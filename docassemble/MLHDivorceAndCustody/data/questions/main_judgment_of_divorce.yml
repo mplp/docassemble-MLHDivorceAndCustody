@@ -1,0 +1,310 @@
+---
+include:
+  - docassemble.AssemblyLine:assembly_line.yml
+  - docassemble.ALAnyState:any_state.yml
+  - docassemble.ALToolbox:collapse_template.yml
+  - docassemble.mlhframework:mlh_interview_framework.yml
+---
+#TODO: subtitle? & confirm description
+metadata:
+  title: Michigan Judgment of Divorce
+  short title: Michigan Judgment of Divorce
+  description: |
+    Self-help interview to obtain a Judgment of Divorce and other documents needed to finish a divorce in Michigan.
+  tags:
+    - "Family"
+  authors:
+    - Jack Adamson
+    - Kelly McGuire
+    - Emily Miller
+---
+features:
+  labels above fields: True
+---
+#TODO: sections
+sections:
+  - signpost_intro: "Introduction"
+  - signpost_qualify: "Do you qualify?"
+  - signpost_user: "Your Information"
+  - signpost_done: "Done"
+  - review_full: "✎ <u>Review / Edit</u>"
+---
+code:  |
+  github_repo_name = 'docassemble-MLHDivorceAndCustody' if get_config('debug') else 'docassemble-UserFeedback'
+---
+#TODO: need survey url
+code: |
+  survey_link_url_only = "https://www.surveymonkey.com/r/xxxxxx"
+---
+#TODO: need survey script
+template: survey_embed_script
+content: |
+  <script>
+  </script>
+---
+#TODO: confirm form type
+# set intro landing screen variables
+code: |
+  MLH_form_type = "Judgment of Divorce"
+  MLH_time_min = 15
+  MLH_time_max = 45
+---
+template: MLH_welcome_message
+content: |
+  Welcome to Michigan Legal Help's Do-It-Yourself ${MLH_form_type} tool.
+
+  This tool will help you prepare forms to finish your divorce in Michigan. Use this tool if all you need is a Judgment of Divorce and the forms that go with it.
+---
+#TODO: need resource url & confirm page name
+code: |
+  resource_page_url_only = "https://michiganlegalhelp.org/node/xxxx"
+  resource_page_name = "Judgment of Divorce"
+---
+# -----------------------------------------------------------------------------
+## interview block
+# -----------------------------------------------------------------------------
+---
+id: interview_order_michigan_judgment_of_divorce
+mandatory: True
+scan for variables: False
+code: |
+  nav.set_section("review_full")
+  nav.set_section("signpost_intro")
+  MLH_standard_intro_pages
+
+  nav.set_section("signpost_qualify")
+  if not pending_divorce:
+    exit_no_pending_divorce
+
+  county_choice #TODO: custom? "In what county was the divorce filed?"
+  docket_number #TODO: custom? "What is the case number? Be certain to enter the “-DO” or “-DM” at the end of the number."
+  user_ask_role
+
+  if not marriage_breakdown:
+    exit_no_marriage_breakdown
+
+  request_spousal_support
+  if not request_spousal_support_continue:
+    exit_general
+
+  real_property.there_are_any
+  real_property.target_number
+
+  have_pension_retirement
+  if not have_pension_retirement_continue:
+    exit_general
+
+---
+# -----------------------------------------------------------------------------
+## objects
+# -----------------------------------------------------------------------------
+---
+objects:
+  - users: ALPeopleList.using(
+      there_are_any=True,
+      there_is_another=False,
+      target_number=1,
+      complete_attribute="complete",
+      )
+  - other_parties: ALPeopleList.using(
+      there_are_any=True,
+      there_is_another=False,
+      target_number=1,
+      complete_attribute="complete",
+      )
+  - children: ALPeopleList.using(
+      ask_number=True,
+      complete_attribute="complete",
+      )
+  - judges: ALPeopleList.using(
+      there_are_any=True,
+      there_is_another=False,
+      target_number=1,
+      complete_attribute="complete",
+      )
+  - real_property: DAList.using(
+      object_type=Thing,
+      ask_number=True,
+      complete_attribute="complete",
+      )
+---
+code: |
+  real_property[i].initializeAttribute("address", Address)
+  real_property[i].address.address
+  real_property[i].name.text
+  real_property[i].complete = True
+---
+# -----------------------------------------------------------------------------
+## questions
+# -----------------------------------------------------------------------------
+---
+id: exit_general
+event: exit_general
+question: |
+  Sorry, this tool cannot help you.
+subquestion: |
+  You may want to contact a lawyer for help. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) on Michigan Legal Help to find a lawyer or a legal services office near you.
+
+  If you think you made a mistake, tap **Undo** and change the answer to this question.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
+id: pending_divorce
+question: |
+  Pending divorce
+fields:
+  - Do you have a pending divorce case with this spouse in any court?: pending_divorce
+    datatype: yesnoradio
+---
+id: exit_no_pending_divorce
+event: exit_no_pending_divorce
+question: |
+  Sorry, this tool cannot help you.
+subquestion: |
+  You must have a pending Michigan divorce case to use this tool. This tool is only for completing your Judgment of Divorce and related papers in an existing divorce case. If you need to file a Michigan Divorce case, return to the Michigan Legal Help website to either the [Filing for Divorce with Children](https://michiganlegalhelp.org/resources/family/filing-divorce-children) Resource page or the [Filing for Divorce without Children](https://michiganlegalhelp.org/resources/family/filing-divorce-without-children) Resource page.
+
+  You may want to contact a lawyer for help. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) on Michigan Legal Help to find a lawyer or a legal services office near you.
+
+  If you think you made a mistake, tap **Undo** and change the answer to this question.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
+
+id: what is the user's role?
+question: |
+  Are you the Plaintiff or the Defendant in this case?
+subquestion: |
+  ${ collapse_template(help_user_ask_role_template) }
+fields:
+  - What party are you in your case?: user_ask_role
+    label above field: True
+    datatype: radio
+    choices:
+      - I am the Plaintiff: plaintiff
+      - I am the Defendant: defendant
+  - note: |
+      Okay, you are the **Plaintiff** in this case. The other
+      side is the Defendant.
+    show if:
+      variable: user_ask_role
+      is: "plaintiff"
+  - note: |
+      Okay, you are the **Defendant** in this case. The other
+      side is the Plaintiff.
+    show if:
+      variable: user_ask_role
+      is: "defendant"
+---
+id: marriage_breakdown
+question: |
+  Marriage breakdown
+subquestion: |
+  Michigan law requires you to testify that there has been a breakdown of the marriage to the extent that the objects of matrimony have been destroyed and there remains no reasonable likelihood that your marriage can be preserved. This means that there has been a serious, permanent, marital breakdown. It means it is very unlikely that you and your spouse can work things out.
+fields:
+  - Has there been a breakdown of the marriage to the extent that the objects of matrimony have been destroyed and there remains no reasonable likelihood that the marriage can be preserved? This means that there has been a serious, permanent, marital breakdown. It means it is very unlikely that you and your spouse can work things out.: marriage_breakdown
+    datatype: yesnoradio
+---
+id: exit_no_marriage_breakdown
+event: exit_no_marriage_breakdown
+question: |
+  Sorry, this tool cannot help you.
+subquestion: |
+  If you are unable to testify to the breakdown of your marriage, you cannot use this tool to create a Judgment of Divorce.
+
+  You may want to contact a lawyer for help. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) on Michigan Legal Help to find a lawyer or a legal services office near you.
+
+  If you think you made a mistake, tap **Undo** and change the answer to this question.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
+id: request_spousal_support
+question: |
+  Spousal support
+fields:
+  - Do you plan to ask the judge to order your spouse to support you financially, other than with child support?: request_spousal_support
+    datatype: yesnoradio
+  - note: |
+      WARNING! This tool cannot help you ask for spousal support. A spousal request must be made in either the Complaint for Divorce or Counterclaim for Divorce. Asking for spousal support is complicated, and the form produced by this tool cannot do that. If you want to ask for spousal support, find a lawyer to help you. To get lawyer referral information, use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
+
+      If you and your spouse agree that one of you will pay spousal support, or if the judge orders spousal support in your case, you can indicate that in the spousal support paragraph of the Judgment of Divorce that you will get from this tool, and fill out a [Uniform Spousal Support Order](https://www.courts.michigan.gov/4a7e2f/siteassets/forms/scao-approved/foc10b.pdf) to attach.
+    show if:
+      variable: request_spousal_support
+      is: True
+  - note: |
+      WARNING! If you don't ask for spousal support now, you will not be allowed to come back to court later and ask for it. If you are unsure whether you might want or need spousal support in the future, you should request it now to preserve your right to ask for it later.
+    show if:
+      variable: request_spousal_support
+      is: False
+  - Do you want to continue?: request_spousal_support_continue
+    datatype: yesnoradio
+    hide if:
+      variable: request_spousal_support
+      is: None
+---
+id: exit_general
+event: exit_general
+question: |
+  Sorry, this tool cannot help you.
+subquestion: |
+  You may want to contact a lawyer for help. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) on Michigan Legal Help to find a lawyer or a legal services office near you.
+
+  If you think you made a mistake, tap **Undo** and change the answer to this question.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
+id: real_property_there_are_any
+question: |
+  Real property
+fields:
+  - Do you or your spouse own real property that was bought or paid for while you were married? Real property is real estate such as a house, a condo, or land.: real_property.there_are_any
+    datatype: yesnoradio
+  - How many pieces of real property do you and your spouse own?: real_property.target_number
+    datatype: integer
+---
+id: have_pension_retirement
+question: |
+  Pension and/or retirement accounts
+fields:
+  - Do you or your spouse have a pension or retirement account?: have_pension_retirement
+    datatype: yesnoradio
+  - Do you each plan to keep your own accounts or do you want to ask the judge to divide your accounts?: pension_retirement_keep_own_accounts
+    show if: have_pension_retirement
+  - note: |
+      You may have a right to part of your spouse's pension or retirement account, and your spouse may have a right to part of yours. This is an important decision that can impact your future. Sometimes it is hard to know the full value of a pension or retirement account, especially if an account includes future benefits. If you don't know all the details of each person's pension and retirement accounts, you may want to consider talking to a lawyer before you decide how you want to divide them.
+    show if:
+      variable: pension_retirement_keep_own_accounts
+      is: True
+  - note: |
+      WARNING! This tool may not be right for you. Dividing pensions or retirement accounts is not simple. Neither this tool nor the Michigan Legal Help website will divide your pensions or retirement accounts. You can still complete this tool to prepare your Judgment of Divorce. The Judgment of Divorce produced after this tool will state that you have pensions or retirement accounts to divide, but the Judgment of Divorce will not divide them. You may want to consider hiring a lawyer to ask the judge to divide your pensions or retirement accounts. A lawyer can also draft the special order that is required.
+
+      If you want to hire a lawyer to help you divide your pensions or retirement accounts and finish your case, you can find referral information in the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
+    show if:
+      variable: pension_retirement_keep_own_accounts
+      is: False
+  - Do you want to continue with the tool, knowing that you will not get a share of your spouse's pension or retirement account and will not be able to return to court in the future and ask for a change?: have_pension_retirement_continue
+    datatype: yesnoradio
+    hide if:
+      variable: pension_retirement_keep_own_accounts
+      is: True
+  - Do you want to continue?: have_pension_retirement_continue
+    datatype: yesnoradio
+    hide if:
+      variable: pension_retirement_keep_own_accounts
+      is: False
+---
