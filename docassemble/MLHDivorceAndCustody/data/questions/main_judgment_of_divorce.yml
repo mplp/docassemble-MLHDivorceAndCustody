@@ -88,11 +88,18 @@ code: |
     exit_general
 
   real_property.there_are_any
-  real_property.target_number
 
-  have_pension_retirement
-  if not have_pension_retirement_continue:
-    exit_general
+  if have_pension_retirement:
+    pension_retirement_accounts
+    if not pension_retirement_accounts_continue:
+      exit_general
+
+  if have_financial_instruments:
+    if financial_instruments_held_together:
+      if not financial_instruments_held_together_continue:
+        exit_general
+    else:
+      pass
 
 ---
 # -----------------------------------------------------------------------------
@@ -138,6 +145,7 @@ code: |
 ## questions
 # -----------------------------------------------------------------------------
 ---
+#TODO: determine if we want specific exit screens for each reason (using templates)
 id: exit_general
 event: exit_general
 question: |
@@ -276,6 +284,14 @@ fields:
     datatype: yesnoradio
   - How many pieces of real property do you and your spouse own?: real_property.target_number
     datatype: integer
+    min: 1
+    show if: real_property.there_are_any
+---
+on change:
+  real_property.there_are_any: |
+    if not real_property.there_are_any:
+      real_property.target_number = 0
+      real_property.clear()
 ---
 id: have_pension_retirement
 question: |
@@ -283,28 +299,63 @@ question: |
 fields:
   - Do you or your spouse have a pension or retirement account?: have_pension_retirement
     datatype: yesnoradio
-  - Do you each plan to keep your own accounts or do you want to ask the judge to divide your accounts?: pension_retirement_keep_own_accounts
-    show if: have_pension_retirement
-  - note: |
-      You may have a right to part of your spouse's pension or retirement account, and your spouse may have a right to part of yours. This is an important decision that can impact your future. Sometimes it is hard to know the full value of a pension or retirement account, especially if an account includes future benefits. If you don't know all the details of each person's pension and retirement accounts, you may want to consider talking to a lawyer before you decide how you want to divide them.
-    show if:
-      variable: pension_retirement_keep_own_accounts
-      is: True
-  - note: |
-      WARNING! This tool may not be right for you. Dividing pensions or retirement accounts is not simple. Neither this tool nor the Michigan Legal Help website will divide your pensions or retirement accounts. You can still complete this tool to prepare your Judgment of Divorce. The Judgment of Divorce produced after this tool will state that you have pensions or retirement accounts to divide, but the Judgment of Divorce will not divide them. You may want to consider hiring a lawyer to ask the judge to divide your pensions or retirement accounts. A lawyer can also draft the special order that is required.
+---
+id: pension_retirement_accounts
+question: |
+  Pension and/or retirement accounts
+fields:
+  - Do you each plan to keep your own accounts or do you want to ask the judge to divide your accounts?: pension_retirement_accounts
+    input type: radio
+    choices:
+      - We will each keep our own account(s): keep
+      - I want the judge to divide our account(s): divide
+---
+if: pension_retirement_accounts == "keep"
+id: pension_retirement_accounts_keep
+question: |
+  Pension and/or retirement accounts
+subquestion: |
+  You may have a right to part of your spouse's pension or retirement account, and your spouse may have a right to part of yours. This is an important decision that can impact your future. Sometimes it is hard to know the full value of a pension or retirement account, especially if an account includes future benefits. If you don't know all the details of each person's pension and retirement accounts, you may want to consider talking to a lawyer before you decide how you want to divide them.
+fields:
+  - Do you want to continue with the tool, knowing that you will not get a share of your spouse's pension or retirement account and will not be able to return to court in the future and ask for a change?: pension_retirement_accounts_continue
+    datatype: yesnoradio
+---
+if: pension_retirement_accounts == "divide"
+id: pension_retirement_accounts_divide
+question: |
+  Pension and/or retirement accounts
+subquestion: |
+  WARNING! This tool may not be right for you. Dividing pensions or retirement accounts is not simple. Neither this tool nor the Michigan Legal Help website will divide your pensions or retirement accounts. You can still complete this tool to prepare your Judgment of Divorce. The Judgment of Divorce produced after this tool will state that you have pensions or retirement accounts to divide, but the Judgment of Divorce will not divide them. You may want to consider hiring a lawyer to ask the judge to divide your pensions or retirement accounts. A lawyer can also draft the special order that is required.
 
-      If you want to hire a lawyer to help you divide your pensions or retirement accounts and finish your case, you can find referral information in the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
-    show if:
-      variable: pension_retirement_keep_own_accounts
-      is: False
-  - Do you want to continue with the tool, knowing that you will not get a share of your spouse's pension or retirement account and will not be able to return to court in the future and ask for a change?: have_pension_retirement_continue
+  If you want to hire a lawyer to help you divide your pensions or retirement accounts and finish your case, you can find referral information in the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
+fields:
+  - Do you want to continue?: pension_retirement_accounts_continue
     datatype: yesnoradio
-    hide if:
-      variable: pension_retirement_keep_own_accounts
-      is: True
-  - Do you want to continue?: have_pension_retirement_continue
+---
+id: have_financial_instruments
+question: |
+  Financial instruments
+fields:
+  - Do you or your spouse own any stocks, bonds, Certificates of Deposit (CDs), mutual funds, Money Market Accounts, or other investments? Do not include pensions or retirement accounts here.: have_financial_instruments
     datatype: yesnoradio
-    hide if:
-      variable: pension_retirement_keep_own_accounts
-      is: False
+---
+id: financial_instruments_held_together
+question: |
+  Financial instruments
+fields:
+  - Are any of these investments held in both of your names?: financial_instruments_held_together
+    datatype: yesnoradio
+---
+id: financial_instruments_agree_about_division
+question: |
+  Financial instruments
+subquestion: |
+  WARNING! This tool may not be right for you. Investments held in both spouses' names must be divided as part of your Judgment of Divorce. There may also be problems actually dividing these assets up after the Judgment is final. Dividing investments is not simple. You cannot use this tool or the Michigan Legal Help website to do this.
+
+  You may want to consider hiring a lawyer to help you divide your investments. Consider asking a financial planner for advice on how to transfer investments and about tax issues that come with transferring investments. You can still complete this tool to prepare your Judgment of Divorce. You will be allowed to divide your investments in your Judgment of Divorce. However, the Judgment of Divorce will not include any information about how the investments will be transferred or about tax liability. Your investments will not be transferred automatically to the person they are awarded to in the Judgment of Divorce. There are more steps that need to be followed after the Judgment of Divorce is final.
+
+  If you want to hire a lawyer to help you divide your investments and finish your case, you can find referral information in the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
+fields:
+  - Do you want to continue?: financial_instruments_held_together_continue
+    datatype: yesnoradio
 ---
