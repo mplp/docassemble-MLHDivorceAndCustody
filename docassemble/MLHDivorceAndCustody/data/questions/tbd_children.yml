@@ -1,0 +1,69 @@
+---
+id: other_parties_0_gender
+question: |
+  What is your spouse's gender?
+fields:
+  - code: |
+      other_parties[0].gender_fields(show_help=True)
+---
+id: users_0_pregnant
+question: |
+  Pregnancy
+fields:
+  - label: To the best of your knowledge are you pregnant?
+    field: users[0].pregnant
+    datatype: yesnoradio
+---
+id: other_parties_0_pregnant
+question: |
+  Pregnancy
+fields:
+  - label: To the best of your knowledge is your spouse pregnant?
+    field: other_parties[0].pregnant
+    datatype: yesnoradio
+---
+id: children_there_are_any_same_sex
+question: |
+ Children
+fields:
+  - label: Do you and your spouse have minor children together?
+    field: children_there_are_any_same_sex
+    datatype: yesnoradio
+---
+id: children_both_legal_parents
+question: |
+  Children
+subquestion: |
+  You are both the legal parents if one of you is a biological parent and you were married to each other when the child was born or conceived.
+fields:
+  - label: Are you and your spouse both the legal parents of the child or children?
+    field: children_both_legal_parents
+    datatype: yesnomaybe
+---
+code: |
+  if users[0].gender == other_parties[0].gender:
+    if children_there_are_any_same_sex and children_both_legal_parents:
+      children.there_are_any = True
+    else:
+      children.there_are_any = False
+  else:
+    pass
+---
+on change:
+  children.there_are_any: |
+    if not children.there_are_any:
+      children.target_number = 0
+      children.clear()
+---
+# TODO: confirm usage of "under text"
+id: children_target_number
+question: |
+  Children
+subquestion: |
+  Children together are those children who have both you and your spouse as legal parents, whether you became their parents during your marriage or before, not including stepchildren.
+fields:
+  - label: How many minor children do you and your spouse have together?
+    field: children.target_number
+    datatype: integer
+    min: 1
+---
