@@ -115,11 +115,27 @@ code: |
     exit_general
 
   users.gather()
-
+  users[0].name.first
+  users[0].previous_last_name_yn
+  users[0].new_last_name_yn
+  users[0].gender #TODO remove or set if we end up asking for gender in the screening
+  users[0].marriage_number
+  users[0].birthdate
+  users[0].birthplace
   confidential_contact_info_yn
   if not users[0].michigan_resident:
     users[0].us_address_yn
   users[0].address.address
+  users[0].phone_number
+  users[0].email
+
+  other_parties.gather()
+  other_parties[0].name.first
+  other_parties[0].previous_last_name_yn
+  other_parties[0].gender #TODO remove or set if we end up asking for gender in the screening
+  other_parties[0].marriage_number
+  other_parties[0].birthdate
+  other_parties[0].birthplace
 
 ---
 code: |
@@ -139,13 +155,11 @@ objects:
       there_are_any=True,
       there_is_another=False,
       target_number=1,
-      complete_attribute="complete",
       )
   - other_parties: ALPeopleList.using(
       there_are_any=True,
       there_is_another=False,
       target_number=1,
-      complete_attribute="complete",
       )
   - children: ALPeopleList.using(
       ask_number=True,
@@ -162,15 +176,6 @@ objects:
       ask_number=True,
       complete_attribute="complete",
       )
----
-code: |
-  users[0].name.first
-  users[0].previous_last_name_yn
-  users[0].gender #TODO remove or set if we end up asking for gender in the screening
-  users[0].marriage_number
-  users[0].birthdate
-  users[0].birthplace
-  users[0].complete = True
 ---
 code: |
   real_property[i].initializeAttribute("address", Address)
@@ -258,18 +263,7 @@ action buttons:
 ## overrides
 # -----------------------------------------------------------------------------
 ---
-# AL-Overridden since it's always a person
-sets:
-  - other_parties[i].name.first
-  - other_parties[i].name.last
-  - other_parties[i].name.middle
-  - other_parties[i].name.suffix
-id: names of opposing parties
-question: |
-  What is your spouse's name?
-fields:
-  - code: |
-      other_parties[i].name_fields(person_or_business="person")
+
 ---
 # -----------------------------------------------------------------------------
 ## introduction
@@ -503,7 +497,7 @@ fields:
     datatype: yesnoradio
 ---
 # -----------------------------------------------------------------------------
-## basic information
+## basic information - users[0]
 # -----------------------------------------------------------------------------
 ---
 id: users[0].previous_last_name
@@ -520,6 +514,22 @@ validation code: |
   if not users[0].previous_last_name_yn:
     users[0].invalidate_attr("previous_last_name")
 ---
+id: users[0].new_last_name_yn
+question: |
+  Change last name
+subquestion: |
+  If you do not want to get your name changed as part of your divorce, you can still ask for a name change later. To do this, file a Petition to Change Name any time after your divorce is final. There is a filing fee for this petition unless you qualify to have your fees waived. There are also other costs related to the petition that cannot be waived.
+fields:
+  - label: Would you like the judge to allow you to change your last name as part of your divorce?
+    field: users[0].new_last_name_yn
+    datatype: yesnoradio
+  - label: What is the **last name** that you want the judge to allow you to use?
+    field: users[0].new_last_name
+    show if: users[0].new_last_name_yn
+validation code: |
+  if not users[0].new_last_name_yn:
+    users[0].invalidate_attr("new_last_name")
+---
 id: users[0].gender
 sets: users[0].gender
 question: |
@@ -532,7 +542,7 @@ id: users[0].marriage_number
 question: |
   Marriage
 fields:
-  - label: Please select the number of this marriage for you.
+  - label: Please select the number of this marriage for you
     field: users[0].marriage_number
     code: |
       [{"label": ordinal(y, capitalize=True), "value": ordinal(y)} for y in range(10)]
@@ -573,7 +583,8 @@ fields:
 ---
 id: confidential_contact_info_yn_more_template
 template: confidential_contact_info_yn_more_template
-subject: Click here for more information.
+subject: |
+  Click here for more information.
 content: |
   Help!
 
@@ -621,4 +632,108 @@ question: |
 fields:
   - code: |
       users[0].address_fields(country_code=getattr(users[0].address, "country", "Select"), show_country=users[0].address.attr("country") != "US")
+---
+id: users[0].phone_number
+question: |
+  Phone number
+subquestion: |
+  % if confidential_contact_info_yn:
+  ${phone_number_confidential_template.content}
+  % else:
+  ${phone_number_template.content}
+  % endif
+fields:
+  - label: |
+      % if confidential_contact_info_yn:
+      ${phone_number_confidential_template.subject}
+      % else:
+      ${phone_number_template.subject}
+      % endif
+    field: users[0].phone_number
+---
+id: phone_number_template
+template: phone_number_template
+subject: |
+  Phone (home or cell)
+content: |
+  Enter a telephone number where the court can reach you, starting with the area code.
+---
+id: phone_number_confidential_template
+template: phone_number_confidential_template
+subject: |
+  Safe phone
+content: |
+  Please enter a safe telephone number where the court can reach you, starting with the area code. This telephone number will appear on papers filed with the court and served on your spouse. **Do not enter a telephone number that you want to keep confidential.**
+---
+id: users[0].email
+question: |
+  Email address
+fields:
+  - label: What is your email address?
+    field: users[0].email
+    datatype: email
+    required: False
+---
+# -----------------------------------------------------------------------------
+## basic information - other_parties[0]
+# -----------------------------------------------------------------------------
+---
+sets:
+  - other_parties[0].name.first
+  - other_parties[0].name.last
+  - other_parties[0].name.middle
+  - other_parties[0].name.suffix
+id: other_parties[0].name.first
+question: |
+  What is your spouse's name?
+fields:
+  - code: |
+      other_parties[0].name_fields(person_or_business="person")
+---
+id: other_parties[0].previous_last_name
+question: |
+  Previous last name
+fields:
+  - label: Was your spouse's last name something _other than_ ${other_parties[0].name.last} before your marriage?
+    field: other_parties[0].previous_last_name_yn
+    datatype: yesnoradio
+  - label: Please enter your spouse's last name before your marriage
+    field: other_parties[0].previous_last_name
+    show if: other_parties[0].previous_last_name_yn
+validation code: |
+  if not other_parties[0].previous_last_name_yn:
+    other_parties[0].invalidate_attr("previous_last_name")
+---
+id: other_parties[0].gender
+sets: other_parties[0].gender
+question: |
+  What is your spouse's gender?
+fields:
+  - code: |
+      other_parties[0].gender_fields(show_help=True)
+---
+id: other_parties[0].marriage_number
+question: |
+  Marriage
+fields:
+  - label: Please select the number of this marriage for your spouse
+    field: other_parties[0].marriage_number
+    code: |
+      [{"label": ordinal(y, capitalize=True), "value": ordinal(y)} for y in range(10)]
+---
+id: other_parties[0].birthdate
+question: |
+  When was your spouse born?
+fields:
+  - label: Birthdate
+    field: other_parties[0].birthdate
+    datatype: BirthDate
+---
+id: other_parties[0].birthplace
+field: other_parties[0].birthplace
+question: |
+  Where was your spouse born?
+fields:
+  - label: Please enter the state or country where your spouse was born
+    field: other_parties[0].birthplace
 ---
