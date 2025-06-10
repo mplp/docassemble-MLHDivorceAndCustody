@@ -5,6 +5,9 @@ include:
   - docassemble.ALToolbox:collapse_template.yml
   - docassemble.mlhframework:mlh_interview_framework.yml
 ---
+modules:
+  - docassemble.ALToolbox.ThreePartsDate
+---
 #TODO subtitle? & confirm description
 metadata:
   title: Michigan Judgment of Divorce
@@ -75,43 +78,43 @@ code: |
   MLH_standard_intro_pages
 
   nav.set_section("signpost_qualify")
-  if not pending_divorce:
+  if not marriage.pending_divorce:
     exit_no_pending_divorce
 
   county_choice #TODO custom? "In what county was the divorce filed?"
   docket_number #TODO custom? "What is the case number? Be certain to enter the “-DO” or “-DM” at the end of the number."
   user_ask_role
 
-  if not marriage_breakdown:
+  if not marriage.breakdown:
     exit_no_marriage_breakdown
 
-  request_spousal_support
-  if not request_spousal_support_continue:
+  marriage.request_spousal_support
+  if not marriage.request_spousal_support_continue:
     exit_general
 
-  real_property.there_are_any
+  marriage.real_property.there_are_any
 
-  if have_pension_retirement:
-    pension_retirement_accounts
-    if not pension_retirement_accounts_continue:
+  if marriage.have_pension_retirement:
+    marriage.pension_retirement_accounts
+    if not marriage.pension_retirement_accounts_continue:
       exit_general
 
-  if have_financial_instruments:
-    if financial_instruments_held_together:
-      financial_instruments_held_together_agree_about_division
-      if not financial_instruments_held_together_continue:
+  if marriage.have_financial_instruments:
+    if marriage.financial_instruments_held_together:
+      marriage.financial_instruments_held_together_agree_about_division
+      if not marriage.financial_instruments_held_together_continue:
         exit_general
     else:
-      if financial_instruments_keep_or_divide == "divide":
+      if marriage.financial_instruments_keep_or_divide == "divide":
         exit_general
-      elif financial_instruments_keep_or_divide == "keep":
-        if not financial_instruments_keep_own_continue:
+      elif marriage.financial_instruments_keep_or_divide == "keep":
+        if not marriage.financial_instruments_keep_own_continue:
           exit_general
 
-  if have_business:
+  if marriage.have_business:
     exit_general
 
-  if have_experienced_domestic_violence and not have_experienced_domestic_violence_continue:
+  if marriage.have_experienced_domestic_violence and not marriage.have_experienced_domestic_violence_continue:
     exit_general
 
   users.gather()
@@ -123,9 +126,14 @@ code: |
   users[0].birthdate
   users[0].birthplace
   confidential_contact_info_yn
-  if not users[0].michigan_resident:
-    users[0].us_address_yn
-  users[0].address.address
+
+  #TODO: address handling is temporary while we work on new hybrid address screen
+  # if users[0].address.country == "US" and users[0].address.state == "MI":
+  if users[0].address.state == "MI":
+    users[0].village_or_township_yn
+
+  # users[0].mailing_address_yn
+
   users[0].phone_number
   users[0].email
 
@@ -136,6 +144,24 @@ code: |
   other_parties[0].marriage_number
   other_parties[0].birthdate
   other_parties[0].birthplace
+
+  #TODO: address handling is temporary while we work on new hybrid address screen
+  # if other_parties[0].address.country == "US" and other_parties[0].address.state == "MI":
+  if other_parties[0].address.state == "MI":
+    other_parties[0].village_or_township_yn
+
+  # other_parties[0].mailing_address_yn
+
+  if other_parties[0].has_attorney:
+    other_parties[0].attorney.name.first
+    other_parties[0].attorney.address.address
+    other_parties[0].attorney.phone_number
+
+  marriage.date
+  marriage.address.city
+  if not marriage.living_together_yn:
+    marriage.living_together_stopped_date
+
 
 ---
 code: |
@@ -161,6 +187,7 @@ objects:
       there_is_another=False,
       target_number=1,
       )
+  - other_parties[0].attorney: ALIndividual
   - children: ALPeopleList.using(
       ask_number=True,
       complete_attribute="complete",
@@ -171,17 +198,19 @@ objects:
       target_number=1,
       complete_attribute="complete",
       )
-  - real_property: DAList.using(
+  - marriage: DAObject
+  - marriage.address: ALAddress
+  - marriage.real_property: DAList.using(
       object_type=Thing,
       ask_number=True,
       complete_attribute="complete",
       )
 ---
 code: |
-  real_property[i].initializeAttribute("address", Address)
-  real_property[i].address.address
-  real_property[i].name.text
-  real_property[i].complete = True
+  marriage.real_property[i].initializeAttribute("address", Address)
+  marriage.real_property[i].address.address
+  marriage.real_property[i].name.text
+  marriage.real_property[i].complete = True
 ---
 # =============================================================================
 ## questions
@@ -269,12 +298,12 @@ action buttons:
 ## introduction
 # -----------------------------------------------------------------------------
 ---
-id: pending_divorce
+id: marriage.pending_divorce
 question: |
   Pending divorce
 fields:
   - label: Do you have a pending divorce case with this spouse in any court?
-    field: pending_divorce
+    field: marriage.pending_divorce
     datatype: yesnoradio
 ---
 id: what is the user's role?
@@ -305,40 +334,40 @@ fields:
       variable: user_ask_role
       is: defendant
 ---
-id: marriage_breakdown
+id: marriage.breakdown
 question: |
   Marriage breakdown
 subquestion: |
   Michigan law requires you to testify that there has been a breakdown of the marriage to the extent that the objects of matrimony have been destroyed and there remains no reasonable likelihood that your marriage can be preserved. This means that there has been a serious, permanent, marital breakdown. It means it is very unlikely that you and your spouse can work things out.
 fields:
   - label: Has there been a breakdown of the marriage to the extent that the objects of matrimony have been destroyed and there remains no reasonable likelihood that the marriage can be preserved?
-    field: marriage_breakdown
+    field: marriage.breakdown
     datatype: yesnoradio
 ---
-id: request_spousal_support
+id: marriage.request_spousal_support
 question: |
   Spousal support
 fields:
   - label: Do you plan to ask the judge to order your spouse to support you financially, other than with child support?
-    field: request_spousal_support
+    field: marriage.request_spousal_support
     datatype: yesnoradio
   - note: |
       WARNING! This tool cannot help you ask for spousal support. A spousal request must be made in either the Complaint for Divorce or Counterclaim for Divorce. Asking for spousal support is complicated, and the form produced by this tool cannot do that. If you want to ask for spousal support, find a lawyer to help you. To get lawyer referral information, use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
 
       If you and your spouse agree that one of you will pay spousal support, or if the judge orders spousal support in your case, you can indicate that in the spousal support paragraph of the Judgment of Divorce that you will get from this tool, and fill out a [Uniform Spousal Support Order](https://www.courts.michigan.gov/4a7e2f/siteassets/forms/scao-approved/foc10b.pdf) to attach.
     show if:
-      variable: request_spousal_support
+      variable: marriage.request_spousal_support
       is: True
   - note: |
       WARNING! If you don't ask for spousal support now, you will not be allowed to come back to court later and ask for it. If you are unsure whether you might want or need spousal support in the future, you should request it now to preserve your right to ask for it later.
     show if:
-      variable: request_spousal_support
+      variable: marriage.request_spousal_support
       is: False
   - label: Do you want to continue?
-    field: request_spousal_support_continue
+    field: marriage.request_spousal_support_continue
     datatype: yesnoradio
     hide if:
-      variable: request_spousal_support
+      variable: marriage.request_spousal_support
       is: None
 ---
 id: real_property_there_are_any
@@ -348,34 +377,34 @@ subquestion: |
   Real property is real estate such as a house, a condo, or land.
 fields:
   - label: Do you or your spouse own real property that was bought or paid for while you were married?
-    field: real_property.there_are_any
+    field: marriage.real_property.there_are_any
     datatype: yesnoradio
   - label: How many pieces of real property do you and your spouse own?
-    field: real_property.target_number
+    field: marriage.real_property.target_number
     datatype: integer
     min: 1
-    show if: real_property.there_are_any
+    show if: marriage.real_property.there_are_any
 ---
 on change:
-  real_property.there_are_any: |
-    if not real_property.there_are_any:
-      real_property.target_number = 0
-      real_property.clear()
+  marriage.real_property.there_are_any: |
+    if not marriage.real_property.there_are_any:
+      marriage.real_property.target_number = 0
+      marriage.real_property.clear()
 ---
-id: have_pension_retirement
+id: marriage.have_pension_retirement
 question: |
   Pension and/or retirement accounts
 fields:
   - label: Do you or your spouse have a pension or retirement account?
-    field: have_pension_retirement
+    field: marriage.have_pension_retirement
     datatype: yesnoradio
 ---
-id: pension_retirement_accounts
+id: marriage.pension_retirement_accounts
 question: |
   Pension and/or retirement accounts
 fields:
   - label: Do you each plan to keep your own accounts or do you want to ask the judge to divide your accounts?
-    field: pension_retirement_accounts
+    field: marriage.pension_retirement_accounts
     input type: radio
     choices:
       - label: We will each keep our own account(s)
@@ -383,7 +412,7 @@ fields:
       - label: I want the judge to divide our account(s)
         value: divide
 ---
-if: pension_retirement_accounts == "keep"
+if: marriage.pension_retirement_accounts == "keep"
 id: pension_retirement_accounts_keep
 question: |
   Pension and/or retirement accounts
@@ -391,10 +420,10 @@ subquestion: |
   You may have a right to part of your spouse's pension or retirement account, and your spouse may have a right to part of yours. This is an important decision that can impact your future. Sometimes it is hard to know the full value of a pension or retirement account, especially if an account includes future benefits. If you don't know all the details of each person's pension and retirement accounts, you may want to consider talking to a lawyer before you decide how you want to divide them.
 fields:
   - label: Do you want to continue with the tool, knowing that you will not get a share of your spouse's pension or retirement account and will not be able to return to court in the future and ask for a change?
-    field: pension_retirement_accounts_continue
+    field: marriage.pension_retirement_accounts_continue
     datatype: yesnoradio
 ---
-if: pension_retirement_accounts == "divide"
+if: marriage.pension_retirement_accounts == "divide"
 id: pension_retirement_accounts_divide
 question: |
   Pension and/or retirement accounts
@@ -404,36 +433,36 @@ subquestion: |
   If you want to hire a lawyer to help you divide your pensions or retirement accounts and finish your case, you can find referral information in the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
 fields:
   - label: Do you want to continue?
-    field: pension_retirement_accounts_continue
+    field: marriage.pension_retirement_accounts_continue
     datatype: yesnoradio
 ---
-id: have_financial_instruments
+id: marriage.have_financial_instruments
 question: |
   Financial investments
 subquestion: |
    Do not consider pensions or retirement accounts here.
 fields:
   - label: Do you or your spouse own any stocks, bonds, Certificates of Deposit (CDs), mutual funds, Money Market Accounts, or other investments?
-    field: have_financial_instruments
+    field: marriage.have_financial_instruments
     datatype: yesnoradio
 ---
-id: financial_instruments_held_together
+id: marriage.financial_instruments_held_together
 question: |
   Financial investments
 fields:
   - label: Are any of these {investments} held in both of your names?
-    field: financial_instruments_held_together
+    field: marriage.financial_instruments_held_together
     datatype: yesnoradio
 ---
-id: financial_instruments_held_together_agree_about_division
+id: marriage.financial_instruments_held_together_agree_about_division
 question: |
   Financial investments
 fields:
   - label: Do you and your spouse agree on how these {investments} will be divided?
-    field: financial_instruments_held_together_agree_about_division
+    field: marriage.financial_instruments_held_together_agree_about_division
     datatype: yesnoradio
 ---
-id: financial_instruments_held_together_continue
+id: marriage.financial_instruments_held_together_continue
 question: |
   Financial investments
 subquestion: |
@@ -444,15 +473,15 @@ subquestion: |
   If you want to hire a lawyer to help you divide your investments and finish your case, you can find referral information in the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
 fields:
   - label: Do you want to continue?
-    field: financial_instruments_held_together_continue
+    field: marriage.financial_instruments_held_together_continue
     datatype: yesnoradio
 ---
-id: financial_instruments_keep_or_divide
+id: marriage.financial_instruments_keep_or_divide
 question: |
   Financial investments
 fields:
   - label: Do you each plan to keep your own accounts or do you want to ask the judge to divide your accounts?
-    field: financial_instruments_keep_or_divide
+    field: marriage.financial_instruments_keep_or_divide
     input type: radio
     choices:
       - label: We will each keep our own account(s)
@@ -460,44 +489,44 @@ fields:
       - label: I want the judge to divide our account(s)
         value: divide
 ---
-id: financial_instruments_keep_own_continue
+id: marriage.financial_instruments_keep_own_continue
 question: |
   Financial investments
 subquestion: |
   You may have a right to part of the investments that are only in your spouse's name, and your spouse may have a right to part of the investments that are only in your name. This is an important decision that can impact your future. Sometimes it is hard to know the full value of an investment. If you don't know all the details of your marital investments, you may want to consider talking to a lawyer before you decide how you want to divide your investments. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) on Michigan Legal Help to find a lawyer or a legal services office near you.
 fields:
   - label: Do you want to continue with the tool, knowing that you will not be awarded a share in investments that are in your spouse's name and will not be able to return to court in the future and ask for a change?
-    field: financial_instruments_keep_own_continue
+    field: marriage.financial_instruments_keep_own_continue
     datatype: yesnoradio
 ---
-id: have_business
+id: marriage.have_business
 question: |
   Business ownership
 fields:
   - label: Do you or your spouse own a business?
-    field: have_business
+    field: marriage.have_business
     datatype: yesnoradio
 ---
-id: have_experienced_domestic_violence
+id: marriage.have_experienced_domestic_violence
 question: |
   Domestic violence
 fields:
   - label: Have you experienced domestic violence or threats of domestic violence by your spouse?
-    field: have_experienced_domestic_violence
+    field: marriage.have_experienced_domestic_violence
     datatype: yesnoradio
 ---
-id: have_experienced_domestic_violence_continue
+id: marriage.have_experienced_domestic_violence_continue
 question: |
   Domestic violence
 subquestion: |
   Domestic violence is serious and can impact many issues in your divorce. Domestic violence is often at its worst when a relationship ends. It is important for you to take steps to be as safe as possible. If there has been verbal, emotional, or physical abuse in your marriage, you may want to consider hiring a lawyer. Your local legal aid office or local domestic violence service provider may be able to help you. To learn more about domestic violence and to find contact information for helpful organizations, please see the [Domestic Violence and Divorce Resource pages](https://michiganlegalhelp.org/resources/personal-safety). If you want to hire a lawyer, you can find referral information in the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
 fields:
   - label: Do you want to continue with the tool now?
-    field: have_experienced_domestic_violence_continue
+    field: marriage.have_experienced_domestic_violence_continue
     datatype: yesnoradio
 ---
 # -----------------------------------------------------------------------------
-## basic information - users[0]
+## users[0]
 # -----------------------------------------------------------------------------
 ---
 id: users[0].previous_last_name
@@ -594,76 +623,56 @@ content: |
 
   If you fear for the safety of you or your children if your address is known by your spouse or someone else, it is strongly recommended that you hire a lawyer and do not do your divorce on your own. Your local domestic violence agency may also be able to help you. To learn more about domestic violence and to find contact information for helpful organizations, please see the [Domestic Violence and Divorce Resource pages](https://michiganlegalhelp.org/resources/personal-safety). You can also use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to look for a lawyer or legal services near you.
 ---
-id: users[0].michigan_resident
+id: users[0].village_or_township
 question: |
-  Residency
+  Village or township
 fields:
-  - label: Do you live in Michigan?
-    field: users[0].michigan_resident
+  - label: Do you live in a township or village that is different from the city in the address you just listed?
+    field: users[0].village_or_township_yn
     datatype: yesnoradio
+  - label: Village or township
+    field: users[0].village_or_township
+    show if: users[0].village_or_township_yn
 validation code: |
-  if users[0].michigan_resident:
-    users[0].address.state = "MI"
-    users[0].address.country = "US"
+  if not users[0].village_or_township_yn:
+    users[0].invalidate_attr("village_or_township")
 ---
-id: users[0].us_address_yn
-question: |
-  Your address
-fields:
-  - label: Is your address in the U.S.?
-    field: users[0].us_address_yn
-    datatype: yesnoradio
-validation code: |
-  if users[0].us_address_yn:
-    users[0].address.country = "US"
-  elif not users[0].us_address_yn and users[0].address.attr("country") == "US":
-    users[0].address.country = ""
----
-id: users[0].address
-sets:
-  - users[0].address.address
-  - users[0].address.city
-  - users[0].address.zip
-  - users[0].address.unit
-  - users[0].address.state
-  - users[0].address.country
-question: |
-  Enter your address
-fields:
-  - code: |
-      users[0].address_fields(country_code=getattr(users[0].address, "country", "Select"), show_country=users[0].address.attr("country") != "US")
+# id: users[0].mailing_address
+# sets:
+#   - users[0].mailing_address.address
+# question: |
+#   Different mailing address
+# fields:
+#   - label: Do you have a different mailing address?
+#     field: users[0].mailing_address_yn
+#     datatype: yesnoradio
+#   - code: |
+#       users[0].address_fields()
+#     show if: users[0].mailing_address_yn
+# validation code: |
+#   if not users[0].mailing_address_yn:
+#     users[0].mailing_address.invalidate_attr("address")
+#     users[0].mailing_address.invalidate_attr("address")
+#     users[0].mailing_address.invalidate_attr("address")
+#     users[0].mailing_address.invalidate_attr("address")
 ---
 id: users[0].phone_number
 question: |
   Phone number
 subquestion: |
   % if confidential_contact_info_yn:
-  ${phone_number_confidential_template.content}
+  Please enter a safe telephone number where the court can reach you, starting with the area code. This telephone number will appear on papers filed with the court and served on your spouse. **Do not enter a telephone number that you want to keep confidential.**
   % else:
-  ${phone_number_template.content}
+  Enter a telephone number where the court can reach you, starting with the area code.
   % endif
 fields:
   - label: |
       % if confidential_contact_info_yn:
-      ${phone_number_confidential_template.subject}
+      Safe phone
       % else:
-      ${phone_number_template.subject}
+      Phone (home or cell)
       % endif
     field: users[0].phone_number
----
-id: phone_number_template
-template: phone_number_template
-subject: |
-  Phone (home or cell)
-content: |
-  Enter a telephone number where the court can reach you, starting with the area code.
----
-id: phone_number_confidential_template
-template: phone_number_confidential_template
-subject: |
-  Safe phone
-content: |
-  Please enter a safe telephone number where the court can reach you, starting with the area code. This telephone number will appear on papers filed with the court and served on your spouse. **Do not enter a telephone number that you want to keep confidential.**
 ---
 id: users[0].email
 question: |
@@ -675,7 +684,7 @@ fields:
     required: False
 ---
 # -----------------------------------------------------------------------------
-## basic information - other_parties[0]
+## other_parties[0]
 # -----------------------------------------------------------------------------
 ---
 sets:
@@ -736,4 +745,95 @@ question: |
 fields:
   - label: Please enter the state or country where your spouse was born
     field: other_parties[0].birthplace
+---
+id: other_parties[0].village_or_township
+question: |
+  Village or township
+fields:
+  - label: Does your spouse live in a township or village that is different from the city in the address you just listed?
+    field: other_parties[0].village_or_township_yn
+    datatype: yesnoradio
+  - label: Village or township
+    field: other_parties[0].village_or_township
+    show if: other_parties[0].village_or_township_yn
+validation code: |
+  if not other_parties[0].village_or_township_yn:
+    other_parties[0].invalidate_attr("village_or_township")
+---
+# -----------------------------------------------------------------------------
+## other_parties[0].attorney
+# -----------------------------------------------------------------------------
+---
+sets:
+  - other_parties[0].attorney.name.first
+  - other_parties[0].attorney.name.last
+  - other_parties[0].attorney.name.middle
+  - other_parties[0].attorney.name.suffix
+  - other_parties[0].attorney.bar_number
+id: lawyer name and bar
+generic object: ALPeopleList
+question: |
+  What is the lawyer's name and bar number?
+subquestion:
+  ${ collapse_template(help_user_find_bar_number_template) }
+fields:
+  - code: |
+      other_parties[0].attorney.name_fields()
+  - label: |
+      Bar number
+      (include the 'P')
+    field: other_parties[0].attorney.bar_number
+    required: False
+---
+# -----------------------------------------------------------------------------
+## marriage information
+# -----------------------------------------------------------------------------
+---
+id: marriage.date
+question: |
+  When were you married?
+fields:
+  - label: Please enter the date you were married
+    field: marriage.date
+    datatype: ThreePartsDate
+---
+#TODO: develop dynamic county dropdown based on state
+id: marriage.address
+question: |
+  Where were you married?
+fields:
+  - label: Country
+    field: marriage.address.country
+    code: |
+      countries_list()
+    default: US
+  - label: State
+    field: marriage.address.state
+    code: |
+      states_list()
+    default: MI
+    show if:
+      variable: marriage.address.country
+      is: US
+  - label: County
+    field: marriage.address.county
+    show if:
+      variable: marriage.address.country
+      is: US
+  - label: City, village, or township
+    field: marriage.address.city
+---
+id: marriage.living_together_yn
+question: |
+  Living together
+fields:
+  - label: Are you and your spouse currently living together?
+    field: marriage.living_together_yn
+    datatype: yesnoradio
+  - label: On or about what date did you and your spouse stop living together?
+    field: marriage.living_together_stopped_date
+    datatype: ThreePartsDate
+    show if:
+      variable: marriage.living_together_yn
+      is: False
 ---
