@@ -167,9 +167,23 @@ code: |
 
   marriage.personal_property_info
   if marriage.personal_property_acquired:
-    if marriage.personal_property_division_agreement:
-      marriage.personal_property_division_actual
+    if not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual:
+      pass
+      # bank accounts
+      # other personal property
+      # mobile home
 
+  marriage.debts_info
+  if marriage.debts_any:
+    if not marriage.debts_pay_own:
+      marriage.debts_responsibility_agree
+    if marriage.debts_joint:
+      pass
+      # Do you and your spouse agree on who will be responsible for these debts?
+      # (Yes/No)
+      # List each jointly debt (debts in both of your names) that will be divided and indicate whether you or your spouse (will/should) be responsible for it.
+      # Do NOT include credit card numbers or any other identifying number associated with a debt.
+      # Type of debtTo whom do you owe moneyApproximate balanceDO NOT enter a dollar signResponsibility of
 
 ---
 code: |
@@ -852,6 +866,10 @@ subquestion: |
   **COBRA**: After your divorce is final, one spouse may continue getting coverage under the other spouse's insurance through COBRA. Your Judgment of Divorce will include language about this. Typically, the spouse who gets continuing medical insurance through COBRA must pay for it. Insurance through COBRA may cost more than when that person was covered as a spouse. If the parties agree to something else, like having the other spouse pay for the COBRA coverage, that must be specifically added to the Judgment of Divorce. You can add this in the Other Provisions section. The Other Provisions section will be available at the end of this tool.
 continue button field: marriage.health_coverage
 ---
+# -----------------------------------------------------------------------------
+## marriage.personal_property_
+# -----------------------------------------------------------------------------
+---
 id: marriage.personal_property_info
 question: |
   Personal property and debt
@@ -885,9 +903,54 @@ id: marriage.personal_property
 question: |
   Personal property and debt
 subquestion: |
-  <em>Only answer <strong>Yes</strong> if each of you has in your possession all of the items that you have agreed you will have.</em>
+  _Only answer **Yes** if each of you has in your possession all of the items that you have agreed you will have._
 fields:
-  - label: Have you and your spouse <strong>actually divided</strong> all the personal property based on your agreement?
+  - label: Have you and your spouse **actually divided** all the personal property based on your agreement?
     field: marriage.personal_property_division_actual
+    datatype: yesnoradio
+---
+# -----------------------------------------------------------------------------
+## marriage.debts_
+# -----------------------------------------------------------------------------
+---
+id: marriage.debts_info
+question: |
+  Debts
+subquestion: |
+  The judge assigned to your divorce case will not have any authority over your creditors (those whom you owe money). Your Judgment of Divorce may divide your marital debt, assigning you or your spouse responsibility for paying each debt. However, creditors may continue to treat debts in both of your names as joint debt. If your spouse defaults on a debt that the Judgment of Divorce requires him or her to pay, you can return to the family court to seek repayment from him or her.
+
+  It is important for all debts that are in both of your names to be included in your Judgment of Divorce. That way, if the person who your divorce assigns responsibility for paying the debt defaults, the other party has a remedy in family court.
+continue button field: marriage.debts_info
+---
+id: marriage.debts_any
+question: |
+  Debts
+fields:
+  - label: Do you or your spouse have any debts, either in your own names or together?
+    field: marriage.debts_any
+    datatype: yesnoradio
+---
+id: marriage.debts_pay_own
+question: |
+  Debts
+fields:
+  - label: Do you and your spouse each plan to pay the debts in your own names?
+    field: marriage.debts_pay_own
+    datatype: yesnoradio
+---
+id: marriage.debts_responsibility_agree
+question: |
+  Debts
+fields:
+  - label: Do you and your spouse agree on who will be responsible for these debts?
+    field: marriage.debts_responsibility_agree
+    datatype: yesnoradio
+---
+id: marriage.debts_joint
+question: |
+  Debts
+fields:
+  - label: Do you and your spouse have any debts that are in **both** of your names?
+    field: marriage.debts_joint
     datatype: yesnoradio
 ---
