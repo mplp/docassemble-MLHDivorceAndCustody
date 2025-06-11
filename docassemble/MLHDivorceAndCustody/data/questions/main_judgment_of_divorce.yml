@@ -114,8 +114,9 @@ code: |
   if marriage.have_business:
     exit_general
 
-  if marriage.have_experienced_domestic_violence and not marriage.have_experienced_domestic_violence_continue:
-    exit_general
+  if marriage.have_experienced_domestic_violence:
+    if not marriage.have_experienced_domestic_violence_continue:
+      exit_general
 
   users.gather()
   users[0].name.first
@@ -161,6 +162,13 @@ code: |
   marriage.address.city
   if not marriage.living_together_yn:
     marriage.living_together_stopped_date
+
+  marriage.health_coverage
+
+  marriage.personal_property_info
+  if marriage.personal_property_acquired:
+    if marriage.personal_property_division_agreement:
+      marriage.personal_property_division_actual
 
 
 ---
@@ -836,4 +844,50 @@ fields:
     show if:
       variable: marriage.living_together_yn
       is: False
+---
+id: marriage.health_coverage
+question: |
+  Health coverage
+subquestion: |
+  **COBRA**: After your divorce is final, one spouse may continue getting coverage under the other spouse's insurance through COBRA. Your Judgment of Divorce will include language about this. Typically, the spouse who gets continuing medical insurance through COBRA must pay for it. Insurance through COBRA may cost more than when that person was covered as a spouse. If the parties agree to something else, like having the other spouse pay for the COBRA coverage, that must be specifically added to the Judgment of Divorce. You can add this in the Other Provisions section. The Other Provisions section will be available at the end of this tool.
+continue button field: marriage.health_coverage
+---
+id: marriage.personal_property_info
+question: |
+  Personal property and debt
+subquestion: |
+  You are now going to be asked about your personal property. Personal property means all of the things you own other than real property (real property is real estate such as a house, condo, or land). Personal property includes things like a mobile home, furniture, jewelry, household goods, and collectibles, as well as cash, stocks, and Certificates of Deposit (CDs). Do not include vehicles (such as cars, boats, trailers, motorcycles, or snowmobiles) in this section. Although vehicles are personal property, you will be asked about vehicles in the next section of this tool.
+
+  - If you and your spouse agree about how all of your property and debt should be divided, use those terms throughout this part of the tool.
+  - If you and your spouse don't agree about how your property and debt should be divided, complete this part of the tool using the division of property and debt terms that you want the judge to order.
+  - If you and your spouse agree on how to divide some, but not all, of your property and debt, use the terms you do agree on, along with the terms that you want the judge to order for things you don't agree on.
+
+  Normally the party who is awarded specific property, such as a car or home, is responsible for paying the debt related to that property. If you or your spouse need to sign any documents to make property transfers final, such as car title transfers or quitclaim deeds, your Judgment of Divorce will require you to do this within 30 days of when the judgment is final.
+continue button field: marriage.personal_property_info
+---
+id: marriage.personal_property
+question: |
+  Personal property and debt
+fields:
+  - label: Did you and your spouse acquire personal property during the marriage?
+    field: marriage.personal_property_acquired
+    datatype: yesnoradio
+---
+id: marriage.personal_property
+question: |
+  Personal property and debt
+fields:
+  - label: Have you and your spouse reached an agreement about how all personal property will be divided?
+    field: marriage.personal_property_division_agreement
+    datatype: yesnoradio
+---
+id: marriage.personal_property
+question: |
+  Personal property and debt
+subquestion: |
+  <em>Only answer <strong>Yes</strong> if each of you has in your possession all of the items that you have agreed you will have.</em>
+fields:
+  - label: Have you and your spouse <strong>actually divided</strong> all the personal property based on your agreement?
+    field: marriage.personal_property_division_actual
+    datatype: yesnoradio
 ---
