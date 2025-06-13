@@ -6,16 +6,17 @@ include:
   - docassemble.mlhframework:mlh_interview_framework.yml
 ---
 modules:
+  - docassemble.ALToolbox.al_income
   - docassemble.ALToolbox.ThreePartsDate
 ---
-#TODO subtitle? & confirm description
+# TODO subtitle? & confirm description
 metadata:
   title: Michigan Judgment of Divorce
   short title: Michigan Judgment of Divorce
   description: |
     Self-help interview to obtain a Judgment of Divorce and other documents needed to finish a divorce in Michigan.
   tags:
-    - "Family"
+    - Family
   authors:
     - Jack Adamson
     - Kelly McGuire
@@ -24,7 +25,7 @@ metadata:
 features:
   labels above fields: True
 ---
-#TODO sections
+# TODO sections
 sections:
   - signpost_intro: "Introduction"
   - signpost_qualify: "Do you qualify?"
@@ -35,17 +36,17 @@ sections:
 code:  |
   github_repo_name = 'docassemble-MLHDivorceAndCustody' if get_config('debug') else 'docassemble-UserFeedback'
 ---
-#TODO need survey url
+# TODO need survey url
 code: |
   survey_link_url_only = "https://www.surveymonkey.com/r/xxxxxx"
 ---
-#TODO need survey script
+# TODO need survey script
 template: survey_embed_script
 content: |
   <script>
   </script>
 ---
-#TODO confirm form type
+# TODO confirm form type
 # set intro landing screen variables
 code: |
   MLH_form_type = "Judgment of Divorce"
@@ -58,7 +59,7 @@ content: |
 
   This tool will help you prepare forms to finish your divorce in Michigan. Use this tool if all you need is a Judgment of Divorce and the forms that go with it.
 ---
-#TODO need resource url & confirm page name
+# TODO need resource url & confirm page name
 code: |
   resource_page_url_only = "https://michiganlegalhelp.org/node/xxxx"
   resource_page_name = "Judgment of Divorce"
@@ -72,7 +73,7 @@ mandatory: True
 scan for variables: False
 code: |
   set_interview_terms
-  reconsider("set_interview_terms") #TODO remove before publishing
+  reconsider("set_interview_terms") # TODO remove before publishing
   nav.set_section("review_full")
   nav.set_section("signpost_intro")
   MLH_standard_intro_pages
@@ -81,8 +82,8 @@ code: |
   if not marriage.pending_divorce:
     exit_no_pending_divorce
 
-  county_choice #TODO custom? "In what county was the divorce filed?"
-  docket_number #TODO custom? "What is the case number? Be certain to enter the “-DO” or “-DM” at the end of the number."
+  county_choice # TODO custom? "In what county was the divorce filed?"
+  docket_number # TODO custom? "What is the case number? Be certain to enter the “-DO” or “-DM” at the end of the number."
   user_ask_role
 
   if not marriage.breakdown:
@@ -122,13 +123,13 @@ code: |
   users[0].name.first
   users[0].previous_last_name_yn
   users[0].new_last_name_yn
-  users[0].gender #TODO remove or set if we end up asking for gender in the screening
+  users[0].gender # TODO remove or set if we end up asking for gender in the screening
   users[0].marriage_number
   users[0].birthdate
   users[0].birthplace
   confidential_contact_info_yn
 
-  #TODO: address handling is temporary while we work on new hybrid address screen
+  # TODO: address handling is temporary while we work on new hybrid address screen
   # if users[0].address.country == "US" and users[0].address.state == "MI":
   if users[0].address.state == "MI":
     users[0].village_or_township_yn
@@ -141,12 +142,12 @@ code: |
   other_parties.gather()
   other_parties[0].name.first
   other_parties[0].previous_last_name_yn
-  other_parties[0].gender #TODO remove or set if we end up asking for gender in the screening
+  other_parties[0].gender # TODO remove or set if we end up asking for gender in the screening
   other_parties[0].marriage_number
   other_parties[0].birthdate
   other_parties[0].birthplace
 
-  #TODO: address handling is temporary while we work on new hybrid address screen
+  # TODO: address handling is temporary while we work on new hybrid address screen
   # if other_parties[0].address.country == "US" and other_parties[0].address.state == "MI":
   if other_parties[0].address.state == "MI":
     other_parties[0].village_or_township_yn
@@ -178,12 +179,14 @@ code: |
     if not marriage.debts_pay_own:
       marriage.debts_responsibility_agree
     if marriage.debts_joint:
+      marriage.debts_joint_responsibility_agree
       pass
       # Do you and your spouse agree on who will be responsible for these debts?
       # (Yes/No)
       # List each jointly debt (debts in both of your names) that will be divided and indicate whether you or your spouse (will/should) be responsible for it.
       # Do NOT include credit card numbers or any other identifying number associated with a debt.
       # Type of debtTo whom do you owe moneyApproximate balanceDO NOT enter a dollar signResponsibility of
+  marriage.debts.gather()
 
 ---
 code: |
@@ -193,6 +196,18 @@ code: |
     }
   )
   set_interview_terms = True
+---
+code: |
+  def dynamic_field(field: str) -> str:
+    match field:
+      case "users[0]":
+        return str(users[0])
+      case "other_parties[0]":
+        return str(other_parties[0])
+      case "joint":
+        return "Joint (50/50)"
+      case _:
+        return "None"
 ---
 # =============================================================================
 ## objects
@@ -227,12 +242,36 @@ objects:
       ask_number=True,
       complete_attribute="complete",
       )
+  - marriage.debts: ALAssetList.using(
+      complete_attribute="complete",
+      )
 ---
 code: |
   marriage.real_property[i].initializeAttribute("address", Address)
   marriage.real_property[i].address.address
   marriage.real_property[i].name.text
   marriage.real_property[i].complete = True
+---
+code: |
+  marriage.debts[i].kind
+  marriage.debts[i].owner
+  marriage.debts[i].balance
+  marriage.debts[i].responsibility
+  marriage.debts[i].complete = True
+---
+table: marriage.debts.table
+rows: marriage.debts
+columns:
+  - Type of debt: row_item.kind
+  - To whom do you owe money: row_item.owner
+  - Approximate balance: row_item.balance
+  - Responsibility of: row_item.responsibility
+edit:
+  - kind
+  - owner
+  - balance
+  - responsibility
+confirm: True
 ---
 # =============================================================================
 ## questions
@@ -242,8 +281,8 @@ code: |
 ## exits
 # -----------------------------------------------------------------------------
 ---
-#TODO determine if we want specific exit screens for each reason (using templates)
-#TODO maybe generate their documents thus far like LHI does?
+# TODO determine if we want specific exit screens for each reason (using templates)
+# TODO maybe generate their documents thus far like LHI does?
 id: exit_general
 event: exit_general
 question: |
@@ -819,7 +858,7 @@ fields:
     field: marriage.date
     datatype: ThreePartsDate
 ---
-#TODO: develop dynamic county dropdown based on state
+# TODO: develop dynamic county dropdown based on state
 id: marriage.address
 question: |
   Where were you married?
@@ -952,5 +991,87 @@ question: |
 fields:
   - label: Do you and your spouse have any debts that are in **both** of your names?
     field: marriage.debts_joint
+    datatype: yesnoradio
+---
+id: marriage.debts_joint_responsibility_agree
+question: |
+  Debts
+fields:
+  - label: Do you and your spouse agree on who will be responsible for these debts?
+    field: marriage.debts_joint_responsibility_agree
+    datatype: yesnoradio
+---
+depends on:
+  - marriage.debts_pay_own
+  - marriage.debts_joint
+code: |
+  marriage.debts.there_are_any = any((
+    not marriage.attr("debts_pay_own"),
+    marriage.attr("debts_joint"),
+  ))
+---
+id: marriage.debts[i]
+question: |
+  Marriage debt
+subquestion: |
+  % if marriage.debts_joint:
+  List each jointly held debt (debts in both of your names) that will be divided and indicate whether you or your spouse ${"will" if marriage.debts_joint_responsibility_agree else "should"} be responsible for it.
+  % endif
+
+  % if not marriage.debts_pay_own:
+  ${"Also, list" if marriage.debts_joint else "List"} each debt that is currently in one spouse's name, but that the other spouse ${"will" if marriage.debts_responsibility_agree else "should"} be responsible for it.
+  % endif
+
+  Do **NOT** include credit card numbers or any other identifying number associated with a debt.
+
+  % if marriage.debts.number_gathered() > 1:
+  So far, you have listed:
+
+  Type | Owed | Balance | Responsibility
+  --- | --- | ---: | ---
+  % for debt in marriage.debts.complete_elements():
+  ${ debt.kind } | ${ debt.owner } | ${ currency(debt.balance) } | ${ dynamic_field(debt.responsibility) }
+  % endfor
+  % endif
+fields:
+  - label: Type of debt
+    field: marriage.debts[i].kind
+    choices:
+      - Credit card
+      - Personal loan
+      - Student loan
+      - Other loan
+      - Unpaid taxes
+      - Judgment
+  - label: To whom do you owe the money
+    field: marriage.debts[i].owner
+  - label: Approximate balance
+    field: marriage.debts[i].balance
+    datatype: currency
+    min: 0
+  - label: Responsibility of
+    field: marriage.debts[i].responsibility
+    choices:
+      - label: ${users[0]}
+        value: users[0]
+      - label: ${other_parties[0]}
+        value: other_parties[0]
+      - label: Joint (50/50)
+        value: joint
+---
+id: marriage.debts.there_is_another
+question: |
+  Marriage debt
+subquestion: |
+  So far, you have listed:
+
+  Type | Owed | Balance | Responsibility
+  --- | --- | ---: | ---
+  % for debt in marriage.debts.complete_elements():
+  <a href="${url_ask(debt.attr_name("kind"))}">${ debt.kind }</a> | <a href="${url_ask(debt.attr_name("owner"))}">${ debt.owner }</a> | <a href="${url_ask(debt.attr_name("balance"))}">${ currency(debt.balance) }</a> | <a href="${url_ask(debt.attr_name("responsibility"))}">${ dynamic_field(debt.responsibility) }</a>
+  % endfor
+fields:
+  - label: Do you want to add another debt?
+    field: marriage.debts.there_is_another
     datatype: yesnoradio
 ---
