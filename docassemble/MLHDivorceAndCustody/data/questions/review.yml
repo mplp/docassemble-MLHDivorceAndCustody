@@ -1,0 +1,10 @@
+---
+id: marriage.debts.revisit
+question: |
+  Marriage debt
+subquestion: |
+  ${marriage.debts.table}
+
+  ${marriage.debts.add_action(color="success", size="md")}
+continue button field: marriage.debts.revisit
+---

@@ -1,9 +1,11 @@
+# use jinja
 ---
 include:
   - docassemble.AssemblyLine:assembly_line.yml
   - docassemble.ALAnyState:any_state.yml
   - docassemble.ALToolbox:collapse_template.yml
   - docassemble.mlhframework:mlh_interview_framework.yml
+  - review.yml
 ---
 modules:
   - docassemble.ALToolbox.al_income
@@ -24,6 +26,7 @@ metadata:
 ---
 features:
   labels above fields: True
+  css: mlh-divorce-and-custody.css
 ---
 # TODO sections
 sections:
@@ -168,25 +171,26 @@ code: |
 
   marriage.personal_property_info
   if marriage.personal_property_acquired:
-    if not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual:
-      pass
-      # bank accounts
-      # other personal property
-      # mobile home
+    if marriage.personal_property_division_agreement:
+      marriage.personal_property_division_actual
+    if any((
+      not marriage.personal_property_division_agreement,
+      not marriage.attr("personal_property_division_actual"),
+    )):
+      marriage.accounts.amass
+      marriage.other_pp.amass
+      marriage.mobile_home.amass
 
   marriage.debts_info
   if marriage.debts_any:
-    if not marriage.debts_pay_own:
-      marriage.debts_responsibility_agree
-    if marriage.debts_joint:
-      marriage.debts_joint_responsibility_agree
-      pass
-      # Do you and your spouse agree on who will be responsible for these debts?
-      # (Yes/No)
-      # List each jointly debt (debts in both of your names) that will be divided and indicate whether you or your spouse (will/should) be responsible for it.
-      # Do NOT include credit card numbers or any other identifying number associated with a debt.
-      # Type of debtTo whom do you owe moneyApproximate balanceDO NOT enter a dollar signResponsibility of
-  marriage.debts.gather()
+    marriage.debts_responsible_agree
+    if any((
+      marriage.debts_any in ("both", "joint"),
+      marriage.attr("debts_responsible_agree_own") == False,
+    )):
+      marriage.debts.amass
+
+  exit_general # temporary ending
 
 ---
 code: |
@@ -198,7 +202,7 @@ code: |
   set_interview_terms = True
 ---
 code: |
-  def dynamic_field(field: str) -> str:
+  def convert_assignment(field: str) -> str:
     match field:
       case "users[0]":
         return str(users[0])
@@ -208,6 +212,22 @@ code: |
         return "Joint (50/50)"
       case _:
         return "None"
+---
+code: |
+  def assignment_choices(joint: bool = False) -> list[dict]:
+    the_list = [
+      {"label": users[0], "value": "users[0]"},
+      {"label": other_parties[0], "value": "other_parties[0]"},
+    ]
+    if joint:
+      the_list.append(
+        {"label": "Joint (50/50)", "value": "joint"}
+      )
+    return the_list
+---
+code: |
+  def required_question(label: str) -> str:
+    return f"""<div class="da-form-group darequired"><label class="da-top-label">{label}</label></div>"""
 ---
 # =============================================================================
 ## objects
@@ -235,14 +255,175 @@ objects:
       target_number=1,
       complete_attribute="complete",
       )
+---
+##### marriage
+---
+objects:
   - marriage: DAObject
   - marriage.address: ALAddress
+---
+##### marriage.accounts
+---
+objects:
+  - marriage.accounts: ALAssetList.using(
+      question="Bank Accounts (Cash) and Investments",
+      noun="account or investment",
+      there_are_any=False,
+      there_is_another=False,
+      complete_attribute="complete",
+      )
+---
+code: |
+  marriage.accounts[i].kind
+  marriage.accounts[i].source
+  marriage.accounts[i].balance
+  marriage.accounts[i].owner
+  marriage.accounts[i].complete = True
+---
+table: marriage.accounts.table
+rows: marriage.accounts
+columns:
+  - Type: row_item.kind
+  - Location: row_item.source
+  - Amount: currency(row_item.balance)
+  - Award: convert_assignment(row_item.owner)
+edit:
+  - kind
+  - source
+  - balance
+  - owner
+delete buttons: True
+confirm: True
+---
+table: marriage.accounts.table_display
+rows: marriage.accounts
+columns:
+  - Type: row_item.kind
+  - Location: row_item.source
+  - Amount: currency(row_item.balance)
+  - Award: convert_assignment(row_item.owner)
+---
+##### marriage.other_pp
+---
+objects:
+  - marriage.other_pp: ALAssetList.using(
+      question="Other Personal Property",
+      noun="piece of property",
+      there_are_any=False,
+      there_is_another=False,
+      complete_attribute="complete",
+      )
+---
+code: |
+  marriage.other_pp[i].kind
+  marriage.other_pp[i].desc
+  marriage.other_pp[i].owner
+  marriage.other_pp[i].complete = True
+---
+table: marriage.other_pp.table
+rows: marriage.other_pp
+columns:
+  - Type: row_item.kind
+  - Owed: row_item.desc
+  - Responsible: convert_assignment(row_item.owner)
+edit:
+  - kind
+  - desc
+  - owner
+delete buttons: True
+confirm: True
+---
+table: marriage.other_pp.table_display
+rows: marriage.other_pp
+columns:
+  - Type: row_item.kind
+  - Owed: row_item.desc
+  - Responsible: convert_assignment(row_item.owner)
+---
+##### marriage.mobile_home
+---
+objects:
+  - marriage.mobile_home: ALAssetList.using(
+      question="Mobile home",
+      noun="mobile home",
+      there_are_any=False,
+      there_is_another=False,
+      complete_attribute="complete",
+      )
+---
+code: |
+  marriage.mobile_home[i].kind
+  marriage.mobile_home[i].desc
+  marriage.mobile_home[i].owner
+  marriage.mobile_home[i].complete = True
+---
+table: marriage.mobile_home.table
+rows: marriage.mobile_home
+columns:
+  - VIN: row_item.kind
+  - Location: row_item.desc
+  - Award: convert_assignment(row_item.owner)
+edit:
+  - kind
+  - desc
+  - owner
+delete buttons: True
+confirm: True
+---
+table: marriage.mobile_home.table_display
+rows: marriage.mobile_home
+columns:
+  - VIN: row_item.kind
+  - Location: row_item.desc
+  - Award: convert_assignment(row_item.owner)
+---
+##### marriage.debts
+---
+objects:
+  - marriage.debts: ALAssetList.using(
+      question="Debts",
+      noun="debt",
+      there_are_any=False,
+      there_is_another=False,
+      complete_attribute="complete",
+      )
+---
+code: |
+  marriage.debts[i].kind
+  marriage.debts[i].source
+  marriage.debts[i].balance
+  marriage.debts[i].owner
+  marriage.debts[i].complete = True
+---
+table: marriage.debts.table
+rows: marriage.debts
+columns:
+  - Type: row_item.kind
+  - Owed: row_item.source
+  - Balance: currency(row_item.balance)
+  - Responsible: convert_assignment(row_item.owner)
+edit:
+  - kind
+  - source
+  - balance
+  - owner
+delete buttons: True
+confirm: True
+---
+table: marriage.debts.table_display
+rows: marriage.debts
+columns:
+  - Type: row_item.kind
+  - Owed: row_item.source
+  - Balance: currency(row_item.balance)
+  - Responsible: convert_assignment(row_item.owner)
+---
+##### marriage.real_property
+---
+objects:
   - marriage.real_property: DAList.using(
       object_type=Thing,
       ask_number=True,
-      complete_attribute="complete",
-      )
-  - marriage.debts: ALAssetList.using(
       complete_attribute="complete",
       )
 ---
@@ -252,26 +433,43 @@ code: |
   marriage.real_property[i].name.text
   marriage.real_property[i].complete = True
 ---
-code: |
-  marriage.debts[i].kind
-  marriage.debts[i].owner
-  marriage.debts[i].balance
-  marriage.debts[i].responsibility
-  marriage.debts[i].complete = True
+# =============================================================================
+## generics
+# =============================================================================
 ---
-table: marriage.debts.table
-rows: marriage.debts
-columns:
-  - Type of debt: row_item.kind
-  - To whom do you owe money: row_item.owner
-  - Approximate balance: row_item.balance
-  - Responsibility of: row_item.responsibility
-edit:
-  - kind
-  - owner
-  - balance
-  - responsibility
-confirm: True
+need: define("most_recent_x", x)
+generic object: ALAssetList
+id: x.amass
+question: |
+  ${x.question}
+subquestion: |
+  ${x.amass_template}
+
+  % if x:
+  So far, you have listed&colon;
+
+  ${x.table}
+  % endif
+
+  ${required_question(f"""Do you want to add {"another " + x.noun if x else indefinite_article(x.noun)}?""")}
+field: x.amass
+continue button label: No (Continue)
+continue button color: secondary
+action buttons:
+  - label: Yes
+    action: _da_list_add
+    arguments:
+      list: most_recent_x
+    css class: button-min-width
+    color: primary
+    placement: before
+---
+generic object: ALAssetList
+template: x.table_display_template
+subject: |
+  So far, you have listed...
+content: |
+  ${x.table_display}
 ---
 # =============================================================================
 ## questions
@@ -371,7 +569,7 @@ id: what is the user's role?
 question: |
   Are you the Plaintiff or the Defendant in this case?
 subquestion: |
-  ${ collapse_template(help_user_ask_role_template) }
+  ${collapse_template(help_user_ask_role_template)}
 fields:
   - label: What party are you in your case?
     field: user_ask_role
@@ -836,7 +1034,7 @@ generic object: ALPeopleList
 question: |
   What is the lawyer's name and bar number?
 subquestion:
-  ${ collapse_template(help_user_find_bar_number_template) }
+  ${collapse_template(help_user_find_bar_number_template)}
 fields:
   - code: |
       other_parties[0].attorney.name_fields()
@@ -911,7 +1109,7 @@ continue button field: marriage.health_coverage
 ---
 id: marriage.personal_property_info
 question: |
-  Personal property and debt
+  Personal property
 subquestion: |
   You are now going to be asked about your personal property. Personal property means all of the things you own other than real property (real property is real estate such as a house, condo, or land). Personal property includes things like a mobile home, furniture, jewelry, household goods, and collectibles, as well as cash, stocks, and Certificates of Deposit (CDs). Do not include vehicles (such as cars, boats, trailers, motorcycles, or snowmobiles) in this section. Although vehicles are personal property, you will be asked about vehicles in the next section of this tool.
 
@@ -924,7 +1122,7 @@ continue button field: marriage.personal_property_info
 ---
 id: marriage.personal_property
 question: |
-  Personal property and debt
+  Personal property
 fields:
   - label: Did you and your spouse acquire personal property during the marriage?
     field: marriage.personal_property_acquired
@@ -932,29 +1130,119 @@ fields:
 ---
 id: marriage.personal_property
 question: |
-  Personal property and debt
+  Personal property
 fields:
   - label: Have you and your spouse reached an agreement about how all personal property will be divided?
     field: marriage.personal_property_division_agreement
     datatype: yesnoradio
----
-id: marriage.personal_property
-question: |
-  Personal property and debt
-subquestion: |
-  _Only answer **Yes** if each of you has in your possession all of the items that you have agreed you will have._
-fields:
+  - note: |
+      <hr>_Only answer **Yes** if each of you has in your possession all of the items that you have agreed you will have._
+    show if: marriage.personal_property_division_agreement
   - label: Have you and your spouse **actually divided** all the personal property based on your agreement?
     field: marriage.personal_property_division_actual
     datatype: yesnoradio
+    show if: marriage.personal_property_division_agreement
 ---
 # -----------------------------------------------------------------------------
-## marriage.debts_
+## marriage.accounts
+# -----------------------------------------------------------------------------
+---
+id: marriage.accounts[i]
+question: |
+  ${marriage.accounts.question}
+subquestion: |
+  % if marriage.accounts.number() > 1:
+  ${collapse_template(marriage.accounts.table_display_template)}
+  % endif
+
+  Do **NOT** include account numbers.
+fields:
+  - label: Type
+    field: marriage.accounts[i].kind
+    choices:
+      - Savings
+      - Checking
+      - CD
+      - Cash
+      - Money Market
+  - label: Location (e.g., Fifth Third Bank)
+    field: marriage.accounts[i].source
+  - label: Amount
+    field: marriage.accounts[i].balance
+    datatype: currency
+    min: 0
+  - label: Award to
+    field: marriage.accounts[i].owner
+    code: |
+      assignment_choices(joint=True)
+---
+template: marriage.accounts.amass_template
+content: |
+  Please list each bank account and investment below that has not been divided, and select how it should be awarded.
+---
+# -----------------------------------------------------------------------------
+## marriage.other_pp
+# -----------------------------------------------------------------------------
+---
+id: marriage.other_pp[i]
+question: |
+  ${marriage.other_pp.question}
+subquestion: |
+  % if marriage.other_pp.number() > 1:
+  So far, you have listed:
+
+  ${marriage.other_pp.table_display}
+  % endif
+
+  Select the type of property. Describe the item and select who it should be awarded to.
+fields:
+  - label: Type of property
+    field: marriage.other_pp[i].kind
+    choices:
+      - Furniture/Furnishings
+      - Art Work
+      - Antiques
+      - Coin and Other Collections
+      - Household Items
+      - Other Personal Property
+  - label: Describe the item
+    field: marriage.other_pp[i].desc
+  - label: Award to
+    field: marriage.other_pp[i].owner
+    code: |
+      assignment_choices(joint=False)
+---
+template: marriage.other_pp.amass_template
+content: |
+  Please list each other item of personal property that has not been divided and indicate whether you or your spouse will keep it.
+---
+# -----------------------------------------------------------------------------
+## marriage.mobile_home
+# -----------------------------------------------------------------------------
+---
+id: marriage.mobile_home
+question: |
+  ${marriage.mobile_home.question}
+fields:
+  - label: VIN
+    field: marriage.mobile_home[i].kind
+  - label: Location
+    field: marriage.mobile_home[i].desc
+  - label: Award to
+    field: marriage.mobile_home[i].owner
+    code: |
+      assignment_choices(joint=False)
+---
+template: marriage.mobile_home.amass_template
+content: ""
+---
+# -----------------------------------------------------------------------------
+## marriage.debts
 # -----------------------------------------------------------------------------
 ---
 id: marriage.debts_info
 question: |
-  Debts
+  ${marriage.debts.question}
 subquestion: |
   The judge assigned to your divorce case will not have any authority over your creditors (those whom you owe money). Your Judgment of Divorce may divide your marital debt, assigning you or your spouse responsibility for paying each debt. However, creditors may continue to treat debts in both of your names as joint debt. If your spouse defaults on a debt that the Judgment of Divorce requires him or her to pay, you can return to the family court to seek repayment from him or her.
 
@@ -963,76 +1251,50 @@ continue button field: marriage.debts_info
 ---
 id: marriage.debts_any
 question: |
-  Debts
+  ${marriage.debts.question}
 fields:
   - label: Do you or your spouse have any debts, either in your own names or together?
     field: marriage.debts_any
-    datatype: yesnoradio
+    input type: radio
+    choices:
+      - label: Debt in own names and together
+        value: both
+      - label: Only debt in own names
+        value: own
+      - label: Only debt together
+        value: joint
+      - label: No debts
+        value: ""
 ---
-id: marriage.debts_pay_own
+id: marriage.debts_responsible_agree
 question: |
-  Debts
+  ${marriage.debts.question}
 fields:
-  - label: Do you and your spouse each plan to pay the debts in your own names?
-    field: marriage.debts_pay_own
+  - label: Do you and your spouse agree on who will be responsible for the debt in your own names?
+    field: marriage.debts_responsible_agree_own
     datatype: yesnoradio
----
-id: marriage.debts_responsibility_agree
-question: |
-  Debts
-fields:
-  - label: Do you and your spouse agree on who will be responsible for these debts?
-    field: marriage.debts_responsibility_agree
+    show if:
+      code: |
+        marriage.debts_any in ("both", "own")
+  - label: Do you and your spouse agree on who will be responsible for the debt held together?
+    field: marriage.debts_responsible_agree_joint
     datatype: yesnoradio
----
-id: marriage.debts_joint
-question: |
-  Debts
-fields:
-  - label: Do you and your spouse have any debts that are in **both** of your names?
-    field: marriage.debts_joint
-    datatype: yesnoradio
----
-id: marriage.debts_joint_responsibility_agree
-question: |
-  Debts
-fields:
-  - label: Do you and your spouse agree on who will be responsible for these debts?
-    field: marriage.debts_joint_responsibility_agree
-    datatype: yesnoradio
----
-depends on:
-  - marriage.debts_pay_own
-  - marriage.debts_joint
-code: |
-  marriage.debts.there_are_any = any((
-    not marriage.attr("debts_pay_own"),
-    marriage.attr("debts_joint"),
-  ))
+    show if:
+      code: |
+        marriage.debts_any in ("both", "joint")
+continue button field: marriage.debts_responsible_agree
 ---
 id: marriage.debts[i]
 question: |
-  Marriage debt
+  ${marriage.debts.question}
 subquestion: |
-  % if marriage.debts_joint:
-  List each jointly held debt (debts in both of your names) that will be divided and indicate whether you or your spouse ${"will" if marriage.debts_joint_responsibility_agree else "should"} be responsible for it.
-  % endif
+  % if marriage.debts.number() > 1:
+  So far, you have listed:
 
-  % if not marriage.debts_pay_own:
-  ${"Also, list" if marriage.debts_joint else "List"} each debt that is currently in one spouse's name, but that the other spouse ${"will" if marriage.debts_responsibility_agree else "should"} be responsible for it.
+  ${marriage.debts.table_display}
   % endif
 
   Do **NOT** include credit card numbers or any other identifying number associated with a debt.
-
-  % if marriage.debts.number_gathered() > 1:
-  So far, you have listed:
-
-  Type | Owed | Balance | Responsibility
-  --- | --- | ---: | ---
-  % for debt in marriage.debts.complete_elements():
-  ${ debt.kind } | ${ debt.owner } | ${ currency(debt.balance) } | ${ dynamic_field(debt.responsibility) }
-  % endfor
-  % endif
 fields:
   - label: Type of debt
     field: marriage.debts[i].kind
@@ -1044,34 +1306,23 @@ fields:
       - Unpaid taxes
       - Judgment
   - label: To whom do you owe the money
-    field: marriage.debts[i].owner
+    field: marriage.debts[i].source
   - label: Approximate balance
     field: marriage.debts[i].balance
     datatype: currency
     min: 0
   - label: Responsibility of
-    field: marriage.debts[i].responsibility
-    choices:
-      - label: ${users[0]}
-        value: users[0]
-      - label: ${other_parties[0]}
-        value: other_parties[0]
-      - label: Joint (50/50)
-        value: joint
+    field: marriage.debts[i].owner
+    code: |
+      assignment_choices(joint=True)
 ---
-id: marriage.debts.there_is_another
-question: |
-  Marriage debt
-subquestion: |
-  So far, you have listed:
+template: marriage.debts.amass_template
+content: |
+  % if marriage.debts_any in ("both", "own"):
+  List each debt that is currently in one spouse's name, but that the other spouse **${"will" if marriage.attr("debts_responsible_agree_own") else "should"}** be responsible for.
+  % endif
 
-  Type | Owed | Balance | Responsibility
-  --- | --- | ---: | ---
-  % for debt in marriage.debts.complete_elements():
-  <a href="${url_ask(debt.attr_name("kind"))}">${ debt.kind }</a> | <a href="${url_ask(debt.attr_name("owner"))}">${ debt.owner }</a> | <a href="${url_ask(debt.attr_name("balance"))}">${ currency(debt.balance) }</a> | <a href="${url_ask(debt.attr_name("responsibility"))}">${ dynamic_field(debt.responsibility) }</a>
-  % endfor
-fields:
-  - label: Do you want to add another debt?
-    field: marriage.debts.there_is_another
-    datatype: yesnoradio
+  % if marriage.debts_any in ("both", "joint"):
+  ${"Also, list" if marriage.debts_any == "both" else "List"}  each jointly held debt (debts in both of your names) that will be divided and indicate whether you or your spouse **${"will" if marriage.attr("debts_responsible_agree_joint") else "should"}** be responsible for it.
+  % endif
 ---
