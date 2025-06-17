@@ -1,3 +1,32 @@
+id: review_full
+event: review_full
+question: |
+  Review your answers
+review:
+  - Edit:
+      - marriage.pending_divorce
+    button: |
+      Pending divorce: ${marriage.pending_divorce}
+  - fields:
+      - marriage.breakdown
+    label: Edit
+    button: |
+      ${marriage.breakdown}
+  - fields:
+      - marriage.request_spousal_support
+    label: Edit
+    button: |
+      ${marriage.request_spousal_support}
+  - fields:
+      - marriage.request_spousal_support_continue
+    label: Edit
+    button: |
+      ${marriage.request_spousal_support_continue}
+  - fields:
+      - marriage.real_property.there_are_any
+    label: Edit
+    button: |
+      ${marriage.real_property.there_are_any}
 ---
 id: marriage.debts.revisit
 question: |
