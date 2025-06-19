@@ -1,39 +1,89 @@
+---
 id: review_full
 event: review_full
 question: |
   Review your answers
 review:
   - Edit:
-      - marriage.pending_divorce
+      - users[0].name.first
     button: |
-      Pending divorce: ${marriage.pending_divorce}
+      ##### User's name
+        - ${users[0]}
+  - Edit:
+      - other_parties[0].name.first
+    button: |
+      ##### Spouse's name
+        - ${other_parties[0]}
   - fields:
-      - marriage.breakdown
+      - marriage.accounts.amass
     label: Edit
     button: |
-      ${marriage.breakdown}
-  - fields:
-      - marriage.request_spousal_support
-    label: Edit
-    button: |
-      ${marriage.request_spousal_support}
-  - fields:
-      - marriage.request_spousal_support_continue
-    label: Edit
-    button: |
-      ${marriage.request_spousal_support_continue}
-  - fields:
-      - marriage.real_property.there_are_any
-    label: Edit
-    button: |
-      ${marriage.real_property.there_are_any}
----
-id: marriage.debts.revisit
-question: |
-  Marriage debt
-subquestion: |
-  ${marriage.debts.table}
+      ##### ${marriage.accounts.question}
 
-  ${marriage.debts.add_action(color="success", size="md")}
-continue button field: marriage.debts.revisit
+      % if marriage.accounts:
+      % for debt in marriage.accounts:
+        - ${debt.kind}:
+          - ${debt.source}
+          - ${currency(debt.balance)}
+          - ${convert_assignment(debt.owner)}
+      % endfor
+      % else:
+        - None
+      % endif
+  - fields:
+      - marriage.other_pp.amass
+    label: Edit
+    button: |
+      ##### ${marriage.other_pp.question}
+
+      % if marriage.other_pp:
+      % for debt in marriage.debts:
+        - ${debt.kind}:
+          - ${debt.desc}
+          - ${convert_assignment(debt.owner)}
+      % endfor
+      % else:
+        - None
+      % endif
+  - fields:
+      - marriage.mobile_home.amass
+    label: Edit
+    button: |
+      ##### ${marriage.mobile_home.question}
+
+      % if marriage.mobile_home:
+      % for debt in marriage.mobile_home:
+        - ${debt.kind}:
+          - ${debt.desc}
+          - ${convert_assignment(debt.owner)}
+      % endfor
+      % else:
+        - None
+      % endif
+  - fields:
+      - marriage.debts.amass
+    label: Edit
+    button: |
+      ##### ${marriage.debts.question}
+
+      % if marriage.debts:
+      % for debt in marriage.debts:
+        - ${debt.kind}:
+          - ${debt.source}
+          - ${currency(debt.balance)}
+          - ${convert_assignment(debt.owner)}
+      % endfor
+      % else:
+        - None
+      % endif
+---
+generic object: ALAssetList
+id: x.amass
+question: |
+  ${x.question}
+subquestion: |
+  ${x.table}
+
+  ${x.add_action(color="success", size="md")}
+continue button field: x.amass
 ---
