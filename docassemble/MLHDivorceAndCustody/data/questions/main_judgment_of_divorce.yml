@@ -232,6 +232,10 @@ objects:
       target_number=1,
       complete_attribute="complete",
       )
+  - joint: Thing
+---
+code: |
+  joint.name.text = "Joint (50/50)"
 ---
 ##### marriage
 ---
@@ -263,7 +267,7 @@ columns:
   - Type: row_item.kind
   - Location: row_item.source
   - Amount: currency(row_item.balance)
-  - Award: convert_assignment(row_item.owner)
+  - Award: row_item.owner
 edit:
   - kind
   - source
@@ -278,7 +282,7 @@ columns:
   - Type: row_item.kind
   - Location: row_item.source
   - Amount: currency(row_item.balance)
-  - Award: convert_assignment(row_item.owner)
+  - Award: row_item.owner
 ---
 ##### marriage.other_pp
 ---
@@ -302,7 +306,7 @@ rows: marriage.other_pp
 columns:
   - Type: row_item.kind
   - Owed: row_item.desc
-  - Responsible: convert_assignment(row_item.owner)
+  - Responsible: row_item.owner
 edit:
   - kind
   - desc
@@ -315,7 +319,7 @@ rows: marriage.other_pp
 columns:
   - Type: row_item.kind
   - Owed: row_item.desc
-  - Responsible: convert_assignment(row_item.owner)
+  - Responsible: row_item.owner
 ---
 ##### marriage.mobile_home
 ---
@@ -339,7 +343,7 @@ rows: marriage.mobile_home
 columns:
   - VIN: row_item.kind
   - Location: row_item.desc
-  - Award: convert_assignment(row_item.owner)
+  - Award: row_item.owner
 edit:
   - kind
   - desc
@@ -352,7 +356,7 @@ rows: marriage.mobile_home
 columns:
   - VIN: row_item.kind
   - Location: row_item.desc
-  - Award: convert_assignment(row_item.owner)
+  - Award: row_item.owner
 ---
 ##### marriage.debts
 ---
@@ -378,7 +382,7 @@ columns:
   - Type: row_item.kind
   - Owed: row_item.source
   - Balance: currency(row_item.balance)
-  - Responsible: convert_assignment(row_item.owner)
+  - Responsible: row_item.owner
 edit:
   - kind
   - source
@@ -393,7 +397,7 @@ columns:
   - Type: row_item.kind
   - Owed: row_item.source
   - Balance: currency(row_item.balance)
-  - Responsible: convert_assignment(row_item.owner)
+  - Responsible: row_item.owner
 ---
 ##### marriage.real_property
 ---
@@ -1149,8 +1153,11 @@ fields:
     min: 0
   - label: Award to
     field: marriage.accounts[i].owner
-    code: |
-      assignment_choices(users[0], other_parties[0], joint=True)
+    datatype: object
+    choices:
+      - users[0]
+      - other_parties[0]
+      - joint
 ---
 template: marriage.accounts.amass_template
 content: |
@@ -1183,8 +1190,10 @@ fields:
     field: marriage.other_pp[i].desc
   - label: Award to
     field: marriage.other_pp[i].owner
-    code: |
-      assignment_choices(users[0], other_parties[0], joint=False)
+    datatype: object
+    choices:
+      - users[0]
+      - other_parties[0]
 ---
 template: marriage.other_pp.amass_template
 content: |
@@ -1208,8 +1217,10 @@ fields:
     field: marriage.mobile_home[i].desc
   - label: Award to
     field: marriage.mobile_home[i].owner
-    code: |
-      assignment_choices(users[0], other_parties[0], joint=False)
+    datatype: object
+    choices:
+      - users[0]
+      - other_parties[0]
 ---
 template: marriage.mobile_home.amass_template
 content: ""
@@ -1289,8 +1300,11 @@ fields:
     min: 0
   - label: Responsibility of
     field: marriage.debts[i].owner
-    code: |
-      assignment_choices(users[0], other_parties[0], joint=True)
+    datatype: object
+    choices:
+      - users[0]
+      - other_parties[0]
+      - joint
 ---
 template: marriage.debts.amass_template
 content: |

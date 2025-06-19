@@ -25,7 +25,7 @@ review:
         - ${debt.kind}:
           - ${debt.source}
           - ${currency(debt.balance)}
-          - ${convert_assignment(debt.owner)}
+          - ${debt.owner}
       % endfor
       % else:
         - None
@@ -40,7 +40,7 @@ review:
       % for debt in marriage.debts:
         - ${debt.kind}:
           - ${debt.desc}
-          - ${convert_assignment(debt.owner)}
+          - ${debt.owner}
       % endfor
       % else:
         - None
@@ -55,7 +55,7 @@ review:
       % for debt in marriage.mobile_home:
         - ${debt.kind}:
           - ${debt.desc}
-          - ${convert_assignment(debt.owner)}
+          - ${debt.owner}
       % endfor
       % else:
         - None
@@ -71,7 +71,7 @@ review:
         - ${debt.kind}:
           - ${debt.source}
           - ${currency(debt.balance)}
-          - ${convert_assignment(debt.owner)}
+          - ${debt.owner}
       % endfor
       % else:
         - None
