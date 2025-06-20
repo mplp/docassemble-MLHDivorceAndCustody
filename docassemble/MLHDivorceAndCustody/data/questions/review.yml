@@ -15,7 +15,7 @@ review:
       ##### Spouse's name
         - ${other_parties[0]}
   - fields:
-      - marriage.accounts.amass
+      - marriage.accounts.revisit
     label: Edit
     button: |
       ##### ${marriage.accounts.question}
@@ -31,7 +31,7 @@ review:
         - None
       % endif
   - fields:
-      - marriage.other_pp.amass
+      - marriage.other_pp.revisit
     label: Edit
     button: |
       ##### ${marriage.other_pp.question}
@@ -46,7 +46,7 @@ review:
         - None
       % endif
   - fields:
-      - marriage.mobile_home.amass
+      - marriage.mobile_home.revisit
     label: Edit
     button: |
       ##### ${marriage.mobile_home.question}
@@ -61,7 +61,7 @@ review:
         - None
       % endif
   - fields:
-      - marriage.debts.amass
+      - marriage.debts.revisit
     label: Edit
     button: |
       ##### ${marriage.debts.question}
@@ -78,12 +78,18 @@ review:
       % endif
 ---
 generic object: ALAssetList
-id: x.amass
+id: x.revisit
 question: |
   ${x.question}
 subquestion: |
+  ${x.there_is_another_template}
+
+  % if x:
+  So far, you have listed&colon;
+
   ${x.table}
+  % endif
 
   ${x.add_action(color="success", size="md")}
-continue button field: x.amass
+continue button field: x.revisit
 ---
