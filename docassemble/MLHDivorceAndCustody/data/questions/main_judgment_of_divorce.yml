@@ -9,7 +9,6 @@ include:
 modules:
   - docassemble.ALToolbox.al_income
   - docassemble.ALToolbox.ThreePartsDate
-  - .functions
 ---
 # TODO subtitle? & confirm description
 metadata:
