@@ -21,11 +21,11 @@ review:
       ##### ${marriage.accounts.question}
 
       % if marriage.accounts:
-      % for debt in marriage.accounts:
-        - ${debt.kind}:
-          - ${debt.source}
-          - ${currency(debt.balance)}
-          - ${debt.owner}
+      % for item in marriage.accounts:
+        - ${item.kind}:
+          - ${item.source}
+          - ${currency(item.balance)}
+          - ${item.owner}
       % endfor
       % else:
         - None
@@ -37,10 +37,10 @@ review:
       ##### ${marriage.other_pp.question}
 
       % if marriage.other_pp:
-      % for debt in marriage.debts:
-        - ${debt.kind}:
-          - ${debt.desc}
-          - ${debt.owner}
+      % for item in marriage.other_pp:
+        - ${item.kind}:
+          - ${item.desc}
+          - ${item.owner}
       % endfor
       % else:
         - None
@@ -52,10 +52,10 @@ review:
       ##### ${marriage.mobile_home.question}
 
       % if marriage.mobile_home:
-      % for debt in marriage.mobile_home:
-        - ${debt.kind}:
-          - ${debt.desc}
-          - ${debt.owner}
+      % for item in marriage.mobile_home:
+        - ${item.kind}:
+          - ${item.desc}
+          - ${item.owner}
       % endfor
       % else:
         - None
@@ -67,11 +67,11 @@ review:
       ##### ${marriage.debts.question}
 
       % if marriage.debts:
-      % for debt in marriage.debts:
-        - ${debt.kind}:
-          - ${debt.source}
-          - ${currency(debt.balance)}
-          - ${debt.owner}
+      % for item in marriage.debts:
+        - ${item.kind}:
+          - ${item.source}
+          - ${currency(item.balance)}
+          - ${item.owner}
       % endfor
       % else:
         - None
