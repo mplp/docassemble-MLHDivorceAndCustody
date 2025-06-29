@@ -32,6 +32,8 @@ sections:
   - signpost_intro: "Introduction"
   - signpost_qualify: "Do you qualify?"
   - signpost_user: "Your Information"
+  - signpost_spouse: "Spouse's Information"
+  - signpost_marriage: "Marriage Information"
   - signpost_done: "Done"
   - review_full: "✎ <u>Review / Edit</u>"
 ---
@@ -77,96 +79,115 @@ code: |
   set_interview_terms
   reconsider("set_interview_terms") # TODO remove before publishing
   nav.set_section("review_full")
-  # nav.set_section("signpost_intro")
-  # MLH_standard_intro_pages
+  nav.set_section("signpost_intro")
+  MLH_standard_intro_pages
 
-  # nav.set_section("signpost_qualify")
-  # if not marriage.pending_divorce:
-  #   exit_no_pending_divorce
+  nav.set_section("signpost_qualify")
+  if not marriage.pending_divorce:
+    exit_no_pending_divorce
 
-  # county_choice # TODO custom? "In what county was the divorce filed?"
-  # docket_number # TODO custom? "What is the case number? Be certain to enter the “-DO” or “-DM” at the end of the number."
-  # user_ask_role
+  county_choice # TODO custom? "In what county was the divorce filed?"
+  docket_number # TODO custom? "What is the case number? Be certain to enter the "-DO" or "-DM" at the end of the number."
+  user_ask_role
 
-  # if not marriage.breakdown:
-  #   exit_no_marriage_breakdown
+  if not marriage.breakdown:
+    exit_no_marriage_breakdown
 
-  # marriage.request_spousal_support
-  # if not marriage.request_spousal_support_continue:
-  #   exit_general
+  marriage.request_spousal_support
+  if not marriage.request_spousal_support_continue:
+    exit_general
 
-  # marriage.real_property.there_are_any
+  marriage.real_property.there_are_any
 
-  # if marriage.have_pension_retirement:
-  #   marriage.pension_retirement_accounts
-  #   if not marriage.pension_retirement_accounts_continue:
-  #     exit_general
+  if marriage.have_pension_retirement:
+    marriage.pension_retirement_accounts_keep_own
+    if not marriage.pension_retirement_accounts_continue:
+      exit_general
 
-  # if marriage.have_financial_instruments:
-  #   if marriage.financial_instruments_held_together:
-  #     marriage.financial_instruments_held_together_agree_about_division
-  #     if not marriage.financial_instruments_held_together_continue:
-  #       exit_general
-  #   else:
-  #     if marriage.financial_instruments_keep_or_divide == "divide":
-  #       exit_general
-  #     elif marriage.financial_instruments_keep_or_divide == "keep":
-  #       if not marriage.financial_instruments_keep_own_continue:
-  #         exit_general
+  if marriage.have_financial_instruments:
+    if marriage.financial_instruments_held_together:
+      marriage.financial_instruments_held_together_agree_about_division
+      if not marriage.financial_instruments_held_together_continue:
+        exit_general
+    else:
+      if marriage.financial_instruments_keep_or_divide == "divide":
+        exit_general
+      elif marriage.financial_instruments_keep_or_divide == "keep":
+        if not marriage.financial_instruments_keep_own_continue:
+          exit_general
 
-  # if marriage.have_business:
-  #   exit_general
+  if marriage.have_business:
+    exit_general
 
-  # if marriage.have_experienced_domestic_violence:
-  #   if not marriage.have_experienced_domestic_violence_continue:
-  #     exit_general
+  if marriage.have_experienced_domestic_violence:
+    if not marriage.have_experienced_domestic_violence_continue:
+      exit_general
+
+  nav.set_section("signpost_user")
 
   users.gather()
   users[0].name.first
-  # users[0].previous_last_name_yn
-  # users[0].new_last_name_yn
-  # users[0].gender # TODO remove or set if we end up asking for gender in the screening
-  # users[0].marriage_number
-  # users[0].birthdate
-  # users[0].birthplace
-  # confidential_contact_info_yn
+  users[0].previous_last_name_yn
+  users[0].new_last_name_yn
+  users[0].gender # TODO remove or set if we end up asking for gender in the screening
+  users[0].marriage_number
+  users[0].birthdate
+  users[0].birthplace
 
-  # # TODO: address handling is temporary while we work on new hybrid address screen
-  # # if users[0].address.country == "US" and users[0].address.state == "MI":
-  # if users[0].address.state == "MI":
-  #   users[0].village_or_township_yn
+  if confidential_contact_info_yn:
+    users[0].lives_in_michigan
+    users[0].mailing_address_in_the_united_states
+    users[0].mailing_address.address
+  else:
+    if not users[0].lives_in_michigan:
+      users[0].address_in_the_united_states
+    users[0].address.address
+    if users[0].address.state == "MI":
+      users[0].village_or_township_yn
 
-  # # users[0].mailing_address_yn
+    if users[0].mailing_address_yn:
+      users[0].mailing_address_in_the_united_states
+      users[0].mailing_address.address
 
-  # users[0].phone_number
-  # users[0].email
+  users[0].phone_number
+  users[0].email
+
+  nav.set_section("signpost_spouse")
 
   other_parties.gather()
   other_parties[0].name.first
-  # other_parties[0].previous_last_name_yn
-  # other_parties[0].gender # TODO remove or set if we end up asking for gender in the screening
-  # other_parties[0].marriage_number
-  # other_parties[0].birthdate
-  # other_parties[0].birthplace
+  other_parties[0].previous_last_name_yn
+  other_parties[0].gender # TODO remove or set if we end up asking for gender in the screening
+  other_parties[0].marriage_number
+  other_parties[0].birthdate
+  other_parties[0].birthplace
 
-  # # TODO: address handling is temporary while we work on new hybrid address screen
-  # # if other_parties[0].address.country == "US" and other_parties[0].address.state == "MI":
-  # if other_parties[0].address.state == "MI":
-  #   other_parties[0].village_or_township_yn
+  if not other_parties[0].lives_in_michigan:
+    other_parties[0].address_in_the_united_states
+  other_parties[0].address.address
+  if other_parties[0].address.state == "MI":
+    other_parties[0].village_or_township_yn
 
-  # # other_parties[0].mailing_address_yn
+  if other_parties[0].mailing_address_yn:
+    other_parties[0].mailing_address_in_the_united_states
+    other_parties[0].mailing_address.address
 
-  # if other_parties[0].has_attorney:
-  #   other_parties[0].attorney.name.first
-  #   other_parties[0].attorney.address.address
-  #   other_parties[0].attorney.phone_number
+  other_parties[0].phone_number
+  other_parties[0].email
 
-  # marriage.date
-  # marriage.address.city
-  # if not marriage.living_together_yn:
-  #   marriage.living_together_stopped_date
+  if other_parties[0].has_attorney:
+    other_parties[0].attorney.name.first
+    other_parties[0].attorney.address.address
+    other_parties[0].attorney.phone_number
 
-  # marriage.health_coverage
+  nav.set_section("signpost_marriage")
+
+  marriage.date
+  marriage.address.city
+  if not marriage.living_together_yn:
+    marriage.living_together_stopped_date
+
+  marriage.health_coverage
 
   marriage.accounts
   marriage.other_pp
@@ -188,16 +209,32 @@ code: |
     if not marriage.debts_pay_own_names or marriage.debts_in_both_names:
       marriage.debts.gather()
 
+  marriage.vehicles
+  marriage.vehicles_info
+  if marriage.vehicles_any:
+    if not marriage.vehicles_keep_own:
+      marriage.vehicles.gather()
 
-  review_full
+  if marriage.other_provisions_any:
+    marriage.other_provisions
 
-  exit_general # temporary ending
+  if marriage.temporary_order:
+    marriage.temporary_order_changed
+
+  if not marriage.true_statement:
+    exit_general
+
+  nav.set_section("signpost_done")
+  MLH_standard_outro_pages
+  MLH_download
 
 ---
 code: |
   update_terms(
     {
       "investments": "Stocks, bonds, Certificates of Deposit (CDs), mutual funds, Money Market Accounts, or other investments, not including pensions or retirement accounts.",
+      "vehicles_make": "Make refers to the name of the company that manufactured the vehicle. Examples of vehicle “makes” are Ford, General Motors, Chrysler, and Toyota.",
+      "vehicles_model": "Model refers to the type of car. Examples of “models” are Focus, Cutlass, Town and Country, and Highlander.",
     }
   )
   set_interview_terms = True
@@ -283,17 +320,17 @@ fields:
     datatype: yesnoradio
 ---
 generic object: ALAssetList
-template: x.table_display_template
+template: x.collapsed_table_template
 subject: |
   So far, you have listed...
 content: |
-  ${x.table_display}
+  ${x.table.show(editable=False)}
 ---
 generic object: ALAssetList
-template: x.question_table_display_template
+template: x.question_table_template
 content: |
   % if x.number_gathered() > 1:
-  ${collapse_template(x.table_display_template)}
+  ${collapse_template(x.collapsed_table_template)}
   % endif
 ---
 # =============================================================================
@@ -417,6 +454,8 @@ fields:
     show if:
       variable: user_ask_role
       is: defendant
+validation code: |
+  op_ask_role = "defendant" if user_ask_role == "plaintiff" else "plaintiff"
 ---
 id: marriage.breakdown
 question: |
@@ -483,20 +522,20 @@ fields:
     field: marriage.have_pension_retirement
     datatype: yesnoradio
 ---
-id: marriage.pension_retirement_accounts
+id: marriage.pension_retirement_accounts_keep_own
 question: |
   Pension and/or retirement accounts
 fields:
   - label: Do you each plan to keep your own accounts or do you want to ask the judge to divide your accounts?
-    field: marriage.pension_retirement_accounts
+    field: marriage.pension_retirement_accounts_keep_own
     input type: radio
     choices:
       - label: We will each keep our own account(s)
-        value: keep
+        value: True
       - label: I want the judge to divide our account(s)
-        value: divide
+        value: False
 ---
-if: marriage.pension_retirement_accounts == "keep"
+if: marriage.pension_retirement_accounts_keep_own
 id: pension_retirement_accounts_keep
 question: |
   Pension and/or retirement accounts
@@ -507,7 +546,7 @@ fields:
     field: marriage.pension_retirement_accounts_continue
     datatype: yesnoradio
 ---
-if: marriage.pension_retirement_accounts == "divide"
+if: not marriage.pension_retirement_accounts_keep_own
 id: pension_retirement_accounts_divide
 question: |
   Pension and/or retirement accounts
@@ -707,6 +746,49 @@ content: |
 
   If you fear for the safety of you or your children if your address is known by your spouse or someone else, it is strongly recommended that you hire a lawyer and do not do your divorce on your own. Your local domestic violence agency may also be able to help you. To learn more about domestic violence and to find contact information for helpful organizations, please see the [Domestic Violence and Divorce Resource pages](https://michiganlegalhelp.org/resources/personal-safety). You can also use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to look for a lawyer or legal services near you.
 ---
+id: users[0].lives_in_michigan
+question: |
+  Your State
+fields:
+  - Do you live in Michigan?: users[0].lives_in_michigan
+    datatype: yesnoradio
+validation code: |
+  if users[0].lives_in_michigan:
+    users[0].address.country = "US"
+    users[0].address.state = "MI"
+  else:
+    if users[0].address.attr("country") and users[0].address.country == "US":
+      users[0].address.delattr("country")
+    if users[0].address.attr("state") and users[0].address.state == "MI":
+      users[0].address.delattr("state")
+---
+id: users[0].address_in_the_united_states
+question: |
+  Your country
+fields:
+  - Is your address in the U.S.?: users[0].address_in_the_united_states
+    datatype: yesnoradio
+validation code: |
+  if users[0].address_in_the_united_states:
+    users[0].address.country = "US"
+  else:
+    if users[0].address.attr("country") and users[0].address.country == "US":
+      users[0].address.delattr("country")
+---
+id: your address
+sets:
+  - users[0].address.address
+  - users[0].address.unit
+  - users[0].address.city
+  - users[0].address.state
+  - users[0].address.zip
+  - users[0].address.country
+question: |
+  Please enter your address
+fields:
+  - code: |
+      users[0].address_fields(country_code=users[0].address.attr("country"), default_state=users[0].address.attr("state"), show_country=users[0].address.attr("country") != "US")
+---
 id: users[0].village_or_township
 question: |
   Village or township
@@ -721,24 +803,54 @@ validation code: |
   if not users[0].village_or_township_yn:
     users[0].invalidate_attr("village_or_township")
 ---
-# id: users[0].mailing_address
-# sets:
-#   - users[0].mailing_address.address
-# question: |
-#   Different mailing address
-# fields:
-#   - label: Do you have a different mailing address?
-#     field: users[0].mailing_address_yn
-#     datatype: yesnoradio
-#   - code: |
-#       users[0].address_fields()
-#     show if: users[0].mailing_address_yn
-# validation code: |
-#   if not users[0].mailing_address_yn:
-#     users[0].mailing_address.invalidate_attr("address")
-#     users[0].mailing_address.invalidate_attr("address")
-#     users[0].mailing_address.invalidate_attr("address")
-#     users[0].mailing_address.invalidate_attr("address")
+id: users[0].mailing_address_yn
+sets:
+  - users[0].mailing_address.address
+  - users[0].mailing_address.unit
+  - users[0].mailing_address.city
+  - users[0].mailing_address.state
+  - users[0].mailing_address.zip
+  - users[0].mailing_address.country
+question: |
+  Different mailing address
+fields:
+  - label: Do you have a different mailing address?
+    field: users[0].mailing_address_yn
+    datatype: yesnoradio
+validation code: |
+  if not users[0].mailing_address_yn:
+    users[0].mailing_address.invalidate_attr("address")
+    users[0].mailing_address.invalidate_attr("unit")
+    users[0].mailing_address.invalidate_attr("city")
+    users[0].mailing_address.invalidate_attr("state")
+    users[0].mailing_address.invalidate_attr("zip")
+    users[0].mailing_address.invalidate_attr("country")
+---
+id: users[0].mailing_address_in_the_united_states
+question: |
+  Your mailing address country
+fields:
+  - Is your mailing address in the U.S.?: users[0].mailing_address_in_the_united_states
+    datatype: yesnoradio
+validation code: |
+  if users[0].mailing_address_in_the_united_states:
+    users[0].mailing_address.country = "US"
+  else:
+    if users[0].mailing_address.attr("country") and users[0].mailing_address.country == "US":
+      users[0].mailing_address.delattr("country")
+---
+id: users[0].mailing_address
+sets:
+  - users[0].mailing_address.address
+  - users[0].mailing_address.unit
+  - users[0].mailing_address.city
+  - users[0].mailing_address.state
+  - users[0].mailing_address.zip
+question: |
+  Please enter your mailing address
+fields:
+  - code: |
+      users[0].mailing_address.address_fields(country_code=users[0].mailing_address.attr("country"), show_country=users[0].mailing_address.attr("country") != "US")
 ---
 id: users[0].phone_number
 question: |
@@ -830,11 +942,54 @@ fields:
   - label: Please enter the state or country where your spouse was born
     field: other_parties[0].birthplace
 ---
+id: other_parties[0].lives_in_michigan
+question: |
+  Your State
+fields:
+  - Does your spouse live in Michigan?: other_parties[0].lives_in_michigan
+    datatype: yesnoradio
+validation code: |
+  if other_parties[0].lives_in_michigan:
+    other_parties[0].address.country = "US"
+    other_parties[0].address.state = "MI"
+  else:
+    if other_parties[0].address.attr("country") and other_parties[0].address.country == "US":
+      other_parties[0].address.delattr("country")
+    if other_parties[0].address.attr("state") and other_parties[0].address.state == "MI":
+      other_parties[0].address.delattr("state")
+---
+id: other_parties[0].address_in_the_united_states
+question: |
+  Your spouse's country
+fields:
+  - Is your spouse's last known address in the U.S.?: other_parties[0].address_in_the_united_states
+    datatype: yesnoradio
+validation code: |
+  if other_parties[0].address_in_the_united_states:
+    other_parties[0].address.country = "US"
+  else:
+    if other_parties[0].address.attr("country") and other_parties[0].address.country == "US":
+      other_parties[0].address.delattr("country")
+---
+id: your address
+sets:
+  - other_parties[0].address.address
+  - other_parties[0].address.unit
+  - other_parties[0].address.city
+  - other_parties[0].address.state
+  - other_parties[0].address.zip
+  - other_parties[0].address.country
+question: |
+  Please enter your spouse's last known home address
+fields:
+  - code: |
+      other_parties[0].address_fields(country_code=other_parties[0].address.attr("country"), default_state=other_parties[0].address.attr("state"), show_country=other_parties[0].address.attr("country") != "US")
+---
 id: other_parties[0].village_or_township
 question: |
-  Village or township
+  Spouse's village or township
 fields:
-  - label: Does your spouse live in a township or village that is different from the city in the address you just listed?
+  - label: Does your spouse live in a township or village that is different from the city of the address you just entered?
     field: other_parties[0].village_or_township_yn
     datatype: yesnoradio
   - label: Village or township
@@ -843,6 +998,71 @@ fields:
 validation code: |
   if not other_parties[0].village_or_township_yn:
     other_parties[0].invalidate_attr("village_or_township")
+---
+id: other_parties[0].mailing_address_yn
+sets:
+  - other_parties[0].mailing_address.address
+  - other_parties[0].mailing_address.unit
+  - other_parties[0].mailing_address.city
+  - other_parties[0].mailing_address.state
+  - other_parties[0].mailing_address.zip
+  - other_parties[0].mailing_address.country
+question: |
+  Spouse's different mailing address
+fields:
+  - label: Does your spouse have a mailing address that is different from his or her home address?
+    field: other_parties[0].mailing_address_yn
+    datatype: yesnoradio
+validation code: |
+  if not other_parties[0].mailing_address_yn:
+    other_parties[0].mailing_address.invalidate_attr("address")
+    other_parties[0].mailing_address.invalidate_attr("unit")
+    other_parties[0].mailing_address.invalidate_attr("city")
+    other_parties[0].mailing_address.invalidate_attr("state")
+    other_parties[0].mailing_address.invalidate_attr("zip")
+    other_parties[0].mailing_address.invalidate_attr("country")
+---
+id: other_parties[0].mailing_address_in_the_united_states
+question: |
+  Spouse's mailing address country
+fields:
+  - Is your spouse's mailing address in the U.S.?: other_parties[0].mailing_address_in_the_united_states
+    datatype: yesnoradio
+validation code: |
+  if other_parties[0].mailing_address_in_the_united_states:
+    other_parties[0].mailing_address.country = "US"
+  else:
+    if other_parties[0].mailing_address.attr("country") and other_parties[0].mailing_address.country == "US":
+      other_parties[0].mailing_address.delattr("country")
+---
+id: other_parties[0].mailing_address
+sets:
+  - other_parties[0].mailing_address.address
+  - other_parties[0].mailing_address.unit
+  - other_parties[0].mailing_address.city
+  - other_parties[0].mailing_address.state
+  - other_parties[0].mailing_address.zip
+question: |
+  Please enter your spouse's mailing address
+fields:
+  - code: |
+      other_parties[0].mailing_address.address_fields(country_code=other_parties[0].mailing_address.attr("country"), show_country=other_parties[0].mailing_address.attr("country") != "US")
+---
+id: other_parties[0].phone_number
+question: |
+  Spouse's phone number
+fields:
+  - label: Enter a telephone number where the court can reach your spouse, starting with the area code
+    field: other_parties[0].phone_number
+---
+id: other_parties[0].email
+question: |
+  Spouse's email address
+fields:
+  - label: What is your spouse's email address?
+    field: other_parties[0].email
+    datatype: email
+    required: False
 ---
 # -----------------------------------------------------------------------------
 ## other_parties[0].attorney
@@ -968,27 +1188,6 @@ fields:
     datatype: yesnoradio
     show if: marriage.personal_property_division_agreement
 ---
-# id: marriage._.there_is_another
-# question: |
-#   Personal property
-# fields:
-#   - label: Do you want to include any ${marriage.accounts.noun_pl}?
-#     field: marriage.accounts.there_are_any
-#     datatype: yesnoradio
-#   - label: Do you want to include any ${marriage.other_pp.noun_pl}?
-#     field: marriage.other_pp.there_are_any
-#     datatype: yesnoradio
-#   - label: Do you want to include any ${marriage.mobile_home.noun_pl}?
-#     field: marriage.mobile_home.there_are_any
-#     datatype: yesnoradio
-# validation code: |
-#   if not (
-#     marriage.accounts.there_are_any
-#     and marriage.other_pp.there_are_any
-#     and marriage.mobile_home.there_are_any
-#   ):
-#     validation_error(""""You must select "Yes" for at least one of these questions. If you think you made a mistake, tap **Undo** and change the answer to this question.""")
----
 # -----------------------------------------------------------------------------
 ## marriage.accounts
 # -----------------------------------------------------------------------------
@@ -1023,19 +1222,11 @@ edit:
 delete buttons: True
 confirm: True
 ---
-table: marriage.accounts.table_display
-rows: marriage.accounts
-columns:
-  - Type: row_item.kind
-  - Location: row_item.source
-  - Amount: currency(row_item.balance)
-  - Award: row_item.owner
----
 id: marriage.accounts[i]
 question: |
   ${marriage.accounts.question}
 subquestion: |
-  ${marriage.accounts.question_table_display_template}
+  ${marriage.accounts.question_table_template}
 
   Do **NOT** include account numbers.
 fields:
@@ -1055,7 +1246,7 @@ fields:
     min: 0
   - label: Award to
     field: marriage.accounts[i].owner
-    datatype: object
+    datatype: object_radio
     choices:
       - users[0]
       - other_parties[0]
@@ -1096,18 +1287,11 @@ edit:
 delete buttons: True
 confirm: True
 ---
-table: marriage.other_pp.table_display
-rows: marriage.other_pp
-columns:
-  - Type: row_item.kind
-  - Owed: row_item.desc
-  - Responsible: row_item.owner
----
 id: marriage.other_pp[i]
 question: |
   ${marriage.other_pp.question}
 subquestion: |
-  ${marriage.other_pp.question_table_display_template}
+  ${marriage.other_pp.question_table_template}
 
   Select the type of property. Describe the item and select who it should be awarded to.
 fields:
@@ -1124,7 +1308,7 @@ fields:
     field: marriage.other_pp[i].desc
   - label: Award to
     field: marriage.other_pp[i].owner
-    datatype: object
+    datatype: object_radio
     choices:
       - users[0]
       - other_parties[0]
@@ -1164,18 +1348,11 @@ edit:
 delete buttons: True
 confirm: True
 ---
-table: marriage.mobile_home.table_display
-rows: marriage.mobile_home
-columns:
-  - VIN: row_item.kind
-  - Location: row_item.desc
-  - Award: row_item.owner
----
 id: marriage.mobile_home
 question: |
   ${marriage.mobile_home.question}
 subquestion: |
-  ${marriage.mobile_home.question_table_display_template}
+  ${marriage.mobile_home.question_table_template}
 fields:
   - label: VIN
     field: marriage.mobile_home[i].kind
@@ -1183,7 +1360,7 @@ fields:
     field: marriage.mobile_home[i].desc
   - label: Award to
     field: marriage.mobile_home[i].owner
-    datatype: object
+    datatype: object_radio
     choices:
       - users[0]
       - other_parties[0]
@@ -1225,14 +1402,6 @@ edit:
   - owner
 delete buttons: True
 confirm: True
----
-table: marriage.debts.table_display
-rows: marriage.debts
-columns:
-  - Type: row_item.kind
-  - Owed: row_item.source
-  - Balance: currency(row_item.balance)
-  - Responsible: row_item.owner
 ---
 id: marriage.debts_info
 question: |
@@ -1289,7 +1458,7 @@ question: |
 subquestion: |
   ${marriage.debts.there_is_another_template}
 
-  ${marriage.debts.question_table_display_template}
+  ${marriage.debts.question_table_template}
 
   Do **NOT** include credit card numbers or any other identifying number associated with a debt.
 fields:
@@ -1310,7 +1479,7 @@ fields:
     min: 0
   - label: Responsibility of
     field: marriage.debts[i].owner
-    datatype: object
+    datatype: object_radio
     choices:
       - users[0]
       - other_parties[0]
@@ -1325,4 +1494,208 @@ content: |
   % if marriage.debts_in_both_names:
   ${"Also, list" if not marriage.debts_pay_own_names else "List"}  each jointly held debt (debts in both of your names) that will be divided and indicate whether you or your spouse **${"will" if marriage.attr("debts_not_pay_both_names_agreement") else "should"}** be responsible for it.
   % endif
+---
+# -----------------------------------------------------------------------------
+## marriage.vehicles
+# -----------------------------------------------------------------------------
+---
+objects:
+  - marriage.vehicles: ALAssetList.using(
+      question="Vehicles",
+      noun_sl="vehicle",
+      noun_pl="vehicles",
+      there_are_any=True,
+      complete_attribute="complete",
+      )
+---
+code: |
+  marriage.vehicles[i].year
+  marriage.vehicles[i].make
+  marriage.vehicles[i].model
+  marriage.vehicles[i].vin
+  marriage.vehicles[i].agree
+  marriage.vehicles[i].debt
+  marriage.vehicles[i].owner
+  marriage.vehicles[i].complete = True
+---
+table: marriage.vehicles.table
+rows: marriage.vehicles
+columns:
+  - Year/Make/Model: |
+      " ".join((row_item.year, row_item.make, row_item.model))
+  - Award: row_item.owner
+edit:
+  - year
+  - make
+  - model
+  - vin
+  - agree
+  - debt
+  - owner
+delete buttons: True
+confirm: True
+---
+id: marriage.vehicles_info
+question: |
+  ${marriage.vehicles.question}
+subquestion: |
+  Next you will be asked about vehicles. Vehicles include cars, boats, trailers, motorcycles, snowmobiles, and other motorized equipment titled to the owner. Mobile homes are vehicles, but do not include them here &mdash; you should have included mobile homes in the previous question about personal property.
+
+  You will be asked for the Make and Model of each vehicle you own. Make refers to the name of the company that manufactured the vehicle. Examples of vehicle "makes" are Ford, General Motors, Chrysler, and Toyota. Model refers to the type of vehicle. Examples of "models" are Focus, Cutlass, Town and Country, and Highlander. If you are describing a vehicle other than a car, do your best to identify the vehicle using the Make and Model entries. For example, if you are listing a boat, you might say "Starcraft" for Make and "Starfish 226" for Model.
+continue button field: marriage.vehicles_info
+---
+id: marriage.vehicles_any
+question: |
+  ${marriage.vehicles.question}
+fields:
+  - label: Do you and your spouse own any vehicles (car, boat, trailer, motorcycle, snowmobile, etc.)?
+    field: marriage.vehicles_any
+    datatype: yesnoradio
+---
+id: marriage.vehicles_keep_own
+question: |
+  ${marriage.vehicles.question}
+fields:
+  - label: How do you want to divide your vehicles?
+    field: marriage.vehicles_keep_own
+    input type: radio
+    choices:
+      - label: Each party will keep the vehicle(s) now in his or her possession and titled in <u>only</u> his or her name. The party keeping the vehicle(s) is fully responsible to pay any debt related to the vehicle(s). The other party will have no claim to any vehicle(s) in the other's name and possession.
+        value: True
+      - label: We need to transfer title to one or more vehicles.
+        value: False
+---
+id: marriage.vehicles[i]
+question: |
+  ${marriage.vehicles.question}
+subquestion: |
+  ${marriage.vehicles.there_is_another_template}
+
+  ${marriage.vehicles.question_table_template}
+fields:
+  - label: Year
+    field: marriage.vehicles[i].year
+    minlength: 4
+    maxlength: 4
+  - label: |
+      {vehicles_make|Make}
+    field: marriage.vehicles[i].make
+  - label: |
+      {vehicles_model|Model}
+    field: marriage.vehicles[i].model
+  - label: VIN
+    field: marriage.vehicles[i].vin
+  - label: Award this vehicle to
+    field: marriage.vehicles[i].owner
+    datatype: object_radio
+    choices:
+      - users[0]
+      - other_parties[0]
+  - label: Do you and the ${op_ask_role.capitalize()} agree on what should happen with this vehicle?
+    field: marriage.vehicles[i].agree
+    datatype: yesnoradio
+  - label: Is there a debt related to this vehicle?
+    field: marriage.vehicles[i].debt
+    datatype: yesnoradio
+  - note: |
+      **The person who is awarded the vehicle will be responsible for paying the debt on that vehicle.**
+    show if: marriage.vehicles[i].debt
+---
+template: marriage.vehicles.there_is_another_template
+content: |
+  Please list each vehicle and whether you or your spouse will keep it.
+---
+# -----------------------------------------------------------------------------
+## marriage.other_provisions
+# -----------------------------------------------------------------------------
+---
+id: marriage.other_provisions
+question: |
+  Other provisions
+fields:
+  - label: Are there any other terms that you and your spouse have agreed to that you want to include in your Judgment of Divorce?
+    field: marriage.other_provisions_any
+    datatype: yesnoradio
+  - label: Enter the additional agreements
+    field: marriage.other_provisions
+    input type: area
+    rows: 10
+    show if: marriage.other_provisions_any
+---
+# -----------------------------------------------------------------------------
+## marriage.temporary_order
+# -----------------------------------------------------------------------------
+---
+id: marriage.temporary_order
+question: |
+  Judgment information
+fields:
+  - label: Has a temporary order been entered in your case after meeting with the Friend of the Court (for example, a temporary order regarding custody, parenting time, and/or child support)?
+    field: marriage.temporary_order
+    datatype: yesnoradio
+  - note: |
+      If a temporary order was entered previously, you should have already filed a [Domestic Relations Judgment Information form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/foc100.pdf). This tool will produce a second Domestic Relations Judgment Information form, which you will need to file with your Judgment of Divorce.
+
+      Click on the link below to see what information the form asks for.
+
+      ${collapse_template(marriage.temporary_order_changed_template)}
+    show if: marriage.temporary_order
+  - label: Has any of the information that goes on this form changed since the last time it was filed?
+    field: marriage.temporary_order_changed
+    datatype: yesnoradio
+    show if: marriage.temporary_order
+---
+template: marriage.temporary_order_changed_template
+subject: |
+  What information is on the Domestic Relations Judgment Information form?
+content: |
+  The Domestic Relations Judgment Information form contains the following information:
+
+  INFORMATION ABOUT YOU
+
+    - Full name and address
+    - Social Security Number
+    - Telephone number
+    - E-mail address
+    - Employer name, address, phone, and FEIN
+    - Driver's license number and state
+    - Occupational license number(s), type(s), issuing state(s), and date(s)
+
+  INFORMATION ABOUT THE OTHER PARTY
+
+    - All of the above information
+
+  INFORMATION ABOUT CHILDREN
+
+    - Full name
+    - Social Security Number
+    - Date of birth
+    - Who has physical custody
+    - Current primary residence address
+    - Who has legal custody
+
+  INFORMATION ABOUT MEDICAL INSURANCE HELD BY EITHER PARTY
+
+    - Provider name and address
+    - Policy / group number
+    - Cert. number
+    - Children covered by the policy
+    - Policy coverage (medical/dental/vision/other)
+---
+# -----------------------------------------------------------------------------
+## marriage.true_statement
+# -----------------------------------------------------------------------------
+---
+id: marriage.true_statement
+question: |
+  Everything is true?
+fields:
+  - label: Is all of the information you provided in this tool true to the best of your knowledge, information, and belief?
+    field: marriage.true_statement
+    datatype: yesnoradio
+  - note: |
+      **You must provide truthful and accurate information on your divorce forms. Prior to filing, you will be required to verify with your signature that the information contained in the forms is true to the best of your knowledge, information, and belief. If you do not believe the information you have provided is truthful and accurate, please go back and make the necessary changes.**
+    show if:
+      variable: marriage.true_statement
+      is: False
 ---
