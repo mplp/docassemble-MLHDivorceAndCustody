@@ -233,8 +233,8 @@ code: |
   update_terms(
     {
       "investments": "Stocks, bonds, Certificates of Deposit (CDs), mutual funds, Money Market Accounts, or other investments, not including pensions or retirement accounts.",
-      "vehicles_make": "Make refers to the name of the company that manufactured the vehicle. Examples of vehicle “makes” are Ford, General Motors, Chrysler, and Toyota.",
-      "vehicles_model": "Model refers to the type of car. Examples of “models” are Focus, Cutlass, Town and Country, and Highlander.",
+      "vehicles_make": "Make refers to the name of the company that manufactured the vehicle. Examples of vehicle "makes" are Ford, General Motors, Chrysler, and Toyota.",
+      "vehicles_model": "Model refers to the type of car. Examples of "models" are Focus, Cutlass, Town and Country, and Highlander.",
     }
   )
   set_interview_terms = True
@@ -410,12 +410,6 @@ action buttons:
     icon: right-from-bracket
 ---
 # -----------------------------------------------------------------------------
-## overrides
-# -----------------------------------------------------------------------------
----
-
----
-# -----------------------------------------------------------------------------
 ## introduction
 # -----------------------------------------------------------------------------
 ---
@@ -426,6 +420,17 @@ fields:
   - label: Do you have a pending divorce case with this spouse in any court?
     field: marriage.pending_divorce
     datatype: yesnoradio
+---
+id: docket number
+question: |
+  What is the case number? Be certain to enter the "-DO" or "-DM" at the end of the number.
+subquestion: |
+  Enter the case number from your existing case.
+
+  ${ collapse_template(where_case_number) }
+fields:
+  - Case number: docket_number
+    maxlength: 25
 ---
 id: what is the user's role?
 question: |
