@@ -232,9 +232,9 @@ code: |
 code: |
   update_terms(
     {
-      "investments": "Stocks, bonds, Certificates of Deposit (CDs), mutual funds, Money Market Accounts, or other investments, not including pensions or retirement accounts.",
-      "vehicles_make": "Make refers to the name of the company that manufactured the vehicle. Examples of vehicle "makes" are Ford, General Motors, Chrysler, and Toyota.",
-      "vehicles_model": "Model refers to the type of car. Examples of "models" are Focus, Cutlass, Town and Country, and Highlander.",
+      "investments": """Stocks, bonds, Certificates of Deposit (CDs), mutual funds, Money Market Accounts, or other investments, not including pensions or retirement accounts.""",
+      "vehicles_make": """Make refers to the name of the company that manufactured the vehicle. Examples of vehicle "makes" are Ford, General Motors, Chrysler, and Toyota.""",
+      "vehicles_model": """Model refers to the type of car. Examples of "models" are Focus, Cutlass, Town and Country, and Highlander.""",
     }
   )
   set_interview_terms = True
