@@ -423,13 +423,14 @@ fields:
 ---
 id: docket number
 question: |
-  What is the case number? Be certain to enter the "-DO" or "-DM" at the end of the number.
+  Case number
 subquestion: |
-  Enter the case number from your existing case.
-
   ${ collapse_template(where_case_number) }
+
+  Be certain to enter the "-DO" or "-DM" at the end of the number.
 fields:
-  - Case number: docket_number
+  - label: What is the case number?
+    field: docket_number
     maxlength: 25
 ---
 id: what is the user's role?
