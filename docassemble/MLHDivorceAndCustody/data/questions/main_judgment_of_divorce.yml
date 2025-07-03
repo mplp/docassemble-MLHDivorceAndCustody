@@ -295,7 +295,7 @@ code: |
 ## generics
 # =============================================================================
 ---
-generic object: ALAssetList
+generic object: DAList
 id: x.there_is_another
 question: |
   ${x.question}
@@ -304,7 +304,7 @@ fields:
     field: x.there_are_any
     datatype: yesnoradio
 ---
-generic object: ALAssetList
+generic object: DAList
 id: x.there_is_another
 question: |
   ${x.question}
@@ -319,14 +319,14 @@ fields:
     field: x.there_is_another
     datatype: yesnoradio
 ---
-generic object: ALAssetList
+generic object: DAList
 template: x.collapsed_table_template
 subject: |
   So far, you have listed...
 content: |
   ${x.table.show(editable=False)}
 ---
-generic object: ALAssetList
+generic object: DAList
 template: x.question_table_template
 content: |
   % if x.number_gathered() > 1:
