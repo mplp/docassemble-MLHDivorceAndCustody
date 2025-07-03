@@ -19,9 +19,8 @@ metadata:
   tags:
     - Family
   authors:
-    - Jack Adamson
-    - Kelly McGuire
-    - Emily Miller
+    - Michigan Legal Help
+    - Lemma Legal
 ---
 features:
   labels above fields: True
