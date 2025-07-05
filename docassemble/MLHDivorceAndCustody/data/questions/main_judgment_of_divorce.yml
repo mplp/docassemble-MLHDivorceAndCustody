@@ -96,8 +96,6 @@ code: |
   if not marriage.request_spousal_support_continue:
     exit_general
 
-  marriage.real_property.there_are_any
-
   if marriage.have_pension_retirement:
     marriage.pension_retirement_accounts_keep_own
     if not marriage.pension_retirement_accounts_continue:
@@ -135,6 +133,7 @@ code: |
 
   if confidential_contact_info_yn:
     users[0].lives_in_michigan
+    users[0].mailing_address_yn
     users[0].mailing_address_in_the_united_states
     users[0].mailing_address.address
   else:
@@ -214,6 +213,8 @@ code: |
     if not marriage.vehicles_keep_own:
       marriage.vehicles.gather()
 
+  marriage.real_property.gather()
+
   if marriage.other_provisions_any:
     marriage.other_provisions
 
@@ -243,6 +244,8 @@ code: |
 # =============================================================================
 ---
 objects:
+  - marriage: DAObject
+  - marriage.address: ALAddress
   - users: ALPeopleList.using(
       there_are_any=True,
       there_is_another=False,
@@ -265,30 +268,13 @@ objects:
       complete_attribute="complete",
       )
   - joint: Thing
+  - sell_and_share: Thing
 ---
 code: |
   joint.name.text = "Joint (50/50)"
 ---
-##### marriage
----
-objects:
-  - marriage: DAObject
-  - marriage.address: ALAddress
----
-##### marriage.real_property
----
-objects:
-  - marriage.real_property: DAList.using(
-      object_type=Thing,
-      ask_number=True,
-      complete_attribute="complete",
-      )
----
 code: |
-  marriage.real_property[i].initializeAttribute("address", Address)
-  marriage.real_property[i].address.address
-  marriage.real_property[i].name.text
-  marriage.real_property[i].complete = True
+  sell_and_share.name.text = "Neither, the property should be sold, and we should share equally in the profit or loss from the sale"
 ---
 # =============================================================================
 ## generics
@@ -497,27 +483,6 @@ fields:
     hide if:
       variable: marriage.request_spousal_support
       is: None
----
-id: real_property_there_are_any
-question: |
-  Real property
-subquestion: |
-  Real property is real estate such as a house, a condo, or land.
-fields:
-  - label: Do you or your spouse own real property that was bought or paid for while you were married?
-    field: marriage.real_property.there_are_any
-    datatype: yesnoradio
-  - label: How many pieces of real property do you and your spouse own?
-    field: marriage.real_property.target_number
-    datatype: integer
-    min: 1
-    show if: marriage.real_property.there_are_any
----
-on change:
-  marriage.real_property.there_are_any: |
-    if not marriage.real_property.there_are_any:
-      marriage.real_property.target_number = 0
-      marriage.real_property.clear()
 ---
 id: marriage.have_pension_retirement
 question: |
@@ -737,6 +702,10 @@ fields:
   - label: Do you want to keep your residential address and telephone number confidential because you have a Personal Protection Order or because disclosing it would place you and/or your children at risk?
     field: confidential_contact_info_yn
     datatype: yesnoradio
+validation code: |
+  if confidential_contact_info_yn:
+    users[0].invalidate_attr("address_in_the_united_states", "village_or_township_yn")
+    users[0].address.invalidate_attr("address", "unit", "city", "state", "zip", "country")
 ---
 id: confidential_contact_info_yn_more_template
 template: confidential_contact_info_yn_more_template
@@ -768,6 +737,7 @@ validation code: |
       users[0].address.delattr("state")
 ---
 id: users[0].address_in_the_united_states
+if: not users[0].lives_in_michigan
 question: |
   Your country
 fields:
@@ -781,6 +751,7 @@ validation code: |
       users[0].address.delattr("country")
 ---
 id: your address
+if: not confidential_contact_info_yn
 sets:
   - users[0].address.address
   - users[0].address.unit
@@ -809,13 +780,7 @@ validation code: |
     users[0].invalidate_attr("village_or_township")
 ---
 id: users[0].mailing_address_yn
-sets:
-  - users[0].mailing_address.address
-  - users[0].mailing_address.unit
-  - users[0].mailing_address.city
-  - users[0].mailing_address.state
-  - users[0].mailing_address.zip
-  - users[0].mailing_address.country
+if: not confidential_contact_info_yn
 question: |
   Different mailing address
 fields:
@@ -830,6 +795,10 @@ validation code: |
     users[0].mailing_address.invalidate_attr("state")
     users[0].mailing_address.invalidate_attr("zip")
     users[0].mailing_address.invalidate_attr("country")
+---
+if: confidential_contact_info_yn
+code: |
+  users[0].mailing_address_yn = True
 ---
 id: users[0].mailing_address_in_the_united_states
 question: |
@@ -1609,6 +1578,160 @@ fields:
 template: marriage.vehicles.there_is_another_template
 content: |
   Please list each vehicle and whether you or your spouse will keep it.
+---
+# -----------------------------------------------------------------------------
+## marriage.real_property
+# -----------------------------------------------------------------------------
+---
+objects:
+  - marriage.real_property: ALAssetList.using(
+      question="Real property",
+      noun_sl="property",
+      noun_pl="properties",
+      complete_attribute="complete",
+      )
+---
+code: |
+  marriage.real_property[i].initializeAttribute("address", ALAddress)
+  marriage.real_property[i].address.address
+  marriage.real_property[i].desc
+  marriage.real_property[i].parcel_number
+  marriage.real_property[i].agree
+  marriage.real_property[i].owner
+  marriage.real_property[i].complete = True
+---
+table: marriage.real_property.table
+rows: marriage.real_property
+columns:
+  - Address: row_item.address.on_one_line()
+  - Description: row_item.desc
+  - Award: row_item.owner
+edit:
+  - address.address
+  - desc
+  - parcel_number
+  - agree
+  - owner
+delete buttons: True
+confirm: True
+---
+id: marriage.real_property.there_are_any
+question: |
+  ${marriage.real_property.question}
+subquestion: |
+  Real property is real estate such as a house, a condo, or land.
+fields:
+  - label: Do you or your spouse own real property that was bought or paid for while you were married?
+    field: marriage.real_property.there_are_any
+    datatype: yesnoradio
+---
+id: marriage.real_property
+sets:
+  - marriage.real_property[i].address.address
+  - marriage.real_property[i].address.unit
+  - marriage.real_property[i].address.city
+  - marriage.real_property[i].address.state
+  - marriage.real_property[i].address.zip
+question: |
+  What is the address of the ${ordinal(i)} property?
+subquestion: |
+  ${marriage.real_property.question_table_template}
+fields:
+  - code: |
+      marriage.real_property[i].address.address_fields(country_code=users[0].address.attr("country"), default_state=users[0].address.attr("state"), show_country=users[0].address.attr("country") != "US")
+---
+id: marriage.real_property
+question: |
+  Describe the ${ordinal(i)} property
+subquestion: |
+  ${marriage.real_property.question_table_template}
+fields:
+  - label: Legal description
+    field: marriage.real_property[i].desc
+    input type: area
+    rows: 10
+  - label: Parcel number
+    field: marriage.real_property[i].parcel_number
+---
+id: marriage.real_property
+question: |
+  What should happen with the ${ordinal(i)} property?
+subquestion: |
+  ${marriage.real_property.question_table_template}
+fields:
+  - label: Do you and the ${op_ask_role.capitalize()} agree on what should happen with this property?
+    field: marriage.real_property[i].agree
+    datatype: yesnoradio
+
+  - label: Award this property to
+    field: marriage.real_property[i].owner
+    datatype: object_radio
+    choices:
+      - users[0]
+      - other_parties[0]
+      - sell_and_share
+
+  - label: Is this property titled in both of your names?
+    field: marriage.real_property[i].titled_together
+    datatype: yesnoradio
+    js show if: |
+      val("marriage.real_property[i].owner") === "users[0]" || val("marriage.real_property[i].owner") === "other_parties[0]"
+
+  - note: |
+      <strong>The person who is not keeping the property will need to sign a quitclaim deed giving his or her share of the property to the other person.</strong>
+    js show if: |
+      val("marriage.real_property[i].titled_together") === true
+
+  - label: Is the person getting the property the one whose name is on the title?
+    field: marriage.real_property[i].title_award_to_named
+    datatype: yesnoradio
+    js show if: |
+      val("marriage.real_property[i].titled_together") === false
+
+  - note: |
+      <strong>The person who is not keeping the property will need to sign a quitclaim deed giving his or her share of the property to the other person.</strong>
+    js show if: |
+      val("marriage.real_property[i].title_award_to_named") === false
+
+  - label: Is there a mortgage or other loan on this property?
+    field: marriage.real_property[i].mortgage_or_loan
+    datatype: yesnoradio
+    js show if: |
+      val("marriage.real_property[i].titled_together") !== null
+
+  - label: Is the mortgage or other loan in both of your names?
+    field: marriage.real_property[i].mortgage_or_loan_together
+    datatype: yesnoradio
+    js show if: |
+      val("marriage.real_property[i].mortgage_or_loan") === true
+
+  - label: Is the person getting the property the one whose name is on the loan?
+    field: marriage.real_property[i].mortgage_or_loan_award_to_named
+    datatype: yesnoradio
+    js show if: |
+      val("marriage.real_property[i].mortgage_or_loan_together") === false
+
+  - note: |
+      <strong>The person who is keeping the property will be required to refinance the loan so that it is in his or her name alone.</strong>
+    js show if: |
+      val("marriage.real_property[i].mortgage_or_loan_together") === true || val("marriage.real_property[i].mortgage_or_loan_award_to_named") === false
+
+  - note: |
+      <strong>The Real Estate Addendum of your proposed Judgment of Divorce will say that the property is awarded to both you and the Defendant, and will be sold within a reasonable time after the judgment is entered. It will also say that both of you are responsible for the mortgage, insurance, taxes, liens, and any other costs and debts associated with the property. If you want something different, use the Guide to Legal Help to look for a lawyer or legal services near you.</strong>
+    js show if: |
+      val("marriage.real_property[i].owner") === "sell_and_share"
+
+  - note: |
+      <strong>In this tool, the person who is awarded a piece of real property (home, condo, or land) will also be made responsible for paying the mortgage, insurance, taxes, liens, and any other costs on the property. Or if you and the other party are going to sell the property and share equally in the profit or loss from the sale, both of you will be responsible for the mortgage, insurance, taxes, liens, and any other costs on the property until it is sold. These are common ways of assigning the rights and responsibilities of real property in a divorce—but not the only ways. If you don't agree with any of these terms for dividing this real property and the related debt, you should consult with an attorney before finalizing your divorce. You may want to consider talking to a lawyer to assure you get the best possible outcome. Please review the articles Divorce Basics: Dividing Your Property and Debt and Real Estate and Divorce for more information on this topic.
+
+      As part of the Judgment of Divorce, the person who is awarded the property may be ordered to refinance the home in his or her name alone. However, refinancing might not be possible if the property is worth less than the amount of the mortgage, if the person required to refinance has poor credit, or for other reasons.
+
+      The person who is not awarded the property may be required to complete a quitclaim deed giving the other spouse his or her share of the property.</strong>
+    js show if: |
+      val("marriage.real_property[i].owner") !== null
+---
+template: marriage.real_property.there_is_another_template
+content: ""
 ---
 # -----------------------------------------------------------------------------
 ## marriage.other_provisions

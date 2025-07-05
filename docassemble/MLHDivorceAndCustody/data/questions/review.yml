@@ -7,13 +7,88 @@ review:
   - Edit:
       - users[0].name.first
     button: |
-      ##### User's name
+      ##### Your name
         - ${users[0]}
+  - Edit:
+      - users[0].previous_last_name_yn
+    button: |
+      ##### Your previous last name
+        - ${users[0].attr("previous_last_name")}
+  - Edit:
+      - users[0].new_last_name_yn
+    button: |
+      ##### Your new last name
+        - ${users[0].attr("new_last_name")}
+  - Edit:
+      - users[0].gender
+    button: |
+      ##### Your gender
+        - ${users[0].gender.capitalize()}
+  - Edit:
+      - users[0].marriage_number
+    button: |
+      ##### Your marriage number
+        - ${users[0].marriage_number.capitalize()}
+  - Edit:
+      - users[0].birthdate
+    button: |
+      ##### Your birthdate
+        - ${users[0].birthdate}
+  - Edit:
+      - users[0].birthplace
+    button: |
+      ##### Your birthplace
+        - ${users[0].birthplace}
+
+  - Edit:
+      - confidential_contact_info_yn
+    button: |
+      ##### Contact information confidentiality
+        - ${"Yes" if confidential_contact_info_yn else "No"}
+
+  - Edit:
+      - users[0].lives_in_michigan
+    button: |
+      ##### You live in Michigan
+        - ${"Yes" if users[0].lives_in_michigan else "No"}
+  - Edit:
+      - users[0].lives_in_michigan
+      - follow up:
+        - users[0].address_in_the_united_states
+      - users[0].address.address
+    button: |
+      ##### Your address
+        - ${users[0].address.on_one_line()}
+  - Edit:
+      - users[0].mailing_address_in_the_united_states
+      - users[0].mailing_address.address
+    button: |
+      ##### Your mailing address
+        - ${users[0].mailing_address.on_one_line()}
+  - Edit:
+      - users[0].village_or_township_yn
+    button: |
+      ##### Your village or township
+        - ${users[0].attr("village_or_township")}
+  - Edit:
+      - users[0].phone_number
+    button: |
+      ##### Your phone number
+        - ${users[0].phone_number}
+  - Edit:
+      - users[0].email
+    button: |
+      ##### Your email address
+        - ${users[0].email}
+
+
   - Edit:
       - other_parties[0].name.first
     button: |
       ##### Spouse's name
         - ${other_parties[0]}
+
+
   - fields:
       - marriage.accounts.revisit
     label: Edit
@@ -72,6 +147,29 @@ review:
           - ${item.source}
           - ${currency(item.balance)}
           - ${item.owner}
+      % endfor
+      % else:
+        - None
+      % endif
+  - fields:
+      - marriage.real_property.revisit
+    label: Edit
+    button: |
+      ##### ${marriage.real_property.question}
+
+      % if marriage.real_property:
+      % for idx, item in enumerate(marriage.real_property):
+        - **${ordinal(idx, capitalize=True)} property**
+          - _Address_
+              - ${item.address.on_one_line()}
+          - _Legal description_
+              - ${item.desc}
+          - _Parcel number_
+              - ${item.parcel_number}
+          - _Do you and the ${op_ask_role.capitalize()} agree on what should happen with this property?_
+              - ${item.agree}
+          - _Award this property to_
+              - ${item.owner}
       % endfor
       % else:
         - None
