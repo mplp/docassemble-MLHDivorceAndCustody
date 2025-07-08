@@ -1,3 +1,58 @@
+### need this here for now to run just this yml
+---
+code: |
+  marriage.date = "1986-09-20T00:00:00-04:00"
+---
+generic object: DAList
+template: x.collapsed_table_template
+subject: |
+  So far, you have listed...
+content: |
+  ${x.table.show(editable=False)}
+---
+generic object: DAList
+template: x.question_table_template
+content: |
+  % if x.number_gathered() > 1:
+  ${collapse_template(x.collapsed_table_template)}
+  % endif
+---
+include:
+  - docassemble.AssemblyLine:assembly_line.yml
+  - docassemble.ALToolbox:collapse_template.yml
+  - docassemble.mlhframework:mlh_interview_framework.yml
+---
+objects:
+  - children: ALPeopleList.using(
+      complete_attribute="complete",
+      )
+  - marriage: DAObject
+### need the above for now to run just this yml
+---
+table: children.table
+rows: children
+columns:
+  - Name: row_item.name
+  - Date of birth: row_item.birthdate
+  - Born before or during marriage: row_item.timing
+edit:
+  - name
+  - birthdate
+  - timing
+delete buttons: True
+confirm: True
+---
+id: child questions
+mandatory: True # remove later
+code: |
+  children.gather()
+---
+code: |
+  children[i].name.first
+  children[i].timing
+  
+  
+  children[i].complete = True
 ---
 id: other_parties_0_gender
 question: |
@@ -21,39 +76,102 @@ fields:
   - label: To the best of your knowledge is your spouse pregnant?
     field: other_parties[0].pregnant
     datatype: yesnoradio
+#---
+#id: children_there_are_any_same_sex
+#question: |
+# Children
+#fields:
+#  - label: Do you and your spouse have minor children together?
+#    field: children_there_are_any_same_sex
+#    datatype: yesnoradio
+#---
+#id: children_both_legal_parents
+#question: |
+#  Children
+#subquestion: |
+#  You are both the legal parents if one of you is a biological parent and you were married to each other when the child was born or conceived.
+#fields:
+#  - label: Are you and your spouse both the legal parents of the child or children?
+#    field: children_both_legal_parents
+#    datatype: yesnomaybe
+#---
+#code: |
+#  if users[0].gender == other_parties[0].gender:
+#    if children_there_are_any_same_sex and children_both_legal_parents:
+#      children.there_are_any = True
+#    else:
+#      children.there_are_any = False
+#  else:
+#    pass
 ---
-id: children_there_are_any_same_sex
+id: any children
 question: |
- Children
+  Minor children
 fields:
-  - label: Do you and your spouse have minor children together?
-    field: children_there_are_any_same_sex
+  - Do you and your spouse have any minor children, either together or separately?: children.there_are_any
     datatype: yesnoradio
 ---
-id: children_both_legal_parents
+id: any more children
 question: |
-  Children
+  Any more children?
 subquestion: |
-  You are both the legal parents if one of you is a biological parent and you were married to each other when the child was born or conceived.
+  Please list **all minor children** that you or your spouse have, either separately or together.
+  
+  You have already told us about:
+
+  ${children.table}
 fields:
-  - label: Are you and your spouse both the legal parents of the child or children?
-    field: children_both_legal_parents
-    datatype: yesnomaybe
----
-code: |
-  if users[0].gender == other_parties[0].gender:
-    if children_there_are_any_same_sex and children_both_legal_parents:
-      children.there_are_any = True
-    else:
-      children.there_are_any = False
-  else:
-    pass
+  - Are there any more minor children to add?: children.there_is_another
+    datatype: yesnoradio
 ---
 on change:
   children.there_are_any: |
     if not children.there_are_any:
       children.target_number = 0
       children.clear()
+---
+id: children info
+sets:
+  - children[i].name.first
+  - children[i].name.middle
+  - children[i].name.last
+  - children[i].name.suffix
+question: |
+  % if i == 0:
+  Child's information
+  % else:
+  ${ ordinal(i) } child's information
+  % endif
+subquestion: |
+  ${children.question_table_template}
+fields:
+  - code: |
+      children[i].name_fields()
+  - Date of birth: children[i].birthdate
+    datatype: BirthDate
+  - Gender: children[i].gender
+    datatype: radio
+    choices:
+      - Female: female
+      - Male: male
+  - Social security number: ssn
+    datatype: ssn
+    required: False
+---
+code: |
+  if int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) < 0:
+    children[i].timing = "premarital"
+  elif int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) > 0:
+    children[i].timing = "marital"
+---
+if: int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) == 0
+Question: Which was first?
+fields:
+  - Was ${children[i]} born before or after you got married?: children[i].timing
+    datatype: radio
+    choices: 
+      - ${children[i]} was born before we got married.: premarital
+      - ${children[i]} was born after we got married.: marital
 ---
 # TODO: confirm usage of "under text"
 id: children_target_number
