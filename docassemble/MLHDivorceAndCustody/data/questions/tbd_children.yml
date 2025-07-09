@@ -1,14 +1,17 @@
-### need this here for now to run just this yml
----
+# example date to avoid marriage question
 code: |
-  marriage.date = "1986-09-20T00:00:00-04:00"
+  marriage.date = "1986-09-20T00:00:00-04:00" 
 ---
+### need the stuff in this section (copied from main yml) here for now to run just this yml
 generic object: DAList
 template: x.collapsed_table_template
 subject: |
   So far, you have listed...
 content: |
   ${x.table.show(editable=False)}
+---
+features:
+  labels above fields: True
 ---
 generic object: DAList
 template: x.question_table_template
@@ -29,12 +32,27 @@ objects:
   - marriage: DAObject
 ### need the above for now to run just this yml
 ---
+### possibly move the below to main yml
+terms:
+  - phrases:
+      - assisted reproduction
+    definition: |
+      Assisted reproduction is a way to become pregnant that is not sexual intercourse. It includes:
+
+      * Donor insemination
+      * Sperm or egg donation
+      * Embryo donation
+      * In vitro fertilization (IVF) and embryo transfer
+      * Intracytoplasmic sperm injection
+      * Assisted reproductive technology
+---
 table: children.table
 rows: children
 columns:
   - Name: row_item.name
   - Date of birth: row_item.birthdate
-  - Born before or during marriage: row_item.timing
+  - Entered family before or during marriage: |
+      "before marriage" if row_item.timing == "premarital" else "during marriage"
 edit:
   - name
   - birthdate
@@ -49,8 +67,11 @@ code: |
 ---
 code: |
   children[i].name.first
-  children[i].timing
-  
+  children[i].timing 
+  children[i].origin
+  children[i].status
+   
+      
   
   children[i].complete = True
 ---
@@ -149,6 +170,10 @@ fields:
       children[i].name_fields()
   - Date of birth: children[i].birthdate
     datatype: BirthDate
+  - My spouse and I **adopted** this child together during our marriage.: children[i].adopted_during_marriage
+    required: False
+    datatype: yesno
+  # need help text saying don't include children who were born to or adopted by either spouse prior to marriage
   - Gender: children[i].gender
     datatype: radio
     choices:
@@ -159,12 +184,15 @@ fields:
     required: False
 ---
 code: |
-  if int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) < 0:
-    children[i].timing = "premarital"
-  elif int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) > 0:
+  if children[i].adopted_during_marriage:
     children[i].timing = "marital"
+  else:
+    if int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) < 0:
+      children[i].timing = "premarital"
+    elif int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) > 0:
+      children[i].timing = "marital"
 ---
-if: int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) == 0
+if: not children[i].adopted_during_marriage and int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) == 0
 Question: Which was first?
 fields:
   - Was ${children[i]} born before or after you got married?: children[i].timing
@@ -172,6 +200,74 @@ fields:
     choices: 
       - ${children[i]} was born before we got married.: premarital
       - ${children[i]} was born after we got married.: marital
+---
+id: marital children's origin
+if: children[i].timing == "marital" and not children[i].adopted_during_marriage
+question: |
+  About ${children[i]}
+fields:
+  - Which of these applies to ${children[i]}?: children[i].origin
+    datatype: radio
+    choices:
+      - My spouse or I **gave birth** to ${children[i]} as a result of **intercourse between me and my spouse**.: marital_intercourse
+      - My spouse or I **gave birth** to  ${children[i]} as a result of **intercourse with someone else** (not the other spouse).: third_party_conceived
+      - My spouse or I **gave birth** to ${children[i]} using **assisted reproduction** (for example, donor insemination or in vitro fertilization (IVF)).: assisted_reproduction
+      - ${children[i]} was born through surrogacy.: surrogacy
+      - My spouse or I conceived ${children[i]} with someone else but did not give birth to them.: third_party_birth ## adding this, need to check with Amy. These would be stepkids.
+      # - We adopted ${children[i]}. ## maybe don't need this one, instead set via code?
+  - note: |
+      ${ collapse_template(why_ask_child_origin) }
+      ${ collapse_template(help_assisted_repro) }
+  - Did the surrogacy agreement comply with Michigan law or another state's laws?: children[i].surrogacy_compliance
+    datatype: yesnoradio
+    js show if: |
+      val("children[i].origin") == "surrogacy" && val("children[i].surrogacy_need_more_info") == false
+  - I don't know.: children[i].surrogacy_need_more_info
+    required: False
+    datatype: yesno
+    show if:
+      variable: children[i].origin 
+      is: surrogacy
+  - note: |
+      There may be a legal parentage issue that can affect your divorce case. Custody, parenting time, and child support for ${children[i]} can only be decided in this divorce if the surrogacy agreement was legally valid. 
+      
+      Before you continue using this tool, talk to a lawyer to find out if your surrogacy agreement complied with the law of Michigan or another state. ${MLH_GUIDE_FULL}
+      
+      To learn more, read [How to Become a Legal Parent](https://michiganlegalhelp.org/resources/family/how-become-legal-parent).
+    show if:
+      variable: children[i].surrogacy_need_more_info
+      is: True
+  - note: |
+      This means that ${children[i]} will **not** be included in the sections about custody, parenting time, and child support in your Judgment of Divorce. If you have questions about parentage or need legal advice, you may want to talk to a lawyer. ${MLH_GUIDE_FULL}
+    js show if: |
+      val("children[i].surrogacy_compliance") == false && val("children[i].surrogacy_need_more_info") == false
+validation code: |
+  if children[i].surrogacy_need_more_info:
+    validation_error("You need to uncheck this box and answer the question above to continue.", field="children[i].surrogacy_need_more_info")
+---
+template: why_ask_child_origin
+subject: |
+  Why are you asking this?
+content: |
+  Depending on your answer, we may need to give you more information about parentage.
+---
+template: help_assisted_repro
+subject: |
+  What does "assisted reproduction" mean?
+content: |
+  Assisted reproduction is a way to become pregnant that is not sexual intercourse. It includes:
+  
+    * Donor insemination
+    * Sperm or egg donation
+    * Embryo donation
+    * In vitro fertilization (IVF) and embryo transfer
+    * Intracytoplasmic sperm injection
+    * Assisted reproductive technology
+---
+id: adopted child set origin
+code: |
+  if children[i].adopted_during_marriage:
+    children[i].origin = "marital_adoption"
 ---
 # TODO: confirm usage of "under text"
 id: children_target_number
