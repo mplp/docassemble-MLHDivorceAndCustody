@@ -45,6 +45,10 @@ terms:
       * In vitro fertilization (IVF) and embryo transfer
       * Intracytoplasmic sperm injection
       * Assisted reproductive technology
+  - phrases:
+      - biological father
+    definition: |
+      Or the person whose sperm conceived the child.
 ---
 table: children.table
 rows: children
@@ -70,10 +74,15 @@ code: |
   children[i].timing 
   children[i].origin
   children[i].legal_parent
-    
-   
-      
+
+  if children[i].legal_parent != "both":
+    children[i].not_included_in_divorce_info
   
+  elif (children[i].origin == "premarital_with_another" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order") and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived") and children[i].legal_parent == "both" and children[i].parentage_plan_to_revoke:
+    children[i].parentage_revocation_info
+
+  children[i].show_parentage_info
+
   children[i].complete = True
 ---
 id: other_parties_0_gender
@@ -211,43 +220,14 @@ fields:
     datatype: radio
     choices:
       - My spouse or I **gave birth** to ${children[i]} as a result of **sex between me and my spouse**.: marital_sex
-      - My spouse or I **gave birth** to  ${children[i]} as a result of **sex with someone else** (not the other spouse).: third_party_conceived
-      - My spouse or I **gave birth** to ${children[i]} using **assisted reproduction** (for example, donor insemination or in vitro fertilization (IVF)).: assisted_reproduction # could we combine this with marital sex?
+      - My spouse or I **gave birth** to  ${children[i]} as a result of **sex with someone else** (not the other spouse).: marital_third_party_conceived
+      - My spouse or I **gave birth** to ${children[i]} using **assisted reproduction** (for example, donor insemination or in vitro fertilization (IVF)).: marital_assisted_reproduction # could we combine this with marital sex?
       - ${children[i]} was born through surrogacy.: marital_surrogacy
       - My spouse or I conceived ${children[i]} with someone else but did not give birth to them.: third_party_birth ## adding this, need to check with Amy. These would be stepkids. need to ask who bio parent is, as well as for who they live with and possibly address
       # - We adopted ${children[i]}. ## maybe don't need this one, instead set via code?
   - note: |
       ${ collapse_template(why_ask_child_origin) }
       ${ collapse_template(help_assisted_repro) }
-  - Did the surrogacy agreement comply with Michigan law or another state's laws?: children[i].legal_parent
-    datatype: radio
-    choices:
-      - Yes: both
-      - No: neither
-    js show if: |
-      val("children[i].origin") == "marital_surrogacy" && val("children[i].surrogacy_need_more_info") == false
-  - I don't know.: children[i].surrogacy_need_more_info
-    required: False
-    datatype: yesno
-    show if:
-      variable: children[i].origin 
-      is: marital_surrogacy
-  - note: |
-      There may be a legal parentage issue that can affect your divorce case. Custody, parenting time, and child support for ${children[i]} can only be decided in this divorce if the surrogacy agreement was legally valid. 
-      
-      Before you continue using this tool, talk to a lawyer to find out if your surrogacy agreement complied with the law of Michigan or another state. ${MLH_GUIDE_FULL}
-      
-      To learn more, read [How to Become a Legal Parent](https://michiganlegalhelp.org/resources/family/how-become-legal-parent).
-    show if:
-      variable: children[i].surrogacy_need_more_info
-      is: True
-  - note: |
-      This means that ${children[i]} will **not** be included in the sections about custody, parenting time, and child support in your Judgment of Divorce. If you have questions about parentage or need legal advice, you may want to talk to a lawyer. ${MLH_GUIDE_FULL}
-    js show if: |
-      val("children[i].surrogacy_compliance") == false && val("children[i].surrogacy_need_more_info") == false
-validation code: |
-  if children[i].origin == "marital_surrogacy" and children[i].surrogacy_need_more_info:
-    validation_error("You need to uncheck this box and answer the question above to continue.", field="children[i].surrogacy_need_more_info")
 ---
 template: why_ask_child_origin
 subject: |
@@ -276,62 +256,13 @@ code: |
 ---
 id: set legal parents for certain situations
 code: |
-  if children[i].origin == "marital_sex" or children[i].origin == "assisted_reproduction":
+  if children[i].origin == "marital_sex" or children[i].origin == "marital_assisted_reproduction":
     children[i].legal_parent = "both"
-  elif children[i].origin == "premarital_sex_or_assisted_repro_with_spouse" and (children[i].parentage_established == "yes" or (children[i].parentage_established == "unknown" and children[i].both_on_birth_cert == True)):
+  elif children[i].origin == "premarital_with_spouse" and children[i].how_conceived == "premarital_sex_or_assisted_repro_with_spouse" and (children[i].parentage_established == "yes" or (children[i].parentage_established == "unknown" and children[i].both_on_birth_cert == True)):
     children[i].legal_parent = "both"
-#  elif children[i].origin == "marital_surrogacy" and 
+  elif children[i].origin == "premarital_with_another" and children[i].parentage_established == "stepparent_adoption": 
+    children[i].legal_parent = "both"
   
----
-id: third_party_conceived followup
-if: children[i].origin == "third_party_conceived"
-question: ${children[i]}'s legal parents
-fields:
-  - Who gave birth to ${children[i]}?: children[i].birthing_parent
-    datatype: radio
-    choices:
-      - I did: user
-      - My spouse did: other_party
-  - Has your spouse's parentage been revoked (canceled) by a court order?  This would only happen if you, your spouse, or the child's other biological parent filed a complaint or motion to revoke your spouse's parentage, and the judge granted it.: children[i].legal_parent
-    datatype: radio
-    choices: 
-      - Yes, my spouse's parentage was revoked by a court order.: user
-      - No, my spouse's parentage was not revoked by a court order.: both
-    show if:
-      variable: children[i].birthing_parent
-      is: user
-  - Has your parentage been revoked by a court order?  This would only happen if you, your spouse, or the child's other biological parent filed a complaint or motion to revoke your parentage, and the judge granted it.: children[i].legal_parent
-    datatype: radio
-    choices: 
-      - Yes, my parentage was revoked by a court order.: other_party
-      - No, my parentage was not revoked by a court order.: both
-    show if:
-      variable: children[i].birthing_parent
-      is: other_party
-  - Do you and your spouse agree that you should continue as ${children[i]}'s legal parent after your divorce?: children[i].want_retain_parentage
-    datatype: yesnoradio
-    js show if: |
-      val("children[i].legal_parent") == "both" && val("children[i].birthing_parent") == "other_party"
-  - Do you and your spouse agree that your spouse should continue as ${children[i]}'s legal parent after your divorce?: children[i].want_retain_parentage
-    datatype: yesnoradio
-    js show if: |
-      val("children[i].legal_parent") == "both" && val("children[i].birthing_parent") == "user"
-  - note: |
-      If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question above that asks if parentage was revoked, and then re-downloading the Judgment of Divorce form.
-
-      You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your spouse's legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). You will need to start the divorce case before you can file the parentage motion.
-
-      If nobody files a Motion to Determine Child Born Out of Wedlock, your spouse will remain a legal parent. This means the judge can award them custody and/or parenting time, and they may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
-    js show if: |
-      val("children[i].legal_parent") == "both" && val("children[i].birthing_parent") == "user" && val("children[i].want_retain_parentage") == false
-  - note: |
-      If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question above that asks if parentage was revoked, and then re-downloading the Judgment of Divorce form.
-
-      You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). You will need to start the divorce case before you can file the parentage motion.
-
-      If nobody files a Motion to Determine Child Born Out of Wedlock, you will remain a legal parent. This means the judge can award you custody and/or parenting time, and you may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
-    js show if: |
-      val("children[i].legal_parent") == "both" && val("children[i].birthing_parent") == "other_party" && val("children[i].want_retain_parentage") == false
 ---
 id: premarital children's origin
 if: children[i].timing == "premarital" 
@@ -341,50 +272,75 @@ fields:
   - Which of these applies to ${children[i]}?: children[i].origin
     datatype: radio
     choices:
-      - My current spouse and I had ${children[i]} **together** as a result of sex or assisted reproduction.: premarital_sex_or_assisted_repro_with_spouse
-      - My current spouse and I had ${children[i]} **together** as a result of a surrogacy agreement.: premarital_surrogacy_with_spouse
+      - My current spouse and I had ${children[i]} **together** as a result of sex, assisted reproduction, or a surrogacy agreement.: premarital_with_spouse
       - My current spouse or I had ${children[i]} **with someone else** through sex, assisted reproduction, surrogacy, or adoption.: premarital_with_another
-      - My spouse or I had ${children[i]} alone, through a single-parent adoption or through assisted reproduction without a second intended parent.: premarital_alone
+      - My current spouse or I had ${children[i]} alone, through a **single-parent adoption** or through **assisted reproduction without another parent.**: premarital_alone
+  - How was ${children[i]} conceived?: children[i].how_conceived
+    datatype: radio
+    choices:
+      - By sexual intercourse or assisted reproduction: premarital_sex_or_assisted_repro_with_spouse
+      - Through a surrogacy agreement: premarital_surrogacy_with_spouse
+    show if:
+      variable: children[i].origin
+      is: premarital_with_spouse
   - note: |
       ${ collapse_template(why_ask_child_origin) }
       ${ collapse_template(help_assisted_repro) }
 ---
 id: premarital children of sex, assisted repro
-if: children[i].timing == "premarital" and children[i].origin == "premarital_sex_or_assisted_repro_with_spouse"
+if: children[i].timing == "premarital" and children[i].origin == "premarital_with_spouse" and children[i].how_conceived == "premarital_sex_or_assisted_repro_with_spouse" and children[i].bio_parent == "user"
 question: ${children[i]}'s legal parents 
 subquestion: ${ collapse_template(why_ask_child_origin) }
 fields:
-  - Who gave birth to ${children[i]}?: children[i].birthing_parent
-    datatype: radio
-    choices:
-      - I did.: user
-      - My spouse did.: other_party
   - Did your spouse become a legal parent of ${children[i]}?: children[i].parentage_established
     datatype: radio
     choices:
       - Yes: yes
       - No: no
       - I don't know.: unknown
+  - note: |
+      Before you can use this tool to get divorce forms, your spouse needs to become a legal parent so your divorce can include custody, parenting time, and child support for all children in common. To learn more, read [How to Become a Legal Parent](https://michiganlegalhelp.org/resources/family/how-become-legal-parent).
     show if:
-      variable: children[i].birthing_parent
-      is: user
+      variable: children[i].parentage_established
+      is: no
+  - Are both your and your spouse's names listed on ${children[i]}'s birth certificate as parents?: children[i].both_on_birth_cert
+    datatype: yesnoradio
+    show if: 
+      variable: children[i].parentage_established
+      is: unknown
+  - note: |
+      If your spouse is not listed on the birth certificate, this could mean either that:
+      
+      * you are the only legal parent, **or**
+      * the birth certificate was not updated after your spouse became a legal parent. 
+      
+      Make sure that your spouse is a legal parent before you use this tool to get divorce forms. This is so your divorce can include custody, parenting time, and child support for all your children in common with your spouse. To learn more, read [How to Become a Legal Parent](https://michiganlegalhelp.org/resources/family/how-become-legal-parent).
+    show if:
+      variable: children[i].both_on_birth_cert
+      is: False
+validation code: |
+  if children[i].parentage_established == "no":
+    validation_error("Both parents must become legal parents before you can use this tool to get divorce forms.", field="children[i].parentage_established")
+  elif children[i].parentage_established == "unknown" and children[i].both_on_birth_cert == False:
+    validation_error("Both parents must become legal parents before you can use this tool to get divorce forms.", field="children[i].both_on_birth_cert")
+---
+id: premarital children of sex, assisted repro
+if: children[i].timing == "premarital" and children[i].origin == "premarital_with_spouse" and children[i].how_conceived == "premarital_sex_or_assisted_repro_with_spouse" and children[i].bio_parent == "other_party"
+question: ${children[i]}'s legal parents 
+subquestion: ${ collapse_template(why_ask_child_origin) }
+fields:
   - Did you become a legal parent of ${children[i]}?: children[i].parentage_established
     datatype: radio
     choices:
       - Yes: yes
       - No: no
       - I don't know.: unknown
-    show if:
-      variable: children[i].birthing_parent
-      is: other_party
   - note: |
       Before you can use this tool to get divorce forms, you need to become a legal parent so your divorce can include custody, parenting time, and child support for all children in common. To learn more, read [How to Become a Legal Parent](https://michiganlegalhelp.org/resources/family/how-become-legal-parent).
-    js show if: |
-      val("children[i].birthing_parent") == "other_party" && val("children[i].parentage_established") == "no"
+    show if:
+      variable: children[i].parentage_established")
+      is: no
   - note: |
-      Before you can use this tool to get divorce forms, your spouse needs to become a legal parent so your divorce can include custody, parenting time, and child support for all children in common. To learn more, read [How to Become a Legal Parent](https://michiganlegalhelp.org/resources/family/how-become-legal-parent).
-    js show if: |
-      val("children[i].birthing_parent") == "user" && val("children[i].parentage_established") == "no"
   - Are both your and your spouse's names listed on ${children[i]}'s birth certificate as parents?: children[i].both_on_birth_cert
     datatype: yesnoradio
     show if: 
@@ -397,29 +353,52 @@ fields:
       * the birth certificate was not updated after you became a legal parent. 
       
       Make sure that you are a legal parent before you use this tool to get divorce forms. This is so your divorce can include custody, parenting time, and child support for all your children in common with your spouse. To learn more, read [How to Become a Legal Parent](https://michiganlegalhelp.org/resources/family/how-become-legal-parent).
-    js show if: |
-      val("children[i].birthing_parent") == "other_party" && val("children[i].both_on_birth_cert") == false
-  - note: |
-      If your spouse is not listed on the birth certificate, this could mean either that:
-      
-      * you are the only legal parent, **or**
-      * the birth certificate was not updated after your spouse became a legal parent. 
-      
-      Make sure that your spouse is a legal parent before you use this tool to get divorce forms. This is so your divorce can include custody, parenting time, and child support for all your children in common with your spouse. To learn more, read [How to Become a Legal Parent](https://michiganlegalhelp.org/resources/family/how-become-legal-parent).
-    js show if: |
-      val("children[i].birthing_parent") == "user" && val("children[i].both_on_birth_cert") == false
+    show if:
+      variable: children[i].both_on_birth_cert
+      is: False
 validation code: |
   if children[i].parentage_established == "no":
     validation_error("Both parents must become legal parents before you can use this tool to get divorce forms.", field="children[i].parentage_established")
   elif children[i].parentage_established == "unknown" and children[i].both_on_birth_cert == False:
     validation_error("Both parents must become legal parents before you can use this tool to get divorce forms.", field="children[i].both_on_birth_cert")
 ---
-# id: premarital children, surrogacy
-# if: children[i].timing == "premarital" and children[i].origin == "premarital_surrogacy"
-# question: ${children[i]}'s legal parents 
-# subquestion: ${ collapse_template(why_ask_child_origin) }
-# fields:
-#   -  Did you have a lawyer to make sure your surrogacy agreement was legally valid?
+id: premarital solo child
+if: children[i].origin == "premarital_alone"
+question: About ${children[i]}
+fields:
+  - Who had ${children[i]} on their own before the marriage?: children[i].bio_parent
+    datatype: radio
+    choices:
+      - I did.: user
+      - My spouse did.: other_party
+  - Did you become ${children[i]}'s legal parent through adoption, Affidavit of Parentage, or another court order (like a *Judgment of Parentage*)?: children[i].legal_parent
+    datatype: radio
+    choices:
+      - Yes: both
+      - No: children[i].bio_parent     # NOTE: does this work????   
+---
+id: surrogacy agreement compliance
+if: (children[i].origin == "premarital_with_spouse" and children[i].how_conceived == "premarital_surrogacy_with_spouse") or children[i].origin == "marital_surrogacy"
+question: Your surrogacy agreement for ${children[i]}
+subquestion: ${ collapse_template(why_ask_child_origin) }
+fields:
+  - Did you have a lawyer to make sure your surrogacy agreement was legally valid?: children[i].legal_parent
+    datatype: radio
+    choices:
+      - Yes: both
+      - No: neither
+  - note: |
+      There may be issues about legal parentage in your divorce.  
+      
+      **Before you use this tool to get divorce forms, talk to a lawyer.** ${MLH_GUIDE_FULL} 
+      
+      To learn more, read [How to Become a Legal Parent](https://michiganlegalhelp.org/resources/family/how-become-legal-parent).
+    show if:
+      variable: children[i].legal_parent
+      is: neither
+validation code: |
+  if children[i].legal_parent == "neither": 
+    validation_error("You need to talk to a lawyer to confirm the validity of your surrogacy agreement before continuing.")
 ---
 id: premarital children with third party
 if: children[i].timing == "premarital" and children[i].origin == "premarital_with_another"
@@ -429,14 +408,15 @@ fields:
   - Who is ${children[i]}'s biological parent?: children[i].bio_parent
     datatype: radio
     choices:
-      - I am.: children[i].bio_parent = user
-      - My spouse is.: children[i].bio_parent = other_party
+      - I am.: user
+      - My spouse is.: other_party
   - Did you become ${children[i]}'s legal parent?: children[i].parentage_established
     datatype: radio
     choices:
       - No.: no
       - Yes, I became ${children[i]}'s legal parent through **stepparent adoption**.: stepparent_adoption
       - Yes, I became ${children[i]}'s legal parent by an **Affidavit of Parentage.**: affidavit
+      - Yes, I became ${children[i]}'s legal parent by a court order of parentage (for example, an *Order of Filiation* or a *Judgment of Parentage*).: court_order
     show if:
       variable: children[i].bio_parent
       is: other_party
@@ -446,47 +426,127 @@ fields:
       - No.: no
       - Yes, they became ${children[i]}'s legal parent through **stepparent adoption**.: stepparent_adoption
       - Yes, they became ${children[i]}'s legal parent by an **Affidavit of Parentage.**: affidavit
+      - Yes, they became ${children[i]}'s legal parent by a court order of parentage (for example, an *Order of Filiation* or a *Judgment of Parentage*).: court_order
     show if:
       variable: children[i].bio_parent
       is: user
   - How was ${children[i]} conceived?: children[i].how_conceived
     datatype: radio
     choices:
-      - By sexual intercourse: sex
+      - By sexual intercourse: sex   # need to trigger revocation questions and message here
       - By assisted reproduction: assisted_reproduction
+    js show if: |
+      val("children[i].parentage_established") == "affidavit" || val("children[i].parentage_established") == "court_order"
+  - note: |
+      **You may want to talk to a lawyer.** There could be a complicated legal issue regarding ${children[i]}'s parentage. 
     show if:
-      variable: children[i].parentage_established
-      is: affidavit
-  - Has your parentage been revoked (canceled) by a court order? This would only happen if you, your spouse, or the child’s biological father filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].parentage_revoked
-    datatype: yesnoradio
+      variable: children[i].how_conceived
+      is: assisted_reproduction
+---
+id: parentage revocation questions
+if: (children[i].origin == "premarital_with_another" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order") and children[i].how_conceived == "sex" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order")) or (children[i].origin == "marital_third_party_conceived")
+Question: Legal parentage status for ${children[i]}
+fields:
+  - Has your parentage been revoked (canceled) by a court order? This would only happen if you, your spouse, or ${children[i]}’s {biological father} filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].legal_parent
+    datatype: radio
+    choices:
+      - Yes: other_party
+      - No: both
     js show if: |
-      val("children[i].bio_parent") == "other_party" && val("children[i].how_conceived") == "sex"
-  - Has your spouse's parentage been revoked (canceled) by a court order? This would only happen if you, your spouse, or the child’s biological father filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].parentage_revoked
-    datatype: yesnoradio
+      val("children[i].bio_parent") == "other_party"
+  - Has your spouse's parentage been revoked (canceled) by a court order? This would only happen if you, your spouse, or ${children[i]}’s {biological father} filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].legal_parent
+    datatype: radio
+    choices:
+      - Yes: user
+      - No: both
     js show if: |
-      val("children[i].bio_parent") == "user" && val("children[i].how_conceived") == "sex"
-  - Do you plan to ask the court to revoke your legal parentage of ${children[i]} as part of this divorce case?: children[i].parentage_plan_to_revoke
+      val("children[i].bio_parent") == "user"
+  - Do you want to ask the court to revoke (cancel) your legal parentage of ${children[i]} as part of your divorce case?: children[i].parentage_plan_to_revoke
     datatype: radio
     choices:
       - Yes, I want to ask the court to revoke my parentage.: True
       - No, I want to continue as legal parent.: False
     js show if: |
-      val("children[i].bio_parent") == "other_party" && val("children[i].parentage_revoked") == false
-  - Do you plan to ask the court to revoke your spouse's legal parentage of ${children[i]} as part of this divorce case?: children[i].parentage_plan_to_revoke
+      val("children[i].bio_parent") == "other_party" && val("children[i].legal_parent") == both
+  - Do you want to ask the court to revoke (cancel) your spouse's legal parentage of ${children[i]} as part of your divorce case?: children[i].parentage_plan_to_revoke
     datatype: radio
     choices:
       - Yes, I want to ask the court to revoke my spouse's parentage.: True
       - No, I want my spouse to continue as legal parent.: False
     js show if: |
-      val("children[i].bio_parent") == "other_party" && val("children[i].parentage_revoked") == false
-  - note: |
-      To do this, you can file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to consider finding a lawyer to help you.
+      val("children[i].bio_parent") == "user" && val("children[i].legal_parent") == both
+---
+id: info about revoking parentage
+continue button field: children[i].parentage_revocation_info
+question: Information about revoking parentage
+subquestion: |
+  % if children[i].origin == "premarital_with_another":
+  
+  % if children[i].parentage_established == "affidavit":
+  
+  % if children[i].bio_parent == "other_party":
+  To do this, you can file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to consider finding a lawyer to help you.
       
-      If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answers on this page, then re-downloading the Judgment of Divorce form.
-    show if:
-      variable: children[i].parentage_plan_to_revoke
-      is: True
+  If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answers on this page, then re-downloading the Judgment of Divorce form.
+  
+  % elif children[i].bio_parent == "user":
+  To do this, you can file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to consider finding a lawyer to help you.
+      
+  If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answers on this page, then re-downloading the Judgment of Divorce form.
+  % endif
 
+  % elif children[i].parentage_established =="court_order":
+  
+  if children[i].bio_parent == "other_party":
+  To do this, you can file a [Motion to Set Aside Order of Filiation](https://www.courts.michigan.gov/4a8194/siteassets/forms/scao-approved/cc437.pdf) in the same case that the Order of Filiation was entered in. You may want to consider finding a lawyer to help you.
+  
+  If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answers, then re-downloading the Judgment of Divorce form.
+
+  % elif children[i].bio_parent == "user":
+  To do this, file a [Motion to Set Aside Order of Filiation](https://www.courts.michigan.gov/4a8194/siteassets/forms/scao-approved/cc437.pdf) in the same case that the Order of Filiation was entered in. You may want to consider finding a lawyer to help you.
+
+  If the judge revokes your spouse’s parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answers, then re-downloading the Judgment of Divorce form.
+  % endif
+  
+  % elif children[i].origin == "marital_third_party_conceived":
+  
+  % if children[i].bio_parent == "other_party":
+  If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question above that asks if parentage was revoked, and then re-downloading the Judgment of Divorce form.
+
+  You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). You will need to start the divorce case before you can file the parentage motion.
+
+  If nobody files a Motion to Determine Child Born Out of Wedlock, you will remain a legal parent. This means the judge can award you custody and/or parenting time, and you may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
+  
+  % elif children[i].bio_parent == "user":
+  If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question above that asks if parentage was revoked, and then re-downloading the Judgment of Divorce form.
+
+  You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your spouse's legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). You will need to start the divorce case before you can file the parentage motion.
+
+  If nobody files a Motion to Determine Child Born Out of Wedlock, your spouse will remain a legal parent. This means the judge can award them custody and/or parenting time, and they may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
+  % endif
+  % endif
+---
+id: info about revoking parentage
+continue button field: children[i].not_included_in_divorce_info
+question: Information about revoking parentage
+subquestion: |
+  % if children[i].bio_parent == "user":
+  Because you are not ${children[i]}'s legal parent, ${children[i].familiar} can't be included in the custody, parenting time, and child support sections of your judgment of divorce (final divorce order). 
+  % elif children[i].bio_parent == "other_party":
+  Because your spouse is not ${children[i]}'s legal parent, ${children[i].familiar} can't be included in the custody, parenting time, and child support sections of your judgment of divorce (final divorce order). 
+  % endif
+  
+  If you are concerned about your ability to be a part of ${children[i].familiar}'s life going forward, talk to a lawyer. ${MLH_GUIDE_FULL}
+---
+id: who is birth parent
+if: (children[i].origin == "premarital_with_spouse" and children[i].how_conceived == "premarital_sex_or_assisted_repro_with_spouse") or children[i].origin == "marital_third_party_conceived"
+question: ${children[i]}'s birth parent
+fields:
+  - Who gave birth to ${children[i]}?: children[i].bio_parent
+    datatype: radio
+    choices:
+      - I did.: user
+      - My spouse did.: other_party
 ---
 # TODO: confirm usage of "under text"
 id: children_target_number
@@ -499,4 +559,24 @@ fields:
     field: children.target_number
     datatype: integer
     min: 1
+---
+id: display parentage interview for testing purposes
+question: Parentage Result
+continue button field: children[i].show_parentage_info
+subquestion: |
+  ${children[i]}'s legal parents is/are:
+
+  % if children[i].legal_parent == "both":
+  **Both** the user and their spouse. 
+  
+  (Custody, etc., will be decided in the divorce.)
+  % elif children[i].legal_parent == "user":
+  **Only the user**. 
+  
+  (${children[i].familiar} will be listed as a stepchild only.)
+  % elif children[i].legal_parent == "other_party":
+  **Only the user's spouse**. 
+  
+  (${children[i].familiar} will be listed as a stepchild only.)
+  % endif
 ---
