@@ -131,24 +131,7 @@ code: |
   users[0].birthdate
   users[0].birthplace
 
-  if confidential_contact_info_yn:
-    users[0].lives_in_michigan
-    users[0].mailing_address_yn
-    users[0].mailing_address_in_the_united_states
-    users[0].mailing_address.address
-  else:
-    if not users[0].lives_in_michigan:
-      users[0].address_in_the_united_states
-    users[0].address.address
-    if users[0].address.state == "MI":
-      users[0].village_or_township_yn
-
-    if users[0].mailing_address_yn:
-      users[0].mailing_address_in_the_united_states
-      users[0].mailing_address.address
-
-  users[0].phone_number
-  users[0].email
+  user_contact_info_block
 
   nav.set_section("signpost_spouse")
 
@@ -160,14 +143,10 @@ code: |
   other_parties[0].birthdate
   other_parties[0].birthplace
 
-  if not other_parties[0].lives_in_michigan:
-    other_parties[0].address_in_the_united_states
   other_parties[0].address.address
   if other_parties[0].address.state == "MI":
     other_parties[0].village_or_township_yn
-
-  if other_parties[0].mailing_address_yn:
-    other_parties[0].mailing_address_in_the_united_states
+  if other_parties[0].mailing_address.yesno:
     other_parties[0].mailing_address.address
 
   other_parties[0].phone_number
@@ -227,7 +206,19 @@ code: |
   nav.set_section("signpost_done")
   MLH_standard_outro_pages
   MLH_download
-
+---
+code: |
+  if confidential_contact_info_yn:
+    users[0].address.address
+  else:
+    users[0].address.address
+    if users[0].address.state == "MI":
+      users[0].village_or_township_yn
+    if users[0].mailing_address.yesno:
+      users[0].mailing_address.address
+  users[0].phone_number
+  users[0].email
+  user_contact_info_block = True
 ---
 code: |
   update_terms(
@@ -703,9 +694,9 @@ fields:
     field: confidential_contact_info_yn
     datatype: yesnoradio
 validation code: |
-  if confidential_contact_info_yn:
-    users[0].invalidate_attr("address_in_the_united_states", "village_or_township_yn")
-    users[0].address.invalidate_attr("address", "unit", "city", "state", "zip", "country")
+  users[0].address.invalidate_attr("address", "unit", "city", "state", "zip", "country")
+  users[0].mailing_address.invalidate_attr("yesno", "address", "unit", "city", "state", "zip", "country")
+  users[0].invalidate_attr("village_or_township_yn", "village_or_township", "phone_number")
 ---
 id: confidential_contact_info_yn_more_template
 template: confidential_contact_info_yn_more_template
@@ -720,56 +711,40 @@ content: |
 
   If you fear for the safety of you or your children if your address is known by your spouse or someone else, it is strongly recommended that you hire a lawyer and do not do your divorce on your own. Your local domestic violence agency may also be able to help you. To learn more about domestic violence and to find contact information for helpful organizations, please see the [Domestic Violence and Divorce Resource pages](https://michiganlegalhelp.org/resources/personal-safety). You can also use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to look for a lawyer or legal services near you.
 ---
-id: users[0].lives_in_michigan
-question: |
-  Your State
-fields:
-  - Do you live in Michigan?: users[0].lives_in_michigan
-    datatype: yesnoradio
-validation code: |
-  if users[0].lives_in_michigan:
-    users[0].address.country = "US"
-    users[0].address.state = "MI"
-  else:
-    if users[0].address.attr("country") and users[0].address.country == "US":
-      users[0].address.delattr("country")
-    if users[0].address.attr("state") and users[0].address.state == "MI":
-      users[0].address.delattr("state")
----
-id: users[0].address_in_the_united_states
-if: not users[0].lives_in_michigan
-question: |
-  Your country
-fields:
-  - Is your address in the U.S.?: users[0].address_in_the_united_states
-    datatype: yesnoradio
-validation code: |
-  if users[0].address_in_the_united_states:
-    users[0].address.country = "US"
-  else:
-    if users[0].address.attr("country") and users[0].address.country == "US":
-      users[0].address.delattr("country")
----
 id: your address
-if: not confidential_contact_info_yn
-sets:
-  - users[0].address.address
-  - users[0].address.unit
-  - users[0].address.city
-  - users[0].address.state
-  - users[0].address.zip
-  - users[0].address.country
 question: |
-  Please enter your address
+  Please enter your ${"safe mailing address" if confidential_contact_info_yn else "address"}
 fields:
-  - code: |
-      users[0].address_fields(country_code=users[0].address.attr("country"), default_state=users[0].address.attr("state"), show_country=users[0].address.attr("country") != "US")
+  - label: Street Address or PO Box
+    field: users[0].address.address
+    address autocomplete: True
+  - label: Apartment, suite, etc
+    field: users[0].address.unit
+    required: False
+  - label: City
+    field: users[0].address.city
+  - label: State or Province (two-letter abbreviation for U.S. states)
+    field: users[0].address.state
+    default: MI
+    input type: datalist
+    code: |
+      states_list()
+    required: False
+  - label: Zip or Postal Code
+    field: users[0].address.zip
+    required: False
+  - label: Country
+    field: users[0].address.country
+    default: "US"
+    code: |
+      countries_list()
+    required: False
 ---
 id: users[0].village_or_township
 question: |
   Village or township
 fields:
-  - label: Do you live in a township or village that is different from the city in the address you just listed?
+  - label: Do you live in a township or village that isn't **${users[0].address.city}**?
     field: users[0].village_or_township_yn
     datatype: yesnoradio
   - label: Village or township
@@ -779,52 +754,54 @@ validation code: |
   if not users[0].village_or_township_yn:
     users[0].invalidate_attr("village_or_township")
 ---
-id: users[0].mailing_address_yn
-if: not confidential_contact_info_yn
+id: users[0].mailing_address
 question: |
   Different mailing address
 fields:
   - label: Do you have a different mailing address?
-    field: users[0].mailing_address_yn
+    field: users[0].mailing_address.yesno
     datatype: yesnoradio
+  - note: |
+      Please enter your mailing address
+    show if: users[0].mailing_address.yesno
+  - label: Street Address or PO Box
+    field: users[0].mailing_address.address
+    address autocomplete: True
+    show if: users[0].mailing_address.yesno
+  - label: Apartment, suite, etc
+    field: users[0].mailing_address.unit
+    required: False
+    show if: users[0].mailing_address.yesno
+  - label: City
+    field: users[0].mailing_address.city
+    show if: users[0].mailing_address.yesno
+  - label: State or Province (two-letter abbreviation for U.S. states)
+    field: users[0].mailing_address.state
+    default: MI
+    input type: datalist
+    code: |
+      states_list()
+    required: False
+    show if: users[0].mailing_address.yesno
+  - label: Zip or Postal Code
+    field: users[0].mailing_address.zip
+    required: False
+    show if: users[0].mailing_address.yesno
+  - label: Country
+    field: users[0].mailing_address.country
+    default: "US"
+    code: |
+      countries_list()
+    required: False
+    show if: users[0].mailing_address.yesno
 validation code: |
-  if not users[0].mailing_address_yn:
+  if not users[0].mailing_address.yesno:
     users[0].mailing_address.invalidate_attr("address")
     users[0].mailing_address.invalidate_attr("unit")
     users[0].mailing_address.invalidate_attr("city")
     users[0].mailing_address.invalidate_attr("state")
     users[0].mailing_address.invalidate_attr("zip")
     users[0].mailing_address.invalidate_attr("country")
----
-if: confidential_contact_info_yn
-code: |
-  users[0].mailing_address_yn = True
----
-id: users[0].mailing_address_in_the_united_states
-question: |
-  Your mailing address country
-fields:
-  - Is your mailing address in the U.S.?: users[0].mailing_address_in_the_united_states
-    datatype: yesnoradio
-validation code: |
-  if users[0].mailing_address_in_the_united_states:
-    users[0].mailing_address.country = "US"
-  else:
-    if users[0].mailing_address.attr("country") and users[0].mailing_address.country == "US":
-      users[0].mailing_address.delattr("country")
----
-id: users[0].mailing_address
-sets:
-  - users[0].mailing_address.address
-  - users[0].mailing_address.unit
-  - users[0].mailing_address.city
-  - users[0].mailing_address.state
-  - users[0].mailing_address.zip
-question: |
-  Please enter your mailing address
-fields:
-  - code: |
-      users[0].mailing_address.address_fields(country_code=users[0].mailing_address.attr("country"), show_country=users[0].mailing_address.attr("country") != "US")
 ---
 id: users[0].phone_number
 question: |
@@ -916,48 +893,34 @@ fields:
   - label: Please enter the state or country where your spouse was born
     field: other_parties[0].birthplace
 ---
-id: other_parties[0].lives_in_michigan
-question: |
-  Your State
-fields:
-  - Does your spouse live in Michigan?: other_parties[0].lives_in_michigan
-    datatype: yesnoradio
-validation code: |
-  if other_parties[0].lives_in_michigan:
-    other_parties[0].address.country = "US"
-    other_parties[0].address.state = "MI"
-  else:
-    if other_parties[0].address.attr("country") and other_parties[0].address.country == "US":
-      other_parties[0].address.delattr("country")
-    if other_parties[0].address.attr("state") and other_parties[0].address.state == "MI":
-      other_parties[0].address.delattr("state")
----
-id: other_parties[0].address_in_the_united_states
-question: |
-  Your spouse's country
-fields:
-  - Is your spouse's last known address in the U.S.?: other_parties[0].address_in_the_united_states
-    datatype: yesnoradio
-validation code: |
-  if other_parties[0].address_in_the_united_states:
-    other_parties[0].address.country = "US"
-  else:
-    if other_parties[0].address.attr("country") and other_parties[0].address.country == "US":
-      other_parties[0].address.delattr("country")
----
-id: your address
-sets:
-  - other_parties[0].address.address
-  - other_parties[0].address.unit
-  - other_parties[0].address.city
-  - other_parties[0].address.state
-  - other_parties[0].address.zip
-  - other_parties[0].address.country
+id: your spouse's address
 question: |
   Please enter your spouse's last known home address
 fields:
-  - code: |
-      other_parties[0].address_fields(country_code=other_parties[0].address.attr("country"), default_state=other_parties[0].address.attr("state"), show_country=other_parties[0].address.attr("country") != "US")
+  - label: Street Address or PO Box
+    field: other_parties[0].address.address
+    address autocomplete: True
+  - label: Apartment, suite, etc
+    field: other_parties[0].address.unit
+    required: False
+  - label: City
+    field: other_parties[0].address.city
+  - label: State or Province (two-letter abbreviation for U.S. states)
+    field: other_parties[0].address.state
+    default: MI
+    input type: datalist
+    code: |
+      states_list()
+    required: False
+  - label: Zip or Postal Code
+    field: other_parties[0].address.zip
+    required: False
+  - label: Country
+    field: other_parties[0].address.country
+    default: "US"
+    code: |
+      countries_list()
+    required: False
 ---
 id: other_parties[0].village_or_township
 question: |
@@ -973,54 +936,54 @@ validation code: |
   if not other_parties[0].village_or_township_yn:
     other_parties[0].invalidate_attr("village_or_township")
 ---
-id: other_parties[0].mailing_address_yn
-sets:
-  - other_parties[0].mailing_address.address
-  - other_parties[0].mailing_address.unit
-  - other_parties[0].mailing_address.city
-  - other_parties[0].mailing_address.state
-  - other_parties[0].mailing_address.zip
-  - other_parties[0].mailing_address.country
+id: other_parties[0].mailing_address
 question: |
   Spouse's different mailing address
 fields:
-  - label: Does your spouse have a mailing address that is different from his or her home address?
-    field: other_parties[0].mailing_address_yn
+  - label: Does your spouse have a different mailing address?
+    field: other_parties[0].mailing_address.yesno
     datatype: yesnoradio
+  - note: |
+      Please enter your spouse's mailing address
+    show if: other_parties[0].mailing_address.yesno
+  - label: Street Address or PO Box
+    field: other_parties[0].mailing_address.address
+    address autocomplete: True
+    show if: other_parties[0].mailing_address.yesno
+  - label: Apartment, suite, etc
+    field: other_parties[0].mailing_address.unit
+    required: False
+    show if: other_parties[0].mailing_address.yesno
+  - label: City
+    field: other_parties[0].mailing_address.city
+    show if: other_parties[0].mailing_address.yesno
+  - label: State or Province (two-letter abbreviation for U.S. states)
+    field: other_parties[0].mailing_address.state
+    default: MI
+    input type: datalist
+    code: |
+      states_list()
+    required: False
+    show if: other_parties[0].mailing_address.yesno
+  - label: Zip or Postal Code
+    field: other_parties[0].mailing_address.zip
+    required: False
+    show if: other_parties[0].mailing_address.yesno
+  - label: Country
+    field: other_parties[0].mailing_address.country
+    default: "US"
+    code: |
+      countries_list()
+    required: False
+    show if: other_parties[0].mailing_address.yesno
 validation code: |
-  if not other_parties[0].mailing_address_yn:
+  if not other_parties[0].mailing_address.yesno:
     other_parties[0].mailing_address.invalidate_attr("address")
     other_parties[0].mailing_address.invalidate_attr("unit")
     other_parties[0].mailing_address.invalidate_attr("city")
     other_parties[0].mailing_address.invalidate_attr("state")
     other_parties[0].mailing_address.invalidate_attr("zip")
     other_parties[0].mailing_address.invalidate_attr("country")
----
-id: other_parties[0].mailing_address_in_the_united_states
-question: |
-  Spouse's mailing address country
-fields:
-  - Is your spouse's mailing address in the U.S.?: other_parties[0].mailing_address_in_the_united_states
-    datatype: yesnoradio
-validation code: |
-  if other_parties[0].mailing_address_in_the_united_states:
-    other_parties[0].mailing_address.country = "US"
-  else:
-    if other_parties[0].mailing_address.attr("country") and other_parties[0].mailing_address.country == "US":
-      other_parties[0].mailing_address.delattr("country")
----
-id: other_parties[0].mailing_address
-sets:
-  - other_parties[0].mailing_address.address
-  - other_parties[0].mailing_address.unit
-  - other_parties[0].mailing_address.city
-  - other_parties[0].mailing_address.state
-  - other_parties[0].mailing_address.zip
-question: |
-  Please enter your spouse's mailing address
-fields:
-  - code: |
-      other_parties[0].mailing_address.address_fields(country_code=other_parties[0].mailing_address.attr("country"), show_country=other_parties[0].mailing_address.attr("country") != "US")
 ---
 id: other_parties[0].phone_number
 question: |
@@ -1098,8 +1061,10 @@ fields:
     show if:
       variable: marriage.address.country
       is: US
+    required: False
   - label: City, village, or township
     field: marriage.address.city
+    required: False
 ---
 id: marriage.living_together_yn
 question: |
@@ -1756,7 +1721,7 @@ fields:
 ---
 id: marriage.temporary_order
 question: |
-  Judgment information
+  Temporary order
 fields:
   - label: Has a temporary order been entered in your case after meeting with the Friend of the Court (for example, a temporary order regarding custody, parenting time, and/or child support)?
     field: marriage.temporary_order

@@ -4,6 +4,36 @@ event: review_full
 question: |
   Review your answers
 review:
+#
+# ---------- case information ----------
+#
+  - note: |
+      % if defined("county_choice"):
+      ${ review_accordion_explainer }
+      % else:
+      ${ review_empty_explainer }
+      % endif
+  - raw html: |
+      ${ start_accordion("""<h2 class="h5">Case Information</h2>""") }
+    show if: county_choice
+  - Edit: county_choice
+    button: |
+      ##### County of the court where your case is
+        - ${county_choice}
+  - Edit: docket_number
+    button: |
+      ##### What is your case number
+        - ${docket_number}
+  - Edit: user_ask_role
+    button: |
+      ##### Are you the Plaintiff or the Defendant in this case?
+        - ${user_ask_role.capitalize()}
+#
+# ---------- users[0] ----------
+#
+  - raw html: |
+      ${ next_accordion("""<h2 class="h5">Your Information</h2>""") }
+    show if: users[0].name.first
   - Edit:
       - users[0].name.first
     button: |
@@ -39,141 +69,300 @@ review:
     button: |
       ##### Your birthplace
         - ${users[0].birthplace}
-
   - Edit:
       - confidential_contact_info_yn
+      - recompute:
+        - user_contact_info_block
     button: |
       ##### Contact information confidentiality
-        - ${"Yes" if confidential_contact_info_yn else "No"}
-
+        - ${word(yesno(confidential_contact_info_yn))}
   - Edit:
-      - users[0].lives_in_michigan
-    button: |
-      ##### You live in Michigan
-        - ${"Yes" if users[0].lives_in_michigan else "No"}
-  - Edit:
-      - users[0].lives_in_michigan
-      - follow up:
-        - users[0].address_in_the_united_states
       - users[0].address.address
     button: |
-      ##### Your address
+      ##### Your ${"safe mailing address" if confidential_contact_info_yn else "address"}
         - ${users[0].address.on_one_line()}
-  - Edit:
-      - users[0].mailing_address_in_the_united_states
-      - users[0].mailing_address.address
-    button: |
-      ##### Your mailing address
-        - ${users[0].mailing_address.on_one_line()}
   - Edit:
       - users[0].village_or_township_yn
     button: |
       ##### Your village or township
         - ${users[0].attr("village_or_township")}
   - Edit:
+      - users[0].mailing_address.yesno
+    button: |
+      % if users[0].mailing_address.yesno:
+      ##### Your mailing address
+        - ${users[0].mailing_address.on_one_line()}
+      % else:
+      ##### You have a different mailing address
+        - No
+      % endif
+  - Edit:
       - users[0].phone_number
     button: |
-      ##### Your phone number
+      ##### Your ${"safe phone number" if confidential_contact_info_yn else "phone number"}
         - ${users[0].phone_number}
   - Edit:
       - users[0].email
     button: |
       ##### Your email address
         - ${users[0].email}
-
-
+#
+# ---------- other_parties[0] ----------
+#
+  - raw html: |
+      ${ next_accordion("""<h2 class="h5">Spouse's Information</h2>""") }
+    show if: other_parties[0].name.first
   - Edit:
       - other_parties[0].name.first
     button: |
       ##### Spouse's name
         - ${other_parties[0]}
-
-
-  - fields:
+  - Edit:
+      - other_parties[0].previous_last_name_yn
+    button: |
+      ##### Spouse's previous last name
+        - ${other_parties[0].attr("previous_last_name")}
+  - Edit:
+      - other_parties[0].new_last_name_yn
+    button: |
+      ##### Spouse's new last name
+        - ${other_parties[0].attr("new_last_name")}
+  - Edit:
+      - other_parties[0].gender
+    button: |
+      ##### Spouse's gender
+        - ${other_parties[0].gender.capitalize()}
+  - Edit:
+      - other_parties[0].marriage_number
+    button: |
+      ##### Spouse's marriage number
+        - ${other_parties[0].marriage_number.capitalize()}
+  - Edit:
+      - other_parties[0].birthdate
+    button: |
+      ##### Spouse's birthdate
+        - ${other_parties[0].birthdate}
+  - Edit:
+      - other_parties[0].birthplace
+    button: |
+      ##### Spouse's birthplace
+        - ${other_parties[0].birthplace}
+  - Edit:
+      - other_parties[0].address.address
+    button: |
+      ##### Spouse's address
+        - ${other_parties[0].address.on_one_line()}
+  - Edit:
+      - other_parties[0].mailing_address_yn
+    button: |
+      ##### Your spouse has a different mailing address
+        - ${word(yesno(other_parties[0].mailing_address_yn))}
+      % if other_parties[0].mailing_address_yn:
+      ##### Spouse's mailing address
+        - ${other_parties[0].mailing_address.on_one_line()}
+      % endif
+  - Edit:
+      - other_parties[0].village_or_township_yn
+    button: |
+      ##### Spouse's village or township
+        - ${other_parties[0].attr("village_or_township")}
+  - Edit:
+      - other_parties[0].phone_number
+    button: |
+      ##### Spouse's phone number
+        - ${other_parties[0].phone_number}
+  - Edit:
+      - other_parties[0].email
+    button: |
+      ##### Spouse's email address
+        - ${other_parties[0].email}
+  - Edit:
+      - other_parties[0].has_attorney
+    button: |
+      ##### Your spouse has an attorney
+        - ${word(yesno(other_parties[0].has_attorney))}
+  - Edit:
+      - other_parties[0].name.first
+    button: |
+      ##### Attorney
+        - **Name:** ${other_parties[0].attorney}
+        - **Bar number:** ${other_parties[0].attorney.bar_number}
+  - Edit:
+      - other_parties[0].address.address
+    button: |
+      ##### Attorney's address
+        - ${other_parties[0].attorney.address.on_one_line()}
+  - Edit:
+      - other_parties[0].phone_number
+    button: |
+      ##### Attorney's phone number
+        - ${other_parties[0].attorney.phone_number}
+#
+# ---------- marriage ----------
+#
+  - raw html: |
+      ${ next_accordion("""<h2 class="h5">Marriage Information</h2>""") }
+    show if: other_parties[0].name.first
+  - Edit:
+      - marriage.date
+    button: |
+      ##### When were you married?
+        - ${marriage.date}
+  - Edit:
+      - marriage.address.country
+    button: |
+      ##### Where were you married?
+        - **Country:** ${country_name(marriage.address.country)}
+        % if marriage.address.country == "US":
+        % if marriage.address.attr("state"):
+        - **State:** ${state_name(marriage.address.attr("state"))}
+        % endif
+        % if marriage.address.attr("county"):
+        - **County:** ${marriage.address.attr("county")}
+        % endif
+        % endif
+        % if marriage.address.attr("city"):
+        - **City, village, or township:** ${marriage.address.attr("city")}
+        % endif
+  - Edit:
+      - marriage.living_together_yn
+    button: |
+      % if marriage.living_together_yn:
+      ##### You and your spouse are currently living together
+        - Yes
+      % else:
+      ##### Date you and your spouse stopped living together
+        - ${marriage.living_together_stopped_date}
+      % endif
+#
+# ---------- marriage assets ----------
+#
+  - raw html: |
+      ${ next_accordion("""<h2 class="h5">Marriage Assets</h2>""") }
+    show if: marriage.accounts.revisit
+  - Edit:
       - marriage.accounts.revisit
-    label: Edit
     button: |
       ##### ${marriage.accounts.question}
 
       % if marriage.accounts:
-      % for item in marriage.accounts:
-        - ${item.kind}:
-          - ${item.source}
-          - ${currency(item.balance)}
-          - ${item.owner}
+      % for idx, item in enumerate(marriage.accounts):
+        - **${ordinal(idx, capitalize=True)} account**
+          - **Type:** ${item.kind}
+          - **Location:** ${item.source}
+          - **Amount:** ${currency(item.balance)}
+          - **Award:** ${item.owner}
       % endfor
       % else:
         - None
       % endif
-  - fields:
+  - Edit:
       - marriage.other_pp.revisit
-    label: Edit
     button: |
       ##### ${marriage.other_pp.question}
 
       % if marriage.other_pp:
-      % for item in marriage.other_pp:
-        - ${item.kind}:
-          - ${item.desc}
-          - ${item.owner}
+      % for idx, item in enumerate(marriage.other_pp):
+        - **${ordinal(idx, capitalize=True)} item**
+          - **Type** ${item.kind}
+          - **Description:** ${item.desc}
+          - **Award:** ${item.owner}
       % endfor
       % else:
         - None
       % endif
-  - fields:
+  - Edit:
       - marriage.mobile_home.revisit
-    label: Edit
     button: |
       ##### ${marriage.mobile_home.question}
 
       % if marriage.mobile_home:
-      % for item in marriage.mobile_home:
-        - ${item.kind}:
-          - ${item.desc}
-          - ${item.owner}
+      % for idx, item in enumerate(marriage.mobile_home):
+        - **${ordinal(idx, capitalize=True)} mobile home**
+          - **VIN:** ${item.kind}
+          - **Location:** ${item.desc}
+          - **Award:** ${item.owner}
       % endfor
       % else:
         - None
       % endif
-  - fields:
+  - Edit:
       - marriage.debts.revisit
-    label: Edit
     button: |
       ##### ${marriage.debts.question}
 
       % if marriage.debts:
-      % for item in marriage.debts:
-        - ${item.kind}:
-          - ${item.source}
-          - ${currency(item.balance)}
-          - ${item.owner}
+      % for idx, item in enumerate(marriage.debts):
+        - **${ordinal(idx, capitalize=True)} debt**
+          - **Type:** ${item.kind}
+          - **Owed:** ${item.source}
+          - **Balance:** ${currency(item.balance)}
+          - **Responsible:** ${item.owner}
       % endfor
       % else:
         - None
       % endif
-  - fields:
+  - Edit:
       - marriage.real_property.revisit
-    label: Edit
     button: |
       ##### ${marriage.real_property.question}
 
       % if marriage.real_property:
       % for idx, item in enumerate(marriage.real_property):
         - **${ordinal(idx, capitalize=True)} property**
-          - _Address_
-              - ${item.address.on_one_line()}
-          - _Legal description_
-              - ${item.desc}
-          - _Parcel number_
-              - ${item.parcel_number}
-          - _Do you and the ${op_ask_role.capitalize()} agree on what should happen with this property?_
-              - ${item.agree}
-          - _Award this property to_
-              - ${item.owner}
+          - **Address:** ${item.address.on_one_line()}
+          - **Legal description:** ${item.desc}
+          - **Parcel number:** ${item.parcel_number}
+          - **Do you and the ${op_ask_role.capitalize()} agree on what should happen with this property?** ${word(yesno(item.agree))}
+          - **Award this property to:** ${item.owner}
+          % if item.attribute_defined("titled_together"):
+          - **Is this property titled in both of your names?** ${word(yesno(item.titled_together))}
+          % endif
+          % if item.attribute_defined("title_award_to_named"):
+          - **Is the person getting the property the one whose name is on the title?** ${word(yesno(item.title_award_to_named))}
+          % endif
+          % if item.attribute_defined("mortgage_or_loan"):
+          - **Is there a mortgage or other loan on this property?** ${word(yesno(item.mortgage_or_loan))}
+          % endif
+          % if item.attribute_defined("mortgage_or_loan_together"):
+          - **Is the mortgage or other loan in both of your names?** ${word(yesno(item.mortgage_or_loan_together))}
+          % endif
+          % if item.attribute_defined("mortgage_or_loan_award_to_named"):
+          - **Is the person getting the property the one whose name is on the loan?** ${word(yesno(item.mortgage_or_loan_award_to_named))}
+          % endif
       % endfor
       % else:
         - None
       % endif
+#
+# ---------- judgment information ----------
+#
+  - raw html: |
+      ${ next_accordion("""<h2 class="h5">Judgment Information</h2>""") }
+    show if: marriage.other_provisions_any
+  - Edit:
+      - marriage.other_provisions_any
+    button: |
+      ##### Other provisions
+        - ${marriage.attr("other_provisions")}
+  - Edit:
+      - marriage.temporary_order
+    button: |
+      ##### Temporary order
+        - **Has a temporary order been entered in your case after meeting with the Friend of the Court (for example, a temporary order regarding custody, parenting time, and/or child support)?**
+          - ${word(yesno(marriage.temporary_order))}
+      % if marriage.temporary_order:
+        - **Has any of the information that goes on this form changed since the last time it was filed?**
+          - ${word(yesno(marriage.temporary_order_changed))}
+      % endif
+  - Edit:
+      - MLH_esign
+    button: |
+      ##### Would you like to add your electronic signature to your form?
+        - ${word(yesno(MLH_esign))}
+  - raw html: |
+      ${ end_accordion() }
+    show if: county_choice
 ---
 generic object: ALAssetList
 id: x.revisit
