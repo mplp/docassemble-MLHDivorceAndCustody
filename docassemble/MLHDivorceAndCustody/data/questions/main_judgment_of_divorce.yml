@@ -67,9 +67,9 @@ code: |
   resource_page_url_only = "https://michiganlegalhelp.org/node/xxxx"
   resource_page_name = "Judgment of Divorce"
 ---
-# =============================================================================
+# ====================================================================
 ## interview block
-# =============================================================================
+# ====================================================================
 ---
 id: interview_order_michigan_judgment_of_divorce
 mandatory: True
@@ -86,7 +86,9 @@ code: |
     exit_no_pending_divorce
 
   county_choice # TODO custom? "In what county was the divorce filed?"
-  docket_number # TODO custom? "What is the case number? Be certain to enter the "-DO" or "-DM" at the end of the number."
+  court_index
+  the_court
+  docket_number
   user_ask_role
 
   if not marriage.breakdown:
@@ -203,6 +205,10 @@ code: |
   if not marriage.true_statement:
     exit_general
 
+  # load value of these so that they populate forms as expected
+  plaintiffs
+  defendants
+
   nav.set_section("signpost_done")
   MLH_standard_outro_pages
   MLH_download
@@ -230,9 +236,9 @@ code: |
   )
   set_interview_terms = True
 ---
-# =============================================================================
+# ====================================================================
 ## objects
-# =============================================================================
+# ====================================================================
 ---
 objects:
   - marriage: DAObject
@@ -267,9 +273,9 @@ code: |
 code: |
   sell_and_share.name.text = "Neither, the property should be sold, and we should share equally in the profit or loss from the sale"
 ---
-# =============================================================================
+# ====================================================================
 ## generics
-# =============================================================================
+# ====================================================================
 ---
 generic object: DAList
 id: x.there_is_another
@@ -309,13 +315,13 @@ content: |
   ${collapse_template(x.collapsed_table_template)}
   % endif
 ---
-# =============================================================================
+# ====================================================================
 ## questions
-# =============================================================================
+# ====================================================================
 ---
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ## exits
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ---
 # TODO determine if we want specific exit screens for each reason (using templates)
 # TODO maybe generate their documents thus far like LHI does?
@@ -385,9 +391,9 @@ action buttons:
     color: danger
     icon: right-from-bracket
 ---
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ## introduction
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ---
 id: marriage.pending_divorce
 question: |
@@ -609,9 +615,9 @@ fields:
     field: marriage.have_experienced_domestic_violence_continue
     datatype: yesnoradio
 ---
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ## users[0]
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ---
 id: users[0].previous_last_name
 question: |
@@ -820,6 +826,13 @@ fields:
       Phone (home or cell)
       % endif
     field: users[0].phone_number
+    show if:
+      variable: users[0].no_phone_number
+      is: False
+  - label: I do not have a phone.
+    field: users[0].no_phone_number
+    required: False
+    datatype: yesno
 ---
 id: users[0].email
 question: |
@@ -830,9 +843,9 @@ fields:
     datatype: email
     required: False
 ---
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ## other_parties[0]
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ---
 sets:
   - other_parties[0].name.first
@@ -991,6 +1004,13 @@ question: |
 fields:
   - label: Enter a telephone number where the court can reach your spouse, starting with the area code
     field: other_parties[0].phone_number
+    show if:
+      variable: other_parties[0].no_phone_number
+      is: False
+  - label: My spouse does not have a phone or I don't know their number.
+    field: other_parties[0].no_phone_number
+    required: False
+    datatype: yesno
 ---
 id: other_parties[0].email
 question: |
@@ -1001,9 +1021,9 @@ fields:
     datatype: email
     required: False
 ---
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ## other_parties[0].attorney
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ---
 sets:
   - other_parties[0].attorney.name.first
@@ -1026,9 +1046,9 @@ fields:
     field: other_parties[0].attorney.bar_number
     required: False
 ---
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ## marriage information
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ---
 id: marriage.date
 question: |
@@ -1087,9 +1107,9 @@ subquestion: |
   **COBRA**: After your divorce is final, one spouse may continue getting coverage under the other spouse's insurance through COBRA. Your Judgment of Divorce will include language about this. Typically, the spouse who gets continuing medical insurance through COBRA must pay for it. Insurance through COBRA may cost more than when that person was covered as a spouse. If the parties agree to something else, like having the other spouse pay for the COBRA coverage, that must be specifically added to the Judgment of Divorce. You can add this in the Other Provisions section. The Other Provisions section will be available at the end of this tool.
 continue button field: marriage.health_coverage
 ---
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ## marriage.personal_property_
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ---
 id: marriage.personal_property_info
 question: |
@@ -1127,9 +1147,9 @@ fields:
     datatype: yesnoradio
     show if: marriage.personal_property_division_agreement
 ---
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ## marriage.accounts
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ---
 objects:
   - marriage.accounts: ALAssetList.using(
@@ -1195,9 +1215,9 @@ template: marriage.accounts.there_is_another_template
 content: |
   Please list each bank account and investment that has not been divided, and select how it should be awarded.
 ---
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ## marriage.other_pp
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ---
 objects:
   - marriage.other_pp: ALAssetList.using(
@@ -1256,9 +1276,9 @@ template: marriage.other_pp.there_is_another_template
 content: |
   Please list each other item of personal property that has not been divided and indicate whether you or your spouse will keep it.
 ---
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ## marriage.mobile_home
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ---
 objects:
   - marriage.mobile_home: ALAssetList.using(
@@ -1307,9 +1327,9 @@ fields:
 template: marriage.mobile_home.there_is_another_template
 content: ""
 ---
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ## marriage.debts
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ---
 objects:
   - marriage.debts: ALAssetList.using(
@@ -1434,9 +1454,9 @@ content: |
   ${"Also, list" if not marriage.debts_pay_own_names else "List"}  each jointly held debt (debts in both of your names) that will be divided and indicate whether you or your spouse **${"will" if marriage.attr("debts_not_pay_both_names_agreement") else "should"}** be responsible for it.
   % endif
 ---
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ## marriage.vehicles
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ---
 objects:
   - marriage.vehicles: ALAssetList.using(
@@ -1544,9 +1564,9 @@ template: marriage.vehicles.there_is_another_template
 content: |
   Please list each vehicle and whether you or your spouse will keep it.
 ---
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ## marriage.real_property
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ---
 objects:
   - marriage.real_property: ALAssetList.using(
@@ -1698,9 +1718,9 @@ fields:
 template: marriage.real_property.there_is_another_template
 content: ""
 ---
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ## marriage.other_provisions
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ---
 id: marriage.other_provisions
 question: |
@@ -1714,10 +1734,13 @@ fields:
     input type: area
     rows: 10
     show if: marriage.other_provisions_any
+validation code: |
+  if not marriage.other_provisions_any:
+    marriage.invalidate_attr("other_provisions")
 ---
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ## marriage.temporary_order
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ---
 id: marriage.temporary_order
 question: |
@@ -1775,9 +1798,9 @@ content: |
     - Children covered by the policy
     - Policy coverage (medical/dental/vision/other)
 ---
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ## marriage.true_statement
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------
 ---
 id: marriage.true_statement
 question: |
@@ -1791,4 +1814,67 @@ fields:
     show if:
       variable: marriage.true_statement
       is: False
+---
+# ====================================================================
+## documents
+# ====================================================================
+---
+objects:
+  - judgment_ccmlh412: ALDocument.using(title="Judgment", filename="Judgment.pdf", enabled=True, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
+objects:
+  - al_user_bundle: ALDocumentBundle.using(elements=[judgment_ccmlh412], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+---
+attachment:
+  - name: Judgment ccmlh412 (no kids)
+    filename: Judgment ccmlh412 (no kids)
+    variable name: judgment_ccmlh412[i]
+    pdf template file: judgment_ccmlh412_no_kids.pdf
+    fields:
+      - trial_court_circuit: |
+          % if the_court.type == "circuit":
+          ${the_court.number}
+          % endif
+      - docket_number: ${docket_number}
+      - trial_court_county: ${the_court.address.county}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${ the_court.phone }
+      - defendants_block: |
+          ${defendants}
+          ${defendants[0].address.on_one_line()}
+          ${word("Does not have phone") if defendants[0].no_phone_number else defendants[0].phone_numbers()}
+      - plaintiffs_block: |
+          ${plaintiffs}
+          ${plaintiffs[0].address.on_one_line()}
+          ${word("Does not have phone") if plaintiffs[0].no_phone_number else plaintiffs[0].phone_numbers()}
+      - plaintiffs1_name: ${plaintiffs}
+      - defendants1_name: ${defendants}
+      - spousal_support_none: No
+      - spousal_support_reserved: No
+      - spousal_support_awarded: No
+      - personal_property_as_is: ${not marriage.personal_property_acquired or marriage.attr("personal_property_division_actual")}
+      - personal_property_in_addendum: ${marriage.personal_property_acquired and (not marriage.attr("personal_property_division_agreement") or not marriage.attr("personal_property_division_actual"))}
+      - debts_none: ${not marriage.debts_any}
+      - debts_pay_debts_in_own_name: ${marriage.attr("debts_pay_own_names")}
+      - debts_in_addendum: ${any((not marriage.attr("debts_not_pay_own_names_agreement"), marriage.attr("debts_in_both_names")))}
+      - vehicles_none: ${not marriage.vehicles_any}
+      - vehicles_keep_same: ${marriage.attr("vehicles_keep_own")}
+      - vehicles_in_addendum: ${not marriage.attr("vehicles_keep_own")}
+      - real_property_none: ${not bool(marriage.real_property)}
+      - real_property_in_addendum: ${bool(marriage.real_property)}
+      - pensions_none: ${not marriage.have_pension_retirement}
+      - pensions_keep_own: ${marriage.attr("pension_retirement_accounts_keep_own")}
+      - pensions_in_addendum: ${not marriage.attr("pension_retirement_accounts_keep_own")}
+      - total_pages: ""
+      - wants_name_change: ${users[0].new_last_name_yn}
+      - name_change_plaintiff: ${plaintiffs[0].attr("new_last_name_yn")}
+      - name_change_defendant: ${defendants[0].attr("new_last_name_yn")}
+      - new_name: ${users[0].attr("new_last_name")}
+      - has_personal_property_debt_addendum: ${any((not marriage.attr("debts_not_pay_own_names_agreement"), marriage.attr("debts_in_both_names")))}
+      - has_vehicle_addendum: ${not marriage.attr("vehicles_keep_own")}
+      - has_real_property_addendum: ${bool(marriage.real_property)}
+      - pensions_none: ${not marriage.have_pension_retirement}
+      - has_pension_addendum: ""
+      - has_other_provisions: ${marriage.other_provisions_any}
+      - other_provisions: ${marriage.attr("other_provisions")}
 ---

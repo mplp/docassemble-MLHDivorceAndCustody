@@ -16,15 +16,25 @@ review:
   - raw html: |
       ${ start_accordion("""<h2 class="h5">Case Information</h2>""") }
     show if: county_choice
-  - Edit: county_choice
+  - Edit:
+      - county_choice
+      - court_index
+      - recompute:
+        - the_court
     button: |
       ##### County of the court where your case is
         - ${county_choice}
+      ##### Court
+        - ${the_court}
   - Edit: docket_number
     button: |
       ##### What is your case number
         - ${docket_number}
-  - Edit: user_ask_role
+  - Edit:
+      - user_ask_role
+      - recompute:
+        - plaintiffs
+        - defendants
     button: |
       ##### Are you the Plaintiff or the Defendant in this case?
         - ${user_ask_role.capitalize()}
@@ -339,7 +349,7 @@ review:
 #
   - raw html: |
       ${ next_accordion("""<h2 class="h5">Judgment Information</h2>""") }
-    show if: marriage.other_provisions_any
+    show if: marriage.attribute_defined("other_provisions_any")
   - Edit:
       - marriage.other_provisions_any
     button: |
