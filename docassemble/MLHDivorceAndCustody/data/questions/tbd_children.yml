@@ -149,7 +149,7 @@ id: any children
 question: |
   Minor children
 fields:
-  - Do you and your spouse have any minor children, either together or separately?: children.there_are_any
+  - Do you and your spouse have any living minor children, either together or separately?: children.there_are_any
     datatype: yesnoradio
 ---
 id: any more children
@@ -178,11 +178,7 @@ sets:
   - children[i].name.last
   - children[i].name.suffix
 question: |
-  % if i == 0:
-  Child's information
-  % else:
-  ${ ordinal(i) } child's information
-  % endif
+  ${ capitalize(ordinal(i)) } child's information
 subquestion: |
   ${children.question_table_template}
 fields:
