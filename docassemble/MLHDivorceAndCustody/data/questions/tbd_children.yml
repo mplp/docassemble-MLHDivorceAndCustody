@@ -2,6 +2,9 @@
 code: |
   marriage.date = "2015-07-20T00:00:00-04:00" 
 ---
+code: |
+  github_repo_name = 'docassemble-mlhdivorceandcustody'
+---
 ### need the stuff in this section (copied from main yml) here for now to run just this yml
 generic object: DAList
 template: x.collapsed_table_template
@@ -75,6 +78,7 @@ id: child questions
 mandatory: True # remove later
 code: |
   children.gather()
+  test_end_screen
 ---
 code: |
   children[i].name.first
@@ -631,3 +635,6 @@ subquestion: |
   
   timing code: ${children[i].timing}
 ---
+event: test_end_screen
+question: Thank you for testing!
+subquestion: You have finished the initial child questions test interview.
