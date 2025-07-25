@@ -1,6 +1,6 @@
 # example date to avoid marriage question
 code: |
-  marriage.date = "1986-09-20T00:00:00-04:00" 
+  marriage.date = "2015-07-20T00:00:00-04:00" 
 ---
 ### need the stuff in this section (copied from main yml) here for now to run just this yml
 generic object: DAList
