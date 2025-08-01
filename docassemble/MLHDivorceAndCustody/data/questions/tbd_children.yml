@@ -2,9 +2,6 @@
 code: |
   marriage.date = "2015-07-20T00:00:00-04:00" 
 ---
-code: |
-  github_repo_name = 'docassemble-mlhdivorceandcustody'
----
 ### need the stuff in this section (copied from main yml) here for now to run just this yml
 generic object: DAList
 template: x.collapsed_table_template
@@ -28,6 +25,9 @@ include:
   - docassemble.ALToolbox:collapse_template.yml
   - docassemble.mlhframework:mlh_interview_framework.yml
 ---
+code: |
+  github_repo_name = 'docassemble-MLHDivorceAndCustody'
+---
 objects:
   - children: ALPeopleList.using(
       complete_attribute="complete",
@@ -48,10 +48,6 @@ terms:
       * In vitro fertilization (IVF) and embryo transfer
       * Intracytoplasmic sperm injection
       * Assisted reproductive technology
-  - phrases:
-      - biological father
-    definition: |
-      Or the person whose sperm conceived the child.
 ---
 table: children.table
 rows: children
@@ -491,7 +487,7 @@ id: parentage revocation questions, user is bio parent
 if: ((children[i].origin == "premarital_with_another" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order") and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived")) and children[i].bio_parent == "user"
 Question: Legal parentage status for ${children[i]}
 fields:
-  - Has your spouse's parentage been revoked (canceled) by a court order? This would only happen if you, your spouse, or ${children[i]}’s {biological father} filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].legal_parent
+  - Has your spouse's parentage been revoked (canceled) by a court order? This would only happen if you, your spouse, or ${children[i]}’s other biological parent filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].legal_parent
     datatype: radio
     choices:
       - Yes: user
@@ -508,7 +504,7 @@ id: parentage revocation questions, spouse is bio parent
 if: ((children[i].origin == "premarital_with_another" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order") and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived")) and children[i].bio_parent == "other_party"
 Question: Legal parentage status for ${children[i]}
 fields:
-  - Has your parentage been revoked (canceled) by a court order? This would only happen if you, your spouse, or ${children[i]}’s {biological father} filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].legal_parent
+  - Has your parentage been revoked (canceled) by a court order? This would only happen if you, your spouse, or ${children[i]}’s other biological parent filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].legal_parent
     datatype: radio
     choices:
       - Yes: other_party
