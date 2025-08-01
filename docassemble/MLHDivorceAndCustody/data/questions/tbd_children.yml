@@ -576,11 +576,11 @@ question: Important!
 subquestion: |
   % if children[i].legal_parent == "other_party":
   Because you are not ${children[i]}'s legal parent, ${children[i].familiar()} can't be included in the custody, parenting time, and child support sections of your judgment of divorce (final divorce order). 
+
+    If you are concerned about your ability to be a part of ${children[i].familiar()}'s life, talk to a lawyer. ${MLH_GUIDE_FULL}
   % elif children[i].legal_parent == "user":
   Because your spouse is not ${children[i]}'s legal parent, ${children[i].familiar()} can't be included in the custody, parenting time, and child support sections of your judgment of divorce (final divorce order). 
   % endif
-  
-  If you are concerned about your ability to be a part of ${children[i].familiar()}'s life, talk to a lawyer. ${MLH_GUIDE_FULL}
 ---
 id: warning for extramarital children where parentage was established by affidavit or court order
 if: children[i].origin == "premarital_with_another" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order") and children[i].how_conceived == "assisted_reproduction"
