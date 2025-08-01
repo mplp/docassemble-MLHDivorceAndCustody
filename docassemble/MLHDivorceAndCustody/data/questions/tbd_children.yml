@@ -149,7 +149,7 @@ id: any children
 question: |
   Minor children
 fields:
-  - Do you and your spouse have any living minor children, either together or separately?: children.there_are_any
+  - Do you or your spouse have any living minor children? This includes children you had together and children you had separately.: children.there_are_any
     datatype: yesnoradio
 ---
 id: any more children
@@ -317,6 +317,14 @@ fields:
     show if:
       variable: children[i].origin
       is: premarital_with_spouse
+  - Who had ${children[i]} with someone else?: children[i].bio_parent
+    datatype: radio
+    choices:
+      - I did.: user
+      - My spouse did.: other_party
+    show if:
+      variable: children[i].origin
+      is: premarital_with_another
   - note: |
       ${ collapse_template(why_ask_child_origin) }
       ${ collapse_template(help_assisted_repro) }
@@ -445,26 +453,11 @@ validation code: |
   if children[i].legal_parent == "neither": 
     validation_error("You need to talk to a lawyer to confirm the validity of your surrogacy agreement before continuing.")
 ---
-id: premarital children with third party
-if: children[i].timing == "premarital" and children[i].origin == "premarital_with_another"
+id: premarital children with third party user is original parent
+if: children[i].timing == "premarital" and children[i].origin == "premarital_with_another" and children[i].bio_parent == "user"
 question: ${children[i]}'s legal parents 
 subquestion: ${ collapse_template(why_ask_child_origin) }
 fields:
-  - Who is ${children[i]}'s biological parent?: children[i].bio_parent
-    datatype: radio
-    choices:
-      - I am.: user
-      - My spouse is.: other_party
-  - Did you become ${children[i]}'s legal parent?: children[i].parentage_established
-    datatype: radio
-    choices:
-      - "**No**": no
-      - Yes, I became ${children[i]}'s legal parent through **stepparent adoption**.: stepparent_adoption
-      - Yes, I became ${children[i]}'s legal parent by an **Affidavit of Parentage.**: affidavit
-      - Yes, I became ${children[i]}'s legal parent by a **court order** of parentage (for example, an *Order of Filiation* or a *Judgment of Parentage*).: court_order
-    show if:
-      variable: children[i].bio_parent
-      is: other_party
   - Did your spouse become ${children[i]}'s legal parent?: children[i].parentage_established
     datatype: radio
     choices:
@@ -472,9 +465,26 @@ fields:
       - Yes, they became ${children[i]}'s legal parent through **stepparent adoption**.: stepparent_adoption
       - Yes, they became ${children[i]}'s legal parent by an **Affidavit of Parentage.**: affidavit
       - Yes, they became ${children[i]}'s legal parent by a **court order** of parentage (for example, an *Order of Filiation* or a *Judgment of Parentage*).: court_order
-    show if:
-      variable: children[i].bio_parent
-      is: user
+  - How was ${children[i]} conceived?: children[i].how_conceived
+    datatype: radio
+    choices:
+      - By sexual intercourse: sex   # trigger revocation questions and message
+      - By assisted reproduction: assisted_reproduction # trigger complicated issue warning
+    js show if: |
+      val("children[i].parentage_established") == "affidavit" || val("children[i].parentage_established") == "court_order"
+---
+id: premarital children with third party spouse is original parent
+if: children[i].timing == "premarital" and children[i].origin == "premarital_with_another" and children[i].bio_parent == "other_party"
+question: ${children[i]}'s legal parents 
+subquestion: ${ collapse_template(why_ask_child_origin) }
+fields:
+  - Did you become ${children[i]}'s legal parent?: children[i].parentage_established
+    datatype: radio
+    choices:
+      - "**No**": no
+      - Yes, I became ${children[i]}'s legal parent through **stepparent adoption**.: stepparent_adoption
+      - Yes, I became ${children[i]}'s legal parent by an **Affidavit of Parentage.**: affidavit
+      - Yes, I became ${children[i]}'s legal parent by a **court order** of parentage (for example, an *Order of Filiation* or a *Judgment of Parentage*).: court_order
   - How was ${children[i]} conceived?: children[i].how_conceived
     datatype: radio
     choices:
@@ -592,12 +602,21 @@ subquestion: |
 id: who is birth parent
 if: (children[i].origin == "premarital_with_spouse" and children[i].how_conceived == "premarital_sex_or_assisted_repro_with_spouse") or children[i].origin == "marital_third_party_conceived"
 question: ${children[i]}'s birth parent
+subquestion: |
+  ${ collapse_template(why_ask_child_origin) }
 fields:
   - Who gave birth to ${children[i]}?: children[i].bio_parent
     datatype: radio
     choices:
       - I did.: user
       - My spouse did.: other_party
+  - How was ${children[i]} conceived?: children[i].how_conceived
+    datatype: radio
+    choices:
+      - By sexual intercourse: sex   # trigger revocation questions and message
+      - By assisted reproduction: assisted_reproduction # trigger complicated issue warning
+    js show if: |
+      (val("children[i].bio_parent") == "user" || val("children[i].bio_parent") == "other_party") && ${ json.dumps(children[i].origin) } === "marital_third_party_conceived"
 ---
 # TODO: confirm usage of "under text"
 id: children_target_number
