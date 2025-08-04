@@ -65,7 +65,7 @@ edit:
   - legal_parent
   - not_included_in_divorce_info
   - parentage_revocation_info
-  - complicated_issue_warning
+  - complicated_issue_kickout
   - show_parentage_info # just for testing purposes
 delete buttons: True
 confirm: True
@@ -80,6 +80,10 @@ code: |
   children[i].name.first
   children[i].timing 
   children[i].origin
+
+  if children[i].origin == "marital_third_party_conceived" and children[i].how_conceived == "assisted_reproduction":
+    children[i].complicated_issue_kickout
+  
   children[i].legal_parent
 
   if children[i].legal_parent != "both":
@@ -89,7 +93,7 @@ code: |
     children[i].parentage_revocation_info
 
   elif children[i].origin == "premarital_with_another" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order") and children[i].how_conceived == "assisted_reproduction":
-    children[i].complicated_issue_warning
+    children[i].complicated_issue_kickout
 
   children[i].show_parentage_info
 
@@ -469,7 +473,7 @@ fields:
     datatype: radio
     choices:
       - By sexual intercourse: sex   # trigger revocation questions and message
-      - By assisted reproduction: assisted_reproduction # trigger complicated issue warning
+      - By assisted reproduction: assisted_reproduction # trigger complicated issue kickout
     js show if: |
       val("children[i].parentage_established") == "affidavit" || val("children[i].parentage_established") == "court_order"
 ---
@@ -489,7 +493,7 @@ fields:
     datatype: radio
     choices:
       - By sexual intercourse: sex   # trigger revocation questions and message
-      - By assisted reproduction: assisted_reproduction # trigger complicated issue warning
+      - By assisted reproduction: assisted_reproduction # trigger complicated issue kickout
     js show if: |
       val("children[i].parentage_established") == "affidavit" || val("children[i].parentage_established") == "court_order"
 ---
@@ -592,12 +596,14 @@ subquestion: |
   Because your spouse is not ${children[i]}'s legal parent, ${children[i].familiar()} can't be included in the custody, parenting time, and child support sections of your judgment of divorce (final divorce order). 
   % endif
 ---
-id: warning for extramarital children where parentage was established by affidavit or court order
-if: children[i].origin == "premarital_with_another" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order") and children[i].how_conceived == "assisted_reproduction"
-continue button field: children[i].complicated_issue_warning
-question: Important!
+id: kickout for complex situations involving assisted reproduction
+if: ((children[i].origin == "premarital_with_another" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order")) or children[i].origin == "marital_third_party_conceived") and children[i].how_conceived == "assisted_reproduction"
+event: children[i].complicated_issue_kickout
+question: This tool is not right for you
 subquestion: |
-      **You may want to talk to a lawyer.** There could be a complicated legal issue regarding ${children[i]}'s parentage. 
+  We're sorry. You can't use this tool to make divorce forms. 
+  
+  Legal parentage of ${children[i]} may be a complicated issue in your divorce. You will need to find a lawyer to help you. ${MLH_GUIDE_FULL}
 ---
 id: who is birth parent
 if: (children[i].origin == "premarital_with_spouse" and children[i].how_conceived == "premarital_sex_or_assisted_repro_with_spouse") or children[i].origin == "marital_third_party_conceived"
@@ -614,7 +620,7 @@ fields:
     datatype: radio
     choices:
       - By sexual intercourse: sex   # trigger revocation questions and message
-      - By assisted reproduction: assisted_reproduction # trigger complicated issue warning
+      - By assisted reproduction: assisted_reproduction # trigger complicated issue kickout
     js show if: |
       (val("children[i].bio_parent") == "user" || val("children[i].bio_parent") == "other_party") && ${ json.dumps(children[i].origin) } === "marital_third_party_conceived"
 ---
