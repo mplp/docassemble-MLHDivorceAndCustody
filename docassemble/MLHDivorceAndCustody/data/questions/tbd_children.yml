@@ -310,9 +310,20 @@ fields:
   - Which of these applies to ${children[i]}?: children[i].origin
     datatype: radio
     choices:
-      - My current spouse and I had ${children[i]} **together** as a result of sex, assisted reproduction, or a surrogacy agreement.: premarital_with_spouse
-      - My current spouse or I had ${children[i]} **with someone else** through sex, assisted reproduction, surrogacy, or adoption.: premarital_with_another
-      - My current spouse or I had ${children[i]} **alone**, through a single-parent adoption or through assisted reproduction without another parent.: premarital_alone
+      - My current spouse and I had ${children[i]} **together**.: premarital_with_spouse
+        help: |
+          This includes children conceived through sex, assisted reproduction, or a surrogacy agreement.
+      - My current spouse or I had ${children[i]} **with someone else**.: premarital_with_another
+        help: |
+          This includes children who were conceived through sex, assisted reproduction, or a surrogacy agreement, or who were adopted.
+      - My current spouse or I had ${children[i]} **alone**, through a **single-parent adoption** or through **assisted reproduction *without*** another parent.: premarital_alone
+        help: |
+          This answer is only for someone who became a single parent **on purpose** through:
+          
+          * adoption or 
+          * assisted reproduction. 
+          
+          If there *was* another parent but they did not or could not act as a parent, choose a different answer.
   - How was ${children[i]} conceived?: children[i].how_conceived
     datatype: radio
     choices:
