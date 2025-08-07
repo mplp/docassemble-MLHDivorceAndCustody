@@ -1,4 +1,4 @@
-# example date to avoid marriage question
+# example date for testing
 code: |
   marriage.date = "2015-07-20T00:00:00-04:00" 
 ---
@@ -666,6 +666,102 @@ subquestion: |
   origin code: ${children[i].origin}
   
   timing code: ${children[i].timing}
+######## start custody questions #######
+---
+id: custody parenting time questions
+question: |
+  Custody and Parenting Time
+subquestion: | 
+  ${ collapse_template(custody_PT_guidance, collapsed=False) }
+fields:
+  - Who should have legal custody?: legal_custody_who
+    datatype: radio
+    choices:
+      - Only me: user
+      - Only my spouse: other_party
+      - "Both of us, jointly": both
+  - Who should have physical custody?: physical_custody_who
+    datatype: radio
+    choices:
+      - Only me: user
+      - Only my spouse: other_party
+      - "Both of us, jointly": both
+  - note: |
+      Because you have selected joint physical custody, both parents will have parenting time.
+    show if: 
+      variable: physical_custody_who
+      is: both
+  - Who should have parenting time (visitation) with the children?
+    datatype: radio
+    choices: 
+      - Only me: user
+      - Only my spouse: other_party
+      - Both of us: both
+    # show if logic and possibly multiple versions needed once hear back from Amy
+  - What type of parenting time do you believe is appropriate?
+See text at the bottom of the screen or click the light bulb in the upper right for a definition of a parenting time type. 
+Reasonable
+Specific
+  - note: |
+      ${ collapse_template(custody_PT_definitions) }
+---
+template: custody_PT_guidance
+subject: |
+  How to answer these questions:
+content: |
+  % if divorce_custody_interview_ID == JOD_Only:
+
+  * If the judge has issued temporary orders regarding custody or parenting time, enter those terms throughout this portion of the interview;
+  * If there are no temporary orders, and you and your spouse agree on all the custody and parenting time terms, use those terms;
+  * If there are no temporary orders, and you and your spouse don’t agree on any of the custody and parenting time terms, complete this portion of the interview using the custody and parenting time terms you want the judge to order;
+  * If there are no temporary orders, and you and your spouse agree on some, but not all, of the custody and parenting time terms, use the terms you do agree on, along with the terms you want the judge to order for things you don’t agree on.
+  % elif divorce_custody_interview_ID == divorce_complaint:
+  * If you and your spouse agree on all of the custody and parenting time (visitation) terms for your children, use those terms throughout this part of the interview.
+  * If you and your spouse don’t agree on any of the terms of custody and parenting time, complete this part of the interview using the custody and parenting time terms that you want the judge to order.
+  * If you and your spouse agree on some, but not all, of the custody and parenting time terms, use the terms you do agree on, along with the terms that you want the judge to order for things you don’t agree on.
+
+  You may have to come back to this tool later and change the custody and parenting time terms if you and your spouse change your agreement or if the judge orders terms that are different than those you enter now.  
+  % if not user_logged_in():
+  You must create an account and log in to save your answers.
+  % endif
+  % endif
+---
+template: custody_PT_definitions
+subject: |
+  What do these questions mean?
+terms:
+  noncustodial parent: |
+    The "**noncustodial parent**" is the parent who does **not** have sole or primary physical custody of the children. 
+    
+    The "custodial parent" generally refers to the parent with whom the children live most of the time.
+  
+content: |
+  ===== **Legal Custody** =====
+  
+  Having legal custody of your children means having the right to make important decisions about their lives, like where they go to school, what religion they are, and major medical decisions. Either parent can have sole legal custody, or parents can have joint legal custody. 
+  
+  When parents have joint legal custody, they both have the right to weigh in on important decisions about their kids. Both parents must agree on important decisions. If they can’t agree, they may have to ask the judge to decide. 
+  
+  If a parent has sole legal custody, that parent can make these important decisions without the other parent’s agreement.
+
+  ===== **Physical Custody** =====
+  
+  Having physical custody of your children means your children will live with you at least some of the time. Either parent can have sole physical custody, or parents can have joint physical custody. 
+  
+  When parents have joint physical custody, the children take turns living with each parent. 
+  
+  If one parent has sole physical custody, the other parent will usually have regular parenting time, or “visitation,” with the children.
+
+  ===== **Parenting Time Types** =====
+  
+  **Reasonable**: If a judge orders “reasonable” parenting time, specific dates, times, and other conditions are left for the parents to work out. If you believe that you and your spouse can agree on parenting time arrangements, you may ask for reasonable parenting time rather than a specific parenting time schedule. However, if the judge orders reasonable parenting time, and you and your spouse can’t agree, the judge may not be able to enforce the order or judgment. You will need to return to court and ask for a specific parenting time schedule in order for the judge to enforce the judgment.
+
+  **Specific**: If a judge orders “specific” parenting time, all of the dates, times, and conditions for visits are included in the court order. Many counties have standard parenting time schedules that you can use in your case. You can contact the Friend of the Court in the county where your case will be filed and ask if there is a standard parenting time schedule. You can also choose one of our common parenting time schedules for families that have joint physical custody, for families with school-age children, for families with children younger than school age, or for long distance parenting time of school-age children.
+
+  **Specific and supervised**: If a judge orders “specific and supervised” parenting time, all of the dates, times, and conditions for visits are included in the court order. The judge will order parenting time to be supervised by a third party – such as a relative, friend, or supervised parenting time center. Supervised parenting time may be appropriate if the {noncustodial parent} is a risk to the children. The supervisor must be willing to supervise parenting time.
+
+######## end custody questions ########
+
 ---
 event: test_end_screen
 question: Thank you for testing!
