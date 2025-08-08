@@ -2,6 +2,10 @@
 code: |
   marriage.date = "2015-07-20T00:00:00-04:00" 
 ---
+# example interview tag for testing
+code: |
+  divorce_custody_interview_ID = "JOD_only"
+---
 ### need the stuff in this section (copied from main yml) here for now to run just this yml
 generic object: DAList
 template: x.collapsed_table_template
@@ -48,6 +52,11 @@ terms:
       * In vitro fertilization (IVF) and embryo transfer
       * Intracytoplasmic sperm injection
       * Assisted reproductive technology
+  - phrases:
+      - parenting time
+    definition: |
+      Sometimes called "visitation".
+      
 ---
 table: children.table
 rows: children
@@ -74,6 +83,9 @@ id: child questions
 mandatory: True # remove later
 code: |
   children.gather()
+  legal_custody_who
+  if PT_type == "specific":
+    specific_PT_how
   test_end_screen
 ---
 code: |
@@ -691,34 +703,114 @@ fields:
     show if: 
       variable: physical_custody_who
       is: both
-  - Who should have parenting time (visitation) with the children?
+  - Who should have parenting time (visitation) with the children?: PT_who
     datatype: radio
     choices: 
       - Only me: user
+      - Both of us: both
+    show if:
+      variable: physical_custody_who
+      is: user
+  - Who should have parenting time (visitation) with the children?: PT_who
+    datatype: radio
+    choices: 
       - Only my spouse: other_party
       - Both of us: both
-    # show if logic and possibly multiple versions needed once hear back from Amy
-  - What type of parenting time do you believe is appropriate?
-See text at the bottom of the screen or click the light bulb in the upper right for a definition of a parenting time type. 
-Reasonable
-Specific
+    show if:
+      variable: physical_custody_who
+      is: other_party
+  - What type of parenting time do you believe is appropriate?: PT_type
+    datatype: radio
+    choices:
+      - Reasonable: reasonable
+      - Specific: specific
+    js show if: |
+      val("PT_who") == "both" && val("physical_custody_who") == "both"
+  - What type of parenting time do you believe is appropriate?: PT_type
+    datatype: radio
+    choices:
+      - Reasonable: reasonable
+      - Specific: specific
+      - Specific and supervised: supervised
+    js show if: |
+      val("PT_who") == "both" && val("physical_custody_who") != "both"
   - note: |
       ${ collapse_template(custody_PT_definitions) }
 ---
+if: PT_type == "specific"
+id: specific parenting time options
+question: |
+  Specific Parenting Time Schedules
+subquestion: | 
+  You will need a specific parenting time schedule. If you are able to work with the other parent, you may want to come up with the schedule together.
+
+  The [Michigan Parenting Time Guideline](https://www.courts.michigan.gov/4a537f/siteassets/court-administration/standardsguidelines/foc/pt_gdlns.pdf), created by the Friend of the Court Bureau, is a helpful resource for putting together a parenting time schedule. We recommend that you **review the Guideline before** creating a custom parenting time schedule for your family. 
+
+  ${ collapse_template(MI_PT_guideline_info) }
+
+  You may also be able to get a sample schedule from your county's Friend of the Court (FOC) office. Check their website or ask the Friend of the Court how to get one. 
+  
+  Another option is to use a sample schedule from Michigan Legal Help:
+
+  ${ collapse_template(MLH_sample_schedules) }
+
+  % if not user_logged_in():
+  If you need time to pick a schedule, please create an account and sign in to save your answers for later.
+  % endif
+  
+fields:
+  - Do you want to write your own parenting time schedule or use a sample schedule?: specific_PT_how
+    datatype: radio
+    choices:
+      - Write my own: custom
+      - "Use a sample schedule from my county’s Friend of the Court office (If you choose this option, you can either find the schedule on your court website or ask the Friend of the Court how you can get one).": FOC_sample
+      - "Use a [sample schedule](link) from Michigan Legal Help (click the link above to view these)": MLH_sample
+  - Which Michigan Legal Help [sample schedule](link) would you like to use?: MLH_PT_selection
+    datatype: radio
+    choices: 
+      - Schedule A - Joint Physical Custody: schedule_A
+      - Schedule B - School-Age Children: schedule_B
+      - Schedule C - Children Not Yet in School: schedule_c
+      - Schedule D - Long Distance Policy: schedule_d
+    show if:
+      variable: specific_PT_how
+      is: MLH_sample
+---
+template: MLH_sample_schedules
+subject: |
+  Tap here for Michigan Legal Help's sample schedules.
+content: |
+  Tap any of the links below to download a PDF showing that sample parenting time schedule. 
+
+  Schedule A - Joint Physical Custody
+  
+  Schedule B - School-Age Children
+  
+  Schedule C - Children Not Yet in School
+  
+  Schedule D - Long Distance Policy
+---
+template: MI_PT_guideline_info
+subject: |
+  More information about the Michigan Parenting Time Guideline
+content: |
+  The [Michigan Parenting Time Guideline](https://www.courts.michigan.gov/4a537f/siteassets/court-administration/standardsguidelines/foc/pt_gdlns.pdf) includes sample schedules you can use as a starting place to create your family's schedule. It also has information about the developmental needs of children at different ages in connection to parenting time. The Guideline addresses specific topics such as long distance parenting time, parenting time with a parent who is in prison, and domestic violence situations.
+---
 template: custody_PT_guidance
 subject: |
-  How to answer these questions:
+  How to answer the custody and parenting time questions:
 content: |
-  % if divorce_custody_interview_ID == JOD_Only:
-
-  * If the judge has issued temporary orders regarding custody or parenting time, enter those terms throughout this portion of the interview;
-  * If there are no temporary orders, and you and your spouse agree on all the custody and parenting time terms, use those terms;
-  * If there are no temporary orders, and you and your spouse don’t agree on any of the custody and parenting time terms, complete this portion of the interview using the custody and parenting time terms you want the judge to order;
-  * If there are no temporary orders, and you and your spouse agree on some, but not all, of the custody and parenting time terms, use the terms you do agree on, along with the terms you want the judge to order for things you don’t agree on.
-  % elif divorce_custody_interview_ID == divorce_complaint:
-  * If you and your spouse agree on all of the custody and parenting time (visitation) terms for your children, use those terms throughout this part of the interview.
-  * If you and your spouse don’t agree on any of the terms of custody and parenting time, complete this part of the interview using the custody and parenting time terms that you want the judge to order.
-  * If you and your spouse agree on some, but not all, of the custody and parenting time terms, use the terms you do agree on, along with the terms that you want the judge to order for things you don’t agree on.
+  % if divorce_custody_interview_ID == "JOD_only":
+  
+  1. If the **judge issued temporary orders** for custody or {parenting time}, you should match the judge's orders.
+  
+  2. If there are **no temporary orders** for custody or {parenting time}:
+      * if you and your spouse **agree** on a question, use your agreed answer.
+      * if you and your spouse **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
+  
+  % elif divorce_custody_interview_ID == "divorce_complaint":
+  * If you and your spouse **agree** on a question, use your agreed answer.
+  * If you and your spouse **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
 
   You may have to come back to this tool later and change the custody and parenting time terms if you and your spouse change your agreement or if the judge orders terms that are different than those you enter now.  
   % if not user_logged_in():
