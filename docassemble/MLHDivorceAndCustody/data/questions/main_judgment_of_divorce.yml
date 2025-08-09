@@ -33,6 +33,11 @@ sections:
   - signpost_user: "Your Information"
   - signpost_spouse: "Spouse's Information"
   - signpost_marriage: "Marriage Information"
+  - signpost_personal_property: "Personal Property"
+  - signpost_debts: "Debts"
+  - signpost_vehicles: "Vehicles"
+  - signpost_real_property: "Real Property"
+  - signpost_judgment_information: "Judgment Information"
   - signpost_done: "Done"
   - review_full: "✎ <u>Review / Edit</u>"
 ---
@@ -167,13 +172,23 @@ code: |
 
   marriage.health_coverage
 
+  nav.set_section("signpost_personal_property")
+
   interview_order_personal_property
+
+  nav.set_section("signpost_debts")
 
   interview_order_debts
 
+  nav.set_section("signpost_vehicles")
+
   interview_order_vehicles
 
+  nav.set_section("signpost_real_property")
+
   marriage.real_property.gather()
+
+  nav.set_section("signpost_judgment_information")
 
   if marriage.other_provisions_any:
     marriage.other_provisions
