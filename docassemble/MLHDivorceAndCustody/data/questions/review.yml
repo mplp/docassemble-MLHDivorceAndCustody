@@ -15,7 +15,7 @@ review:
       % endif
   - raw html: |
       ${ start_accordion("""<h2 class="h5">Case Information</h2>""") }
-    show if: county_choice
+    show if: defined("county_choice")
   - Edit:
       - county_choice
       - court_index
@@ -43,7 +43,7 @@ review:
 #
   - raw html: |
       ${ next_accordion("""<h2 class="h5">Your Information</h2>""") }
-    show if: users[0].name.first
+    show if: users[0].name.attribute_defined("first")
   - Edit:
       - users[0].name.first
     button: |
@@ -64,6 +64,11 @@ review:
     button: |
       ##### Your gender
         - ${users[0].gender.capitalize()}
+  - Edit:
+      - users[0].pregnant
+    button: |
+      ##### You are pregnant
+        - ${word(yesno(users[0].pregnant))}
   - Edit:
       - users[0].marriage_number
     button: |
@@ -96,6 +101,7 @@ review:
     button: |
       ##### Your village or township
         - ${users[0].attr("village_or_township")}
+    show if: users[0].address.state == "MI"
   - Edit:
       - users[0].mailing_address.yesno
     button: |
@@ -121,7 +127,7 @@ review:
 #
   - raw html: |
       ${ next_accordion("""<h2 class="h5">Spouse's Information</h2>""") }
-    show if: other_parties[0].name.first
+    show if: other_parties[0].name.attribute_defined("first")
   - Edit:
       - other_parties[0].name.first
     button: |
@@ -142,6 +148,11 @@ review:
     button: |
       ##### Spouse's gender
         - ${other_parties[0].gender.capitalize()}
+  - Edit:
+      - other_parties[0].pregnant
+    button: |
+      ##### Spouse is pregnant
+        - ${word(yesno(other_parties[0].pregnant))}
   - Edit:
       - other_parties[0].marriage_number
     button: |
@@ -176,6 +187,7 @@ review:
     button: |
       ##### Spouse's village or township
         - ${other_parties[0].attr("village_or_township")}
+    show if: other_parties[0].address.state == "MI"
   - Edit:
       - other_parties[0].phone_number
     button: |
@@ -188,31 +200,45 @@ review:
         - ${other_parties[0].email}
   - Edit:
       - other_parties[0].has_attorney
+      - invalidate:
+        - other_parties[0].attorney.name.first
+        - other_parties[0].attorney.name.middle
+        - other_parties[0].attorney.name.last
+        - other_parties[0].attorney.name.suffix
+        - other_parties[0].attorney.bar_number
+        - other_parties[0].attorney.address.address
+        - other_parties[0].attorney.address.unit
+        - other_parties[0].attorney.address.city
+        - other_parties[0].attorney.address.state
+        - other_parties[0].attorney.address.zip
+        - other_parties[0].attorney.phone_number
+      - recompute:
+        - interview_order_other_parties_attorney
     button: |
       ##### Your spouse has an attorney
         - ${word(yesno(other_parties[0].has_attorney))}
-  - Edit:
-      - other_parties[0].name.first
-    button: |
+
+      % if other_parties[0].has_attorney:
       ##### Attorney
+        % if other_parties[0].attorney.name.attribute_defined("first"):
         - **Name:** ${other_parties[0].attorney}
+        % endif
+        % if other_parties[0].attorney.attribute_defined("bar_number"):
         - **Bar number:** ${other_parties[0].attorney.bar_number}
-  - Edit:
-      - other_parties[0].address.address
-    button: |
-      ##### Attorney's address
-        - ${other_parties[0].attorney.address.on_one_line()}
-  - Edit:
-      - other_parties[0].phone_number
-    button: |
-      ##### Attorney's phone number
-        - ${other_parties[0].attorney.phone_number}
+        % endif
+        % if other_parties[0].attorney.address.attribute_defined("address"):
+        - **Address:** ${other_parties[0].attorney.address.on_one_line()}
+        % endif
+        % if other_parties[0].attorney.attribute_defined("phone_number"):
+        - **Phone number:** ${other_parties[0].attorney.phone_number}
+        % endif
+      % endif
 #
 # ---------- marriage ----------
 #
   - raw html: |
       ${ next_accordion("""<h2 class="h5">Marriage Information</h2>""") }
-    show if: other_parties[0].name.first
+    show if: marriage.attribute_defined("date")
   - Edit:
       - marriage.date
     button: |
@@ -245,32 +271,39 @@ review:
         - ${marriage.living_together_stopped_date}
       % endif
 #
-# ---------- marriage assets ----------
+# ---------- personal property ----------
 #
   - raw html: |
-      ${ next_accordion("""<h2 class="h5">Marriage Assets</h2>""") }
-    show if: marriage.personal_property_info
+      ${ next_accordion("""<h2 class="h5">Personal Property</h2>""") }
+    show if: marriage.attribute_defined("personal_property_acquired")
   - Edit:
       - marriage.personal_property_acquired
+      - invalidate:
+        - marriage.debts.pay_debts_in_own_names
+        - marriage.personal_property_division_agreement
+        - marriage.personal_property_division_actual
+      - recompute:
+        - marriage.accounts.gathered_reset
+        - marriage.other_pp.gathered_reset
+        - marriage.mobile_home.gathered_reset
+        - interview_order_personal_property
     button: |
       ##### Did you and your spouse acquire personal property during the marriage?
+        - ${word(yesno(marriage.personal_property_acquired))}
 
-      - ${yesno(marriage.personal_property_acquired)}
-  - Edit:
-      - marriage.personal_property_division_agreement
-    button: |
+      % if marriage.attribute_defined("personal_property_division_agreement"):
       ##### Have you and your spouse reached an agreement about how all personal property will be divided?
+        - ${word(yesno(marriage.personal_property_division_agreement))}
+      % endif
 
-      - ${yesno(marriage.personal_property_division_agreement)}
-      % if marriage.attr("personal_property_division_actual"):
+      % if marriage.attribute_defined("personal_property_division_actual"):
       ##### Have you and your spouse **actually divided** all the personal property based on your agreement?
-
-      - ${yesno(marriage.personal_property_division_actual)}
+        - ${word(yesno(marriage.personal_property_division_actual))}
       % endif
   - Edit:
       - marriage.accounts.revisit
     button: |
-      ##### ${marriage.accounts.question}
+      ##### ${marriage.accounts.question_text}
 
       % if marriage.accounts:
       % for idx, item in enumerate(marriage.accounts):
@@ -286,7 +319,7 @@ review:
   - Edit:
       - marriage.other_pp.revisit
     button: |
-      ##### ${marriage.other_pp.question}
+      ##### ${marriage.other_pp.question_text}
 
       % if marriage.other_pp:
       % for idx, item in enumerate(marriage.other_pp):
@@ -301,7 +334,7 @@ review:
   - Edit:
       - marriage.mobile_home.revisit
     button: |
-      ##### ${marriage.mobile_home.question}
+      ##### ${marriage.mobile_home.question_text}
 
       % if marriage.mobile_home:
       % for idx, item in enumerate(marriage.mobile_home):
@@ -313,10 +346,49 @@ review:
       % else:
         - None
       % endif
+#
+# ---------- debts ----------
+#
+  - raw html: |
+      ${ next_accordion("""<h2 class="h5">Debts</h2>""") }
+    show if: marriage.debts.attribute_defined("any")
+  - Edit:
+      - marriage.debts.any
+      - invalidate:
+        - marriage.debts.pay_debts_in_own_names
+        - marriage.debts.agree_responsibility_debts_own_name
+        - marriage.debts.any_in_both_names
+        - marriage.debts.agree_responsibility_debts_both_names
+      - recompute:
+        - marriage.debts.gathered_reset
+        - interview_order_debts
+    button: |
+      ##### Do you or your spouse have any debts, either in your own names or together?
+        - ${word(yesno(marriage.debts.any))}
+
+      % if marriage.debts.attribute_defined("pay_debts_in_own_names"):
+      ##### Do you and your spouse each plan to pay the debts in your own names?
+        - ${word(yesno(marriage.debts.pay_debts_in_own_names))}
+      % endif
+
+      % if marriage.debts.attribute_defined("agree_responsibility_debts_own_name"):
+      ##### Do you and your spouse agree on who will be responsible for these debts?
+        - ${word(yesno(marriage.debts.agree_responsibility_debts_own_name))}
+      % endif
+
+      % if marriage.debts.attribute_defined("any_in_both_names"):
+      ##### Do you and your spouse have any debts that are in **both** of your names?
+        - ${word(yesno(marriage.debts.any_in_both_names))}
+      % endif
+
+      % if marriage.debts.attribute_defined("agree_responsibility_debts_both_names"):
+      ##### Do you and your spouse agree on who will be responsible for these debts?
+        - ${word(yesno(marriage.debts.agree_responsibility_debts_both_names))}
+      % endif
   - Edit:
       - marriage.debts.revisit
     button: |
-      ##### ${marriage.debts.question}
+      ##### ${marriage.debts.question_text}
 
       % if marriage.debts:
       % for idx, item in enumerate(marriage.debts):
@@ -329,10 +401,60 @@ review:
       % else:
         - None
       % endif
+#
+# ---------- vehicles ----------
+#
+  - raw html: |
+      ${ next_accordion("""<h2 class="h5">Vehicles</h2>""") }
+    show if: marriage.vehicles.attribute_defined("any")
+  - Edit:
+      - marriage.vehicles.any
+      - invalidate:
+        - marriage.vehicles.keep_own
+      - recompute:
+        - marriage.vehicles.gathered_reset
+        - interview_order_vehicles
+    button: |
+      ##### Do you and your spouse own any vehicles (car, boat, trailer, motorcycle, snowmobile, etc.)?
+        - ${word(yesno(marriage.vehicles.any))}
+
+      % if marriage.vehicles.attribute_defined("keep_own"):
+      ##### How do you want to divide your vehicles?
+      % if marriage.vehicles.keep_own:
+        - Each party will keep the vehicle(s) now in his or her possession and titled in <u>only</u> his or her name. The party keeping the vehicle(s) is fully responsible to pay any debt related to the vehicle(s). The other party will have no claim to any vehicle(s) in the other's name and possession.
+      % else:
+        - We need to transfer title to one or more vehicles.
+      % endif
+      % endif
+  - Edit:
+      - marriage.vehicles.revisit
+    button: |
+      ##### ${marriage.vehicles.question_text}
+
+      % if marriage.vehicles:
+      % for idx, item in enumerate(marriage.vehicles):
+        - **${ordinal(idx, capitalize=True)} vehicle**
+          - **Year:** ${item.year}
+          - **Make:** ${item.make}
+          - **Model:** ${item.model}
+          - **VIN:** ${item.vin}
+          - **Award this vehicle to:** ${item.owner}
+          - **Do you and the ${op_ask_role.capitalize()} agree on what should happen with this vehicle?** ${word(yesno(item.agree))}
+          - **Is there a debt related to this vehicle?:** ${word(yesno(item.debt))}
+      % endfor
+      % else:
+        - None
+      % endif
+#
+# ---------- real property ----------
+#
+  - raw html: |
+      ${ next_accordion("""<h2 class="h5">Real Property</h2>""") }
+    show if: marriage.real_property.attribute_defined("revisit")
   - Edit:
       - marriage.real_property.revisit
     button: |
-      ##### ${marriage.real_property.question}
+      ##### ${marriage.real_property.question_text}
 
       % if marriage.real_property:
       % for idx, item in enumerate(marriage.real_property):
@@ -375,12 +497,11 @@ review:
   - Edit:
       - marriage.temporary_order
     button: |
-      ##### Temporary order
-        - **Has a temporary order been entered in your case after meeting with the Friend of the Court (for example, a temporary order regarding custody, parenting time, and/or child support)?**
-          - ${word(yesno(marriage.temporary_order))}
-      % if marriage.temporary_order:
-        - **Has any of the information that goes on this form changed since the last time it was filed?**
-          - ${word(yesno(marriage.temporary_order_changed))}
+      ##### Has a temporary order been entered in your case after meeting with the Friend of the Court (for example, a temporary order regarding custody, parenting time, and/or child support)?
+        - ${word(yesno(marriage.temporary_order))}
+      % if marriage.attribute_defined("temporary_order_changed"):
+      ##### Has any of the information that goes on this form changed since the last time it was filed?
+        - ${word(yesno(marriage.temporary_order_changed))}
       % endif
   - Edit:
       - MLH_esign
@@ -390,20 +511,4 @@ review:
   - raw html: |
       ${ end_accordion() }
     show if: county_choice
----
-generic object: ALAssetList
-id: x.revisit
-question: |
-  ${x.question}
-subquestion: |
-  ${x.there_is_another_template}
-
-  % if x:
-  So far, you have listed&colon;
-
-  ${x.table}
-  % endif
-
-  ${x.add_action(color="success", size="md")}
-continue button field: x.revisit
 ---

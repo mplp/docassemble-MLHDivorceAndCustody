@@ -68,7 +68,7 @@ code: |
   resource_page_name = "Judgment of Divorce"
 ---
 # ====================================================================
-## interview block
+## interview_order
 # ====================================================================
 ---
 id: interview_order_michigan_judgment_of_divorce
@@ -128,19 +128,21 @@ code: |
   users[0].name.first
   users[0].previous_last_name_yn
   users[0].new_last_name_yn
-  users[0].gender # TODO remove or set if we end up asking for gender in the screening
+  users[0].gender
+  users[0].pregnant
   users[0].marriage_number
   users[0].birthdate
   users[0].birthplace
 
-  user_contact_info_block
+  interview_order_user_contact_info
 
   nav.set_section("signpost_spouse")
 
   other_parties.gather()
   other_parties[0].name.first
   other_parties[0].previous_last_name_yn
-  other_parties[0].gender # TODO remove or set if we end up asking for gender in the screening
+  other_parties[0].gender
+  other_parties[0].pregnant
   other_parties[0].marriage_number
   other_parties[0].birthdate
   other_parties[0].birthplace
@@ -154,10 +156,7 @@ code: |
   other_parties[0].phone_number
   other_parties[0].email
 
-  if other_parties[0].has_attorney:
-    other_parties[0].attorney.name.first
-    other_parties[0].attorney.address.address
-    other_parties[0].attorney.phone_number
+  interview_order_other_parties_attorney
 
   nav.set_section("signpost_marriage")
 
@@ -168,31 +167,11 @@ code: |
 
   marriage.health_coverage
 
-  marriage.accounts
-  marriage.other_pp
-  marriage.mobile_home
-  marriage.personal_property_info
-  if marriage.personal_property_acquired:
-    if not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual:
-      marriage.accounts.gather()
-      marriage.other_pp.gather()
-      marriage.mobile_home.gather()
+  interview_order_personal_property
 
-  marriage.debts
-  marriage.debts.info
-  if marriage.debts.any:
-    if not marriage.debts.pay_debts_in_own_names:
-      marriage.debts.agree_responsibility_debts_own_name
-    if marriage.debts.any_in_both_names:
-      marriage.debts.agree_responsibility_debts_both_names
-    if not marriage.debts.pay_debts_in_own_names or marriage.debts.any_in_both_names:
-      marriage.debts.gather()
+  interview_order_debts
 
-  marriage.vehicles
-  marriage.vehicles.info
-  if marriage.vehicles.any:
-    if not marriage.vehicles.keep_own:
-      marriage.vehicles.gather()
+  interview_order_vehicles
 
   marriage.real_property.gather()
 
@@ -224,7 +203,45 @@ code: |
       users[0].mailing_address.address
   users[0].phone_number
   users[0].email
-  user_contact_info_block = True
+  interview_order_user_contact_info = True
+---
+code: |
+  if other_parties[0].has_attorney:
+    other_parties[0].attorney.name.first
+    other_parties[0].attorney.address.address
+    other_parties[0].attorney.phone_number
+  interview_order_other_parties_attorney = True
+---
+code: |
+  marriage.accounts
+  marriage.other_pp
+  marriage.mobile_home
+  marriage.personal_property_info
+  if marriage.personal_property_acquired:
+    if not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual:
+      marriage.accounts.gather()
+      marriage.other_pp.gather()
+      marriage.mobile_home.gather()
+  interview_order_personal_property = True
+---
+code: |
+  marriage.debts.info
+  if marriage.debts.any:
+    if not marriage.debts.pay_debts_in_own_names:
+      marriage.debts.agree_responsibility_debts_own_name
+    if marriage.debts.any_in_both_names:
+      marriage.debts.agree_responsibility_debts_both_names
+    if not marriage.debts.pay_debts_in_own_names or marriage.debts.any_in_both_names:
+      marriage.debts.gather()
+  interview_order_debts = True
+---
+code: |
+  marriage.vehicles
+  marriage.vehicles.info
+  if marriage.vehicles.any:
+    if not marriage.vehicles.keep_own:
+      marriage.vehicles.gather()
+  interview_order_vehicles = True
 ---
 code: |
   update_terms(
@@ -278,6 +295,27 @@ code: |
 # ====================================================================
 ---
 generic object: DAList
+code: |
+  x.reset_gathered()
+  x.gathered_reset = True
+---
+generic object: ALAssetList
+id: x.revisit
+question: |
+  ${x.question_text}
+subquestion: |
+  ${x.there_is_another_template}
+
+  % if x:
+  So far, you have listed&colon;
+
+  ${x.table}
+  % endif
+
+  ${x.add_action(color="success", size="md")}
+continue button field: x.revisit
+---
+generic object: DAList
 id: x.there_is_another
 question: |
   ${x.question_text}
@@ -314,6 +352,31 @@ content: |
   % if x.number_gathered() > 1:
   ${collapse_template(x.collapsed_table_template)}
   % endif
+---
+generic object: ALIndividual
+template: x.gender_explanation_template
+subject: |
+  Why are you asking this? What if ${"I'm" if x is users[0] else "they're"} nonbinary?
+content: |
+  The DCH-0838 Record of Divorce or Annulment form needed to finalize a divorce in Michigan makes you select "male" or "female" for each party. Unfortunately it does not have a nonbinary option. Please select which option you want checked on the form.
+---
+generic object: ALIndividual
+template: x.pregnant_explanation_template
+subject: |
+  Why are you asking this?
+content: |
+  The Complaint for Divorce (one of the forms you will file to start your divorce case), must say if either party is pregnant.
+---
+generic object: ALIndividual
+template: x.pregnant_notice
+subject: |
+  Pregnancy Notice
+content: |
+  WARNING! If either you or your spouse is pregnant, there may be complicated legal parentage issues in your divorce. Consider hiring a lawyer to help you. To get lawyer referral information, use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
+
+  You can use this tool to prepare your divorce forms, but you may have to wait until the birth to schedule your final hearing and enter your Judgment of Divorce, so that provisions for custody, parenting time, and support are complete.
+
+  Children conceived during a marriage are also considered children of the marriage. If a new child is born who was conceived during the marriage, you will need to log back in to your saved answers so you can add that child and include their name and other information. This will allow you to get an updated Judgment of Divorce and other updated forms.
 ---
 # ====================================================================
 ## questions
@@ -637,11 +700,18 @@ id: users[0].new_last_name_yn
 question: |
   Change last name
 subquestion: |
-  If you do not want to get your name changed as part of your divorce, you can still ask for a name change later. To do this, file a Petition to Change Name any time after your divorce is final. There is a filing fee for this petition unless you qualify to have your fees waived. There are also other costs related to the petition that cannot be waived.
+  ${collapse_template(users[0].can_i_change_my_name_later_template)}
+
+  ${collapse_template(users[0].what_can_i_change_my_last_name_to_template)}
 fields:
   - label: Would you like the judge to allow you to change your last name as part of your divorce?
     field: users[0].new_last_name_yn
     datatype: yesnoradio
+  - note: |
+      Michigan law says that a woman may ask the court to change her last name as part of a divorce case. If you're not a woman and you want to ask the court to change your last name, you may want to talk to a lawyer.
+    show if:
+      variable: users[0].new_last_name_yn
+      is: True
   - label: What is the **last name** that you want the judge to allow you to use?
     field: users[0].new_last_name
     show if: users[0].new_last_name_yn
@@ -649,13 +719,50 @@ validation code: |
   if not users[0].new_last_name_yn:
     users[0].invalidate_attr("new_last_name")
 ---
+template: users[0].what_can_i_change_my_last_name_to_template
+subject: |
+  What can I change my last name to?
+content: |
+  As part of the divorce, a woman can ask the judge to change her name to any of the following:
+
+  - Her last name at birth,
+  - Her last before marriage to the spouse she is divorcing, or
+  - Any other last name if she isn’t trying to change her name to commit fraud or for some other harmful reason.
+---
+template: users[0].can_i_change_my_name_later_template
+subject: |
+  Can I change my name later?
+content: |
+  If you do not want to get your name changed as part of your divorce, you can still ask for a name change later. To do this, file a Petition to Change Name any time after your divorce is final. There is a filing fee for this petition unless you qualify to have your fees waived. There are also other costs related to the petition that cannot be waived.
+---
 id: users[0].gender
 sets: users[0].gender
 question: |
   What is your gender?
+subquestion: |
+  ${collapse_template(users[0].gender_explanation_template)}
 fields:
-  - code: |
-      users[0].gender_fields(show_help=True)
+  - label: Gender
+    field: users[0].gender
+    input type: radio
+    choices:
+      - Female: female
+      - Male: male
+---
+id: users[0].pregnant
+question: |
+  Pregnancy
+subquestion: |
+  ${collapse_template(users[0].pregnant_explanation_template)}
+fields:
+  - label: Are you pregnant?
+    field: users[0].pregnant
+    datatype: yesnoradio
+  - note: |
+      ${users[0].pregnant_notice}
+    show if:
+      variable: users[0].pregnant
+      is: True
 ---
 id: users[0].marriage_number
 question: |
@@ -877,9 +984,30 @@ id: other_parties[0].gender
 sets: other_parties[0].gender
 question: |
   What is your spouse's gender?
+subquestion: |
+  ${collapse_template(other_parties[0].gender_explanation_template)}
 fields:
-  - code: |
-      other_parties[0].gender_fields(show_help=True)
+  - label: Gender
+    field: other_parties[0].gender
+    input type: radio
+    choices:
+      - Female: female
+      - Male: male
+---
+id: other_parties[0].pregnant
+question: |
+  Pregnancy
+subquestion: |
+  ${collapse_template(other_parties[0].pregnant_explanation_template)}
+fields:
+  - label: Is your spouse pregnant?
+    field: other_parties[0].pregnant
+    datatype: yesnoradio
+  - note: |
+      ${other_parties[0].pregnant_notice}
+    show if:
+      variable: other_parties[0].pregnant
+      is: True
 ---
 id: other_parties[0].marriage_number
 question: |
@@ -1131,17 +1259,6 @@ fields:
   - label: Did you and your spouse acquire personal property during the marriage?
     field: marriage.personal_property_acquired
     datatype: yesnoradio
-validation code: |
-  if not marriage.attr(
-    "personal_property_acquired"
-  ):
-    invalidate(
-      "marriage.personal_property_division_agreement",
-      "marriage.personal_property_division_actual",
-    )
-    marriage.accounts.reset_gathered()
-    marriage.other_pp.reset_gathered()
-    marriage.mobile_home.reset_gathered()
 ---
 id: marriage.personal_property
 question: |
@@ -1157,14 +1274,6 @@ fields:
     field: marriage.personal_property_division_actual
     datatype: yesnoradio
     show if: marriage.personal_property_division_agreement
-validation code: |
-  if (
-    not marriage.attr("personal_property_division_agreement")
-    or not marriage.attr("personal_property_division_actual")
-  ):
-    marriage.accounts.reset_gathered()
-    marriage.other_pp.reset_gathered()
-    marriage.mobile_home.reset_gathered()
 ---
 # --------------------------------------------------------------------
 ## marriage.accounts
@@ -1355,9 +1464,13 @@ objects:
       question_text="Debts",
       noun_sl="debt",
       noun_pl="debts",
-      there_are_any=True,
       complete_attribute="complete",
       )
+---
+# this list's there_are_any is determined by interview_order
+# re-sets True after review_full recomputes x.gathered_reset
+code: |
+  marriage.debts.there_are_any = True
 ---
 code: |
   marriage.debts[i].kind
@@ -1482,9 +1595,13 @@ objects:
       question_text="Vehicles",
       noun_sl="vehicle",
       noun_pl="vehicles",
-      there_are_any=True,
       complete_attribute="complete",
       )
+---
+# this list's there_are_any is determined by interview_order
+# re-sets True after review_full recomputes x.gathered_reset
+code: |
+  marriage.vehicles.there_are_any = True
 ---
 code: |
   marriage.vehicles[i].year
