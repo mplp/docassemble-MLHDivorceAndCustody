@@ -179,19 +179,19 @@ code: |
       marriage.mobile_home.gather()
 
   marriage.debts
-  marriage.debts_info
-  if marriage.debts_any:
-    if not marriage.debts_pay_own_names:
-      marriage.debts_not_pay_own_names_agreement
-    if marriage.debts_in_both_names:
-      marriage.debts_not_pay_both_names_agreement
-    if not marriage.debts_pay_own_names or marriage.debts_in_both_names:
+  marriage.debts.info
+  if marriage.debts.any:
+    if not marriage.debts.pay_debts_in_own_names:
+      marriage.debts.agree_responsibility_debts_own_name
+    if marriage.debts.any_in_both_names:
+      marriage.debts.agree_responsibility_debts_both_names
+    if not marriage.debts.pay_debts_in_own_names or marriage.debts.any_in_both_names:
       marriage.debts.gather()
 
   marriage.vehicles
-  marriage.vehicles_info
-  if marriage.vehicles_any:
-    if not marriage.vehicles_keep_own:
+  marriage.vehicles.info
+  if marriage.vehicles.any:
+    if not marriage.vehicles.keep_own:
       marriage.vehicles.gather()
 
   marriage.real_property.gather()
@@ -280,7 +280,7 @@ code: |
 generic object: DAList
 id: x.there_is_another
 question: |
-  ${x.question}
+  ${x.question_text}
 fields:
   - label: Do you want to include any ${x.noun_pl}?
     field: x.there_are_any
@@ -289,7 +289,7 @@ fields:
 generic object: DAList
 id: x.there_is_another
 question: |
-  ${x.question}
+  ${x.question_text}
 subquestion: |
   ${x.there_is_another_template}
 
@@ -309,7 +309,7 @@ content: |
   ${x.table.show(editable=False)}
 ---
 generic object: DAList
-template: x.question_table_template
+template: x.question_text_table_template
 content: |
   % if x.number_gathered() > 1:
   ${collapse_template(x.collapsed_table_template)}
@@ -1131,6 +1131,17 @@ fields:
   - label: Did you and your spouse acquire personal property during the marriage?
     field: marriage.personal_property_acquired
     datatype: yesnoradio
+validation code: |
+  if not marriage.attr(
+    "personal_property_acquired"
+  ):
+    invalidate(
+      "marriage.personal_property_division_agreement",
+      "marriage.personal_property_division_actual",
+    )
+    marriage.accounts.reset_gathered()
+    marriage.other_pp.reset_gathered()
+    marriage.mobile_home.reset_gathered()
 ---
 id: marriage.personal_property
 question: |
@@ -1146,6 +1157,14 @@ fields:
     field: marriage.personal_property_division_actual
     datatype: yesnoradio
     show if: marriage.personal_property_division_agreement
+validation code: |
+  if (
+    not marriage.attr("personal_property_division_agreement")
+    or not marriage.attr("personal_property_division_actual")
+  ):
+    marriage.accounts.reset_gathered()
+    marriage.other_pp.reset_gathered()
+    marriage.mobile_home.reset_gathered()
 ---
 # --------------------------------------------------------------------
 ## marriage.accounts
@@ -1153,7 +1172,7 @@ fields:
 ---
 objects:
   - marriage.accounts: ALAssetList.using(
-      question="Bank Accounts (Cash) and Investments",
+      question_text="Bank Accounts (Cash) and Investments",
       noun_sl="account or investment",
       noun_pl="accounts or investments",
       complete_attribute="complete",
@@ -1183,9 +1202,9 @@ confirm: True
 ---
 id: marriage.accounts[i]
 question: |
-  ${marriage.accounts.question}
+  ${marriage.accounts.question_text}
 subquestion: |
-  ${marriage.accounts.question_table_template}
+  ${marriage.accounts.question_text_table_template}
 
   Do **NOT** include account numbers.
 fields:
@@ -1221,7 +1240,7 @@ content: |
 ---
 objects:
   - marriage.other_pp: ALAssetList.using(
-      question="Other Personal Property",
+      question_text="Other Personal Property",
       noun_sl="piece of property",
       noun_pl="pieces of property",
       complete_attribute="complete",
@@ -1248,9 +1267,9 @@ confirm: True
 ---
 id: marriage.other_pp[i]
 question: |
-  ${marriage.other_pp.question}
+  ${marriage.other_pp.question_text}
 subquestion: |
-  ${marriage.other_pp.question_table_template}
+  ${marriage.other_pp.question_text_table_template}
 
   Select the type of property. Describe the item and select who it should be awarded to.
 fields:
@@ -1282,7 +1301,7 @@ content: |
 ---
 objects:
   - marriage.mobile_home: ALAssetList.using(
-      question="Mobile homes",
+      question_text="Mobile homes",
       noun_sl="mobile home",
       noun_pl="mobile homes",
       complete_attribute="complete",
@@ -1309,9 +1328,9 @@ confirm: True
 ---
 id: marriage.mobile_home
 question: |
-  ${marriage.mobile_home.question}
+  ${marriage.mobile_home.question_text}
 subquestion: |
-  ${marriage.mobile_home.question_table_template}
+  ${marriage.mobile_home.question_text_table_template}
 fields:
   - label: VIN
     field: marriage.mobile_home[i].kind
@@ -1333,7 +1352,7 @@ content: ""
 ---
 objects:
   - marriage.debts: ALAssetList.using(
-      question="Debts",
+      question_text="Debts",
       noun_sl="debt",
       noun_pl="debts",
       there_are_any=True,
@@ -1362,62 +1381,62 @@ edit:
 delete buttons: True
 confirm: True
 ---
-id: marriage.debts_info
+id: marriage.debts.info
 question: |
-  ${marriage.debts.question}
+  ${marriage.debts.question_text}
 subquestion: |
   The judge assigned to your divorce case will not have any authority over your creditors (those whom you owe money). Your Judgment of Divorce may divide your marital debt, assigning you or your spouse responsibility for paying each debt. However, creditors may continue to treat debts in both of your names as joint debt. If your spouse defaults on a debt that the Judgment of Divorce requires him or her to pay, you can return to the family court to seek repayment from him or her.
 
   It is important for all debts that are in both of your names to be included in your Judgment of Divorce. That way, if the person who your divorce assigns responsibility for paying the debt defaults, the other party has a remedy in family court.
-continue button field: marriage.debts_info
+continue button field: marriage.debts.info
 ---
-id: marriage.debts_any
+id: marriage.debts.any
 question: |
-  ${marriage.debts.question}
+  ${marriage.debts.question_text}
 fields:
   - label: Do you or your spouse have any debts, either in your own names or together?
-    field: marriage.debts_any
+    field: marriage.debts.any
     datatype: yesnoradio
 ---
-id: marriage.debts_pay_own_names
+id: marriage.debts.pay_debts_in_own_names
 question: |
-  ${marriage.debts.question}
+  ${marriage.debts.question_text}
 fields:
   - label: Do you and your spouse each plan to pay the debts in your own names?
-    field: marriage.debts_pay_own_names
+    field: marriage.debts.pay_debts_in_own_names
     datatype: yesnoradio
 ---
-id: marriage.debts_not_pay_own_names_agreement
+id: marriage.debts.agree_responsibility_debts_own_name
 question: |
-  ${marriage.debts.question}
+  ${marriage.debts.question_text}
 fields:
   - label: Do you and your spouse agree on who will be responsible for these debts?
-    field: marriage.debts_not_pay_own_names_agreement
+    field: marriage.debts.agree_responsibility_debts_own_name
     datatype: yesnoradio
 ---
-id: marriage.debts_in_both_names
+id: marriage.debts.any_in_both_names
 question: |
-  ${marriage.debts.question}
+  ${marriage.debts.question_text}
 fields:
   - label: Do you and your spouse have any debts that are in **both** of your names?
-    field: marriage.debts_in_both_names
+    field: marriage.debts.any_in_both_names
     datatype: yesnoradio
 ---
-id: marriage.debts_not_pay_both_names_agreement
+id: marriage.debts.agree_responsibility_debts_both_names
 question: |
-  ${marriage.debts.question}
+  ${marriage.debts.question_text}
 fields:
   - label: Do you and your spouse agree on who will be responsible for these debts?
-    field: marriage.debts_not_pay_both_names_agreement
+    field: marriage.debts.agree_responsibility_debts_both_names
     datatype: yesnoradio
 ---
 id: marriage.debts[i]
 question: |
-  ${marriage.debts.question}
+  ${marriage.debts.question_text}
 subquestion: |
   ${marriage.debts.there_is_another_template}
 
-  ${marriage.debts.question_table_template}
+  ${marriage.debts.question_text_table_template}
 
   Do **NOT** include credit card numbers or any other identifying number associated with a debt.
 fields:
@@ -1446,12 +1465,12 @@ fields:
 ---
 template: marriage.debts.there_is_another_template
 content: |
-  % if not marriage.debts_pay_own_names:
-  List each debt that is currently in one spouse's name, but that the other spouse **${"will" if marriage.attr("debts_not_pay_own_names_agreement") else "should"}** be responsible for.
+  % if not marriage.debts.pay_debts_in_own_names:
+  List each debt that is currently in one spouse's name, but that the other spouse **${"will" if marriage.attr("debts.agree_responsibility_debts_own_name") else "should"}** be responsible for.
   % endif
 
-  % if marriage.debts_in_both_names:
-  ${"Also, list" if not marriage.debts_pay_own_names else "List"}  each jointly held debt (debts in both of your names) that will be divided and indicate whether you or your spouse **${"will" if marriage.attr("debts_not_pay_both_names_agreement") else "should"}** be responsible for it.
+  % if marriage.debts.any_in_both_names:
+  ${"Also, list" if not marriage.debts.pay_debts_in_own_names else "List"}  each jointly held debt (debts in both of your names) that will be divided and indicate whether you or your spouse **${"will" if marriage.attr("debts.agree_responsibility_debts_both_names") else "should"}** be responsible for it.
   % endif
 ---
 # --------------------------------------------------------------------
@@ -1460,7 +1479,7 @@ content: |
 ---
 objects:
   - marriage.vehicles: ALAssetList.using(
-      question="Vehicles",
+      question_text="Vehicles",
       noun_sl="vehicle",
       noun_pl="vehicles",
       there_are_any=True,
@@ -1494,29 +1513,29 @@ edit:
 delete buttons: True
 confirm: True
 ---
-id: marriage.vehicles_info
+id: marriage.vehicles.info
 question: |
-  ${marriage.vehicles.question}
+  ${marriage.vehicles.question_text}
 subquestion: |
   Next you will be asked about vehicles. Vehicles include cars, boats, trailers, motorcycles, snowmobiles, and other motorized equipment titled to the owner. Mobile homes are vehicles, but do not include them here &mdash; you should have included mobile homes in the previous question about personal property.
 
   You will be asked for the Make and Model of each vehicle you own. Make refers to the name of the company that manufactured the vehicle. Examples of vehicle "makes" are Ford, General Motors, Chrysler, and Toyota. Model refers to the type of vehicle. Examples of "models" are Focus, Cutlass, Town and Country, and Highlander. If you are describing a vehicle other than a car, do your best to identify the vehicle using the Make and Model entries. For example, if you are listing a boat, you might say "Starcraft" for Make and "Starfish 226" for Model.
-continue button field: marriage.vehicles_info
+continue button field: marriage.vehicles.info
 ---
-id: marriage.vehicles_any
+id: marriage.vehicles.any
 question: |
-  ${marriage.vehicles.question}
+  ${marriage.vehicles.question_text}
 fields:
   - label: Do you and your spouse own any vehicles (car, boat, trailer, motorcycle, snowmobile, etc.)?
-    field: marriage.vehicles_any
+    field: marriage.vehicles.any
     datatype: yesnoradio
 ---
-id: marriage.vehicles_keep_own
+id: marriage.vehicles.keep_own
 question: |
-  ${marriage.vehicles.question}
+  ${marriage.vehicles.question_text}
 fields:
   - label: How do you want to divide your vehicles?
-    field: marriage.vehicles_keep_own
+    field: marriage.vehicles.keep_own
     input type: radio
     choices:
       - label: Each party will keep the vehicle(s) now in his or her possession and titled in <u>only</u> his or her name. The party keeping the vehicle(s) is fully responsible to pay any debt related to the vehicle(s). The other party will have no claim to any vehicle(s) in the other's name and possession.
@@ -1526,11 +1545,11 @@ fields:
 ---
 id: marriage.vehicles[i]
 question: |
-  ${marriage.vehicles.question}
+  ${marriage.vehicles.question_text}
 subquestion: |
   ${marriage.vehicles.there_is_another_template}
 
-  ${marriage.vehicles.question_table_template}
+  ${marriage.vehicles.question_text_table_template}
 fields:
   - label: Year
     field: marriage.vehicles[i].year
@@ -1570,7 +1589,7 @@ content: |
 ---
 objects:
   - marriage.real_property: ALAssetList.using(
-      question="Real property",
+      question_text="Real property",
       noun_sl="property",
       noun_pl="properties",
       complete_attribute="complete",
@@ -1602,7 +1621,7 @@ confirm: True
 ---
 id: marriage.real_property.there_are_any
 question: |
-  ${marriage.real_property.question}
+  ${marriage.real_property.question_text}
 subquestion: |
   Real property is real estate such as a house, a condo, or land.
 fields:
@@ -1620,7 +1639,7 @@ sets:
 question: |
   What is the address of the ${ordinal(i)} property?
 subquestion: |
-  ${marriage.real_property.question_table_template}
+  ${marriage.real_property.question_text_table_template}
 fields:
   - code: |
       marriage.real_property[i].address.address_fields(country_code=users[0].address.attr("country"), default_state=users[0].address.attr("state"), show_country=users[0].address.attr("country") != "US")
@@ -1629,7 +1648,7 @@ id: marriage.real_property
 question: |
   Describe the ${ordinal(i)} property
 subquestion: |
-  ${marriage.real_property.question_table_template}
+  ${marriage.real_property.question_text_table_template}
 fields:
   - label: Legal description
     field: marriage.real_property[i].desc
@@ -1642,7 +1661,7 @@ id: marriage.real_property
 question: |
   What should happen with the ${ordinal(i)} property?
 subquestion: |
-  ${marriage.real_property.question_table_template}
+  ${marriage.real_property.question_text_table_template}
 fields:
   - label: Do you and the ${op_ask_role.capitalize()} agree on what should happen with this property?
     field: marriage.real_property[i].agree
@@ -1849,32 +1868,55 @@ attachment:
           ${word("Does not have phone") if plaintiffs[0].no_phone_number else plaintiffs[0].phone_numbers()}
       - plaintiffs1_name: ${plaintiffs}
       - defendants1_name: ${defendants}
-      - spousal_support_none: No
+      - spousal_support_none: Yes
       - spousal_support_reserved: No
       - spousal_support_awarded: No
-      - personal_property_as_is: ${not marriage.personal_property_acquired or marriage.attr("personal_property_division_actual")}
-      - personal_property_in_addendum: ${marriage.personal_property_acquired and (not marriage.attr("personal_property_division_agreement") or not marriage.attr("personal_property_division_actual"))}
-      - debts_none: ${not marriage.debts_any}
-      - debts_pay_debts_in_own_name: ${marriage.attr("debts_pay_own_names")}
-      - debts_in_addendum: ${any((not marriage.attr("debts_not_pay_own_names_agreement"), marriage.attr("debts_in_both_names")))}
-      - vehicles_none: ${not marriage.vehicles_any}
-      - vehicles_keep_same: ${marriage.attr("vehicles_keep_own")}
-      - vehicles_in_addendum: ${not marriage.attr("vehicles_keep_own")}
+      - personal_property_as_is: |
+          ${not personal_property_in_addendum(marriage)}
+      - personal_property_in_addendum: |
+          ${personal_property_in_addendum(marriage)}
+      - debts_none: ${not debts_in_addendum(marriage)}
+      - debts_pay_debts_in_own_name: ${marriage.debts.any and marriage.attr("debts.pay_debts_in_own_names")}
+      - debts_in_addendum: ${debts_in_addendum(marriage)}
+      - vehicles_none: ${not marriage.vehicles.any}
+      - vehicles_keep_same: ${marriage.vehicles.any and marriage.attr("vehicles.keep_own")}
+      - vehicles_in_addendum: ${marriage.vehicles.any and not marriage.attr("vehicles.keep_own")}
       - real_property_none: ${not bool(marriage.real_property)}
       - real_property_in_addendum: ${bool(marriage.real_property)}
       - pensions_none: ${not marriage.have_pension_retirement}
-      - pensions_keep_own: ${marriage.attr("pension_retirement_accounts_keep_own")}
-      - pensions_in_addendum: ${not marriage.attr("pension_retirement_accounts_keep_own")}
+      - pensions_keep_own: ${marriage.have_pension_retirement and marriage.attr("pension_retirement_accounts_keep_own")}
+      - pensions_in_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
       - total_pages: ""
       - wants_name_change: ${users[0].new_last_name_yn}
       - name_change_plaintiff: ${plaintiffs[0].attr("new_last_name_yn")}
       - name_change_defendant: ${defendants[0].attr("new_last_name_yn")}
       - new_name: ${users[0].attr("new_last_name")}
-      - has_personal_property_debt_addendum: ${any((not marriage.attr("debts_not_pay_own_names_agreement"), marriage.attr("debts_in_both_names")))}
-      - has_vehicle_addendum: ${not marriage.attr("vehicles_keep_own")}
+      - has_personal_property_debt_addendum: ${personal_property_in_addendum(marriage) or debts_in_addendum(marriage)}
+      - has_vehicle_addendum: ${has_vehicle_addendum(marriage)}
       - has_real_property_addendum: ${bool(marriage.real_property)}
-      - pensions_none: ${not marriage.have_pension_retirement}
-      - has_pension_addendum: ""
+      - has_pension_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
       - has_other_provisions: ${marriage.other_provisions_any}
       - other_provisions: ${marriage.attr("other_provisions")}
+---
+code: |
+  def personal_property_in_addendum(marriage: DAObject) -> bool:
+    return marriage.personal_property_acquired and (
+      not marriage.attr("personal_property_division_agreement")
+      or not marriage.attr("personal_property_division_actual")
+    )
+---
+code: |
+  def debts_in_addendum(marriage: DAObject) -> bool:
+    return marriage.debts.any and (
+      not marriage.attr("debts.agree_responsibility_debts_own_name")
+      or marriage.attr("debts.any_in_both_names")
+    )
+---
+code: |
+  def has_vehicle_addendum(marriage: DAObject) -> bool:
+    return (
+      marriage.vehicles.any
+      and not marriage.attr("vehicles.keep_own")
+      and any(not item.agree for item in marriage.vehicles)
+    )
 ---

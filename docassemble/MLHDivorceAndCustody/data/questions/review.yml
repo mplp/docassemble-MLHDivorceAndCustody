@@ -249,7 +249,24 @@ review:
 #
   - raw html: |
       ${ next_accordion("""<h2 class="h5">Marriage Assets</h2>""") }
-    show if: marriage.accounts.revisit
+    show if: marriage.personal_property_info
+  - Edit:
+      - marriage.personal_property_acquired
+    button: |
+      ##### Did you and your spouse acquire personal property during the marriage?
+
+      - ${yesno(marriage.personal_property_acquired)}
+  - Edit:
+      - marriage.personal_property_division_agreement
+    button: |
+      ##### Have you and your spouse reached an agreement about how all personal property will be divided?
+
+      - ${yesno(marriage.personal_property_division_agreement)}
+      % if marriage.attr("personal_property_division_actual"):
+      ##### Have you and your spouse **actually divided** all the personal property based on your agreement?
+
+      - ${yesno(marriage.personal_property_division_actual)}
+      % endif
   - Edit:
       - marriage.accounts.revisit
     button: |
