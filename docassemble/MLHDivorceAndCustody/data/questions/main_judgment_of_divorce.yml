@@ -9,6 +9,7 @@ include:
 modules:
   - docassemble.ALToolbox.al_income
   - docassemble.ALToolbox.ThreePartsDate
+  - .jod_functions
 ---
 # TODO subtitle? & confirm description
 metadata:
@@ -26,7 +27,6 @@ features:
   labels above fields: True
   css: mlh-divorce-and-custody.css
 ---
-# TODO sections
 sections:
   - signpost_intro: "Introduction"
   - signpost_qualify: "Do you qualify?"
@@ -54,23 +54,25 @@ content: |
   <script>
   </script>
 ---
-# TODO confirm form type
 # set intro landing screen variables
 code: |
+  # TODO confirm form type
   MLH_form_type = "Judgment of Divorce"
   MLH_time_min = 15
   MLH_time_max = 45
+
+  # TODO need resource url & confirm page name
+  resource_page_url_only = "https://michiganlegalhelp.org/node/xxxx"
+  resource_page_name = "Judgment of Divorce"
+
+  # E-signature not supported for JOD Only
+  MLH_esign_supported = False
 ---
 template: MLH_welcome_message
 content: |
   Welcome to Michigan Legal Help's Do-It-Yourself ${MLH_form_type} tool.
 
   This tool will help you prepare forms to finish your divorce in Michigan. Use this tool if all you need is a Judgment of Divorce and the forms that go with it.
----
-# TODO need resource url & confirm page name
-code: |
-  resource_page_url_only = "https://michiganlegalhelp.org/node/xxxx"
-  resource_page_name = "Judgment of Divorce"
 ---
 # ====================================================================
 ## interview_order
@@ -867,6 +869,8 @@ fields:
     code: |
       countries_list()
     required: False
+validation code: |
+  validate_us_state(users[0].address)
 ---
 id: users[0].village_or_township
 question: |
@@ -923,7 +927,9 @@ fields:
     required: False
     show if: users[0].mailing_address.yesno
 validation code: |
-  if not users[0].mailing_address.yesno:
+  if users[0].mailing_address.yesno:
+    validate_us_state(users[0].mailing_address)
+  else:
     users[0].mailing_address.invalidate_attr("address")
     users[0].mailing_address.invalidate_attr("unit")
     users[0].mailing_address.invalidate_attr("city")
@@ -1077,6 +1083,8 @@ fields:
     code: |
       countries_list()
     required: False
+validation code: |
+  validate_us_state(other_parties[0].address)
 ---
 id: other_parties[0].village_or_township
 question: |
@@ -1133,7 +1141,9 @@ fields:
     required: False
     show if: other_parties[0].mailing_address.yesno
 validation code: |
-  if not other_parties[0].mailing_address.yesno:
+  if other_parties[0].mailing_address.yesno:
+    validate_us_state(other_parties[0].mailing_address)
+  else:
     other_parties[0].mailing_address.invalidate_attr("address")
     other_parties[0].mailing_address.invalidate_attr("unit")
     other_parties[0].mailing_address.invalidate_attr("city")
