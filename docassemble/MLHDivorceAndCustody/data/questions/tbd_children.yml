@@ -56,6 +56,10 @@ terms:
       - parenting time
     definition: |
       Sometimes called "visitation".
+  - phrases:
+      - minor
+    definition: |
+      A child is a minor if they are 17 years old or younger.
       
 ---
 table: children.table
@@ -82,6 +86,7 @@ confirm: True
 id: child questions
 mandatory: True # remove later
 code: |
+  children_intro
   children.gather()
   legal_custody_who
   if PT_type == "specific":
@@ -161,11 +166,43 @@ fields:
 #  else:
 #    pass
 ---
+id: children intro
+continue button field: children_intro
+question: Children
+subquestion: |
+  This tool will ask questions about {minor} children next.
+  
+  ${ collapse_template(minor_children_info) }
+
+  ${ collapse_template(adult_children_info) }
+---
+template: minor_children_info
+subject: |
+  More info on minor children and divorce
+content: |
+  If you and your spouse have any **minor children together**, your divorce must address custody, parenting time, and child support. 
+  
+  **Minor children of just one spouse** must also be listed in the divorce paperwork. However, the divorce will not cover their custody, parenting time, or child support.
+---
+template: adult_children_info
+subject: |
+  **Important**: children who are 18 to 19-and-a-half years old
+content: |
+  If you and your spouse have a **child between 18 years old and 19 years and 6 months**, it is possible to ask the court for child support if:
+
+  * The child is enrolled full time in high school,
+  * You reasonably expect the child to graduate, and
+  * The child lives with one parent full time.
+
+  If all of these things are true and you ask for child support, the judge may grant the request. It is not a guarantee. This can be complicated. If this is your child’s situation and you want to ask for child support, you may want to talk to a lawyer. ${MLH_GUIDE_FULL} 
+  
+  You can make your divorce forms using this tool, but the forms **will not** include a child support request for an adult child.
+---
 id: any children
 question: |
   Minor children
 fields:
-  - Do you or your spouse have any living minor children? This includes children you had together and children you had separately.: children.there_are_any
+  - Do you or your spouse have any living {minor} children? This includes children you had together and children you had separately.: children.there_are_any
     datatype: yesnoradio
 ---
 id: any more children
