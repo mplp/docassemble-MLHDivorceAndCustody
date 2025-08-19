@@ -171,32 +171,35 @@ continue button field: children_intro
 question: Children
 subquestion: |
   This tool will ask questions about {minor} children next.
-  
-  ${ collapse_template(minor_children_info) }
 
+  ${ collapse_template(minor_children_info) }
+  
+  Important! If you and your spouse have a child **between 18 years old and 19 years and 6 months,** you may also be able to ask for child support for that child, but this tool can’t help you with that.
+  
   ${ collapse_template(adult_children_info) }
+  
 ---
 template: minor_children_info
 subject: |
-  More info on minor children and divorce
+  More info about minor children and divorce
 content: |
   If you and your spouse have any **minor children together**, your divorce must address custody, parenting time, and child support. 
-  
+
   **Minor children of just one spouse** must also be listed in the divorce paperwork. However, the divorce will not cover their custody, parenting time, or child support.
 ---
 template: adult_children_info
 subject: |
-  **Important**: children who are 18 to 19-and-a-half years old
+  More info about children who are 18 to 19-and-a-half years old
 content: |
   If you and your spouse have a **child between 18 years old and 19 years and 6 months**, it is possible to ask the court for child support if:
 
   * The child is enrolled full time in high school,
-  * You reasonably expect the child to graduate, and
+  * You reasonably expect the child to graduate, **and**
   * The child lives with one parent full time.
 
-  If all of these things are true and you ask for child support, the judge may grant the request. It is not a guarantee. This can be complicated. If this is your child’s situation and you want to ask for child support, you may want to talk to a lawyer. ${MLH_GUIDE_FULL} 
+  If all of these things are true and you ask for child support, the judge **may** grant the request. It is not a guarantee. This can be complicated. If you want to ask for child support in this situation, you may want to talk to a lawyer. ${MLH_GUIDE_FULL} 
   
-  You can make your divorce forms using this tool, but the forms **will not** include a child support request for an adult child.
+  You can make your divorce forms using this tool, but the forms **will not** include a child support request for your adult child.
 ---
 id: any children
 question: |
