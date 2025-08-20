@@ -88,9 +88,17 @@ mandatory: True # remove later
 code: |
   children_intro
   children.gather()
-  legal_custody_who
-  if PT_type == "specific":
-    specific_PT_how
+  if children.there_are_any:
+    legal_custody_who
+    if PT_type == "specific" or PT_type == "supervised":
+      if county_choice == "Muskegon":
+        Muskegon_specific_PT_info
+      if county_choice != "Muskegon":
+        specific_PT_how
+      if county_choice == "Muskegon" or (county_choice != "Muskegon" and specific_PT_how == "custom"):
+        custom_PT_details
+    hague_convention_info
+    child_domicile_info
   test_end_screen
 ---
 code: |
@@ -174,7 +182,7 @@ subquestion: |
 
   ${ collapse_template(minor_children_info) }
   
-  Important! If you and your spouse have a child **between 18 years old and 19 years and 6 months,** you may also be able to ask for child support for that child, but this tool can’t help you with that.
+  Important! If you and your spouse have a child **between 18 years old and 19 years and 6 months,** you may be able to ask for child support for that child, but this tool can’t help you with that.
   
   ${ collapse_template(adult_children_info) }
   
@@ -774,10 +782,16 @@ fields:
       - Specific and supervised: supervised
     js show if: |
       val("PT_who") == "both" && val("physical_custody_who") != "both"
+  - label: "If you know the name of the person or agency you want to supervise parenting time, enter it here. If you don't know, leave this blank."
+    field: PT_supervisor
+    show if: 
+      variable: PT_type
+      is: supervised
+    required: False
   - note: |
       ${ collapse_template(custody_PT_definitions) }
 ---
-if: PT_type == "specific"
+if: (PT_type == "specific" or PT_type == "supervised") and county_choice != "Muskegon"
 id: specific parenting time options
 question: |
   Specific Parenting Time Schedules
@@ -790,12 +804,8 @@ subquestion: |
 
   You may also be able to get a sample schedule from your county's Friend of the Court (FOC) office. Check their website or ask the Friend of the Court how to get one. 
   
-  Another option is to use a sample schedule from Michigan Legal Help:
-
-  ${ collapse_template(MLH_sample_schedules) }
-
   % if not user_logged_in():
-  If you need time to pick a schedule, please create an account and sign in to save your answers for later.
+  If you need time to come up with a schedule, please create an account and sign in to save your answers for later.
   % endif
   
 fields:
@@ -803,32 +813,24 @@ fields:
     datatype: radio
     choices:
       - Write my own: custom
-      - "Use a sample schedule from my county’s Friend of the Court office (If you choose this option, you can either find the schedule on your court website or ask the Friend of the Court how you can get one).": FOC_sample
-      - "Use a [sample schedule](link) from Michigan Legal Help (click the link above to view these)": MLH_sample
-  - Which Michigan Legal Help [sample schedule](link) would you like to use?: MLH_PT_selection
-    datatype: radio
-    choices: 
-      - Schedule A - Joint Physical Custody: schedule_A
-      - Schedule B - School-Age Children: schedule_B
-      - Schedule C - Children Not Yet in School: schedule_c
-      - Schedule D - Long Distance Policy: schedule_d
-    show if:
-      variable: specific_PT_how
-      is: MLH_sample
----
-template: MLH_sample_schedules
-subject: |
-  Tap here for Michigan Legal Help's sample schedules.
-content: |
-  Tap any of the links below to download a PDF showing that sample parenting time schedule. 
+      - "Use a sample schedule from my county’s Friend of the Court office (If you choose this option, you can either find the schedule on your court website or ask the Friend of the Court how to get one).": FOC_sample
 
-  Schedule A - Joint Physical Custody
-  
-  Schedule B - School-Age Children
-  
-  Schedule C - Children Not Yet in School
-  
-  Schedule D - Long Distance Policy
+---
+if: (PT_type == "specific" or PT_type == "supervised") and county_choice == "Muskegon"
+id: specific parenting time info
+continue button field: Muskegon_specific_PT_info
+question: |
+  Specific Parenting Time Schedules
+subquestion: | 
+  You will need a specific parenting time schedule. If you are able to work with the other parent, you may want to come up with the schedule together.
+
+  The [Michigan Parenting Time Guideline](https://www.courts.michigan.gov/4a537f/siteassets/court-administration/standardsguidelines/foc/pt_gdlns.pdf), created by the Friend of the Court Bureau, is a helpful resource for putting together a parenting time schedule. We recommend that you **review the Guideline before** creating a custom parenting time schedule for your family. 
+
+  ${ collapse_template(MI_PT_guideline_info) }
+
+  % if not user_logged_in():
+  If you need time to come up with a schedule, please create an account and sign in to save your answers for later.
+  % endif
 ---
 template: MI_PT_guideline_info
 subject: |
@@ -892,6 +894,69 @@ content: |
 
   **Specific and supervised**: If a judge orders “specific and supervised” parenting time, all of the dates, times, and conditions for visits are included in the court order. The judge will order parenting time to be supervised by a third party – such as a relative, friend, or supervised parenting time center. Supervised parenting time may be appropriate if the {noncustodial parent} is a risk to the children. The supervisor must be willing to supervise parenting time.
 
+---
+id: custom parenting time schedule
+if: county_choice == "Muskegon" or (county_choice != "Muskegon" and specific_PT_how == "custom")
+question: Parenting Time Schedule
+subquestion: |
+  What parenting time schedule do you want the judge to order?
+  
+   - Write in complete sentences and include all important details, including days and times.
+   - Refer to yourself and your spouse by your full names, or as Plaintiff and Defendant.
+   - Do **not** use words like “I”, “we”, “him”, or “her”.
+
+  Review the [Michigan Parenting Time Guideline](https://www.courts.michigan.gov/4a537f/siteassets/court-administration/standardsguidelines/foc/pt_gdlns.pdf) for help creating a schedule that fits your family’s needs. 
+fields:
+  - label: "Your parenting time schedule:"
+    field: custom_PT_details
+    input type: area
+    rows: 10
+---
+id: Hague Convention warning
+continue button field: hague_convention_info
+question: Parenting Time in a Foreign Country and the Hague Convention
+subquestion: |
+  The Hague Convention is a treaty that helps parents get a kidnapped child back from other countries that have agreed to the treaty. [Countries that are treaty partners](https://travel.state.gov/content/travel/en/International-Parental-Child-Abduction/abductions/hague-abduction-country-list.html) have agreed to return a child who has been taken to or kept in another Hague country in violation of a parent's custodial rights.
+
+  An abducted child is returned to where the child was a **habitual resident.** This means the country where the child has been living. It doesn’t necessarily mean the country where the child or the child’s parents are citizens. After the child is returned to the country of habitual residence, custody decisions are made in the courts there. The Hague Convention does not decide who should have custody of the child. It only decides where the custody case will happen.
+
+  It can be much harder to return a kidnapped child from a country that has not signed on to the Hague Convention. Because of this, Michigan law requires your Judgment of Divorce to include a paragraph that prevents parenting time in a non-Hague Convention country. The Judgment includes a place where you and your spouse can agree to allow parenting time in a specific country that is not a Hague Convention country, but you cannot do this using this tool.
+
+  The Hague Convention is complicated, and it is an important tool for a parent whose spouse abducts their child and keeps the child in another country. If you want your spouse to have parenting time in a country that is **not** a party to the Hague Convention, you may want to consider talking to a lawyer to make sure you understand the risks involved.
+
+---
+id: generic domicile provisions
+continue button field: child_domicile_info
+question: Domicile and Residence of Minor Children 
+subquestion: |
+  If your Judgment of Divorce has custody provisions, the following will apply:
+
+  % if len(children.complete_elements()) > 1
+  * If you have sole or joint physical custody of your children and you move, you must give the Friend of the Court the child’s new address in writing.
+  * The minor children may not be moved from the state of Michigan without the judge’s prior approval. Even if you and your spouse agree that the children can move out of state, you must get a court order first.
+  * Neither you nor your spouse may move more than 100 miles away from where you lived at the beginning of the case (within Michigan) except in certain situations. This is referred to as the “100-mile rule.” **If one parent is granted sole legal custody of the minor children, the 100-mile rule will not apply.**
+  % else:
+  * If you have sole or joint physical custody of your child and you move, you must give the Friend of the Court the child’s new address in writing.
+  * The minor child may not be moved from the state of Michigan without the judge’s prior approval. Even if you and your spouse agree that the child can move out of state, you must get a court order first.
+  * Neither you nor your spouse may move more than 100 miles away from where you lived at the beginning of the case (within Michigan) except in certain situations. This is referred to as the “100-mile rule.” **If one parent is granted sole legal custody of the minor child, the 100-mile rule will not apply.**
+  % endif
+
+---
+# we'll show this if legal custody is joint I think?
+id: 100 mile rule
+continue button field: 100_mile_rule
+question: 100-Mile Rule
+fields:
+  - Do you and your spouse currently live more than 100 miles away from each other?: currently_over_100_miles
+    datatype: yesnoradio
+  - "Do you and your spouse agree that either of you may move more than 100 miles from where you currently live, as long as you still live within the state of Michigan?": allow_over_100_miles
+    datatype: yesnoradio
+    show if:
+      variable: currently_over_100_miles
+      is: False
+
+  
+  
 ######## end custody questions ########
 
 ---
