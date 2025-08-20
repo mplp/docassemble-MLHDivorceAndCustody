@@ -279,7 +279,6 @@ review:
   - Edit:
       - marriage.personal_property_acquired
       - invalidate:
-        - marriage.debts.pay_debts_in_own_names
         - marriage.personal_property_division_agreement
         - marriage.personal_property_division_actual
       - recompute:

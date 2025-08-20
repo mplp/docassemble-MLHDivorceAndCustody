@@ -2040,6 +2040,9 @@ attachment:
       - has_other_provisions: ${marriage.other_provisions_any}
       - other_provisions: ${marriage.attr("other_provisions")}
 ---
+# The following functions are here so that the logic can be kept consistent,
+# since these logical checks are used in multiple fields of the document.
+---
 code: |
   def personal_property_in_addendum(marriage: DAObject) -> bool:
     return marriage.personal_property_acquired and (
