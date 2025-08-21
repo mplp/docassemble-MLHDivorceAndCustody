@@ -4,7 +4,7 @@ code: |
 ---
 # example interview tag for testing
 code: |
-  divorce_custody_interview_ID = "JOD_only"
+  divorce_custody_tool_ID = "JOD_only"
 ---
 ### need the stuff in this section (copied from main yml) here for now to run just this yml
 generic object: DAList
@@ -83,22 +83,29 @@ edit:
 delete buttons: True
 confirm: True
 ---
+# trying using filter() method from https://docassemble.org/docs/objects.html
+# if not, try using list comprehension something like "[child for child in children if child.legal_parent=="both"]"
 id: child questions
 mandatory: True # remove later
 code: |
   children_intro
   children.gather()
   if children.there_are_any:
-    legal_custody_who
-    if PT_type == "specific" or PT_type == "supervised":
-      if county_choice == "Muskegon":
-        Muskegon_specific_PT_info
-      if county_choice != "Muskegon":
-        specific_PT_how
-      if county_choice == "Muskegon" or (county_choice != "Muskegon" and specific_PT_how == "custom"):
-        custom_PT_details
-    hague_convention_info
-    child_domicile_info
+    if len(children.filter(legal_parent="both")) > 0:
+      legal_custody_who
+      if PT_type == "specific" or PT_type == "supervised":
+        if county_choice == "Muskegon":
+          Muskegon_specific_PT_info
+        if county_choice != "Muskegon":
+          specific_PT_how
+        if county_choice == "Muskegon" or (county_choice != "Muskegon" and specific_PT_how == "custom"):
+          custom_PT_details
+      hague_convention_info
+      child_domicile_info
+      if legal_custody_who != "both":
+        hundred_mile_rule
+      child_support_basic
+
   test_end_screen
 ---
 code: |
@@ -209,18 +216,41 @@ content: |
   
   You can make your divorce forms using this tool, but the forms **will not** include a child support request for your adult child.
 ---
-id: any children
+if: divorce_custody_tool_ID == "divorce_complaint"
+id: any children divorce complaint
 question: |
   Minor children
+subquestion: |
+  This includes stepchildren and children of just one of you.
 fields:
   - Do you or your spouse have any living {minor} children? This includes children you had together and children you had separately.: children.there_are_any
+    datatype: yesnoradio
+---
+if: divorce_custody_tool_ID == "JOD_only"
+id: any children JOD-only
+question: |
+  Minor children
+subquestion: |
+  Answer yes if there are:
+  
+  * any minor children who have you and your spouse as legal parents, or
+  * any minor children of either spouse, and you're not sure who their legal parents are.
+fields:
+  - Do you and your spouse have any living {minor} children?: children.there_are_any
     datatype: yesnoradio
 ---
 id: any more children
 question: |
   Any more children?
 subquestion: |
+  % if divorce_custody_tool_ID == "divorce_complaint":
   Please list **all minor children** that you or your spouse have, either separately or together.
+  % elif divorce_custody_tool_ID == "JOD_only":
+  Please include:
+
+  * all minor children who have you and your spouse as legal parents, and
+  * all minor children of either spouse, if you're not sure who their legal parents are.
+  % endif
   
   You have already told us about:
 
@@ -773,7 +803,7 @@ fields:
       - Reasonable: reasonable
       - Specific: specific
     js show if: |
-      val("PT_who") == "both" && val("physical_custody_who") == "both"
+      val("PT_who") == "both" || val("physical_custody_who") == "both"
   - What type of parenting time do you believe is appropriate?: PT_type
     datatype: radio
     choices:
@@ -842,7 +872,7 @@ template: custody_PT_guidance
 subject: |
   How to answer the custody and parenting time questions:
 content: |
-  % if divorce_custody_interview_ID == "JOD_only":
+  % if divorce_custody_tool_ID == "JOD_only":
   
   1. If the **judge issued temporary orders** for custody or {parenting time}, you should match the judge's orders.
   
@@ -850,7 +880,7 @@ content: |
       * if you and your spouse **agree** on a question, use your agreed answer.
       * if you and your spouse **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
   
-  % elif divorce_custody_interview_ID == "divorce_complaint":
+  % elif divorce_custody_tool_ID == "divorce_complaint":
   * If you and your spouse **agree** on a question, use your agreed answer.
   * If you and your spouse **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
 
@@ -925,16 +955,17 @@ subquestion: |
   The Hague Convention is complicated, and it is an important tool for a parent whose spouse abducts their child and keeps the child in another country. If you want your spouse to have parenting time in a country that is **not** a party to the Hague Convention, you may want to consider talking to a lawyer to make sure you understand the risks involved.
 
 ---
+# LHI Domicile and Residence of Minor Children Part 1
 id: generic domicile provisions
 continue button field: child_domicile_info
 question: Domicile and Residence of Minor Children 
 subquestion: |
   If your Judgment of Divorce has custody provisions, the following will apply:
 
-  % if len(children.complete_elements()) > 1
+  % if len(children.complete_elements()) > 1:
   * If you have sole or joint physical custody of your children and you move, you must give the Friend of the Court the child’s new address in writing.
   * The minor children may not be moved from the state of Michigan without the judge’s prior approval. Even if you and your spouse agree that the children can move out of state, you must get a court order first.
-  * Neither you nor your spouse may move more than 100 miles away from where you lived at the beginning of the case (within Michigan) except in certain situations. This is referred to as the “100-mile rule.” **If one parent is granted sole legal custody of the minor children, the 100-mile rule will not apply.**
+  * Neither you nor your spouse may move more than 100 miles away from where you lived at the beginning of the case (within Michigan) except in certain situations. This is called the “100-mile rule.” **If one parent is granted sole legal custody of the minor children, the 100-mile rule will not apply.**
   % else:
   * If you have sole or joint physical custody of your child and you move, you must give the Friend of the Court the child’s new address in writing.
   * The minor child may not be moved from the state of Michigan without the judge’s prior approval. Even if you and your spouse agree that the child can move out of state, you must get a court order first.
@@ -942,23 +973,70 @@ subquestion: |
   % endif
 
 ---
-# we'll show this if legal custody is joint I think?
+# LHI Domicile and Residence of Minor Children Part 2
 id: 100 mile rule
-continue button field: 100_mile_rule
+continue button field: hundred_mile_rule
 question: 100-Mile Rule
 fields:
-  - Do you and your spouse currently live more than 100 miles away from each other?: currently_over_100_miles
+  - Do you and your spouse currently live more than 100 miles away from each other?: already_over_100_miles
     datatype: yesnoradio
+  - note: |
+      **The 100-mile rule will not apply in your case** because you and your spouse live more than 100 miles away from each other at the start of your divorce case. 
+    show if:
+      variable: already_over_100_miles
+      is: True
   - "Do you and your spouse agree that either of you may move more than 100 miles from where you currently live, as long as you still live within the state of Michigan?": allow_over_100_miles
     datatype: yesnoradio
     show if:
-      variable: currently_over_100_miles
+      variable: already_over_100_miles
       is: False
+  - note: |
+      **The 100-mile rule will not apply in your case** if you and your spouse agree that it will not apply. 
+    show if:
+      variable: allow_over_100_miles
+      is: True
+  - note: |
+      According to your answers, the minor child will have a legal residence with each parent, (meaning you and your spouse will be granted joint legal custody), and **the 100-mile rule will apply in your case.** 
+      
+      Your Judgment of Divorce will state that “neither party shall move more than 100 miles away from where he or she lived at the beginning of this case, and the child has a legal residence with each parent. For more information, read [Moving with Children After Separation or Divorce](https://michiganlegalhelp.org/resources/family/moving-children-after-separation-or-divorce).
+    show if:
+      variable: allow_over_100_miles
+      is: False
+---
+# LHI Child Support
+id: child support basic info
+continue button field: child_support_basic
+question: Child Support
+subquestion: |
+  % if divorce_custody_tool_ID == "divorce_complaint":
+  Your Complaint for Divorce will ask the judge to order child support. 
+  % endif
+  Michigan law requires judges to order child support based on the Michigan Child Support Formula. In many counties, the Friend of the Court will calculate child support for you. The amount of child support is based on the income of each parent, the number of overnights that each parent has with the child, and a number of other factors. You can use the [MiChildSupport Calculator](https://micase.state.mi.us/calculatorapp/public/welcome/load.html) on the Michigan Department of Health and Human Services website to find out what the support amount might be in your case.
 
+  In some situations, the judge can order support that is less than what is required by the Michigan Child Support Formula, or order no child support at all—but this is uncommon. If you think there is a reason to have less child support than required by the Formula or none at all, you may want to contact a lawyer. ${MLH_GUIDE_FULL} 
   
-  
+  To learn more about child support, read [Child Support in a Nutshell](https://michiganlegalhelp.org/resources/family/child-support-nutshell).
+---
+# LHI Child Support Part 2
+# note: include in divorce complaint but not JOD-only
+# id: . . .
+
+---
+# LHI Prior Court Cases Part 1
+# need to build
+---
+# LHI Prior Family cases DLG
+# need to build
+
+---
+# LHI 
+#insurance flow, pull in insurance setup from main interview
+
 ######## end custody questions ########
 
+---
+# LHI Income Taxes
+# need to build
 ---
 event: test_end_screen
 question: Thank you for testing!
