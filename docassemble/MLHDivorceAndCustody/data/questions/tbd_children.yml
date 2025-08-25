@@ -4,7 +4,16 @@ code: |
 ---
 # example interview tag for testing
 code: |
-  divorce_custody_tool_ID = "JOD_only"
+  tool_ID = "JOD_only"
+# other options = "divorce_complaint", "divorce_answer", "custody_complaint", "custody_answer"
+---
+code: |
+  if tool_ID == "JOD_only" or tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+    OP_label = "your spouse"
+  elif user_ask_role == "plaintiff":
+    OP_label = "the defendant"
+  elif user_ask_role == "defendant":
+    OP_label = "the plaintiff"
 ---
 ### need the stuff in this section (copied from main yml) here for now to run just this yml
 generic object: DAList
@@ -28,6 +37,7 @@ include:
   - docassemble.AssemblyLine:assembly_line.yml
   - docassemble.ALToolbox:collapse_template.yml
   - docassemble.mlhframework:mlh_interview_framework.yml
+  - question_bank.yml
 ---
 code: |
   github_repo_name = 'docassemble-MLHDivorceAndCustody'
@@ -90,8 +100,7 @@ mandatory: True # remove later
 code: |
   children_intro
   children.gather()
-  if children.there_are_any:
-    if len(children.filter(legal_parent="both")) > 0:
+  if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
       legal_custody_who
       if PT_type == "specific" or PT_type == "supervised":
         if county_choice == "Muskegon":
@@ -105,6 +114,11 @@ code: |
       if legal_custody_who != "both":
         hundred_mile_rule
       child_support_basic
+  
+  if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
+    users[0].has_health_coverage
+  else:
+    marriage.health_coverage  
 
   test_end_screen
 ---
@@ -216,7 +230,7 @@ content: |
   
   You can make your divorce forms using this tool, but the forms **will not** include a child support request for your adult child.
 ---
-if: divorce_custody_tool_ID == "divorce_complaint"
+if: tool_ID == "divorce_complaint"
 id: any children divorce complaint
 question: |
   Minor children
@@ -226,7 +240,7 @@ fields:
   - Do you or your spouse have any living {minor} children? This includes children you had together and children you had separately.: children.there_are_any
     datatype: yesnoradio
 ---
-if: divorce_custody_tool_ID == "JOD_only"
+if: tool_ID == "JOD_only"
 id: any children JOD-only
 question: |
   Minor children
@@ -243,9 +257,9 @@ id: any more children
 question: |
   Any more children?
 subquestion: |
-  % if divorce_custody_tool_ID == "divorce_complaint":
+  % if tool_ID == "divorce_complaint":
   Please list **all minor children** that you or your spouse have, either separately or together.
-  % elif divorce_custody_tool_ID == "JOD_only":
+  % elif tool_ID == "JOD_only":
   Please include:
 
   * all minor children who have you and your spouse as legal parents, and
@@ -872,7 +886,7 @@ template: custody_PT_guidance
 subject: |
   How to answer the custody and parenting time questions:
 content: |
-  % if divorce_custody_tool_ID == "JOD_only":
+  % if tool_ID == "JOD_only":
   
   1. If the **judge issued temporary orders** for custody or {parenting time}, you should match the judge's orders.
   
@@ -880,7 +894,7 @@ content: |
       * if you and your spouse **agree** on a question, use your agreed answer.
       * if you and your spouse **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
   
-  % elif divorce_custody_tool_ID == "divorce_complaint":
+  % elif tool_ID == "divorce_complaint":
   * If you and your spouse **agree** on a question, use your agreed answer.
   * If you and your spouse **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
 
@@ -1008,7 +1022,7 @@ id: child support basic info
 continue button field: child_support_basic
 question: Child Support
 subquestion: |
-  % if divorce_custody_tool_ID == "divorce_complaint":
+  % if tool_ID == "divorce_complaint":
   Your Complaint for Divorce will ask the judge to order child support. 
   % endif
   Michigan law requires judges to order child support based on the Michigan Child Support Formula. In many counties, the Friend of the Court will calculate child support for you. The amount of child support is based on the income of each parent, the number of overnights that each parent has with the child, and a number of other factors. You can use the [MiChildSupport Calculator](https://micase.state.mi.us/calculatorapp/public/welcome/load.html) on the Michigan Department of Health and Human Services website to find out what the support amount might be in your case.
@@ -1051,18 +1065,47 @@ content:
 id: prior court cases
 question: Past court cases
 fields:
-  - Are there any prior custody or support orders in Michigan or any other state regarding comma_and_list(children.filter(legal_parent="both"), and_string='or')?
+  - "Are there any prior custody or support orders in Michigan or any other state regarding comma_and_list(children.filter(legal_parent='both'), and_string='or')?": prior_custody_orders
 # lots of confusing logic going on here, need to come back to this
 ---
 # LHI Prior Family cases DLG
 # need to build
 
 ---
-# LHI 
-#insurance flow, pull in insurance setup from main interview
-
 ######## end custody questions ########
-
+---
+# LHI 
+id: health_coverage (with children)
+question: |
+  Health coverage
+subquestion: |
+fields:
+  - label: |
+      Do you have your own health care coverage, either through an employer, Medicaid or Medicare, or privately? **Do not include health care coverage provided by ${ OP_label } or ${ OP_label }’s employer here.**
+    field: users[0].has_health_coverage
+    datatype: yesnoradio
+  - How many health care policies do you have?: users[0].how_many_health_policies
+    datatype: number
+    min: 0
+    # max: ?
+    show if: 
+      variable: users[0].has_health_coverage
+      is: True
+  - label: |
+      Does ${ OP_label } hold their own health care coverage, either through an employer, Medicaid or Medicare, or privately?"
+    field: other_parties[0].has_health_coverage
+    datatype: yesnoradio
+  - How many health care policies does ${ OP_label } have?: other_parties[0].how_many_health_policies
+    datatype: number
+    min: 0
+    # max: ?
+    show if: 
+      variable: other_parties[0].has_health_coverage
+      is: True
+  - note: |
+      % if tool_ID == "JOD_only" or tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+      ${ COBRA_message }
+      % endif
 ---
 # LHI Income Taxes
 # need to build
