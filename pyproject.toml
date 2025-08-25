@@ -1,3 +1,28 @@
+license = "MIT"
+license-files = [
+    "LICENSE",
+]
+
 [build-system]
-requires = ["setuptools"]
+requires = [
+    "setuptools>=80.9.0",
+]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "docassemble.MLHDivorceAndCustody"
+version = "0.0.1"
+description = "Michigan divorce and child support tools"
+readme = "README.md"
+authors = [
+    { name = "Emily Miller", email = "ekressmiller@lsscm.org" },
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://michiganlegalhelp.org/resources/divorce"
+
+[tool.setuptools.packages.find]
+where = [
+    ".",
+]
