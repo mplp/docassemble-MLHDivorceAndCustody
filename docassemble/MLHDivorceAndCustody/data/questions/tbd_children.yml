@@ -1018,12 +1018,41 @@ subquestion: |
   To learn more about child support, read [Child Support in a Nutshell](https://michiganlegalhelp.org/resources/family/child-support-nutshell).
 ---
 # LHI Child Support Part 2
-# note: include in divorce complaint but not JOD-only
-# id: . . .
+# note: do not include in JOD-only, but do include in other 4 tools
+id: child support errors
+question: Child support processing errors
+subquestion: |
+  If you end up **receiving** child support, the Michigan IV-D child support program will process the payments. If an error is made and you receive money that you were not owed or you are overpaid, the program will take steps to correct the error.
+fields:
+  - Do you want to give the program permission to pay back any error or overpayment by keeping a percentage from your future child support payments until the mistake is corrected?: allow_child_support_overpayment_correction
+    datatype: yesnoradio
+  - note: |
+      ${ collapse_template(child_support_overpayment_correction_info) }  
+  - "If an error is made, what percentage do you permit the child support program to withhold from your payments until the error is corrected?": child_support_overpayment_percentage
+    datatype: radio
+    choices:
+      - 10%: ten
+      - 20%: twenty
+      - 30%: thirty
+    show if:
+      variable: allow_child_support_overpayment_correction
+      is: True
+---
+template: child_support_overpayment_correction_info
+subject: |
+  More information
+content:
+  Select "No" if you would like to be contacted before the child support program tries to recover an amount from your support payments.
 
+  If you change your mind later, you must contact the Friend of the Court (FOC). Your answer has no effect on your eligibility for child support services.
 ---
 # LHI Prior Court Cases Part 1
-# need to build
+# for JOD-only, this screen is only shown if there are marital children. For other filing types, there are questions needed here even if there are no children. See 
+id: prior court cases
+question: Past court cases
+fields:
+  - Are there any prior custody or support orders in Michigan or any other state regarding comma_and_list(children.filter(legal_parent="both"), and_string='or')?
+# lots of confusing logic going on here, need to come back to this
 ---
 # LHI Prior Family cases DLG
 # need to build
