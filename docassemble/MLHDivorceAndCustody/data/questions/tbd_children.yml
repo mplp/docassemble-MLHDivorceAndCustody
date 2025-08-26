@@ -16,22 +16,8 @@ code: |
     OP_label = "the plaintiff"
 ---
 ### need the stuff in this section (copied from main yml) here for now to run just this yml
-generic object: DAList
-template: x.collapsed_table_template
-subject: |
-  So far, you have listed...
-content: |
-  ${x.table.show(editable=False)}
----
 features:
   labels above fields: True
----
-generic object: DAList
-template: x.question_table_template
-content: |
-  % if x.number_gathered() > 1:
-  ${collapse_template(x.collapsed_table_template)}
-  % endif
 ---
 include:
   - docassemble.AssemblyLine:assembly_line.yml
@@ -42,12 +28,20 @@ include:
 code: |
   github_repo_name = 'docassemble-MLHDivorceAndCustody'
 ---
+### need the above for now to run just this yml
+### below objects are not included in question bank yml
 objects:
   - children: ALPeopleList.using(
       complete_attribute="complete",
       )
-  - marriage: DAObject
-### need the above for now to run just this yml
+  - users[0].insurance: DAList.using(
+      complete_attribute="complete",
+      object_type = DAObject
+      )
+  - other_parties[0].insurance: DAList.using(
+      complete_attribute="complete",
+      object_type = DAObject
+      )
 ---
 ### possibly move the below to main yml
 terms:
@@ -100,26 +94,30 @@ mandatory: True # remove later
 code: |
   children_intro
   children.gather()
-  if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
-      legal_custody_who
-      if PT_type == "specific" or PT_type == "supervised":
-        if county_choice == "Muskegon":
-          Muskegon_specific_PT_info
-        if county_choice != "Muskegon":
-          specific_PT_how
-        if county_choice == "Muskegon" or (county_choice != "Muskegon" and specific_PT_how == "custom"):
-          custom_PT_details
-      hague_convention_info
-      child_domicile_info
-      if legal_custody_who != "both":
-        hundred_mile_rule
-      child_support_basic
   
   if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
-    users[0].has_health_coverage
-  else:
-    marriage.health_coverage  
+    legal_custody_who
+    if PT_type == "specific" or PT_type == "supervised":
+      if county_choice == "Muskegon":
+        Muskegon_specific_PT_info
+      if county_choice != "Muskegon":
+        specific_PT_how
+      if county_choice == "Muskegon" or (county_choice != "Muskegon" and specific_PT_how == "custom"):
+        custom_PT_details
+    hague_convention_info
+    child_domicile_info
+    if legal_custody_who != "both":
+      hundred_mile_rule
+    child_support_basic
+    users[0].insurance.gather()
+    other_parties[0].insurance.gather()
+    if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
+      marriage.cobra_coverage
 
+  else:
+    if tool_ID == "JOD_only" or tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+      marriage.cobra_coverage
+    
   test_end_screen
 ---
 code: |
@@ -167,33 +165,6 @@ fields:
   - label: To the best of your knowledge is your spouse pregnant?
     field: other_parties[0].pregnant
     datatype: yesnoradio
-#---
-#id: children_there_are_any_same_sex
-#question: |
-# Children
-#fields:
-#  - label: Do you and your spouse have minor children together?
-#    field: children_there_are_any_same_sex
-#    datatype: yesnoradio
-#---
-#id: children_both_legal_parents
-#question: |
-#  Children
-#subquestion: |
-#  You are both the legal parents if one of you is a biological parent and you were married to each other when the child was born or conceived.
-#fields:
-#  - label: Are you and your spouse both the legal parents of the child or children?
-#    field: children_both_legal_parents
-#    datatype: yesnomaybe
-#---
-#code: |
-#  if users[0].gender == other_parties[0].gender:
-#    if children_there_are_any_same_sex and children_both_legal_parents:
-#      children.there_are_any = True
-#    else:
-#      children.there_are_any = False
-#  else:
-#    pass
 ---
 id: children intro
 continue button field: children_intro
@@ -273,6 +244,8 @@ fields:
   - Are there any more minor children to add?: children.there_is_another
     datatype: yesnoradio
 ---
+# Emily note: not sure if this is needed as it does not mirror Jack's patterns. It's possible it can be done in a different way. Cannot remember my thinking when I added it.
+# alternatively, may need to add this for the other lists I create in this yml.
 on change:
   children.there_are_any: |
     if not children.there_are_any:
@@ -288,7 +261,7 @@ sets:
 question: |
   ${ capitalize(ordinal(i)) } child's information
 subquestion: |
-  ${children.question_table_template}
+  ${children.question_text_table_template}
 fields:
   - code: |
       children[i].name_fields()
@@ -1068,44 +1041,226 @@ fields:
   - "Are there any prior custody or support orders in Michigan or any other state regarding comma_and_list(children.filter(legal_parent='both'), and_string='or')?": prior_custody_orders
 # lots of confusing logic going on here, need to come back to this
 ---
-# LHI Prior Family cases DLG
+# LHI "Prior Family cases DLG"
 # need to build
 
 ---
 ######## end custody questions ########
 ---
-# LHI 
-id: health_coverage (with children)
+# --------------------------------------------------------------------
+## health insurance collection
+# --------------------------------------------------------------------
+---
+code: |
+  users[0].insurance[i].company_name
+  users[0].insurance[i].complete = True
+---
+code: |
+  other_parties[0].insurance[i].company_name
+  other_parties[0].insurance[i].complete = True
+---
+# LHI "Health Coverage" (with kids version) (but we're using a different structure)
+id: user's health_coverage (with children)
 question: |
   Health coverage
 subquestion: |
 fields:
   - label: |
       Do you have your own health care coverage, either through an employer, Medicaid or Medicare, or privately? **Do not include health care coverage provided by ${ OP_label } or ${ OP_label }’s employer here.**
-    field: users[0].has_health_coverage
+    field: users[0].insurance.there_are_any
     datatype: yesnoradio
-  - How many health care policies do you have?: users[0].how_many_health_policies
-    datatype: number
-    min: 0
-    # max: ?
-    show if: 
-      variable: users[0].has_health_coverage
-      is: True
+---
+# LHI "Health Coverage" (with kids version) (but we're using a different structure)
+id: OP's health_coverage (with children)
+question: |
+  Health coverage
+subquestion: |
+fields:
   - label: |
-      Does ${ OP_label } hold their own health care coverage, either through an employer, Medicaid or Medicare, or privately?"
-    field: other_parties[0].has_health_coverage
+      Does ${ OP_label } hold their own health care coverage, either through an employer, Medicaid or Medicare, or privately?
+    field: other_parties[0].insurance.there_are_any
     datatype: yesnoradio
-  - How many health care policies does ${ OP_label } have?: other_parties[0].how_many_health_policies
-    datatype: number
-    min: 0
-    # max: ?
-    show if: 
-      variable: other_parties[0].has_health_coverage
-      is: True
-  - note: |
-      % if tool_ID == "JOD_only" or tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
-      ${ COBRA_message }
-      % endif
+---
+id: user has any more health insurance
+question: |
+  Do you have any more health care policies?
+subquestion: |
+  So far, you have listed&colon;
+
+  ${users[0].insurance.table}
+
+  **Do not include health care coverage provided by ${ OP_label } or ${ OP_label }’s employer here.**
+fields:
+  - Do you have another health care policy to add?: users[0].insurance.there_is_another
+    datatype: yesnoradio
+---
+id: OP has any more health insurance
+question: |
+  Does ${ OP_label } have any more health care policies?
+subquestion: |
+  So far, you have listed&colon;
+
+  ${other_parties[0].insurance.table}
+fields:
+  - Does ${ OP_label } have another health care policy to add?: other_parties[0].insurance.there_is_another
+    datatype: yesnoradio
+---
+if: len(children.filter(legal_parent="both")) == 1
+id: user insurance policy info (1 marital child)
+question: |
+  Your ${ ordinal(i) } health care policy
+subquestion: |
+  ${users[0].insurance.question_text_table_template}
+fields:
+  - Are you the named policy holder?: users[0].insurance[i].in_own_name
+    datatype: yesnoradio
+    required: False
+  - Please enter the name of the policy holder: users[0].insurance[i].policyholder
+    required: False
+    show if:
+      variable: users[0].insurance[i].in_own_name
+      is: False
+  - What is the name of the provider?: users[0].insurance[i].company_name
+  - What is the address of the provider?: users[0].insurance[i].company_address
+    required: False
+  - What is the policy number?: users[0].insurance[i].policy_number
+    required: False
+  - What is the certificate number?: users[0].insurance[i].certificate_number
+    required: False
+  - What coverage does the policy provide?: users[0].insurance[i].coverage_type
+    required: False
+    datatype: checkboxes
+    choices:
+      - medical
+      - dental
+      - optical/vision
+      - other
+    none of the above: False
+  - Does this policy cover ${ children }?: users[0].insurance[i].covers_child
+    datatype: yesnoradio
+    required: False
+---
+if: len(children.filter(legal_parent="both")) > 1
+id: user insurance policy info (multiple marital children)
+question: |
+  Your ${ ordinal(i) } health care policy
+subquestion: |
+  ${users[0].insurance.question_text_table_template}
+fields:
+  - Are you the named policy holder?: users[0].insurance[i].in_own_name
+    datatype: yesnoradio
+    required: False
+  - Please enter the name of the policy holder: users[0].insurance[i].policyholder
+    required: False
+    show if:
+      variable: users[0].insurance[i].in_own_name
+      is: False
+  - What is the name of the provider?: users[0].insurance[i].company_name
+  - What is the address of the provider?: users[0].insurance[i].company_address
+    required: False
+  - What is the policy number?: users[0].insurance[i].policy_number
+    required: False
+  - What is the certificate number?: users[0].insurance[i].certificate_number
+    required: False
+  - What coverage does the policy provide?: users[0].insurance[i].coverage_type
+    required: False
+    datatype: checkboxes
+    choices:
+      - medical
+      - dental
+      - optical/vision
+      - other
+    none of the above: False
+  - Does this policy cover any of these children?: users[0].insurance[i].covers_child
+    required: False
+    datatype: checkboxes
+    none of the above: False
+    code: |
+      children.filter(legal_parent="both")    
+---
+if: len(children.filter(legal_parent="both")) == 1
+id: OP insurance policy info (1 marital child)
+question: |
+  ${ capitalize(OP_label) }'s ${ ordinal(i) } health care policy
+subquestion: |
+  ${other_parties[0].insurance.question_text_table_template}
+fields:
+  - Is ${ OP_label } the named policy holder?: other_parties[0].insurance[i].in_own_name
+    datatype: yesnoradio
+    required: False
+  - Please enter the name of the policy holder: other_parties[0].insurance[i].policyholder
+    required: False
+    show if:
+      variable: other_parties[0].insurance[i].in_own_name
+      is: False
+  - What is the name of the provider?: other_parties[0].insurance[i].company_name
+  - What is the address of the provider?: other_parties[0].insurance[i].company_address
+    required: False
+  - What is the policy number?: other_parties[0].insurance[i].policy_number
+    required: False
+  - What is the certificate number?: other_parties[0].insurance[i].certificate_number
+    required: False
+  - What coverage does the policy provide?: other_parties[0].insurance[i].coverage_type
+    required: False
+    datatype: checkboxes
+    choices:
+      - medical
+      - dental
+      - optical/vision
+      - other
+    none of the above: False
+  - Does this policy cover ${ children }?: other_parties[0].insurance[i].covers_child
+    datatype: yesnoradio
+    required: False
+---
+if: len(children.filter(legal_parent="both")) > 1
+id: OP insurance policy info (multiple marital children)
+question: |
+  ${ capitalize(OP_label) }'s ${ ordinal(i) } health care policy
+subquestion: |
+  ${other_parties[0].insurance.question_text_table_template}
+fields:
+  - Is ${ OP_label } the named policy holder?: other_parties[0].insurance[i].in_own_name
+    datatype: yesnoradio
+    required: False
+  - Please enter the name of the policy holder: other_parties[0].insurance[i].policyholder
+    required: False
+    show if:
+      variable: other_parties[0].insurance[i].in_own_name
+      is: False
+  - What is the name of the provider?: other_parties[0].insurance[i].company_name
+  - What is the address of the provider?: other_parties[0].insurance[i].company_address
+    required: False
+  - What is the policy number?: other_parties[0].insurance[i].policy_number
+    required: False
+  - What is the certificate number?: other_parties[0].insurance[i].certificate_number
+    required: False
+  - What coverage does the policy provide?: other_parties[0].insurance[i].coverage_type
+    required: False
+    datatype: checkboxes
+    choices:
+      - medical
+      - dental
+      - optical/vision
+      - other
+  - Does this policy cover any of these children?: other_parties[0].insurance[i].covers_child
+    required: False
+    datatype: checkboxes
+    none of the above: False
+    code: |
+      children.filter(legal_parent="both")    
+---
+table: users[0].insurance.table
+rows: users[0].insurance
+columns:
+  - Name: row_item.company_name
+#  - Entered family before or during marriage: |
+#      "before marriage" if row_item.timing == "premarital" else "during marriage"
+edit:
+  - company_name
+delete buttons: True
+confirm: True
+---
 ---
 # LHI Income Taxes
 # need to build
