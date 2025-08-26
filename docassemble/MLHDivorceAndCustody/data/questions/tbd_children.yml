@@ -1250,6 +1250,7 @@ fields:
     code: |
       children.filter(legal_parent="both")    
 ---
+id: user insurance table
 table: users[0].insurance.table
 rows: users[0].insurance
 columns:
