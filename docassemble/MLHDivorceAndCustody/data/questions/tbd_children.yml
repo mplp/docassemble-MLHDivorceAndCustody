@@ -113,6 +113,7 @@ code: |
     other_parties[0].insurance.gather()
     if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
       marriage.cobra_coverage
+    interview_order_income_tax
 
   else:
     if tool_ID == "JOD_only" or tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
@@ -1034,12 +1035,63 @@ content:
   If you change your mind later, you must contact the Friend of the Court (FOC). Your answer has no effect on your eligibility for child support services.
 ---
 # LHI Prior Court Cases Part 1
-# for JOD-only, this screen is only shown if there are marital children. For other filing types, there are questions needed here even if there are no children. See 
+# for JOD-only, this screen is only shown if there are marital children. For other filing types, there are questions needed here even if there are no children. 
+# TO DO: question for Amy: should the help text for family division cases exclude custody, paternity, and child support for custody interviews? (See Prior Court Cases Part 1 Dialog in Brett's materials.)
 id: prior court cases
 question: Past court cases
 fields:
-  - "Are there any prior custody or support orders in Michigan or any other state regarding comma_and_list(children.filter(legal_parent='both'), and_string='or')?": prior_custody_orders
-# lots of confusing logic going on here, need to come back to this
+  - label: |
+      % if tool_ID == "JOD_only":
+      Are there any prior custody or support orders in Michigan or any other state regarding comma_and_list(children.filter(legal_parent='both'), and_string='or')?
+      % elif tool_ID == "custody_complaint" or tool_ID == "custody_answer":
+      Are there any pending or resolved **family division** court cases or orders involving you and ${ OP_label }? See text at the bottom of the screen or click the light bulb in the upper right to read about the types of cases that are Family Division cases.«.ie»"
+      % elif tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+      % if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
+      Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving comma_and_list(children.filter(legal_parent='both'), and_string='or') or you and your spouse?
+      % else:
+      Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving you and your spouse?
+      % endif
+      % endif
+    field: prior_custody_orders
+  - note: |
+      % if tool_ID == "custody_complaint" or tool_ID == "custody_answer" or tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+      ${ collapse_template(family_division_info) }
+      % endif
+  - note: |
+      % if tool_ID == "JOD_only":
+      **You will enter information for any prior custody cases on the next page.**
+      % else:
+      ***You will enter information for any prior family division court cases on the next page.**
+      % endif
+    show if:
+      variable: prior_custody_orders
+      is: True
+  - Is a request for child support **currently pending** in another state?: child_support_request_pending
+    datatype: yesnoradio
+    js show if: |
+      val("tool_ID") === "JOD_only" || val("tool_ID") === "divorce_complaint"
+# continue with logic here
+---
+template: family_division_info
+subject: |
+  Family Division Case Types
+content: |
+  **Family Division cases in Michigan** include:
+  
+  * Divorce, annulment, or separate maintenance (sometimes called legal separation)
+  * Custody
+  * Paternity
+  * Child support
+  * All types of personal protection orders-- whether for a domestic relationship, sexual assault, or nondomestic stalking
+  * Adoption
+  * Child protective proceedings
+  * Cases involving children who are placed in a state institution by the Family Division of Circuit Court
+  * Name change
+  * Emancipation
+  * Juvenile court cases
+
+  **Other states and countries** may call their family court something different. Cases from outside of Michigan that fall within these categories should be listed where the form asks for pending or resolved family law cases in other states or countries.
+
 ---
 # LHI "Prior Family cases DLG"
 # need to build
@@ -1262,9 +1314,98 @@ edit:
 delete buttons: True
 confirm: True
 ---
+# --------------------------------------------------------------------
+## income tax info
+# --------------------------------------------------------------------
 ---
-# LHI Income Taxes
-# need to build
+code: |
+  income_tax_method
+  if income_tax_method == "specify_per_child":
+    for child in children:
+      if child.legal_parent == "both":
+        child.tax_parent
+  elif income_tax_method == "alternate_years":
+    tax_deductions_who_first
+  interview_order_income_tax = True
+---
+# LHI "Income Taxes", (only used in divorce_complaint and JOD_only per Brett spreadsheet)
+id: income tax question
+question: Income taxes
+subquestion: |
+  Under federal tax law, the parent who a child lives with for the greater number of nights during the year is entitled to claim tax deductions, credits, and exemptions for that child. This includes state, federal, and local deductions, credits, and exemptions. 
+
+  ${ collapse_template(federal_tax_default_info) }
+
+  Even though the parent with the greater number of overnights is entitled to claim the child, you and your spouse may agree to something different. For example, even if you will have more parenting time overnights, you may agree that your spouse can claim your child for tax purposes in exchange for something you want in your property settlement. 
+fields:
+  - label: |
+      % if len(children.filter(legal_parent="both")) == 1:
+      How will income tax deductions, credits, and exemptions for ${ children[0] } be divided between you and your spouse? 
+      % elif len(children.filter(legal_parent="both")) > 1:
+      How will income tax deductions, credits, and exemptions for the children be divided between you and your spouse? 
+      % endif
+    field: income_tax_method
+    datatype: radio
+    code: |
+      tax_choices
+  - Beginning in what year?: tax_start_year
+    datatype: integer
+    min: |
+     ${ today().year - 10 }
+    max: 3000
+    js show if: |
+      val("income_tax_method") === "user" || val("income_tax_method") === "other_party" || val("income_tax_method") === "specify_per_child" || val("income_tax_method") === "alternate_years"
+---
+# TO DO: going to have to clear this out and rebuild if # of children changes
+code: |
+  tax_choices = [
+                  ['default', f'Based on federal tax law, the parent with whom the { children.as_noun() } { children.does_verb("live") } for the greater number of nights during the year will be awarded all income tax deductions, credits, and exemptions for the minor { children.as_noun() }, including state, federal, or local tax returns, for all tax years.'],
+                  ['user', f'{ users[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.as_noun() }, including state, federal, or local tax returns, for all tax years.'],
+                  ['other_party', f'{ other_parties[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.as_noun() }, including state, federal, or local tax returns, for all tax years.']
+                ]
+  
+  if len(children.filter(legal_parent="both")) > 1:
+    tax_choices.append(['specify_per_child', f'{ users[0] } and { other_parties[0] } will claim the deductions, credits, and exemptions for different children, including state, federal, or local tax returns.'])
+  
+  tax_choices.append(['alternate_years', f'{ users[0] } and { other_parties[0] } will claim all deductions, credits, and exemptions for the { children.as_noun() } in alternating years, including state, federal, or local tax returns.'])
+---
+id: income tax deductions starting year
+Question: Who gets income tax deductions first?
+subquestion: |
+  You said that you and ${ other_parties[0] } will claim income tax deductions in alternating years, starting in tax year ${ tax_start_year }. 
+fields:
+  - Who will be awarded the income tax deductions for tax year ${ tax_start_year }?: tax_deductions_who_first
+    datatype: radio
+    choices:
+      - I will: users[0]
+      - My spouse will: other_parties[0]
+  - note: |
+      OK, You will get the deductions, credits, and exemptions for tax year ${ tax_start_year }. ${ other_parties[0] } will claim them for tax year ${ tax_start_year + 1 }.
+    show if:
+      variable: tax_deductions_who_first
+      is: users[0]
+  - note: |
+      OK, ${ other_parties[0] } will get the deductions, credits, and exemptions for tax year ${ tax_start_year }. You will claim them for tax year ${ tax_start_year + 1 }.
+    show if:
+      variable: tax_deductions_who_first
+      is: other_parties[0]
+---
+template: federal_tax_default_info
+subject: |
+  More info about giving tax benefits based on the actual number overnights (the first option)
+content: |
+  Choosing this option can have a  different effect than specifically giving the tax deductions, credits, and exemptions to the parent who has the greater number of parenting time overnights based on the Judgment of Divorce. 
+  
+  If the parties do not follow their Judgment of Divorce, and the parent who was supposed to have more overnights ends up having less than 50% of the overnights in one year, then this provision would allow the parent who **actually had over 50% of the overnights** to claim the tax credits, etc., **instead of the parent who was awarded more overnights.**)
+---
+id: specific child tax election
+question: Tax deductions, exemptions, and credits for ${ children[i] }
+fields:
+  - Who will claim the deductions, exemptions, and credits for ${ children[i] }?: children[i].tax_parent
+    datatype: radio
+    choices:
+      - I will: users[0]
+      - My spouse will: other_parties[0]
 ---
 event: test_end_screen
 question: Thank you for testing!
