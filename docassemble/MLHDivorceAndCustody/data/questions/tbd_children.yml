@@ -4,7 +4,7 @@ code: |
 ---
 # example interview tag for testing
 code: |
-  tool_ID = "JOD_only"
+  tool_ID = "divorce_complaint"
 # other options = "divorce_complaint", "divorce_answer", "custody_complaint", "custody_answer"
 ---
 code: |
@@ -39,6 +39,10 @@ objects:
       object_type = DAObject
       )
   - other_parties[0].insurance: DAList.using(
+      complete_attribute="complete",
+      object_type = DAObject
+      )
+  - prior_family_case_or_order: DAList.using(
       complete_attribute="complete",
       object_type = DAObject
       )
@@ -96,6 +100,17 @@ code: |
   children.gather()
   
   if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
+    
+    if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+      if not children_live_with_parent:
+        children_live_with_third_party_kickout
+      if kids_had_other_custodian:
+        other_custodian_exit
+      if third_party_custody_claim:
+        third_party_custody_exit
+      if temporary_order_exit:
+        exit_general
+  
     legal_custody_who
     if PT_type == "specific" or PT_type == "supervised":
       if county_choice == "Muskegon":
@@ -114,6 +129,7 @@ code: |
     if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
       marriage.cobra_coverage
     interview_order_income_tax
+    interview_order_prior_cases
 
   else:
     if tool_ID == "JOD_only" or tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
@@ -713,18 +729,6 @@ fields:
     js show if: |
       (val("children[i].bio_parent") == "user" || val("children[i].bio_parent") == "other_party") && ${ json.dumps(children[i].origin) } === "marital_third_party_conceived"
 ---
-# TODO: confirm usage of "under text"
-id: children_target_number
-question: |
-  Children
-subquestion: |
-  Children together are those children who have both you and your spouse as legal parents, whether you became their parents during your marriage or before, not including stepchildren.
-fields:
-  - label: How many minor children do you and your spouse have together?
-    field: children.target_number
-    datatype: integer
-    min: 1
----
 id: display parentage interview for testing purposes
 question: Parentage Result
 continue button field: children[i].show_parentage_info
@@ -744,6 +748,117 @@ subquestion: |
   origin code: ${children[i].origin}
   
   timing code: ${children[i].timing}
+---
+######## start children qualification/address/home state questions #######
+# LHI "(Marital) Minor Children Information" (first part)
+id: where children live
+question: |
+  % if len(children.filter(legal_parent="both")) > 1:
+  Who your minor children live with now
+  % else:
+  Who ${ children[0] } lives with now
+  % endif
+subquestion: |
+  This question is about your and ${ other_parties[0] }'s shared minor ${ children.as_noun() }: ${ comma_and_list(children.filter(legal_parent='both')) }.
+
+  This question does not include stepchildren, or legal children of just one of you.
+fields:
+  - label: |
+      % if len(children.filter(legal_parent="both")) > 1:
+      Do all of your and ${ other_parties[0] }'s minor children currently live with you or ${ other_parties[0] }?
+      % else:
+      Does your child ${ children[0] } currently live with you or ${ other_parties[0] }?
+      % endif
+    field: children_live_with_parent
+    datatype: yesnoradio
+  - label: |
+      % if len(children.filter(legal_parent="both")) > 1:
+      Who do your and ${ other_parties[0] }'s minor children currently live with?
+      % else:
+      Who does your child ${ children[0] } currently live with?
+      % endif
+    field: which_parent_lives_with_children
+    datatype: radio
+    code: |
+      child_lives_with_choices
+    show if:
+      variable: children_live_with_parent
+      is: True
+---
+# TODO: going to have to clear this out and rebuild if # of children changes
+code: |
+  child_lives_with_choices = [
+                  ['users[0]', 'Me'],
+                  ['other_parties[0]', 'My spouse'],
+                  ['both', 'Both']
+                             ]
+  
+  if len(children.filter(legal_parent="both")) > 1:
+    tax_choices.append(['specify_per_child', f'{ users[0] } and { other_parties[0] } will claim the deductions, credits, and exemptions for different children, including state, federal, or local tax returns.'])
+  
+  child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with my spouse.'])
+---
+id: kickout if children don't live with parents
+event: children_live_with_third_party_kickout
+question: This tool is not right for you
+subquestion: |
+  We're sorry. You cannot use this tool if any of your shared minor children are living with someone besides you or your spouse.
+  
+  You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
+---
+id: children disqualifiers
+question: |
+  Minor children -- special situations
+subquestion: |
+  These questions are about your and ${ other_parties[0] }'s shared minor ${ children.as_noun() }: ${ comma_and_list(children.filter(legal_parent='both')) }.
+
+  These question are not about stepchildren, or legal children of just one of you.
+fields:
+  - label: |
+      % if len(children.filter(legal_parent="both")) > 1:
+      Have any of your and ${ other_parties[0] }'s children lived with a legal custodian, other than a parent, during the past five years? (For example, because of a child protective services case, a minor guardianship, or a third-party custody order.)
+      % else:
+      Has your child ${ children[0] } lived with a legal custodian, other than a parent, during the past five years? (For example, because of a child protective services case, a minor guardianship, or a third-party custody order.)
+      % endif
+    field: kids_had_other_custodian
+    datatype: yesnoradio
+  - label: |
+      % if len(children.filter(legal_parent="both")) > 1:
+      Are there any other adults (besides you and your spouse) who may have a legal right to custody or parenting time of any of the minor children?
+      % else:
+      Are there any other adults (besides you and your spouse) who may have a legal right to custody or parenting time of any of ${ children[0] }?
+      % endif
+    show if:
+      variable: kids_had_other_custodian
+      is: False
+    field: third_party_custody_claim
+    datatype: yesnoradio
+  - label: |
+      % if len(children.filter(legal_parent="both")) > 1:
+      Do you believe that a temporary custody order is needed to protect the children because they have been abused, mistreated, threatened, or neglected?
+      % else:
+      Do you believe that a temporary custody order is needed to protect ${ children[0] } because they have been abused, mistreated, threatened, or neglected?
+      % endif
+    show if:
+      variable: third_party_custody_claim
+      is: False
+    field: need_temporary_order
+    datatype: yesnoradio
+  - note: |
+      **WARNING! This tool may not be right for you.** Getting temporary orders for custody is not simple. Neither this tool nor the Michigan Legal Help website will create temporary orders. **The forms created by this tool will not let the judge know that a temporary order is needed or that the children in this case have been abused, mistreated, threatened, or neglected.**
+
+      You can still use this tool to prepare your forms and begin the divorce process, but this tool will not create any motions for temporary custody orders or proposed temporary custody orders. You may want to consider hiring a lawyer to help you ask the judge for a temporary custody order.
+
+      ${MLH_GUIDE_FULL} 
+    show if:
+      variable: need_temporary_order
+      is: True
+  - Do you want to continue?: temporary_order_exit
+    datatype: noyesradio
+    show if:
+      variable: need_temporary_order
+      is: True
+---
 ######## start custody questions #######
 ---
 id: custody parenting time questions
@@ -1034,43 +1149,115 @@ content:
 
   If you change your mind later, you must contact the Friend of the Court (FOC). Your answer has no effect on your eligibility for child support services.
 ---
+######## end custody questions ########
+---
+# --------------------------------------------------------------------
+## prior cases
+# --------------------------------------------------------------------
+# for JOD-only, this is only shown if there are marital children. For other divorce filing types, there are questions needed here even if no marital children. 
+---
+code: |
+  prior_custody_orders_or_family_cases.gather()
+  interview_order_prior_cases = True
+---
+#code: |
+#  prior_family_case_or_order[i].??????????
+#  prior_family_case_or_order[i].complete = True
+#---
+id: prior orders or cases table
+table: prior_family_case_or_order.table
+rows: prior_family_case_or_order
+columns:
+  - Name: row_item.company_name
+#  - Entered family before or during marriage: |
+#      "before marriage" if row_item.timing == "premarital" else "during marriage"
+edit:
+  - company_name
+delete buttons: True
+confirm: True
+---
 # LHI Prior Court Cases Part 1
-# for JOD-only, this screen is only shown if there are marital children. For other filing types, there are questions needed here even if there are no children. 
-# TO DO: question for Amy: should the help text for family division cases exclude custody, paternity, and child support for custody interviews? (See Prior Court Cases Part 1 Dialog in Brett's materials.)
+# TODO: question for Amy: should the help text for family division cases exclude custody, paternity, and child support for custody interviews? (See Prior Court Cases Part 1 Dialog in Brett's materials.)
+# TODO: maybe ask about prior civil cases AFTER collecting custody/support orders and family division cases? This screen is long and clunky as-is.
 id: prior court cases
 question: Past court cases
 fields:
   - label: |
       % if tool_ID == "JOD_only":
-      Are there any prior custody or support orders in Michigan or any other state regarding comma_and_list(children.filter(legal_parent='both'), and_string='or')?
+      Are there any prior custody or support orders in Michigan or any other state regarding ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') }?
       % elif tool_ID == "custody_complaint" or tool_ID == "custody_answer":
-      Are there any pending or resolved **family division** court cases or orders involving you and ${ OP_label }? See text at the bottom of the screen or click the light bulb in the upper right to read about the types of cases that are Family Division cases.«.ie»"
+      Are there any pending or resolved **family division** court cases or orders involving you and ${ OP_label }? 
       % elif tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
       % if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
-      Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving comma_and_list(children.filter(legal_parent='both'), and_string='or') or you and your spouse?
+      Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } or you and your spouse?
       % else:
       Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving you and your spouse?
       % endif
       % endif
-    field: prior_custody_orders
+    field: prior_custody_orders_or_family_cases.there_are_any
+    datatype: yesnoradio
   - note: |
       % if tool_ID == "custody_complaint" or tool_ID == "custody_answer" or tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
       ${ collapse_template(family_division_info) }
       % endif
   - note: |
       % if tool_ID == "JOD_only":
-      **You will enter information for any prior custody cases on the next page.**
+      You will enter information for **prior custody cases** on the next page.
       % else:
-      ***You will enter information for any prior family division court cases on the next page.**
+      You will enter information for **prior family division court cases** on the next page.
       % endif
-    show if:
-      variable: prior_custody_orders
-      is: True
+    js show if: |
+      val("has_prior_custody_orders_or_family_cases") === true
   - Is a request for child support **currently pending** in another state?: child_support_request_pending
     datatype: yesnoradio
     js show if: |
-      val("tool_ID") === "JOD_only" || val("tool_ID") === "divorce_complaint"
-# continue with logic here
+      (val("has_prior_custody_orders_or_family_cases") === true || val("has_prior_custody_orders_or_family_cases") === false) && (${ json.dumps(tool_ID) } === "JOD_only" || ${ json.dumps(tool_ID) } === "divorce_complaint")
+  - label: |
+      % if tool_ID == "divorce_complaint":
+      Do you know of any other pending or resolved **civil** actions (not family law cases) between you and ${ OP_label } related to your marriage? For example, has one spouse previously sued the other spouse for a tort, such as assault?
+      % elif tool_ID == "custody_complaint":
+      Do you know of any other pending or resolved **civil** actions (not family law cases or personal protection order cases) between you and ${ other_parties[0] }? For example, has one parent previously sued the other parent for a tort, such as assault?
+      % endif
+    field: has_prior_civil_cases
+    datatype: yesnoradio
+    js show if: |
+      (val("child_support_request_pending") === true || val("child_support_request_pending") === false) && (${ json.dumps(tool_ID) } === "custody_complaint" || ${ json.dumps(tool_ID) } === "divorce_complaint")
+  - Is that case still active (pending)?: prior_civil_case_is_pending
+    datatype: yesnoradio
+    required: False
+    js show if: |
+      val("has_prior_civil_cases") === true
+  - If the case was filed in Michigan, select the county:: prior_civil_case_county
+    required: False
+    code: court_list._load_courts()["address_county"].unique() + " County"
+    js show if: |
+      val("has_prior_civil_cases") === true && val("prior_civil_case_filed_outside_MI") === false
+  - The case was filed outside the state of Michigan: prior_civil_case_filed_outside_MI
+    required: False
+    datatype: yesno
+    js show if: |
+      val("has_prior_civil_cases") === true
+  - Type of court: MI_court_type
+    required: False
+    datatype: radio
+    choices:
+      - Circuit
+      - District
+      - Probate
+    js show if: |
+      val("has_prior_civil_cases") === true && val("prior_civil_case_filed_outside_MI") === false
+  - What is the name of the court?: prior_civil_case_non_MI_court
+    required: False
+    js show if: |
+      val("has_prior_civil_cases") === true && val("prior_civil_case_filed_outside_MI") === true
+  - What is the case number of that case?: prior_civil_case_number
+    required: False
+    js show if: |
+      val("has_prior_civil_cases") === true
+  - What is the **last name** of the judge assigned to that case?: prior_civil_case_judge
+    required: False
+    js show if: |
+      val("has_prior_civil_cases") === true
 ---
 template: family_division_info
 subject: |
@@ -1079,9 +1266,11 @@ content: |
   **Family Division cases in Michigan** include:
   
   * Divorce, annulment, or separate maintenance (sometimes called legal separation)
+  % if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
   * Custody
   * Paternity
   * Child support
+  % endif
   * All types of personal protection orders-- whether for a domestic relationship, sexual assault, or nondomestic stalking
   * Adoption
   * Child protective proceedings
@@ -1091,13 +1280,76 @@ content: |
   * Juvenile court cases
 
   **Other states and countries** may call their family court something different. Cases from outside of Michigan that fall within these categories should be listed where the form asks for pending or resolved family law cases in other states or countries.
-
 ---
-# LHI "Prior Family cases DLG"
-# need to build
+id: any more family court cases or custody orders?
+question: |
+  % if tool_ID == "JOD_only":
+  Any more prior custody or support orders?
+  % else:
+  Any more **family division** court cases or orders?
+  % endif
+subquestion: |
+  So far, you have listed&colon;
 
+  ${prior_custody_orders_or_family_cases.table}
+fields:
+  - label: |
+      % if tool_ID == "JOD_only":
+      Are there any more prior custody or support orders in Michigan or any other state regarding ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') }?
+      % elif tool_ID == "custody_complaint" or tool_ID == "custody_answer":
+      Are there any more pending or resolved **family division** court cases or orders involving you and ${ OP_label }? 
+      % elif tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+      % if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
+      Are there any more pending or resolved **family division** court cases or orders in Michigan or any other state involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } or you and your spouse?
+      % else:
+      Are there any more pending or resolved **family division** court cases or orders in Michigan or any other state involving you and your spouse?
+      % endif
+      % endif
+    field: prior_custody_orders_or_family_cases.there_is_another
+    datatype: yesnoradio
 ---
-######## end custody questions ########
+# LHI "Prior Family Cases DLG"
+# probably need to adjust state collection based on home state stuff (and possibly apply to civil case collection too?)
+id: prior case or order collection screen
+question: |
+  % if tool_ID == "JOD_only":
+  ${ capitalize(ordinal(i)) } custody or support order
+  % else:
+  ${ capitalize(ordinal(i)) } **family division** case or order
+  % endif
+subquestion: |
+  ${prior_custody_orders_or_family_cases.question_text_table_template}
+fields:
+  - Are you the named policy holder?: users[0].insurance[i].in_own_name
+    datatype: yesnoradio
+    required: False
+  - Please enter the name of the policy holder: users[0].insurance[i].policyholder
+    required: False
+    show if:
+      variable: users[0].insurance[i].in_own_name
+      is: False
+  - What is the name of the provider?: users[0].insurance[i].company_name
+  - What is the address of the provider?: users[0].insurance[i].company_address
+    required: False
+  - What is the policy number?: users[0].insurance[i].policy_number
+    required: False
+  - What is the certificate number?: users[0].insurance[i].certificate_number
+    required: False
+  - What coverage does the policy provide?: users[0].insurance[i].coverage_type
+    required: False
+    datatype: checkboxes
+    choices:
+      - medical
+      - dental
+      - optical/vision
+      - other
+    none of the above: False
+  - Does this policy cover ${ children }?: users[0].insurance[i].covers_child
+    datatype: yesnoradio
+    required: False
+---
+
+
 ---
 # --------------------------------------------------------------------
 ## health insurance collection
@@ -1110,6 +1362,18 @@ code: |
 code: |
   other_parties[0].insurance[i].company_name
   other_parties[0].insurance[i].complete = True
+---
+id: user insurance table
+table: users[0].insurance.table
+rows: users[0].insurance
+columns:
+  - Name: row_item.company_name
+#  - Entered family before or during marriage: |
+#      "before marriage" if row_item.timing == "premarital" else "during marriage"
+edit:
+  - company_name
+delete buttons: True
+confirm: True
 ---
 # LHI "Health Coverage" (with kids version) (but we're using a different structure)
 id: user's health_coverage (with children)
@@ -1301,18 +1565,6 @@ fields:
     none of the above: False
     code: |
       children.filter(legal_parent="both")    
----
-id: user insurance table
-table: users[0].insurance.table
-rows: users[0].insurance
-columns:
-  - Name: row_item.company_name
-#  - Entered family before or during marriage: |
-#      "before marriage" if row_item.timing == "premarital" else "during marriage"
-edit:
-  - company_name
-delete buttons: True
-confirm: True
 ---
 # --------------------------------------------------------------------
 ## income tax info
