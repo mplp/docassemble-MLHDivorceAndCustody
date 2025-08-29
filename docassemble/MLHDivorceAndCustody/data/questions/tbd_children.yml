@@ -25,6 +25,10 @@ include:
   - docassemble.mlhframework:mlh_interview_framework.yml
   - question_bank.yml
 ---
+# for testing:
+code: |
+  confidential_contact_info_yn = False
+---
 code: |
   github_repo_name = 'docassemble-MLHDivorceAndCustody'
 ---
@@ -45,6 +49,10 @@ objects:
   - prior_family_case_or_order: DAList.using(
       complete_attribute="complete",
       object_type = DAObject
+      )
+  - children_previous_address: DAList.using(
+      complete_attribute="complete",
+      object_type = ALAddress
       )
 ---
 ### possibly move the below to main yml
@@ -102,14 +110,27 @@ code: |
   if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
     
     if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+      if kids_had_other_custodian:
+        other_custodian_kickout
+      if third_party_custody_claim:
+        third_party_custody_kickout
+      if need_temporary_order:
+        if temporary_order_exit:
+          exit_general
+
+    if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer" or tool_ID == "JOD_only":
       if not children_live_with_parent:
         children_live_with_third_party_kickout
-      if kids_had_other_custodian:
-        other_custodian_exit
-      if third_party_custody_claim:
-        third_party_custody_exit
-      if temporary_order_exit:
-        exit_general
+      if children_now_live_with_which_parent == "depends_on_child":
+        for child in children:
+          if child.legal_parent == "both":
+            child.lives_with
+
+    if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+      if not confidential_contact_info_yn and (children_now_live_with_which_parent == "depends_on_child" or children_now_live_with_which_parent == "users[0]"):
+        child_address_not_confidential_warning
+      children_lived_with_which_parent_past
+      children_previous_address.gather()
   
     legal_custody_who
     if PT_type == "specific" or PT_type == "supervised":
@@ -759,9 +780,7 @@ question: |
   Who ${ children[0] } lives with now
   % endif
 subquestion: |
-  This question is about your and ${ other_parties[0] }'s shared minor ${ children.as_noun() }: ${ comma_and_list(children.filter(legal_parent='both')) }.
-
-  This question does not include stepchildren, or legal children of just one of you.
+  This question is about your and ${ other_parties[0] }'s minor ${ children.as_noun() }: **${ comma_and_list(children.filter(legal_parent='both')) }**.
 fields:
   - label: |
       % if len(children.filter(legal_parent="both")) > 1:
@@ -777,7 +796,7 @@ fields:
       % else:
       Who does your child ${ children[0] } currently live with?
       % endif
-    field: which_parent_lives_with_children
+    field: children_now_live_with_which_parent
     datatype: radio
     code: |
       child_lives_with_choices
@@ -794,15 +813,29 @@ code: |
                              ]
   
   if len(children.filter(legal_parent="both")) > 1:
-    tax_choices.append(['specify_per_child', f'{ users[0] } and { other_parties[0] } will claim the deductions, credits, and exemptions for different children, including state, federal, or local tax returns.'])
-  
-  child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with my spouse.'])
+    child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with my spouse.'])
 ---
 id: kickout if children don't live with parents
 event: children_live_with_third_party_kickout
 question: This tool is not right for you
 subquestion: |
-  We're sorry. You cannot use this tool if any of your shared minor children are living with someone besides you or your spouse.
+  We're sorry. You cannot use this tool if any of your and ${ other_parties[0] }'s minor children are living with someone besides you or your spouse.
+  
+  You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
+---
+id: kickout if children lived with someone else in last 5 years
+event: other_custodian_kickout
+question: This tool is not right for you
+subquestion: |
+  We're sorry. You cannot use this tool if any of your and ${ other_parties[0] }'s minor children have lived with a legal custodian other than a parent during the past five years
+  
+  You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
+---
+id: kickout if children don't live with parents
+event: third_party_custody_kickout
+question: This tool is not right for you
+subquestion: |
+  We're sorry. You cannot use this tool if there are any other adults (besides you and ${ other_parties[0] }) who may have a legal right to custody or parenting time of any of your and ${ other_parties[0] }'s minor children.
   
   You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
 ---
@@ -810,9 +843,8 @@ id: children disqualifiers
 question: |
   Minor children -- special situations
 subquestion: |
-  These questions are about your and ${ other_parties[0] }'s shared minor ${ children.as_noun() }: ${ comma_and_list(children.filter(legal_parent='both')) }.
+  These questions are about your and ${ other_parties[0] }'s minor ${ children.as_noun() }: **${ comma_and_list(children.filter(legal_parent='both')) }**.
 
-  These question are not about stepchildren, or legal children of just one of you.
 fields:
   - label: |
       % if len(children.filter(legal_parent="both")) > 1:
@@ -826,7 +858,7 @@ fields:
       % if len(children.filter(legal_parent="both")) > 1:
       Are there any other adults (besides you and your spouse) who may have a legal right to custody or parenting time of any of the minor children?
       % else:
-      Are there any other adults (besides you and your spouse) who may have a legal right to custody or parenting time of any of ${ children[0] }?
+      Are there any other adults (besides you and your spouse) who may have a legal right to custody or parenting time for ${ children[0] }?
       % endif
     show if:
       variable: kids_had_other_custodian
@@ -844,20 +876,132 @@ fields:
       is: False
     field: need_temporary_order
     datatype: yesnoradio
-  - note: |
-      **WARNING! This tool may not be right for you.** Getting temporary orders for custody is not simple. Neither this tool nor the Michigan Legal Help website will create temporary orders. **The forms created by this tool will not let the judge know that a temporary order is needed or that the children in this case have been abused, mistreated, threatened, or neglected.**
-
-      You can still use this tool to prepare your forms and begin the divorce process, but this tool will not create any motions for temporary custody orders or proposed temporary custody orders. You may want to consider hiring a lawyer to help you ask the judge for a temporary custody order.
-
-      ${MLH_GUIDE_FULL} 
-    show if:
-      variable: need_temporary_order
-      is: True
+---
+id: temporary order warning
+question: |
+  **WARNING! This tool may not be right for you.**
+subquestion: |
+  You said that you think a temporary custody order is needed to protect ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } because of abuse, mistreatment, threats, or neglect.
+  
+  Getting temporary orders for custody is not simple. Neither this tool nor the Michigan Legal Help website will create temporary orders. **The forms created by this tool will not let the judge know that a temporary order is needed or that the children in this case have been abused, mistreated, threatened, or neglected.**
+  
+  You can still use this tool to prepare your forms and begin the divorce process, but this tool will not create any motions for temporary custody orders or proposed temporary custody orders. 
+  
+  You may want to speak to a lawyer. ${MLH_GUIDE_FULL}
+fields:
   - Do you want to continue?: temporary_order_exit
     datatype: noyesradio
+---
+id: specify which parent child lives with
+question: Who ${ children[i] } lives with
+fields:
+  - Who does ${ children[i] } live with?: children[i].lives_with
+    datatype: radio
+    choices:
+      - ${ users[0] }: users[0]
+      - ${ other_parties[0] }: other_parties[0]
+---
+# LHI this appears on "Children Addresses"
+# TODO: Brett has a note saying currently JOD_only does not have condfidential option, so this doesn't apply to JOD_only. Is that desired to continue?
+id: child_address_not_confidential_warning
+continue button field: child_address_not_confidential_warning
+question: |
+  Reminder: your address is not confidential
+subquestion: |
+  Earlier, you said that you did not want to keep your address and telephone number confidential. 
+  
+  If the health or safety of your children will be put at risk by having your address on court papers, you should go back and change your previous answer. 
+
+  **Need to decide what to say here. Give direct link or send to review/edit screen?**
+---
+id: children's previous addresses
+question: Children's previous addresses
+subquestion: |
+  You already told us who ${ comma_and_list(children.filter(legal_parent='both')) } **currently** ${ children.does_verb("live") } with.
+fields:
+  - label: |
+      % if len(children.filter(legal_parent="both")) > 1:
+      Have any of these children lived at any **other addresses** in the past five years?
+      % else:
+      Has ${ children[0] } lived at any **other addresses** in the past five years?
+      % endif
+    field: children_previous_address.there_are_any
+    datatype: yesnoradio
+  - note: |
+      You will enter those other addresses on the next page.
     show if:
-      variable: need_temporary_order
+      variable: children_previous_address.there_are_any
       is: True
+  - label: |
+      % if len(children.filter(legal_parent="both")) > 1:
+      During the last five years, who have your children lived with?
+      % else:
+      During the last five years, who has ${ children[0] } lived with?
+      % endif
+    field: children_lived_with_which_parent_past
+    datatype: radio
+    choices:
+      - Me: users[0]
+      - ${ other_parties[0] }: other_parties[0]
+      - Both of us: both
+---
+code: |
+  children_previous_address[i].address
+  children_previous_address[i].complete = True
+---
+table: children_previous_address.table
+rows: children_previous_address
+columns:
+  - Address: row_item.on_one_line()
+edit:
+  - address.address
+delete buttons: True
+confirm: True
+---
+#TODO possibly revisit this address and use similar code to marriage.real_property's address for real interview if having defaults seems helpful.
+id: children's previous address
+question: |
+  ${capitalize(ordinal(i))} previous address
+subquestion: |
+  Enter the ${ordinal(i)} previous address where ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } lived in the last five years.
+fields:
+  - label: Street Address or PO Box
+    field: children_previous_address[i].address
+    address autocomplete: True
+  - label: Apartment, suite, etc
+    field: children_previous_address[i].unit
+    required: False
+  - label: City
+    field: children_previous_address[i].city
+  - label: State or Province (two-letter abbreviation for U.S. states)
+    field: children_previous_address[i].state
+    default: MI
+    input type: datalist
+    code: |
+      states_list()
+    required: False
+  - label: Zip or Postal Code
+    field: children_previous_address[i].zip
+    required: False
+  - label: Country
+    field: children_previous_address[i].country
+    default: "US"
+    code: |
+      countries_list()
+    required: False
+---
+id: any more previous child addresses?
+question: |
+  Any more previous addresses?
+subquestion: |
+  So far, you have listed&colon;
+
+  ${children_previous_address.table}
+fields:
+  - label: |
+      Are there any more previous address where ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } lived in the last five years?
+    field: children_previous_address.there_is_another
+    datatype: yesnoradio
 ---
 ######## start custody questions #######
 ---
