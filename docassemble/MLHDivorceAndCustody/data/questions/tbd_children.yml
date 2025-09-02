@@ -54,6 +54,10 @@ objects:
       complete_attribute="complete",
       object_type = ALAddress
       )
+  - users[0].job: ALJob
+  - users[0].income: ALIncome
+  - other_parties[0].job: ALJob
+  - other_parties[0].income: ALIncome
 ---
 ### possibly move the below to main yml
 terms:
@@ -1709,6 +1713,254 @@ fields:
     none of the above: False
     code: |
       children.filter(legal_parent="both")    
+---
+# --------------------------------------------------------------------
+## Employment and income info
+# --------------------------------------------------------------------
+---
+code: |
+  users[0].has_job
+  if tool_ID != "JOD_only":
+    users[0].occupation
+  if users[0].has_job:
+    users[0].job.employer
+  users[0].professional_license
+  if tool_ID != "JOD_only":
+    if users[0].has_job:
+      users[0].income.value
+    pa_recieved
+
+  other_parties[0].has_job
+  if tool_ID != "divorce_complaint" and len(children.filter(legal_parent="both")) > 0:
+    other_parties[0].occupation
+  if other_parties[0].has_job:
+    other_parties[0].job.employer
+  other_parties[0].professional_license
+  if tool_ID != "JOD_only":
+    if other_parties[0].has_job:
+      other_parties[0].income.value
+    other_party_pa_receieved
+  
+  interview_order_employment_income = True
+---
+# LHI: "Plaintiff Employer" or "Defendant Employer"
+id: user employment
+question: Your employment
+subquestion: |
+  Answer the following questions about your employment as fully as you can. If you don’t have all the information or if you are afraid to disclose this information to ${ OP_label }, you can leave some answers blank, but the court may require answers later.
+      
+  All of the information you supply in this tool, including your employment information, will be included on forms that you will file with the court and deliver to ${ OP_label }. If you are afraid that sharing your employment information will put you at risk of harm, you should contact a lawyer to help you with your case. For more information, see [Domestic Violence and Divorce](https://michiganlegalhelp.org/resources/family/domestic-violence-and-divorce).   
+fields:
+  - Are you currently employed?: users[0].has_job
+    datatype: yesnoradio
+    required: False
+
+---
+# LHI: "Plaintiff Employer" or "Defendant Employer"
+id: user occupation
+question: Your occupation or field of work
+fields:
+  - What is your occupation?: users[0].occupation
+    required: False
+---
+# LHI: "Plaintiff Employer" or "Defendant Employer"
+id: user job
+question: Your job
+fields:
+  - Employer name: users[0].job.employer
+    required: False
+  - label: Street Address or PO Box
+    field: users[0].job.employer_address.address
+    address autocomplete: True
+    required: False
+  - label: Apartment, suite, etc
+    field: users[0].job.employer_address.unit
+    required: False
+  - label: City
+    field: users[0].job.employer_address.city
+    required: False
+  - label: State or Province (two-letter abbreviation for U.S. states)
+    field: users[0].job.employer_address.state
+    default: MI
+    input type: datalist
+    code: |
+      states_list()
+    required: False
+  - label: Zip or Postal Code
+    field: users[0].job.employer_address.zip
+    required: False
+  - label: Country
+    field: users[0].job.employer_address.country
+    default: "US"
+    code: |
+      countries_list()
+    required: False
+  - Phone: users[0].job.employer_phone
+  - "Federal Employer Identification Number (FEIN), if known": users[0].job.FEIN
+---
+# LHI: "Plaintiff Occupational License" or "Defendant Occupational License"
+id: user professional license
+question: Professional license?
+fields:
+  - Do you hold a professional or occupational license?: users[0].has_professional_license
+    datatype: yesnoradio
+    required: False
+  - What is the license number: users[0].professional_license_number
+    required: False
+  - What type of license is it?: users[0].professional_license_type
+    required: False
+    #TODO should this be limited to US stated plus Virgin Islands and PR? If so should we change initial question to US license? Given it's not required anyway, OK to leave as fill-in?
+  - What state or territory issued the license?: users[0].professional_license_state
+    required: False
+  - What date was the license issued?: users[0].professional_license_date
+    required: False
+    datatype: ThreePartsDate
+    max: |
+     ${ today() }
+     
+---
+# LHI: "Plaintiff Income" or "Defendant Income"
+id: user income
+question: Your income
+fields:
+  - How often are you paid?: users[0].income.times_per_year
+    datatype: radio
+    required: False
+    choices:
+      - Once a week: 52
+      - Every two weeks: 26
+      - Twice a month: 24
+      - Once a month: 12
+  - "What is the amount of your paycheck, before taxes?": users[0].income.value
+    required: False
+    datatype: currency
+    min: 0
+    step: 0.01
+---
+# LHI: "Plaintiff Income" or "Defendant Income"
+id: user public assistance
+question: Do you receive public assistance?
+subquestion: ${ collapse_template(public_assistance_template) }
+fields:
+  - Do you get public assistance that is **based on having low income**?: pa_received
+    datatype: radio
+    required: False
+    choices:
+      - "Applied, but not yet receiving assistance": applied
+      - Currently receiving assistance: gets_assistance
+      - Neither: none
+      - Unknown: unknown
+# not done need to know whether to standardize with fee waiver tool or not, this question probable needs to be separate because we need the neither, applied, etc. options. But maybe list can be shared?
+---  
+#LHI: "Plaintiff Identifying Information" or "Defendant Identifying Information"
+---
+# LHI: "Plaintiff Employer" or "Defendant Employer"
+id: other party employment
+question: ${ other_parties[0] }'s employment
+subquestion: |
+  Answer these questions as fully as you can. If you don’t have all the information, you can leave some answers blank, but the court may require answers later.
+fields:
+  - To the best of your knowledge, is ${ other_parties[0] } currently employed?: other_parties[0].has_job
+    datatype: yesnoradio
+---
+# LHI: "Plaintiff Employer" or "Defendant Employer"
+id: other party occupation
+question: ${ other_parties[0] }'s occupation or field of work
+fields:
+  - What is ${ other_parties[0] }'s occupation?: other_parties[0].occupation
+    required: False
+---
+# LHI: "Plaintiff Employer" or "Defendant Employer"
+id: other party job
+question: ${ other_parties[0] }'s job
+fields:
+  - Employer name: other_parties[0].job.employer
+    required: False
+  - label: Street Address or PO Box
+    field: other_parties[0].job.employer_address.address
+    address autocomplete: True
+    required: False
+  - label: Apartment, suite, etc
+    field: other_parties[0].job.employer_address.unit
+    required: False
+  - label: City
+    field: other_parties[0].job.employer_address.city
+    required: False
+  - label: State or Province (two-letter abbreviation for U.S. states)
+    field: other_parties[0].job.employer_address.state
+    default: MI
+    input type: datalist
+    code: |
+      states_list()
+    required: False
+  - label: Zip or Postal Code
+    field: other_parties[0].job.employer_address.zip
+    required: False
+  - label: Country
+    field: other_parties[0].job.employer_address.country
+    default: "US"
+    code: |
+      countries_list()
+    required: False
+  - Phone: other_parties[0].job.employer_phone
+  - "Federal Employer Identification Number (FEIN), if known": other_parties[0].job.FEIN
+---
+# LHI: "Plaintiff Occupational License" or "Defendant Occupational License"
+id: other party professional license
+question: Professional license?
+fields:
+  - Does ${ other_parties[0] } hold a professional or occupational license?: other_parties[0].has_professional_license
+    datatype: yesnoradio
+    required: False
+  - What is the license number: other_parties[0].professional_license_number
+    required: False
+  - What type of license is it?: other_parties[0].professional_license_type
+    required: False
+    #TODO should this be limited to US stated plus Virgin Islands and PR? If so should we change initial question to US license? Given it's not required anyway, OK to leave as fill-in?
+  - What state or territory issued the license?: other_parties[0].professional_license_state
+    required: False
+  - What date was the license issued?: other_parties[0].professional_license_date
+    required: False
+    datatype: ThreePartsDate
+    max: |
+     ${ today() }
+---
+# LHI: "Plaintiff Income" or "Defendant Income"
+id: other party income
+question: Your income
+fields:
+  - How often are you paid?: users[0].income.times_per_year
+    datatype: radio
+    required: False
+    choices:
+      - Once a week: 52
+      - Every two weeks: 26
+      - Twice a month: 24
+      - Once a month: 12
+  - "What is the amount of your paycheck, before taxes?": users[0].income.value
+    required: False
+    datatype: currency
+    min: 0
+    step: 0.01
+---
+# LHI: "Plaintiff Income" or "Defendant Income"
+id: user public assistance
+question: Do you receive public assistance?
+subquestion: ${ collapse_template(public_assistance_template) }
+fields:
+  - Do you get public assistance that is **based on having low income**?: pa_received
+    datatype: radio
+    required: False
+    choices:
+      - "Applied, but not yet receiving assistance": applied
+      - Currently receiving assistance: gets_assistance
+      - Neither: none
+      - Unknown: unknown
+# not done need to know whether to standardize with fee waiver tool or not, this question probable needs to be separate because we need the neither, applied, etc. options. But maybe list can be shared?
+---  
+#LHI: "Plaintiff Identifying Information" or "Defendant Identifying Information"
+---
+
 ---
 # --------------------------------------------------------------------
 ## income tax info
