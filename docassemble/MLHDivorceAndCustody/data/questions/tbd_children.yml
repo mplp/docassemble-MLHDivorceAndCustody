@@ -318,7 +318,7 @@ fields:
     choices:
       - Female: female
       - Male: male
-  - Social security number: ssn
+  - Social security number: children[i].ssn
     datatype: ssn
     required: False
 ---
@@ -1724,24 +1724,27 @@ code: |
     users[0].occupation
   if users[0].has_job:
     users[0].job.employer
-  users[0].professional_license
+  users[0].has_professional_license
   if tool_ID != "JOD_only":
     if users[0].has_job:
       users[0].income.value
     pa_recieved
 
   other_parties[0].has_job
-  if tool_ID != "divorce_complaint" and len(children.filter(legal_parent="both")) > 0:
+  if tool_ID == "divorce_complaint" and len(children.filter(legal_parent="both")) > 0:
     other_parties[0].occupation
   if other_parties[0].has_job:
     other_parties[0].job.employer
-  other_parties[0].professional_license
+  other_parties[0].has_professional_license
   if tool_ID != "JOD_only":
     if other_parties[0].has_job:
       other_parties[0].income.value
     other_party_pa_receieved
   
   interview_order_employment_income = True
+
+# note it's possible need to ask occupation of defendant if wants spousal support as well
+# really it's possible that all of this would apply to spousal support as well for divorce complaint (reading interview script)? Except for the occupation question.
 ---
 # LHI: "Plaintiff Employer" or "Defendant Employer"
 id: user employment
@@ -1840,7 +1843,10 @@ fields:
 # LHI: "Plaintiff Income" or "Defendant Income"
 id: user public assistance
 question: Do you receive public assistance?
-subquestion: ${ collapse_template(public_assistance_template) }
+subquestion: |
+  ${ collapse_template(public_assistance_template) }
+
+  **NOTE**: THIS IS STILL UNDER CONSTRUCTION. NEED TO DECIDE HOW MUCH TO PULL FROM FEE WAIVER CODE VS JUST REBUILD HERE.
 fields:
   - Do you get public assistance that is **based on having low income**?: pa_received
     datatype: radio
@@ -1851,8 +1857,17 @@ fields:
       - Neither: none
       - Unknown: unknown
 # not done need to know whether to standardize with fee waiver tool or not, this question probable needs to be separate because we need the neither, applied, etc. options. But maybe list can be shared?
----  
-#LHI: "Plaintiff Identifying Information" or "Defendant Identifying Information"
+# note divorce tool currently only asks for SSI case number if there is no MDHHS case number. (And in that case prints a PII form.) Fee waiver tool only uses SSI case number if there's no MDHHS and no "Other" case number. So probably should follow same logic here. 
+# note, if they choose "applied, but not receiving", only ask for specific type of aid if there are children or possibly if they're asking for spousal support. (Note that for complaint we do ask the income questions even if there's no kids or spousal support.)
+---
+# taken almost directly from fee waiver for now
+template: public_assistance_template
+subject: |
+  What are some examples?
+content: |
+  This may include help such as SNAP or food stamps, Medicaid, TANF, WIC, cash assistance, child care assistance, or SSI (Supplemental Security Income).
+  
+  **Note:** Social Security Disability Insurance benefits (SSDI) are **not** based on having low income, so if that is the only benefit received, select **No**.
 ---
 # LHI: "Plaintiff Employer" or "Defendant Employer"
 id: other party employment
@@ -1929,7 +1944,7 @@ fields:
 id: other party income
 question: Your income
 fields:
-  - How often are you paid?: users[0].income.times_per_year
+  - How often are you paid?: other_parties[0].income.times_per_year
     datatype: radio
     required: False
     choices:
@@ -1937,7 +1952,7 @@ fields:
       - Every two weeks: 26
       - Twice a month: 24
       - Once a month: 12
-  - "What is the amount of your paycheck, before taxes?": users[0].income.value
+  - "What is the amount of your paycheck, before taxes?": other_parties[0].income.value
     required: False
     datatype: currency
     min: 0
@@ -1946,9 +1961,12 @@ fields:
 # LHI: "Plaintiff Income" or "Defendant Income"
 id: user public assistance
 question: Do you receive public assistance?
-subquestion: ${ collapse_template(public_assistance_template) }
+subquestion: |
+  ${ collapse_template(public_assistance_template) }
+
+  **NOTE:** under construction, not built out yet.
 fields:
-  - Do you get public assistance that is **based on having low income**?: pa_received
+  - Do you get public assistance that is **based on having low income**?: other_party_pa_received
     datatype: radio
     required: False
     choices:
@@ -1957,11 +1975,255 @@ fields:
       - Neither: none
       - Unknown: unknown
 # not done need to know whether to standardize with fee waiver tool or not, this question probable needs to be separate because we need the neither, applied, etc. options. But maybe list can be shared?
+# not finished yet, see notes on user version
 ---  
+# --------------------------------------------------------------------
+## Party Identifying Information
+# --------------------------------------------------------------------
 #LHI: "Plaintiff Identifying Information" or "Defendant Identifying Information"
 ---
+code: |
+  users[0].ssn
+  if "tool_ID" != "JOD_only":
+    users[0].eye_color
+    users[0].height_feet
+    users[0].race
+  
+  interview_order_user_identifying_info = True
+---
+code: |
+  other_parties[0].ssn
+  if "tool_ID" != "JOD_only":
+    other_parties[0].eye_color
+    other_parties[0].height_feet
+    other_parties[0].race
+  
+  interview_order_other_party_identifying_info = True
+---
+id: user SSN and DL
+question: |
+  Your identity documents
+subquestion: |
+  ${ collapse_template(why_need_SSN)}
+fields:
+  - Please enter your social security number: users[0].ssn
+    required: False
+    datatype: ssn
+  - Enter your driver's license number: users[0].license_number
+    required: False
+  - What state issued your driver's license?: users[0].license_state
+    required: False
+    # probably we should just make a consistent dropdown with states plus DC, PR, Guam, Virgin Islands (what about northern mariana islands (citizens) and american samoa (not citizens)?)
+  - Are you a citizen of any country other than the US?: users[0].has_foreign_citizenship
+    required: False
+    datatype: yesnoradio
+    js show if: |
+      ${ json.dumps(tool_ID) } !== "JOD_only"
+  - List all other countries that you are a citizen of: users[0].countries_of_citizenship
+    required: False
+    js show if: |
+      ${ json.dumps(tool_ID) } !== "JOD_only" && val("users[0].has_foreign_citizenship") === true
+  - "List any foreign/international identifying numbers and sources. *For example: 'German Passport #12345-AA; Canadian driver's license # CAN-999'*": users[0].foreign_identity_documents
+    required: False
+    js show if: |
+      ${ json.dumps(tool_ID) } !== "JOD_only" && val("users[0].has_foreign_citizenship") === true
+---
+template: why_need_SSN
+subject: |
+  Why are you asking for a social security number?
+content: |
+  Social security numbers are only used in child support documents. If you don't want to type it here, you can hand write the number on the documents after you print them.
+---
+id: user eye color, hair color, weight
+question: |
+  Your physical description
+fields:
+  - What color eyes do you have?: users[0].eye_color
+    required: False
+    choices:
+      - Black: Black
+      - Blue: Blue
+      - Brown: Brown
+      - Gray: Gray
+      - Green: Green
+      - Hazel: Hazel
+      - Unknown: Unknown
+  - What color hair do you have?: users[0].hair_color
+    required: False
+    choices:
+      - Bald: Bald
+      - Black: Black
+      - Blonde or Strawberry: Blonde
+      - Brown: Brown
+      - Gray or Partially Gray: Gray
+      - Red or Auburn: Red
+      - Sandy: Sandy
+      - White: White
+      - Other: other
+  - "How much do you weigh, in pounds?": users[0].weight
+    datatype: integer
+    required: False
+    min: 0
+    max: 2000
+  - "Briefly list any identifying scars, tattoos, or other identifying marks that you have. *Please limit your answer to 220 characters or less.*": users[0].other_identifying_info
+    required: False
+    maxlength: 220
 
 ---
+id: user height
+question: |
+  How tall are you?
+fields:
+  - Feet: users[0].height_feet
+    label above field: False
+    datatype: integer
+    required: False
+    min: 1
+    max: 10
+  - Inches: users[0].height_inches
+    label above field: False
+    datatype: integer
+    required: False
+    min: 0
+    max: 11
+---
+id: user race
+question: Your race
+fields:
+  - What is your race?: users[0].race
+    required: False
+    choices:
+      - White, not Hispanic or Latino: white
+      - Hispanic or Latino: hispanic_latino
+      - American Indian or Alaska Native: american_indian_AK_native
+      - Asian: asian
+      - African American: african_american
+      - Native Hawaiian or Other Pacific Islander: HI_native_pacific_islander
+      - Other: other
+  - What is the other race?: users[0].other_race_description
+    required: False
+    show if: 
+      variable: users[0].race 
+      is: other
+---
+id: other party SSN and DL
+question: |
+  % if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer" or tool_ID == "JOD_only":
+  Your spouse's identity documents
+  % else:
+  The plaintiff's identity documents
+  % endif
+subquestion: |
+  ${ collapse_template(why_need_SSN)}
+fields:
+  - Please enter ${ OP_label }'s social security number: other_parties[0].ssn
+    required: False
+    datatype: ssn
+  - Please enter ${ OP_label }'s driver's license number: other_parties[0].license_number
+    required: False
+  - What state issued ${ OP_label }'s driver's license?: other_parties[0].license_state
+    required: False
+    # probably we should just make a consistent dropdown with states plus DC, PR, Guam, Virgin Islands (what about northern mariana islands (citizens) and american samoa (not citizens)?)
+  - Is ${ OP_label } a citizen of any country other than the US?: other_parties[0].has_foreign_citizenship
+    required: False
+    datatype: yesnoradio
+    js show if: |
+      ${ json.dumps(tool_ID) } !== "JOD_only"
+  - List all other countries that ${ OP_label } is a citizen of: other_parties[0].countries_of_citizenship
+    required: False
+    js show if: |
+      ${ json.dumps(tool_ID) } !== "JOD_only" && val("other_parties[0].has_foreign_citizenship") === true
+  - "List any foreign/international identifying numbers and sources. *For example: 'German Passport #12345-AA; Canadian driver's license # CAN-999'*": other_parties[0].foreign_identity_documents
+    required: False
+    js show if: |
+      ${ json.dumps(tool_ID) } !== "JOD_only" && val("other_parties[0].has_foreign_citizenship") === true
+---
+template: why_need_SSN
+subject: |
+  Why are you asking for a social security number?
+content: |
+  Social security numbers are only used in child support documents. If you don't want to type it here, you can hand write the number on the documents after you print them.
+---
+id: other party eye color, hair color, weight
+question: |
+  % if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer" or tool_ID == "JOD_only":
+  Your spouse's physical description
+  % else:
+  The plaintiff's physical description
+  % endif
+fields:
+  - What color eyes does ${ OP_label } have?: other_parties[0].eye_color
+    required: False
+    choices:
+      - Black: Black
+      - Blue: Blue
+      - Brown: Brown
+      - Gray: Gray
+      - Green: Green
+      - Hazel: Hazel
+      - Unknown: Unknown
+  - What color hair does ${ OP_label } have?: other_parties[0].hair_color
+    required: False
+    choices:
+      - Bald: Bald
+      - Black: Black
+      - Blonde or Strawberry: Blonde
+      - Brown: Brown
+      - Gray or Partially Gray: Gray
+      - Red or Auburn: Red
+      - Sandy: Sandy
+      - White: White
+      - Other: other
+  - "How much does ${ OP_label } weigh, in pounds?": other_parties[0].weight
+    datatype: integer
+    required: False
+    min: 0
+    max: 2000
+  - "Briefly list any identifying scars, tattoos, or other identifying marks that ${ OP_label } has. *Please limit your answer to 220 characters or less.*": other_parties[0].other_identifying_info
+    required: False
+    maxlength: 220
+---
+id: other party height
+question: |
+  How tall is ${ OP_label }?
+fields:
+  - Feet: other_parties[0].height_feet
+    label above field: False
+    datatype: integer
+    required: False
+    min: 1
+    max: 10
+  - Inches: other_parties[0].height_inches
+    label above field: False
+    datatype: integer
+    required: False
+    min: 0
+    max: 11
+---
+id: other party race
+question: |
+  % if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer" or tool_ID == "JOD_only":
+  Your spouse's race
+  % else:
+  The plaintiff's race
+  % endif
+fields:
+  - What is ${ OP_label }'s race?: other_parties[0].race
+    required: False
+    choices:
+      - White, not Hispanic or Latino: white
+      - Hispanic or Latino: hispanic_latino
+      - American Indian or Alaska Native: american_indian_AK_native
+      - Asian: asian
+      - African American: african_american
+      - Native Hawaiian or Other Pacific Islander: HI_native_pacific_islander
+      - Other: other
+  - What is the other race?: other_parties[0].other_race_description
+    required: False
+    show if: 
+      variable: users[0].race 
+      is: other
+
 # --------------------------------------------------------------------
 ## income tax info
 # --------------------------------------------------------------------
