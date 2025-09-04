@@ -1,19 +1,18 @@
-# example date for testing
-code: |
-  marriage.date = "2015-07-20T00:00:00-04:00" 
----
 # example interview tag for testing
 code: |
   tool_ID = "divorce_complaint"
-# other options = "divorce_complaint", "divorce_answer", "custody_complaint", "custody_answer"
+# options: "JOD_only", "divorce_complaint", "divorce_answer", "custody_complaint", "custody_answer"
 ---
 code: |
   if tool_ID == "JOD_only" or tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
     OP_label = "your spouse"
+    case_label = "divorce"
   elif user_ask_role == "plaintiff":
     OP_label = "the defendant"
+    case_label = "custody"
   elif user_ask_role == "defendant":
     OP_label = "the plaintiff"
+    case_label = "custody"
 ---
 ### need the stuff in this section (copied from main yml) here for now to run just this yml
 features:
@@ -24,6 +23,13 @@ include:
   - docassemble.ALToolbox:collapse_template.yml
   - docassemble.mlhframework:mlh_interview_framework.yml
   - question_bank.yml
+---
+modules:
+  - docassemble.ALToolbox.al_income
+---
+# example date for testing
+code: |
+  marriage.date = "2015-07-20T00:00:00-04:00" 
 ---
 # for testing:
 code: |
@@ -112,7 +118,8 @@ code: |
   children.gather()
   
   if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
-    
+
+    guidepost_marital_children
     if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
       if kids_had_other_custodian:
         other_custodian_kickout
@@ -135,7 +142,7 @@ code: |
         child_address_not_confidential_warning
       children_lived_with_which_parent_past
       children_previous_address.gather()
-  
+
     legal_custody_who
     if PT_type == "specific" or PT_type == "supervised":
       if county_choice == "Muskegon":
@@ -149,16 +156,33 @@ code: |
     if legal_custody_who != "both":
       hundred_mile_rule
     child_support_basic
+    if tool_ID != "JOD_only":
+      allow_child_support_overpayment_correction
+
+    if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0:
+      guidepost_stepchildren
+      interview_order_stepchild_address
+  
     users[0].insurance.gather()
     other_parties[0].insurance.gather()
     if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
       marriage.cobra_coverage
+    interview_order_user_employment
+    if tool_ID != "JOD_only":
+      interview_order_user_income
+    interview_order_user_identifying_info
+    interview_order_other_party_employment
+    if tool_ID != "JOD_only":
+      interview_order_other_party_income
+    interview_order_other_party_identifying_info
     interview_order_income_tax
     interview_order_prior_cases
 
   else:
     if tool_ID == "JOD_only" or tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
       marriage.cobra_coverage
+    if tool_ID == "divorce_complaint":
+      interview_order_user_income
     
   test_end_screen
 ---
@@ -309,7 +333,7 @@ fields:
       children[i].name_fields()
   - Date of birth: children[i].birthdate
     datatype: BirthDate
-  - My spouse and I **adopted** this child together during our marriage.: children[i].adopted_during_marriage
+  - My spouse and I **adopted** this child together during our marriage.: dopted_during_marriage
     required: False
     datatype: yesno
   # need help text saying don't include children who were born to or adopted by either spouse prior to marriage
@@ -776,21 +800,34 @@ subquestion: |
 ---
 ######## start children qualification/address/home state questions #######
 # LHI "(Marital) Minor Children Information" (first part)
+---
+id: guidepost_marital_children
+continue button field: guidepost_marital_children
+question: More information about the children of your marriage
+subquestion: |
+  The next few questions are all about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() }: **${ comma_and_list(children.filter(legal_parent='both')) }**.
+
+  % if len(children.filter(legal_parent="both")) > 1:
+  The divorce may decide issues of custody and child support for these children.
+  % else:
+  The divorce may decide issues of custody and child support for ${ comma_and_list(children.filter(legal_parent='both')) }
+  % endif
+---
 id: where children live
 question: |
   % if len(children.filter(legal_parent="both")) > 1:
   Who your minor children live with now
   % else:
-  Who ${ children[0] } lives with now
+  Who ${ children.filter(legal_parent='both') } lives with now
   % endif
 subquestion: |
-  This question is about your and ${ other_parties[0] }'s minor ${ children.as_noun() }: **${ comma_and_list(children.filter(legal_parent='both')) }**.
+  This question is about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() }: **${ comma_and_list(children.filter(legal_parent='both')) }**.
 fields:
   - label: |
       % if len(children.filter(legal_parent="both")) > 1:
       Do all of your and ${ other_parties[0] }'s minor children currently live with you or ${ other_parties[0] }?
       % else:
-      Does your child ${ children[0] } currently live with you or ${ other_parties[0] }?
+      Does your child ${ children.filter(legal_parent='both') } currently live with you or ${ other_parties[0] }?
       % endif
     field: children_live_with_parent
     datatype: yesnoradio
@@ -798,7 +835,7 @@ fields:
       % if len(children.filter(legal_parent="both")) > 1:
       Who do your and ${ other_parties[0] }'s minor children currently live with?
       % else:
-      Who does your child ${ children[0] } currently live with?
+      Who does your child ${ children.filter(legal_parent='both') } currently live with?
       % endif
     field: children_now_live_with_which_parent
     datatype: radio
@@ -847,14 +884,14 @@ id: children disqualifiers
 question: |
   Minor children -- special situations
 subquestion: |
-  These questions are about your and ${ other_parties[0] }'s minor ${ children.as_noun() }: **${ comma_and_list(children.filter(legal_parent='both')) }**.
+  These questions are about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() }: **${ comma_and_list(children.filter(legal_parent='both')) }**.
 
 fields:
   - label: |
       % if len(children.filter(legal_parent="both")) > 1:
       Have any of your and ${ other_parties[0] }'s children lived with a legal custodian, other than a parent, during the past five years? (For example, because of a child protective services case, a minor guardianship, or a third-party custody order.)
       % else:
-      Has your child ${ children[0] } lived with a legal custodian, other than a parent, during the past five years? (For example, because of a child protective services case, a minor guardianship, or a third-party custody order.)
+      Has your child ${ children.filter(legal_parent='both') } lived with a legal custodian, other than a parent, during the past five years? (For example, because of a child protective services case, a minor guardianship, or a third-party custody order.)
       % endif
     field: kids_had_other_custodian
     datatype: yesnoradio
@@ -862,7 +899,7 @@ fields:
       % if len(children.filter(legal_parent="both")) > 1:
       Are there any other adults (besides you and your spouse) who may have a legal right to custody or parenting time of any of the minor children?
       % else:
-      Are there any other adults (besides you and your spouse) who may have a legal right to custody or parenting time for ${ children[0] }?
+      Are there any other adults (besides you and your spouse) who may have a legal right to custody or parenting time for ${ children.filter(legal_parent='both') }?
       % endif
     show if:
       variable: kids_had_other_custodian
@@ -873,7 +910,7 @@ fields:
       % if len(children.filter(legal_parent="both")) > 1:
       Do you believe that a temporary custody order is needed to protect the children because they have been abused, mistreated, threatened, or neglected?
       % else:
-      Do you believe that a temporary custody order is needed to protect ${ children[0] } because they have been abused, mistreated, threatened, or neglected?
+      Do you believe that a temporary custody order is needed to protect ${ children.filter(legal_parent='both') } because they have been abused, mistreated, threatened, or neglected?
       % endif
     show if:
       variable: third_party_custody_claim
@@ -927,7 +964,7 @@ fields:
       % if len(children.filter(legal_parent="both")) > 1:
       Have any of these children lived at any **other addresses** in the past five years?
       % else:
-      Has ${ children[0] } lived at any **other addresses** in the past five years?
+      Has ${ children.filter(legal_parent='both') } lived at any **other addresses** in the past five years?
       % endif
     field: children_previous_address.there_are_any
     datatype: yesnoradio
@@ -940,7 +977,7 @@ fields:
       % if len(children.filter(legal_parent="both")) > 1:
       During the last five years, who have your children lived with?
       % else:
-      During the last five years, who has ${ children[0] } lived with?
+      During the last five years, who has ${ children.filter(legal_parent='both') } lived with?
       % endif
     field: children_lived_with_which_parent_past
     datatype: radio
@@ -1496,8 +1533,148 @@ fields:
     datatype: yesnoradio
     required: False
 ---
+# --------------------------------------------------------------------
+## stepchildren additional info
+# --------------------------------------------------------------------
+---
+code: |
+  for child in children:
+    if child.legal_parent != "both":
+      child.stepchild_lives_with
 
-
+  interview_order_stepchild_address = True
+---
+id: guidepost_stepchildren
+continue button field: guidepost_stepchildren
+question: More information about stepchildren
+subquestion: |
+  % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 1:
+  The next few questions are about you and ${ other_parties[0] }'s other minor children (stepchildren): **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**.
+  
+  Stepchildren are children that have only one of you as their legal parent. This ${ case_label } case will not directly affect your stepchildren or ${ other_parties[0] }'s stepchildren, but information about them is required on some of the forms.   
+  % else:
+  The next few questions are about the minor child: **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**.
+  
+    Stepchildren are children that have only one of you as their legal parent. This ${ case_label } case will not directly affect ${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }, but information about them is required on some of the forms.
+  % endif
+---
+if: children[i].legal_parent == "user"
+id: user's child home
+question: ${ children[i] }'s home address
+fields:
+  - Does ${ children[i] } live with you?: children[i].stepchild_lives_with
+    datatype: radio
+    choices:
+      - Yes: user
+      - No: other
+  - Do you want to keep this child's address confidential?: children[i].stepchild_address_confidential
+    datatype: yesnoradio
+    show if:
+      variable: children[i].stepchild_lives_with
+      is: other
+  - label: Street Address or PO Box
+    field: children[i].address.address
+    address autocomplete: True
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: Apartment, suite, etc
+    field: children[i].address.unit
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: City
+    field: children[i].address.city
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: State or Province (two-letter abbreviation for U.S. states)
+    field: children[i].address.state
+    default: MI
+    input type: datalist
+    code: |
+      states_list()
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: Zip or Postal Code
+    field: children[i].address.zip
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: Country
+    field: children[i].address.country
+    default: "US"
+    code: |
+      countries_list()
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+---
+if: children[i].legal_parent == "other_party"
+id: other party's child home
+question: ${ children[i] }'s home address
+fields:
+  - Does ${ children[i] } live with ${ OP_label }?: children[i].stepchild_lives_with
+    datatype: radio
+    choices:
+      - Yes: other_party
+      - No: other
+  - Do you want to keep this child's address confidential?: children[i].stepchild_address_confidential
+    datatype: yesnoradio
+    show if:
+      variable: children[i].stepchild_lives_with
+      is: other
+  - label: Street Address or PO Box
+    field: children[i].address.address
+    address autocomplete: True
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: Apartment, suite, etc
+    field: children[i].address.unit
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: City
+    field: children[i].address.city
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: State or Province (two-letter abbreviation for U.S. states)
+    field: children[i].address.state
+    default: MI
+    input type: datalist
+    code: |
+      states_list()
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: Zip or Postal Code
+    field: children[i].address.zip
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: Country
+    field: children[i].address.country
+    default: "US"
+    code: |
+      countries_list()
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
 ---
 # --------------------------------------------------------------------
 ## health insurance collection
@@ -1516,8 +1693,23 @@ table: users[0].insurance.table
 rows: users[0].insurance
 columns:
   - Name: row_item.company_name
+  - Type: row_item.coverage_type.true_values()
 #  - Entered family before or during marriage: |
 #      "before marriage" if row_item.timing == "premarital" else "during marriage"
+edit:
+  - company_name
+delete buttons: True
+confirm: True
+---
+id: other party insurance table
+table: other_parties[0].insurance.table
+rows: other_parties[0].insurance
+columns:
+  - Name: row_item.company_name
+  - Type: row_item.coverage_type.true_values()
+#  - Covered children: |
+#      row_item.covers_child.true_values() if len(children.filter(legal_parent="both")) > 1 else "during marriage"
+# can't figure out how to get this working for both single and multiple children in single chart
 edit:
   - company_name
 delete buttons: True
@@ -1725,23 +1917,34 @@ code: |
   if users[0].has_job:
     users[0].job.employer
   users[0].has_professional_license
-  if tool_ID != "JOD_only":
-    if users[0].has_job:
-      users[0].income.value
-    pa_recieved
 
+  interview_order_user_employment = True
+---
+# never asked for JOD_only; always asked for divorce_complaint even if no kids
+code: |
+  if users[0].has_job:
+    users[0].income.value
+  pa_received
+
+  interview_order_user_income = True
+---
+code: |
   other_parties[0].has_job
   if tool_ID == "divorce_complaint" and len(children.filter(legal_parent="both")) > 0:
     other_parties[0].occupation
   if other_parties[0].has_job:
     other_parties[0].job.employer
   other_parties[0].has_professional_license
-  if tool_ID != "JOD_only":
-    if other_parties[0].has_job:
-      other_parties[0].income.value
-    other_party_pa_receieved
+
+  interview_order_other_party_employment = True
+---
+# never asked for JOD_only
+code: |
+  if other_parties[0].has_job:
+    other_parties[0].income.value
+  other_party_pa_received
   
-  interview_order_employment_income = True
+  interview_order_other_party_income = True
 
 # note it's possible need to ask occupation of defendant if wants spousal support as well
 # really it's possible that all of this would apply to spousal support as well for divorce complaint (reading interview script)? Except for the occupation question.
@@ -1810,13 +2013,25 @@ fields:
     required: False
   - What is the license number: users[0].professional_license_number
     required: False
+    show if:
+      variable: users[0].has_professional_license
+      is: True
   - What type of license is it?: users[0].professional_license_type
     required: False
+    show if:
+      variable: users[0].has_professional_license
+      is: True
     #TODO should this be limited to US stated plus Virgin Islands and PR? If so should we change initial question to US license? Given it's not required anyway, OK to leave as fill-in?
   - What state or territory issued the license?: users[0].professional_license_state
     required: False
+    show if:
+      variable: users[0].has_professional_license
+      is: True
   - What date was the license issued?: users[0].professional_license_date
     required: False
+    show if:
+      variable: users[0].has_professional_license
+      is: True
     datatype: ThreePartsDate
     max: |
      ${ today() }
@@ -1876,6 +2091,7 @@ subquestion: |
   Answer these questions as fully as you can. If you don’t have all the information, you can leave some answers blank, but the court may require answers later.
 fields:
   - To the best of your knowledge, is ${ other_parties[0] } currently employed?: other_parties[0].has_job
+    required: False
     datatype: yesnoradio
 ---
 # LHI: "Plaintiff Employer" or "Defendant Employer"
@@ -1929,13 +2145,25 @@ fields:
     required: False
   - What is the license number: other_parties[0].professional_license_number
     required: False
+    show if:
+      variable: other_parties[0].has_professional_license
+      is: True
   - What type of license is it?: other_parties[0].professional_license_type
     required: False
     #TODO should this be limited to US stated plus Virgin Islands and PR? If so should we change initial question to US license? Given it's not required anyway, OK to leave as fill-in?
+    show if:
+      variable: other_parties[0].has_professional_license
+      is: True
   - What state or territory issued the license?: other_parties[0].professional_license_state
     required: False
+    show if:
+      variable: other_parties[0].has_professional_license
+      is: True
   - What date was the license issued?: other_parties[0].professional_license_date
     required: False
+    show if:
+      variable: other_parties[0].has_professional_license
+      is: True
     datatype: ThreePartsDate
     max: |
      ${ today() }
@@ -1959,14 +2187,14 @@ fields:
     step: 0.01
 ---
 # LHI: "Plaintiff Income" or "Defendant Income"
-id: user public assistance
-question: Do you receive public assistance?
+id: other party public assistance
+question: Does ${ OP_label } receive public assistance?
 subquestion: |
   ${ collapse_template(public_assistance_template) }
 
   **NOTE:** under construction, not built out yet.
 fields:
-  - Do you get public assistance that is **based on having low income**?: other_party_pa_received
+  - Does ${ OP_label } get public assistance that is **based on having low income**?: other_party_pa_received
     datatype: radio
     required: False
     choices:
@@ -1984,7 +2212,7 @@ fields:
 ---
 code: |
   users[0].ssn
-  if "tool_ID" != "JOD_only":
+  if tool_ID != "JOD_only":
     users[0].eye_color
     users[0].height_feet
     users[0].race
@@ -1993,7 +2221,7 @@ code: |
 ---
 code: |
   other_parties[0].ssn
-  if "tool_ID" != "JOD_only":
+  if tool_ID != "JOD_only":
     other_parties[0].eye_color
     other_parties[0].height_feet
     other_parties[0].race
@@ -2018,7 +2246,7 @@ fields:
     required: False
     datatype: yesnoradio
     js show if: |
-      ${ json.dumps(tool_ID) } !== "JOD_only"
+      ${ json.dumps(tool_ID) } !== "JOD_only" && (true || val("users[0].ssn"))
   - List all other countries that you are a citizen of: users[0].countries_of_citizenship
     required: False
     js show if: |
@@ -2128,7 +2356,7 @@ fields:
     required: False
     datatype: yesnoradio
     js show if: |
-      ${ json.dumps(tool_ID) } !== "JOD_only"
+      ${ json.dumps(tool_ID) } !== "JOD_only" && (true || val("other_parties[0].ssn"))
   - List all other countries that ${ OP_label } is a citizen of: other_parties[0].countries_of_citizenship
     required: False
     js show if: |
@@ -2250,7 +2478,7 @@ subquestion: |
 fields:
   - label: |
       % if len(children.filter(legal_parent="both")) == 1:
-      How will income tax deductions, credits, and exemptions for ${ children[0] } be divided between you and your spouse? 
+      How will income tax deductions, credits, and exemptions for ${ children.filter(legal_parent='both') } be divided between you and your spouse? 
       % elif len(children.filter(legal_parent="both")) > 1:
       How will income tax deductions, credits, and exemptions for the children be divided between you and your spouse? 
       % endif
@@ -2269,15 +2497,15 @@ fields:
 # TO DO: going to have to clear this out and rebuild if # of children changes
 code: |
   tax_choices = [
-                  ['default', f'Based on federal tax law, the parent with whom the { children.as_noun() } { children.does_verb("live") } for the greater number of nights during the year will be awarded all income tax deductions, credits, and exemptions for the minor { children.as_noun() }, including state, federal, or local tax returns, for all tax years.'],
-                  ['user', f'{ users[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.as_noun() }, including state, federal, or local tax returns, for all tax years.'],
-                  ['other_party', f'{ other_parties[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.as_noun() }, including state, federal, or local tax returns, for all tax years.']
+                  ['default', f'Based on federal tax law, the parent with whom the { children.filter(legal_parent='both').as_noun() } { children.does_verb("live") } for the greater number of nights during the year will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years.'],
+                  ['user', f'{ users[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years.'],
+                  ['other_party', f'{ other_parties[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years.']
                 ]
   
   if len(children.filter(legal_parent="both")) > 1:
     tax_choices.append(['specify_per_child', f'{ users[0] } and { other_parties[0] } will claim the deductions, credits, and exemptions for different children, including state, federal, or local tax returns.'])
   
-  tax_choices.append(['alternate_years', f'{ users[0] } and { other_parties[0] } will claim all deductions, credits, and exemptions for the { children.as_noun() } in alternating years, including state, federal, or local tax returns.'])
+  tax_choices.append(['alternate_years', f'{ users[0] } and { other_parties[0] } will claim all deductions, credits, and exemptions for the { children.filter(legal_parent='both').as_noun() } in alternating years, including state, federal, or local tax returns.'])
 ---
 id: income tax deductions starting year
 Question: Who gets income tax deductions first?
