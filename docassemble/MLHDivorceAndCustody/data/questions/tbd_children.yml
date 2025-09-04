@@ -333,7 +333,7 @@ fields:
       children[i].name_fields()
   - Date of birth: children[i].birthdate
     datatype: BirthDate
-  - My spouse and I **adopted** this child together during our marriage.: dopted_during_marriage
+  - My spouse and I **adopted** this child together during our marriage.: children[i].adopted_during_marriage
     required: False
     datatype: yesno
   # need help text saying don't include children who were born to or adopted by either spouse prior to marriage
