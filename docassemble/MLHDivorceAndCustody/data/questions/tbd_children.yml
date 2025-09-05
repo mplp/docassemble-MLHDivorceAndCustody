@@ -86,7 +86,11 @@ terms:
       - minor
     definition: |
       A child is a minor if they are 17 years old or younger.
-      
+---
+### possibly move the below to main yml
+code: |
+  US_states_and_territories_list = ["Alabama", "Alaska", "American Samoa", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "District of Columbia", "Florida", "Georgia", "Guam", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', "New Jersey", "New Mexico", "New York", 'North Carolina', 'North Dakota', 'Northern Mariana Islands', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Puerto Rico', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'US Virgin Islands', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming']
+# currently includes all 5 inhabited US territories and DC. But note that American Samoans are not US citizens. Not sure they should be on this list. 
 ---
 table: children.table
 rows: children
@@ -129,6 +133,13 @@ code: |
         if temporary_order_exit:
           exit_general
 
+    for child in children:
+        if child.legal_parent == "both":
+          if child.home_state != "Michigan":
+            if child.home_state_exit:
+              exit_general
+              
+
     if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer" or tool_ID == "JOD_only":
       if not children_live_with_parent:
         children_live_with_third_party_kickout
@@ -136,6 +147,7 @@ code: |
         for child in children:
           if child.legal_parent == "both":
             child.lives_with
+              
 
     if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
       if not confidential_contact_info_yn and (children_now_live_with_which_parent == "depends_on_child" or children_now_live_with_which_parent == "users[0]"):
@@ -805,7 +817,9 @@ id: guidepost_marital_children
 continue button field: guidepost_marital_children
 question: More information about the children of your marriage
 subquestion: |
-  The next few questions are all about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() }: **${ comma_and_list(children.filter(legal_parent='both')) }**.
+  The next few questions are all about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() }: 
+  
+  **${ comma_and_list(children.filter(legal_parent='both')) }**.
 
   % if len(children.filter(legal_parent="both")) > 1:
   The divorce may decide issues of custody and child support for these children.
@@ -821,7 +835,9 @@ question: |
   Who ${ children.filter(legal_parent='both') } lives with now
   % endif
 subquestion: |
-  This question is about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() }: **${ comma_and_list(children.filter(legal_parent='both')) }**.
+  This question is about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() }: 
+  
+  **${ comma_and_list(children.filter(legal_parent='both')) }**.
 fields:
   - label: |
       % if len(children.filter(legal_parent="both")) > 1:
@@ -941,6 +957,148 @@ fields:
     choices:
       - ${ users[0] }: users[0]
       - ${ other_parties[0] }: other_parties[0]
+---
+id: specify each child's home state
+question: ${ children[i] }'s legal "home state"
+subquestion: |
+  ${ collapse_template(home_state_info) }
+fields:
+  - label: |
+      % if children[i].age_in_months() >= 6:
+      Has ${ children[i] } lived on land governed by a Native American tribe (a tribal reservation) for the last six months?
+      % else:
+      Has ${ children[i] } lived on land governed by a Native American tribe (a tribal reservation) from birth?
+      % endif
+    field: children[i].has_tribal_home_state
+    datatype: yesnoradio
+  - Please identify the tribe:: children[i].home_state
+    show if:
+      variable: children[i].has_tribal_home_state
+      is: True
+  - label: |
+      % if children[i].age_in_months() >= 6:
+      Has ${ children[i] } lived in the United States for the last six months?
+      % else:
+      Has ${ children[i] } lived in the United States from birth?
+      % endif
+    field: children[i].has_US_home_state
+    datatype: yesnoradio
+    show if: 
+      variable: children[i].has_tribal_home_state
+      is: False
+  - label: |
+      % if children[i].age_in_months() >= 6:
+      What foreign country has ${ children[i] } lived in for the last 6 months?
+      % else:
+      What foreign country has ${ children[i] } lived in since birth?
+      % endif
+    field: children[i].home_state
+    show if:
+      variable: children[i].has_US_home_state
+      is: False
+  - note: |
+      % if children[i].age_in_months() >= 6:
+      If ${ children[i] } has lived in **multiple countries** during the last 6 months, please enter "None".
+      % else:
+      If ${ children[i] } lived in **multiple countries** since birth, please enter "None".
+      % endif
+    show if:
+      variable: children[i].has_US_home_state
+      is: False
+  - label: |
+      % if children[i].age_in_months() >= 6:
+      Select the state or territory where ${ children[i] } has lived with a parent for at least 6 consecutive months right before today.
+      % else:
+      Select the state or territory where ${ children[i] } has lived with a parent from birth.
+      % endif
+    field: children[i].home_state
+    code: |
+      US_states_and_territories_list + ["none"]
+    show if: 
+      variable: children[i].has_US_home_state
+      is: True
+  - note: |
+      ${ collapse_template(home_state_trip_info) }
+  - note: |
+      ${ collapse_template(no_home_state_help) }
+    show if: 
+      variable: children[i].has_US_home_state
+      is: True
+---
+template: home_state_info
+subject: Why does it matter where ${ children[i].familiar() } lived for the last 6 months?
+content: |
+  Usually, a Michigan court can enter an order about child custody when Michigan is the “home state” of a child. This matters in a divorce case because the final order in the case will include custody.
+
+  The home state of a child is the state where the child has lived with a parent (or a person acting as a parent) for at least 6 consecutive months (6 months in a row). If the child is less than 6 months old, the home state is the state where the child lived from birth with a parent or person acting as a parent. A short-term absence of a parent is included as part of the 6 months.
+
+  We ask where ${ children[i].familiar() } lived for the last 6 months to find out if a Michigan court can issue a custody order.
+---
+template: no_home_state_help
+subject: |
+  % if children[i].age_in_months() >= 6:
+  What if ${ children[i].familiar() } lived in multiple states during the last six months?
+  % else:
+  What if ${ children[i].familiar() } lived in multiple states since birth?
+  % endif
+content: |
+  % if children[i].age_in_months() >= 6:
+  If ${ children[i] } lived in more than one US state or territory during the last six consecutive months, select "None" from the bottom of the list.
+  % else:
+  If ${ children[i] } lived in more than one US state or territory, select "None" from the bottom of the list.
+  % endif
+---
+template: home_state_trip_info
+subject: What if ${ children[i].familiar() } went on a trip?
+content: |
+  % if children[i].age_in_months() >= 6:
+  A short absence is still part of the six consecutive months. 
+  
+  For example, a child may have lived with you in Michigan for four months, and then you both go to visit relatives in Ohio for a week. Then, you return to Michigan with the child, where you live for two more months. In this case, the week in Ohio counts as part of the time the child lived in Michigan.
+  % else:
+  A short absence is OK. 
+  
+  For example, a child might be born and live with you in Michigan for two months. Then you both go to visit relatives in Ohio for a week. Then, you return to Michigan with the child, where you live for another month. Then you file your divorce case. In this case, the week in Ohio counts as part of the time the child lived in Michigan.
+  % endif
+---
+#id: secondary Michigan custody inquiry
+#question: 
+#
+#children[i].MI_custody_jurisdiction
+---
+#id: tribal court divorce forms
+#TODO still need to consider/try adding AB's list of divorce forms from tribal courts
+---
+id: MI has no custody jurisdiction warning
+question: It's important for you to talk to a lawyer
+subquestion: |
+  Based on your answers, Michigan is not ${ children[i] }'s legal "home state". 
+  
+  When another state, country, or Native American tribe is considered the child’s home state, a judge in a Michigan court may not be able to enter an order dealing with child custody, parenting time, and child support. This means that you may need to file in a separate court to get an order dealing with those issues.
+
+  It is important for you to talk to a lawyer if you file for divorce in a Michigan court. There are some legal exceptions that could allow a Michigan court to enter an order about your minor child/children, but this is complicated. If you have low income you may qualify for free legal services. ${ MLH_GUIDE_FULL }
+fields:
+  - Do you want to stop using this tool?: children[i].home_state_exit
+    datatype: radio
+    choices:
+      - "Yes, I want to stop.": True
+      - "No, I want to continue.": False
+  - "Do you understand that if you make your divorce forms using this tool and file a divorce case in a Michigan court, it is important to find a lawyer to help you?": children[i].acknowledge_home_state_warning
+    datatype: radio
+    choices:
+      - "Yes, I understand.": True
+      - "No, I don't understand.": False
+    show if:
+      variable: children[i].home_state_exit
+      is: False
+  - note: |
+      Please read the information above. It's important that you understand this information before you continue.
+    show if:
+      variable: children[i].acknowledge_home_state_warning
+      is: False
+validation code: |
+  if children[i].acknowledge_home_state_warning == False:
+    validation_error("You need to understand the importance of speaking with a lawyer before you continue.", field="children[i].acknowledge_home_state_warning")
 ---
 # LHI this appears on "Children Addresses"
 # TODO: Brett has a note saying currently JOD_only does not have condfidential option, so this doesn't apply to JOD_only. Is that desired to continue?
@@ -1537,6 +1695,7 @@ fields:
 ## stepchildren additional info
 # --------------------------------------------------------------------
 ---
+# EKM note: logic surrounding whether stepchild address is printed on forms or kept confidential will need to be done on attachment screens or in separate variable at some point
 code: |
   for child in children:
     if child.legal_parent != "both":
@@ -1549,11 +1708,15 @@ continue button field: guidepost_stepchildren
 question: More information about stepchildren
 subquestion: |
   % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 1:
-  The next few questions are about you and ${ other_parties[0] }'s other minor children (stepchildren): **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**.
+  The next few questions are about you and ${ other_parties[0] }'s other minor children (stepchildren): 
+  
+  **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**.
   
   Stepchildren are children that have only one of you as their legal parent. This ${ case_label } case will not directly affect your stepchildren or ${ other_parties[0] }'s stepchildren, but information about them is required on some of the forms.   
   % else:
-  The next few questions are about the minor child: **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**.
+  The next few questions are about the minor child: 
+  
+  **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**.
   
     Stepchildren are children that have only one of you as their legal parent. This ${ case_label } case will not directly affect ${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }, but information about them is required on some of the forms.
   % endif
