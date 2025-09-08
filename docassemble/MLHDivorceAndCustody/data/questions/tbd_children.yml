@@ -3,10 +3,15 @@ code: |
   tool_ID = "divorce_complaint"
 # options: "JOD_only", "divorce_complaint", "divorce_answer", "custody_complaint", "custody_answer"
 ---
+# maybe just set these directly in each main interview yml?
 code: |
   if tool_ID == "JOD_only" or tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
     OP_label = "your spouse"
     case_label = "divorce"
+    if tool_ID == "divorce_complaint":
+      filing_name = "Complaint for Divorce"
+    elif tool_ID == "divorce_answer":
+      filng_name = "Counterclaim for Divorce"
   elif user_ask_role == "plaintiff":
     OP_label = "the defendant"
     case_label = "custody"
@@ -136,8 +141,10 @@ code: |
     for child in children:
         if child.legal_parent == "both":
           if child.home_state != "Michigan":
-            if child.home_state_exit:
-              exit_general
+            michigan_absence_calculation
+            if not child.currently_lives_in_michigan:
+              if child.home_state_exit:
+                exit_general
               
 
     if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer" or tool_ID == "JOD_only":
@@ -220,6 +227,7 @@ code: |
   children[i].show_parentage_info
 
   children[i].complete = True
+# TODO: IF (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) and children[i].legal_parent == "both" and children[i].parentage_plan_to_revoke: we need to say in the complaint and Answer? that user intends to file motion to establish child born out of wedlock
 ---
 id: other_parties_0_gender
 question: |
@@ -672,13 +680,18 @@ fields:
     choices:
       - Yes: user
       - No: both
-  - Do you want to ask the court to revoke (cancel) your spouse's legal parentage of ${children[i]} as part of your divorce case?: children[i].parentage_plan_to_revoke
+  - Do you plan to ask the court to revoke (cancel) your spouse's legal parentage of ${children[i]} as part of your divorce case?: children[i].parentage_plan_to_revoke
     datatype: radio
     choices:
       - Yes, I want to ask the court to revoke my spouse's parentage.: True
       - No, I want my spouse to continue as legal parent.: False
     js show if: |
       val("children[i].legal_parent") == "both"
+  - note: |
+      If you answer **Yes,** your ${ filing_name } will state that you plan to file a motion asking to revoke your spouse's parentage.
+    js show if: |
+      val("children[i].legal_parent") == "both" && ${ "true" if (tool_ID == "divorce_complaint" or tool_ID == "divorce_answer") and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" }  
+# NOTE: see above for another way to to do js show if logic without json.dumps!
 ---
 id: parentage revocation questions, spouse is bio parent
 if: ((children[i].origin == "premarital_with_another" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order") and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived")) and children[i].bio_parent == "other_party"
@@ -689,13 +702,17 @@ fields:
     choices:
       - Yes: other_party
       - No: both
-  - Do you want to ask the court to revoke (cancel) your legal parentage of ${children[i]} as part of your divorce case?: children[i].parentage_plan_to_revoke
+  - Do you plan to ask the court to revoke (cancel) your legal parentage of ${children[i]} as part of your divorce case?: children[i].parentage_plan_to_revoke
     datatype: radio
     choices:
       - Yes, I want to ask the court to revoke my parentage.: True
       - No, I want to continue as legal parent.: False
     js show if: |
       val("children[i].legal_parent") == "both"
+  - note: |
+      If you answer **Yes,** your ${ filing_name } will state that you plan to file a motion asking to revoke your parentage.
+    js show if: |
+      val("children[i].legal_parent") == "both" && ${ "true" if (tool_ID == "divorce_complaint" or tool_ID == "divorce_answer") and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" }  
 ---
 id: info about revoking parentage
 if: ((children[i].origin == "premarital_with_another" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order") and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived" and children[i].legal_parent == "both")) and children[i].parentage_plan_to_revoke
@@ -707,12 +724,20 @@ subquestion: |
   % if children[i].parentage_established == "affidavit":
   
   % if children[i].bio_parent == "other_party":
-  To do this, you can file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to consider finding a lawyer to help you.
+  % if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+  Your ${ filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
+  
+  % endif
+  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to consider finding a lawyer to help you.
       
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
   
   % elif children[i].bio_parent == "user":
-  To do this, you can file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to consider finding a lawyer to help you.
+  % if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+  Your ${ filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
+
+  % endif
+  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to consider finding a lawyer to help you.
       
   If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
   % endif
@@ -734,16 +759,24 @@ subquestion: |
   % elif children[i].origin == "marital_third_party_conceived":
   
   % if children[i].bio_parent == "other_party":
-  If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, and then re-downloading the Judgment of Divorce form.
+  % if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+  Your ${ filing_name } will say that you plan to file a Motion to Determine Child Born Out of Wedlock for ${ children[i] }.
 
+  % endif
   You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). You will need to start the divorce case before you can file the parentage motion.
+
+  If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, and then re-downloading the Judgment of Divorce form.
 
   If nobody files a Motion to Determine Child Born Out of Wedlock, you will remain a legal parent. This means the judge can award you custody and/or parenting time, and you may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
   
   % elif children[i].bio_parent == "user":
-  If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, and then re-downloading the Judgment of Divorce form.
+  % if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+  Your ${ filing_name } will say that you plan to file a Motion to Determine Child Born Out of Wedlock for ${ children[i] }.
 
+  % endif
   You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your spouse's legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). You will need to start the divorce case before you can file the parentage motion.
+
+  If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, and then re-downloading the Judgment of Divorce form.
 
   If nobody files a Motion to Determine Child Born Out of Wedlock, your spouse will remain a legal parent. This means the judge can award them custody and/or parenting time, and they may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
   % endif
@@ -971,82 +1004,71 @@ fields:
       % endif
     field: children[i].has_tribal_home_state
     datatype: yesnoradio
-  - Please identify the tribe:: children[i].home_state
+  - note: |
+      Choose **No** if ${ children[i].familiar() } lived on multiple tribal lands governed by different tribes within the last six months.
+  - label: |
+      % if children[i].age_in_months() >= 6:
+      Please name the tribal reservation where ${ children[i] } lived for the last 6 months:
+      % else:
+      Please name the tribal reservation where ${ children[i] } lived from birth:
+      % endif
+    field: children[i].home_state
     show if:
       variable: children[i].has_tribal_home_state
       is: True
   - label: |
       % if children[i].age_in_months() >= 6:
-      Has ${ children[i] } lived in the United States for the last six months?
+      For **the last six months**, right up to today, ${ children[i] } lived in:
       % else:
-      Has ${ children[i] } lived in the United States from birth?
+      **From birth** to today, ${ children[i] } lived in:
       % endif
-    field: children[i].has_US_home_state
-    datatype: yesnoradio
-    show if: 
+    field: children[i].home_state_type
+    datatype: radio
+    choices:
+      - "one US state or territory": US_state
+      - "one foreign country": foreign_country
+      - "**multiple** states, countries, or tribal lands": none
+    show if:
       variable: children[i].has_tribal_home_state
       is: False
   - label: |
       % if children[i].age_in_months() >= 6:
-      What foreign country has ${ children[i] } lived in for the last 6 months?
+      What foreign country has ${ children[i] } lived in for the last six months?
       % else:
-      What foreign country has ${ children[i] } lived in since birth?
+      What foreign country has ${ children[i] } lived in from birth?
       % endif
     field: children[i].home_state
     show if:
-      variable: children[i].has_US_home_state
-      is: False
-  - note: |
-      % if children[i].age_in_months() >= 6:
-      If ${ children[i] } has lived in **multiple countries** during the last 6 months, please enter "None".
-      % else:
-      If ${ children[i] } lived in **multiple countries** since birth, please enter "None".
-      % endif
-    show if:
-      variable: children[i].has_US_home_state
-      is: False
+      variable: children[i].home_state_type
+      is: foreign_country
   - label: |
       % if children[i].age_in_months() >= 6:
-      Select the state or territory where ${ children[i] } has lived with a parent for at least 6 consecutive months right before today.
+      Select the state or territory where ${ children[i] } has lived for the last six months.
       % else:
       Select the state or territory where ${ children[i] } has lived with a parent from birth.
       % endif
     field: children[i].home_state
     code: |
-      US_states_and_territories_list + ["none"]
+      US_states_and_territories_list
     show if: 
-      variable: children[i].has_US_home_state
-      is: True
+      variable: children[i].home_state_type
+      is: US_state
   - note: |
       ${ collapse_template(home_state_trip_info) }
-  - note: |
-      ${ collapse_template(no_home_state_help) }
-    show if: 
-      variable: children[i].has_US_home_state
-      is: True
 ---
 template: home_state_info
-subject: Why does it matter where ${ children[i].familiar() } lived for the last 6 months?
+subject: |
+  % if children[i].age_in_months() >= 6:
+  Why does it matter where ${ children[i].familiar() } lived for the last 6 months?
+  % else:
+  Why does it matter where ${ children[i].familiar() } lived from birth?
+  % endif
 content: |
   Usually, a Michigan court can enter an order about child custody when Michigan is the “home state” of a child. This matters in a divorce case because the final order in the case will include custody.
 
   The home state of a child is the state where the child has lived with a parent (or a person acting as a parent) for at least 6 consecutive months (6 months in a row). If the child is less than 6 months old, the home state is the state where the child lived from birth with a parent or person acting as a parent. A short-term absence of a parent is included as part of the 6 months.
 
-  We ask where ${ children[i].familiar() } lived for the last 6 months to find out if a Michigan court can issue a custody order.
----
-template: no_home_state_help
-subject: |
-  % if children[i].age_in_months() >= 6:
-  What if ${ children[i].familiar() } lived in multiple states during the last six months?
-  % else:
-  What if ${ children[i].familiar() } lived in multiple states since birth?
-  % endif
-content: |
-  % if children[i].age_in_months() >= 6:
-  If ${ children[i] } lived in more than one US state or territory during the last six consecutive months, select "None" from the bottom of the list.
-  % else:
-  If ${ children[i] } lived in more than one US state or territory, select "None" from the bottom of the list.
-  % endif
+  We ask where ${ children[i].familiar() } lived to find out if a Michigan court can issue a custody order.
 ---
 template: home_state_trip_info
 subject: What if ${ children[i].familiar() } went on a trip?
@@ -1054,17 +1076,58 @@ content: |
   % if children[i].age_in_months() >= 6:
   A short absence is still part of the six consecutive months. 
   
-  For example, a child may have lived with you in Michigan for four months, and then you both go to visit relatives in Ohio for a week. Then, you return to Michigan with the child, where you live for two more months. In this case, the week in Ohio counts as part of the time the child lived in Michigan.
+  For example:
+  
+  * A child may have lived with you in Michigan for four months.
+  * Then you both go to visit relatives in Ohio for a week. 
+  * Then, you return to Michigan with the child, where you live for two more months. 
+  * Then you file your divorce case.
+  
+  In this case, the week in Ohio counts as part of the time the child lived in Michigan. The child in the example has lived in Michigan for the last six months.
   % else:
   A short absence is OK. 
   
-  For example, a child might be born and live with you in Michigan for two months. Then you both go to visit relatives in Ohio for a week. Then, you return to Michigan with the child, where you live for another month. Then you file your divorce case. In this case, the week in Ohio counts as part of the time the child lived in Michigan.
+  For example:
+  
+  * A child might be born and live with you in Michigan for two months. 
+  * Then you both go to visit relatives in Ohio for a week. 
+  * Then, you return to Michigan with the child, where you live for another month. 
+  * Then you file your divorce case. 
+  
+  In this case, the week in Ohio counts as part of the time the child lived in Michigan. The child in the example has lived in Michigan from birth.
   % endif
 ---
-#id: secondary Michigan custody inquiry
+code: |
+  if children[i].home_state_type == "none":
+    children[i].ask_if_currently_lives_in_michigan
+  elif children[i].home_state != "Michigan":
+    children[i].currently_lives_in_michigan = False
+
+  michigan_absence_calculation = True
+---
+id: child currently lives in MI?
+continue button field: children[i].ask_if_currently_lives_in_michigan
+question: Does ${ children[i] } currently live in Michigan?
+fields: 
+  - Does ${ children[i] } currently live in Michigan?: children[i].currently_lives_in_michigan
+    datatype: yesnoradio
+---
+id: Michigan was previous home state prong
+question: Has ${ children[i] } ever lived in Michigan for 6 months or more in a row?
+fields: 
+  - Did your child ${ children[i] } **ever** live in Michigan for at least 6 months in a row in the past?: children[i].once_spent_six_months_in_michigan
+    datatype: yesnoradio
+  - When did that time of 6 or more consecutive months end?: children[i].MI_stay_ended_when
+    datatype: radio
+    choices: 
+      - Within the last 6 months: within_six_months
+      - More than 6 months ago: more_than_six_months_ago
+    show if:
+      variable: children[i].once_spent_six_months_in_michigan
+      is: True
+---
+#id: Michigan not home state (or previous home state)
 #question: 
-#
-#children[i].MI_custody_jurisdiction
 ---
 #id: tribal court divorce forms
 #TODO still need to consider/try adding AB's list of divorce forms from tribal courts
