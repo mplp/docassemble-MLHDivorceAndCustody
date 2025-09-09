@@ -138,14 +138,7 @@ code: |
         if temporary_order_exit:
           exit_general
 
-    for child in children:
-        if child.legal_parent == "both":
-          if child.home_state != "Michigan":
-            michigan_absence_calculation
-            if not child.currently_lives_in_michigan:
-              if child.home_state_exit:
-                exit_general
-              
+    interview_order_home_state              
 
     if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer" or tool_ID == "JOD_only":
       if not children_live_with_parent:
@@ -991,78 +984,75 @@ fields:
       - ${ users[0] }: users[0]
       - ${ other_parties[0] }: other_parties[0]
 ---
-id: specify each child's home state
-question: ${ children[i] }'s legal "home state"
+#####
+######## Home State logic
+#####
+---
+code: |
+  
+  for child in children:
+      if child.legal_parent == "both":
+        if child.currently_resides_in_type == "Michigan":
+          child.currently_resides_in_locality = "Michigan"
+        child.current_residence_is_home_state
+        if child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.currently_resides_in_locality != "Michigan":
+          child.spent_six_months_in_michigan
+        if not (child.currently_resides_in_type == "Michigan" and child.current_residence_is_home_state) and not (child.age_in_months() >= 6 and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months"):
+          if child.home_state_exit:
+            exit_general
+
+  interview_order_home_state = True
+---
+id: home state inquiry -- current residence
+question: ${ children[i] }'s legal "home state", part 1
+subquestion: |
+  ${ collapse_template(home_state_info) }
+fields:
+  - Where does ${ children[i] } currently live?: children[i].currently_resides_in_type
+    datatype: radio
+    choices:
+      - on land governed by a Native American tribe (a tribal reservation): tribal_lands
+      - in Michigan: Michigan
+      - in a different US state or territory: other_US_state
+      - in a foreign country: foreign_country
+  - Please name the tribal reservation where ${ children[i] } lives:: children[i].currently_resides_in_locality
+    show if:
+      variable: children[i].currently_resides_in_type
+      is: tribal_lands
+  - Please name the foreign country where ${ children[i] } lives:: children[i].currently_resides_in_locality
+    show if:
+      variable: children[i].currently_resides_in_type
+      is: foreign_country
+  - Select the state or territory where ${ children[i] } lives:: children[i].currently_resides_in_locality
+    code: |
+      US_states_and_territories_list
+    exclude: |
+      "Michigan"
+    show if: 
+      variable: children[i].currently_resides_in_type
+      is: other_US_state
+---
+id: home state inquiry -- length of current residence
+question: ${ children[i] }'s legal "home state", part 2
 subquestion: |
   ${ collapse_template(home_state_info) }
 fields:
   - label: |
       % if children[i].age_in_months() >= 6:
-      Has ${ children[i] } lived on land governed by a Native American tribe (a tribal reservation) for the last six months?
+      Has ${ children[i] } been living in ${ children[i].currently_resides_in_locality } **for the last 6 months?**
       % else:
-      Has ${ children[i] } lived on land governed by a Native American tribe (a tribal reservation) from birth?
+      Has ${ children[i] } lived in ${ children[i].currently_resides_in_locality } **since birth?**
       % endif
-    field: children[i].has_tribal_home_state
-    datatype: yesnoradio
-  - note: |
-      Choose **No** if ${ children[i].familiar() } lived on multiple tribal lands governed by different tribes within the last six months.
-  - label: |
-      % if children[i].age_in_months() >= 6:
-      Please name the tribal reservation where ${ children[i] } lived for the last 6 months:
-      % else:
-      Please name the tribal reservation where ${ children[i] } lived from birth:
-      % endif
-    field: children[i].home_state
-    show if:
-      variable: children[i].has_tribal_home_state
-      is: True
-  - label: |
-      % if children[i].age_in_months() >= 6:
-      For **the last six months**, right up to today, ${ children[i] } lived in:
-      % else:
-      **From birth** to today, ${ children[i] } lived in:
-      % endif
-    field: children[i].home_state_type
+    field: children[i].current_residence_is_home_state
     datatype: radio
     choices:
-      - "one US state or territory": US_state
-      - "one foreign country": foreign_country
-      - "**multiple** states, countries, or tribal lands": none
-    show if:
-      variable: children[i].has_tribal_home_state
-      is: False
-  - label: |
-      % if children[i].age_in_months() >= 6:
-      What foreign country has ${ children[i] } lived in for the last six months?
-      % else:
-      What foreign country has ${ children[i] } lived in from birth?
-      % endif
-    field: children[i].home_state
-    show if:
-      variable: children[i].home_state_type
-      is: foreign_country
-  - label: |
-      % if children[i].age_in_months() >= 6:
-      Select the state or territory where ${ children[i] } has lived for the last six months.
-      % else:
-      Select the state or territory where ${ children[i] } has lived with a parent from birth.
-      % endif
-    field: children[i].home_state
-    code: |
-      US_states_and_territories_list
-    show if: 
-      variable: children[i].home_state_type
-      is: US_state
+      - Yes.: True
+      - No, ${ children[i].familiar() } ${ f"moved to { children[i].currently_resides_in_locality } within the last 6 months." if children[i].age_in_months() >= 6 else "used to live in a different state, country, or tribal reservation." }: False
   - note: |
       ${ collapse_template(home_state_trip_info) }
 ---
 template: home_state_info
-subject: |
-  % if children[i].age_in_months() >= 6:
-  Why does it matter where ${ children[i].familiar() } lived for the last 6 months?
-  % else:
-  Why does it matter where ${ children[i].familiar() } lived from birth?
-  % endif
+subject: What is a "home state" and why does it matter?
 content: |
   Usually, a Michigan court can enter an order about child custody when Michigan is the “home state” of a child. This matters in a divorce case because the final order in the case will include custody.
 
@@ -1097,25 +1087,12 @@ content: |
   In this case, the week in Ohio counts as part of the time the child lived in Michigan. The child in the example has lived in Michigan from birth.
   % endif
 ---
-code: |
-  if children[i].home_state_type == "none":
-    children[i].ask_if_currently_lives_in_michigan
-  elif children[i].home_state != "Michigan":
-    children[i].currently_lives_in_michigan = False
-
-  michigan_absence_calculation = True
----
-id: child currently lives in MI?
-continue button field: children[i].ask_if_currently_lives_in_michigan
-question: Does ${ children[i] } currently live in Michigan?
-fields: 
-  - Does ${ children[i] } currently live in Michigan?: children[i].currently_lives_in_michigan
-    datatype: yesnoradio
----
 id: Michigan was previous home state prong
-question: Has ${ children[i] } ever lived in Michigan for 6 months or more in a row?
+question: ${ children[i] }'s legal "home state", part 3
+subquestion: |
+  ${ collapse_template(home_state_info) }
 fields: 
-  - Did your child ${ children[i] } **ever** live in Michigan for at least 6 months in a row in the past?: children[i].once_spent_six_months_in_michigan
+  - Did your child ${ children[i] } **ever** live in the state of Michigan for at least 6 months in a row in the past?: children[i].spent_six_months_in_michigan
     datatype: yesnoradio
   - When did that time of 6 or more consecutive months end?: children[i].MI_stay_ended_when
     datatype: radio
@@ -1123,14 +1100,8 @@ fields:
       - Within the last 6 months: within_six_months
       - More than 6 months ago: more_than_six_months_ago
     show if:
-      variable: children[i].once_spent_six_months_in_michigan
+      variable: children[i].spent_six_months_in_michigan
       is: True
----
-#id: Michigan not home state (or previous home state)
-#question: 
----
-#id: tribal court divorce forms
-#TODO still need to consider/try adding AB's list of divorce forms from tribal courts
 ---
 id: MI has no custody jurisdiction warning
 question: It's important for you to talk to a lawyer
@@ -1139,7 +1110,13 @@ subquestion: |
   
   When another state, country, or Native American tribe is considered the child’s home state, a judge in a Michigan court may not be able to enter an order dealing with child custody, parenting time, and child support. This means that you may need to file in a separate court to get an order dealing with those issues.
 
-  It is important for you to talk to a lawyer if you file for divorce in a Michigan court. There are some legal exceptions that could allow a Michigan court to enter an order about your minor child/children, but this is complicated. If you have low income you may qualify for free legal services. ${ MLH_GUIDE_FULL }
+  It is important for you to talk to a lawyer if you file for divorce in a Michigan court. There are some legal exceptions that could allow a Michigan court to enter an order about your minor child, but this is complicated. If you have low income you may qualify for free legal services. ${ MLH_GUIDE_FULL }
+
+  % if children[i].currently_resides_in_type == "tribal_lands":
+  If a lawyer advises you to file a divorce case in tribal court, some forms are available on tribal court websites. If not, you may want to call the court to find out if they have divorce forms.
+
+  ${ collapse_template(tribal_divorce_forms) }
+  % endif
 fields:
   - Do you want to stop using this tool?: children[i].home_state_exit
     datatype: radio
@@ -1160,8 +1137,24 @@ fields:
       variable: children[i].acknowledge_home_state_warning
       is: False
 validation code: |
-  if children[i].acknowledge_home_state_warning == False:
+  if children[i].home_state_exit == False and children[i].acknowledge_home_state_warning == False:
     validation_error("You need to understand the importance of speaking with a lawyer before you continue.", field="children[i].acknowledge_home_state_warning")
+---
+template: tribal_divorce_forms
+subject: Forms for filing in tribal courts
+content: |
+  * Bay Mills Indian Community: [Complaint for Divorce with Minor Children](https://baymillstribalcourt.org/wp-content/uploads/2018/11/Complaint_divorce_no_children2.pdf)
+  * Grand Traverse Band of Ottawa and Chippewa Indians: [Complaint for Divorce with Minor Children](https://www.gtbindians.org/downloads/divorce_w_children.pdf)
+  * Hannahville Indian Community: *Divorce forms not found online.*
+  * Nottawaseppi Huron Band of Potawatomi: *Divorce forms not found online.*
+  * Keweenaw Bay Indian Community: [Complaint for divorce](https://www.kbic-nsn.gov/wp-content/uploads/2023/07/complaint_of_divorce_revised_07072022.pdf)
+  * Lac Vieux Desert Band of Lake Superior Chippewa Indians: [Petition for Divorce](https://lvd-nsn.gov//media/banners/Petition%20for%20Divorce.pdf)
+  * Little River Band of Ottawa Indians: [Summons, Complaint, and Proof of Service](https://lrboi-nsn.gov/sites/default/files/pages/Summons-Complaint-Proof-of-Service-Divorce05_02_24.pdf). See [other divorce court forms on this page](https://lrboi-nsn.gov/government/tribal-judicial/tribal-court/tribal-court-documentation).
+  * Little Traverse Bay Bands of Odawa Indians: *Divorce forms not found online.*
+  * Pokagon Band of Potawatomi Indians: *Divorce forms not found online.*
+  * Saginaw Chippewa Indian Tribe: [Divorce packet](https://www.sagchip.org/tribalcourt/forms/2022/Divorce%20Packet%202022.pdf)
+  * Sault Ste. Marie Tribe of Chippewa Indians: *Divorce forms not found online.*
+  * Match-E-Be-Nash-She-Wish Band of Pottawatomi Indians (Gun Lake Tribe): *Divorce forms not found online.*
 ---
 # LHI this appears on "Children Addresses"
 # TODO: Brett has a note saying currently JOD_only does not have condfidential option, so this doesn't apply to JOD_only. Is that desired to continue?
