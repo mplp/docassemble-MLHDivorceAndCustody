@@ -125,8 +125,9 @@ mandatory: True # remove later
 code: |
   children_intro
   children.gather()
+  set_marital_children_or_not
   
-  if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
+  if there_are_marital_children:
 
     guidepost_marital_children
     if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
@@ -223,6 +224,16 @@ code: |
 
   children[i].complete = True
 # TODO: IF (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) and children[i].legal_parent == "both" and children[i].parentage_plan_to_revoke: we need to say in the complaint and Answer? that user intends to file motion to establish child born out of wedlock
+---
+# TODO: this must recalculate in review block if child gathering is edited
+id: divorce with or without children tag
+code: |
+  if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
+    there_are_marital_children = True
+  else: 
+    there_are_marital_children = False
+
+  set_marital_children_or_not = True
 ---
 id: other_parties_0_gender
 question: |
@@ -1614,7 +1625,7 @@ fields:
       % elif tool_ID == "custody_complaint" or tool_ID == "custody_answer":
       Are there any pending or resolved **family division** court cases or orders involving you and ${ OP_label }? 
       % elif tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
-      % if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
+      % if there_are_marital_children:
       Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } or you and your spouse?
       % else:
       Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving you and your spouse?
@@ -1725,7 +1736,7 @@ fields:
       % elif tool_ID == "custody_complaint" or tool_ID == "custody_answer":
       Are there any more pending or resolved **family division** court cases or orders involving you and ${ OP_label }? 
       % elif tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
-      % if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
+      % if there_are_marital_children:
       Are there any more pending or resolved **family division** court cases or orders in Michigan or any other state involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } or you and your spouse?
       % else:
       Are there any more pending or resolved **family division** court cases or orders in Michigan or any other state involving you and your spouse?
@@ -1775,7 +1786,56 @@ if: tool_ID != "JOD_only"
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
   ${prior_family_cases.question_text_table_template}
-#fields:
+fields:
+  - State:: prior_family_cases[i].state
+    code: |
+      US_states_and_territories_list
+  - County: prior_family_cases[i].county
+    code: court_list._load_courts()["address_county"].unique() + " County"
+    show if:
+      variable: prior_family_cases[i].state
+      is: Michigan
+  - County: prior_family_cases[i].county
+    js show if: |
+      val("prior_family_cases[i].state") !== "Michigan" && (${ json.dumps(tool_ID) } === "divorce_complaint" || ${ json.dumps(tool_ID) } === "divorce_answer")
+  - Court Name: prior_family_cases[i].court
+    js show if: |
+      val("prior_family_cases[i].state") !== "Michigan"
+  - Court address: prior_family_cases[i].address
+    js show if: |
+      val("prior_family_cases[i].state") !== "Michigan" && ${ "true" if there_are_marital_children else "false" }
+  - "Case name *(for example, Jones v. Smith or In re: Thomas)*:": prior_family_cases[i].title
+  - Case number:: prior_family_cases[i].docket_number
+  - "Judge's last name *(do not include 'Judge' or 'Hon.')*": prior_family_cases[i].judge
+    js show if: |
+      (${ json.dumps(tool_ID) } === "divorce_complaint" || ${ json.dumps(tool_ID) } === "custody_complaint")
+  - What is the nature of this case?: prior_family_cases[i].type
+    code: |
+      prior_family_case_types
+  - Describe the nature of this case:: prior_family_cases[i].type_description
+    show if:
+      variable: prior_family_cases[i].type
+      is: other
+  
+---
+code: |
+  prior_family_case_types = [
+                              ['divorce', 'Divorce'],
+                              ['protection_order', 'Protection Order']
+                              ['parental_rights', 'Parental Rights (abuse/neglect)'],
+                              ['adoption', 'Adoption']
+                              ['paternity', 'Paternity'],
+                              ['custody', 'Custody'],
+                              ['guardianship', 'Guardianship']
+                              ['juvenile_delinquency', 'Juvenile Delinquency']
+                              ['name_change', 'Name Change'],
+                              ['emancipation', 'Emancipation'],
+                              ['other', 'Other']
+                            ]
+  if tool_ID == "custody_answer" or tool_ID == "custody_complaint":
+    prior_family_case_types.remove("['paternity', 'Paternity']", "['custody', 'Custody']")
+  if tool_ID == "custody_complaint":
+    prior_family_case_types.remove("['divorce', 'Divorce']")
 ---
 # --------------------------------------------------------------------
 ## stepchildren additional info
@@ -2179,7 +2239,7 @@ code: |
 ---
 code: |
   other_parties[0].has_job
-  if tool_ID == "divorce_complaint" and len(children.filter(legal_parent="both")) > 0:
+  if tool_ID == "divorce_complaint" and there_are_marital_children:
     other_parties[0].occupation
   if other_parties[0].has_job:
     other_parties[0].job.employer
