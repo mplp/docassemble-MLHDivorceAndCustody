@@ -57,7 +57,7 @@ objects:
       complete_attribute="complete",
       object_type = DAObject
       )
-  - prior_family_case_or_order: DAList.using(
+  - prior_family_cases: DAList.using(
       complete_attribute="complete",
       object_type = DAObject
       )
@@ -195,6 +195,8 @@ code: |
       marriage.cobra_coverage
     if tool_ID == "divorce_complaint":
       interview_order_user_income
+    if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+      interview_order_prior_cases
     
   test_end_screen
 ---
@@ -989,7 +991,6 @@ fields:
 #####
 ---
 code: |
-  
   for child in children:
       if child.legal_parent == "both":
         if child.currently_resides_in_type == "Michigan":
@@ -1000,8 +1001,34 @@ code: |
         if not (child.currently_resides_in_type == "Michigan" and child.current_residence_is_home_state) and not (child.age_in_months() >= 6 and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months"):
           if child.home_state_exit:
             exit_general
+  set_children_home_state_info
 
   interview_order_home_state = True
+---
+only sets: set_children_home_state_info
+code: |
+  for child in children:
+      if child.legal_parent == "both":
+        if child.current_residence_is_home_state:
+          child.home_state = child.currently_resides_in_locality
+          if child.home_state == "Michigan":
+            child.MI_jurisdiction = True
+          else: 
+            child.MI_jurisdiction = False
+        elif child.age_in_months() >= 6 and child.currently_resides_in_locality != "Michigan" and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months":
+          child.home_state = "none"
+          child.MI_jurisdiction = True
+        else:
+          child.home_state = "none"
+          child.MI_jurisdiction = False
+
+  MI_has_jurisdiction_all_kids = True
+  for child in children:
+      if child.legal_parent == "both":
+        if child.MI_jurisdiction == False:
+          MI_has_jurisdiction_all_kids = False
+  
+  set_children_home_state_info = True
 ---
 id: home state inquiry -- current residence
 question: ${ children[i] }'s legal "home state", part 1
@@ -1556,16 +1583,16 @@ content:
 # for JOD-only, this is only shown if there are marital children. For other divorce filing types, there are questions needed here even if no marital children. 
 ---
 code: |
-  prior_custody_orders_or_family_cases.gather()
+  prior_family_cases.gather()
   interview_order_prior_cases = True
 ---
 #code: |
-#  prior_family_case_or_order[i].??????????
-#  prior_family_case_or_order[i].complete = True
+#  prior_family_cases[i].??????????
+#  prior_family_cases[i].complete = True
 #---
-id: prior orders or cases table
-table: prior_family_case_or_order.table
-rows: prior_family_case_or_order
+id: prior family cases table
+table: prior_family_cases.table
+rows: prior_family_cases
 columns:
   - Name: row_item.company_name
 #  - Entered family before or during marriage: |
@@ -1593,7 +1620,7 @@ fields:
       Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving you and your spouse?
       % endif
       % endif
-    field: prior_custody_orders_or_family_cases.there_are_any
+    field: prior_family_cases.there_are_any
     datatype: yesnoradio
   - note: |
       % if tool_ID == "custody_complaint" or tool_ID == "custody_answer" or tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
@@ -1606,11 +1633,11 @@ fields:
       You will enter information for **prior family division court cases** on the next page.
       % endif
     js show if: |
-      val("has_prior_custody_orders_or_family_cases") === true
+      val("prior_family_cases.there_are_any") === true
   - Is a request for child support **currently pending** in another state?: child_support_request_pending
     datatype: yesnoradio
     js show if: |
-      (val("has_prior_custody_orders_or_family_cases") === true || val("has_prior_custody_orders_or_family_cases") === false) && (${ json.dumps(tool_ID) } === "JOD_only" || ${ json.dumps(tool_ID) } === "divorce_complaint")
+      (val("prior_family_cases.there_are_any") === true || val("prior_family_cases.there_are_any") === false) && (${ json.dumps(tool_ID) } === "JOD_only" || ${ json.dumps(tool_ID) } === "divorce_complaint")
   - label: |
       % if tool_ID == "divorce_complaint":
       Do you know of any other pending or resolved **civil** actions (not family law cases) between you and ${ OP_label } related to your marriage? For example, has one spouse previously sued the other spouse for a tort, such as assault?
@@ -1690,7 +1717,7 @@ question: |
 subquestion: |
   So far, you have listed&colon;
 
-  ${prior_custody_orders_or_family_cases.table}
+  ${prior_family_cases.table}
 fields:
   - label: |
       % if tool_ID == "JOD_only":
@@ -1704,48 +1731,51 @@ fields:
       Are there any more pending or resolved **family division** court cases or orders in Michigan or any other state involving you and your spouse?
       % endif
       % endif
-    field: prior_custody_orders_or_family_cases.there_is_another
+    field: prior_family_cases.there_is_another
     datatype: yesnoradio
 ---
 # LHI "Prior Family Cases DLG"
-# probably need to adjust state collection based on home state stuff (and possibly apply to civil case collection too?)
-id: prior case or order collection screen
-question: |
-  % if tool_ID == "JOD_only":
-  ${ capitalize(ordinal(i)) } custody or support order
-  % else:
-  ${ capitalize(ordinal(i)) } **family division** case or order
-  % endif
+# JOD_only version should only be asked if there are marital children
+id: prior family case or order collection screen JOD_only IFF with kids
+if: tool_ID == "JOD_only"
+question: ${ capitalize(ordinal(i)) } custody or support order
 subquestion: |
-  ${prior_custody_orders_or_family_cases.question_text_table_template}
+  ${prior_family_cases.question_text_table_template}
 fields:
-  - Are you the named policy holder?: users[0].insurance[i].in_own_name
-    datatype: yesnoradio
-    required: False
-  - Please enter the name of the policy holder: users[0].insurance[i].policyholder
-    required: False
-    show if:
-      variable: users[0].insurance[i].in_own_name
-      is: False
-  - What is the name of the provider?: users[0].insurance[i].company_name
-  - What is the address of the provider?: users[0].insurance[i].company_address
-    required: False
-  - What is the policy number?: users[0].insurance[i].policy_number
-    required: False
-  - What is the certificate number?: users[0].insurance[i].certificate_number
-    required: False
-  - What coverage does the policy provide?: users[0].insurance[i].coverage_type
-    required: False
-    datatype: checkboxes
+  - State:: prior_family_cases[i].state
+    code: |
+      US_states_and_territories_list
+  - What is the status of this case?: prior_family_cases[i].status
     choices:
-      - medical
-      - dental
-      - optical/vision
-      - other
-    none of the above: False
-  - Does this policy cover ${ children }?: users[0].insurance[i].covers_child
+      - "It has ended and an order was made": ended_with_order
+      - "It has ended but was dismissed by the court": dimissed
+      - "It is active/pending but has been stayed by the court": stayed
+      - "It is active_pending": pending
+  - Case number:: prior_family_cases[i].docket_number
+  - Is there a custody or parenting time order in this case that is currently in effect?: prior_family_cases[i].has_current_custody_PT_order
     datatype: yesnoradio
-    required: False
+  - Is there a child support order in this case that is currently in effect?: prior_family_cases[i].has_current_support_order
+    datatype: yesnoradio
+  - note: |
+      **WARNING:** If Michigan is not the ${ children.filter(legal_parent='both').as_noun() }'s home state, a Michigan court may not be able to make decisions about custody and parenting time of your ${ children.filter(legal_parent='both').as_noun() }.
+      
+      You can still use this tool to prepare your divorce forms, but your Judgment of Divorce will not include custody and parenting time arrangements. It will be up to the court to decide whether it has jurisdiction to include custody and parenting time orders in your divorce judgment. ${MLH_GUIDE_FULL}
+    js show if: |
+      val("prior_family_cases[i].state") !== "Michigan" && val("prior_family_cases[i].has_current_custody_PT_order") === true && ${ json.dumps(MI_has_jurisdiction_all_kids) } === false
+  - note: |
+      **WARNING:** If there is a prior custody order from another state and either you, your child, or the other parent resides in that state, a Michigan court may not be able to make decisions about custody and parenting time of your child.
+
+      You can still use this tool to prepare your divorce forms, but your Judgment of Divorce will not include custody and parenting time arrangements. It will be up to the court to decide whether it has jurisdiction to include custody and parenting time orders in your divorce judgment. ${MLH_GUIDE_FULL}
+    js show if: |
+      val("prior_family_cases[i].state") !== "Michigan" && val("prior_family_cases[i].has_current_custody_PT_order") === true && ${ json.dumps(MI_has_jurisdiction_all_kids) } === true && [address matching party logic]
+---
+# LHI "Prior Family Cases DLG"
+id: prior family case or order collection screen NOT JOD_only
+if: tool_ID != "JOD_only"
+question: ${ capitalize(ordinal(i)) } **family division** case or order
+subquestion: |
+  ${prior_family_cases.question_text_table_template}
+#fields:
 ---
 # --------------------------------------------------------------------
 ## stepchildren additional info
