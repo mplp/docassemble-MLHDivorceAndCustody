@@ -1838,7 +1838,8 @@ id: prior family cases logic for with children NOT JOD_only
 code: |
   if prior_family_cases[i].type == "divorce":
     prior_family_cases[i].has_current_support_order = False
-  
+#  if prior_family_cases[i].type == "adoption" or prior_family_cases[i].type == "adoption"
+# continueing from row 122
 ---
 # LHI "Prior Family Cases DLG" (starting at row 108)
 # this screen only applies if there are marital children
@@ -1849,7 +1850,7 @@ subquestion: |
   maybe put case name and type here to help remind what we're doing
 fields:
   - label: |
-      % if prior_family_cases[i].status == "stayed" or prior_family_cases[i].status == "pending" 
+      % if prior_family_cases[i].status == "stayed" or prior_family_cases[i].status == "pending": 
       Is there a custody or parenting time order in this case?
       % elif prior_family_cases[i].status == "dismissed":
       Was a temporary custody or parenting time order entered in that case when the case was pending?
