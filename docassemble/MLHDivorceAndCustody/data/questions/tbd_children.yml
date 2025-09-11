@@ -1748,7 +1748,7 @@ fields:
 # LHI "Prior Family Cases DLG"
 # JOD_only version should only be asked if there are marital children
 id: prior family case or order collection screen JOD_only IFF with kids
-if: tool_ID == "JOD_only"
+if: tool_ID == "JOD_only" and there_are_marital_children
 question: ${ capitalize(ordinal(i)) } custody or support order
 subquestion: |
   ${prior_family_cases.question_text_table_template}
@@ -1759,7 +1759,7 @@ fields:
   - What is the status of this case?: prior_family_cases[i].status
     choices:
       - "It has ended and an order was made": ended_with_order
-      - "It has ended but was dismissed by the court": dimissed
+      - "It has ended but was dismissed by the court": dismissed
       - "It is active/pending but has been stayed by the court": stayed
       - "It is active_pending": pending
   - Case number:: prior_family_cases[i].docket_number
@@ -1816,7 +1816,58 @@ fields:
     show if:
       variable: prior_family_cases[i].type
       is: other
+  - What is the status of this case?: prior_family_cases[i].status
+    choices:
+      - "It has ended and an order was made": ended_with_order
+      - "It has ended but was dismissed by the court": dismissed
+      - "It is active/pending but has been stayed by the court": stayed
+      - "It is active_pending": pending
+    js show if: |
+      val("prior_family_cases[i].type") !== "divorce"
+  - What is the status of this case?: prior_family_cases[i].status
+    choices:
+      - "It has ended and a judgment of divorce or a final decree was made": ended_with_order
+      - "It has ended but was dismissed by the court": dismissed
+    js show if: |
+      val("prior_family_cases[i].type") === "divorce"
+---
+# LHI "Prior Family Cases DLG" (starting at row 108)
+# only applies if there are marital children and not JOD_only
+# not sure how much of this logic makes sense to replicate, but trying to at least record it for now
+id: prior family cases logic for with children NOT JOD_only
+code: |
+  if prior_family_cases[i].type == "divorce":
+    prior_family_cases[i].has_current_support_order = False
   
+---
+# LHI "Prior Family Cases DLG" (starting at row 108)
+# this screen only applies if there are marital children
+id: prior family case or order additional info 
+if: tool_ID != "JOD_only" and there_are_marital_children
+question: ${ capitalize(ordinal(i)) } **family division** case or order
+subquestion: |
+  maybe put case name and type here to help remind what we're doing
+fields:
+  - label: |
+      % if prior_family_cases[i].status == "stayed" or prior_family_cases[i].status == "pending" 
+      Is there a custody or parenting time order in this case?
+      % elif prior_family_cases[i].status == "dismissed":
+      Was a temporary custody or parenting time order entered in that case when the case was pending?
+      % elif prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].type == "divorce":
+      Did this case involve custody or parenting time?
+      % elif prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].type != "divorce":
+      Was there a custody or parenting time order in that case?
+      % endif
+    field: prior_family_cases[i].included_support_order
+    js show if: |
+      val("prior_family_cases[i].type") === "divorce"
+  - What is the date of that order?: prior_family_cases[i].support_order_date
+    datatype: ThreePartsDate
+    max: |
+     ${ today() }
+    js show if: |
+      val("prior_family_cases[i].included_support_order") === true && val("prior_family_cases[i].type") === "divorce"
+# continue from row 122
 ---
 code: |
   prior_family_case_types = [
