@@ -1594,13 +1594,10 @@ content:
 # for JOD-only, this is only shown if there are marital children. For other divorce filing types, there are questions needed here even if no marital children. 
 ---
 code: |
+  has_prior_civil_cases
   prior_family_cases.gather()
   interview_order_prior_cases = True
 ---
-#code: |
-#  prior_family_cases[i].??????????
-#  prior_family_cases[i].complete = True
-#---
 id: prior family cases table
 table: prior_family_cases.table
 rows: prior_family_cases
@@ -1745,6 +1742,24 @@ fields:
     field: prior_family_cases.there_is_another
     datatype: yesnoradio
 ---
+#code: |
+#  if tool_ID == "JOD_only" and there_are_marital_children:
+#    prior_family_cases[i].status
+#  elif tool ID != "JOD_only":
+#    prior_family_cases[i].status
+#    if there_are_marital_children:
+#      prior_family_cases[i].set_default_case_info
+#      if prior_family_cases[i].type == "divorce":
+#        prior_family_cases[i].included_custody_PT_order
+#      if prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"]:
+#        if prior_family_cases[i].status in ["stayed", "pending", "ended_with_order"]:
+#          prior_family_cases[i].included_custody_PT_order
+#        elif prior_family_cases[i].status == "dismissed" and prior_family_cases[i].type != "paternity":
+#          prior_family_cases[i].included_custody_PT_order
+#  TODO still need to implement other state warnings and children number count rows 191, 200 TODO
+#
+#  prior_family_cases[i].complete = True
+---
 # LHI "Prior Family Cases DLG"
 # JOD_only version should only be asked if there are marital children
 id: prior family case or order collection screen JOD_only IFF with kids
@@ -1765,7 +1780,7 @@ fields:
   - Case number:: prior_family_cases[i].docket_number
   - Is there a custody or parenting time order in this case that is currently in effect?: prior_family_cases[i].has_current_custody_PT_order
     datatype: yesnoradio
-  - Is there a child support order in this case that is currently in effect?: prior_family_cases[i].has_current_support_order
+  - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_current_support_order
     datatype: yesnoradio
   - note: |
       **WARNING:** If Michigan is not the ${ children.filter(legal_parent='both').as_noun() }'s home state, a Michigan court may not be able to make decisions about custody and parenting time of your ${ children.filter(legal_parent='both').as_noun() }.
@@ -1831,23 +1846,27 @@ fields:
     js show if: |
       val("prior_family_cases[i].type") === "divorce"
 ---
-# LHI "Prior Family Cases DLG" (starting at row 108)
-# only applies if there are marital children and not JOD_only
+# LHI "Prior Family Cases DLG" (start at row 108)
 # not sure how much of this logic makes sense to replicate, but trying to at least record it for now
 id: prior family cases logic for with children NOT JOD_only
+if: tool_ID != "JOD_only" and there_are_marital_children
 code: |
   if prior_family_cases[i].type == "divorce":
+    prior_family_cases[i].has_current_custody_PT_order = False
     prior_family_cases[i].has_current_support_order = False
-#  if prior_family_cases[i].type == "adoption" or prior_family_cases[i].type == "adoption"
-# continueing from row 122
+  if prior_family_cases[i].type in ["adoption", "name_change", "juvenile_delinquency", "emancipation"]:
+    prior_family_cases[i].has_current_support_order = False
+    prior_family_cases[i].included_custody_PT_order = False
+    prior_family_cases[i].has_current_custody_PT_order = False
+
+  prior_family_cases[i].set_default_case_info = True
 ---
-# LHI "Prior Family Cases DLG" (starting at row 108)
-# this screen only applies if there are marital children
-id: prior family case or order additional info 
-if: tool_ID != "JOD_only" and there_are_marital_children
+# LHI "Prior Family Cases DLG" (start at row 108)
+id: prior family case or order additional info divorce
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type == "divorce"
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
-  maybe put case name and type here to help remind what we're doing
+  These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
 fields:
   - label: |
       % if prior_family_cases[i].status == "stayed" or prior_family_cases[i].status == "pending": 
@@ -1859,16 +1878,67 @@ fields:
       % elif prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].type != "divorce":
       Was there a custody or parenting time order in that case?
       % endif
-    field: prior_family_cases[i].included_support_order
-    js show if: |
-      val("prior_family_cases[i].type") === "divorce"
-  - What is the date of that order?: prior_family_cases[i].support_order_date
+    field: prior_family_cases[i].included_custody_PT_order
+  - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
     datatype: ThreePartsDate
     max: |
      ${ today() }
     js show if: |
-      val("prior_family_cases[i].included_support_order") === true && val("prior_family_cases[i].type") === "divorce"
-# continue from row 122
+      val("prior_family_cases[i].included_custody_PT_order") === true
+---
+# LHI "Prior Family Cases DLG" (start at row 132)
+id: prior family case or order additional info 
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and prior_family_cases[i].status == "ended_with_order"
+question: ${ capitalize(ordinal(i)) } **family division** case or order
+subquestion: |
+  These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
+fields:
+  - What is the date of that order?: prior_family_cases[i].final_order_date
+    datatype: ThreePartsDate
+    max: |
+     ${ today() }
+  - Is there a custody or parenting time order in this case?: prior_family_cases[i].included_custody_PT_order
+  - Is the custody or parenting time order currently in effect?: prior_family_cases[i].has_current_custody_PT_order
+    js show if: |
+      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && val("prior_family_cases[i].included_custody_PT_order") === true
+  - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_current_support_order
+    js show if: |
+      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].final_order_date"))
+# TODO: do we care about the final order if it doesn't have custody in it? If not can we switch the question order and standardize the date question with the divorce version?
+---
+# LHI "Prior Family Cases DLG" (start at row 174)
+id: prior family case or order additional info 
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "paternity", "guardianship", "other"] and prior_family_cases[i].status in ["stayed", "pending"]
+question: ${ capitalize(ordinal(i)) } **family division** case or order
+subquestion: |
+  These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
+fields:
+  - Is there a custody or parenting time order in this case?: prior_family_cases[i].included_custody_PT_order
+    # note I'm not sure but perhaps we should assume this order is also CURRENT?
+  - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
+    datatype: ThreePartsDate
+    max: |
+     ${ today() }
+    js show if: |
+      val("prior_family_cases[i].included_custody_PT_order") === true
+  - Is there a support order in this case?: prior_family_cases[i].has_current_support_order
+    js show if: |
+      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].included_custody_PT_order"))
+---
+# LHI "Prior Family Cases DLG" (start at row 151)
+id: prior family case or order additional info 
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "guardianship", "other"] and prior_family_cases[i].status == "dimissed"
+question: ${ capitalize(ordinal(i)) } **family division** case or order
+subquestion: |
+  These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
+fields:
+  - "Was a temporary custody or parenting time order entered in that case when the case was pending?": prior_family_cases[i].included_custody_PT_order
+  - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
+    datatype: ThreePartsDate
+    max: |
+     ${ today() }
+    js show if: |
+      val("prior_family_cases[i].included_custody_PT_order") === true
 ---
 code: |
   prior_family_case_types = [
