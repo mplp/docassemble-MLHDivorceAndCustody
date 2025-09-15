@@ -5,7 +5,7 @@ code: |
 ---
 # maybe just set these directly in each main interview yml?
 code: |
-  if tool_ID == "JOD_only" or tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+  if tool_ID in ["JOD_only", "divorce_complaint", "divorce_answer"]:
     OP_label = "your spouse"
     case_label = "divorce"
     if tool_ID == "divorce_complaint":
@@ -130,7 +130,7 @@ code: |
   if there_are_marital_children:
 
     guidepost_marital_children
-    if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+    if tool_ID in ["divorce_complaint", "divorce_answer"]:
       if kids_had_other_custodian:
         other_custodian_kickout
       if third_party_custody_claim:
@@ -141,7 +141,7 @@ code: |
 
     interview_order_home_state              
 
-    if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer" or tool_ID == "JOD_only":
+    if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
       if not children_live_with_parent:
         children_live_with_third_party_kickout
       if children_now_live_with_which_parent == "depends_on_child":
@@ -150,14 +150,14 @@ code: |
             child.lives_with
               
 
-    if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
-      if not confidential_contact_info_yn and (children_now_live_with_which_parent == "depends_on_child" or children_now_live_with_which_parent == "users[0]"):
+    if tool_ID in ["divorce_complaint", "divorce_answer"]:
+      if not confidential_contact_info_yn and (children_now_live_with_which_parent in ["depends_on_child", "users[0]"]):
         child_address_not_confidential_warning
       children_lived_with_which_parent_past
       children_previous_address.gather()
 
     legal_custody_who
-    if PT_type == "specific" or PT_type == "supervised":
+    if PT_type in ["specific", "supervised"]:
       if county_choice == "Muskegon":
         Muskegon_specific_PT_info
       if county_choice != "Muskegon":
@@ -192,11 +192,11 @@ code: |
     interview_order_prior_cases
 
   else:
-    if tool_ID == "JOD_only" or tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+    if tool_ID in ["JOD_only", "divorce_complaint", "divorce_answer"]:
       marriage.cobra_coverage
     if tool_ID == "divorce_complaint":
       interview_order_user_income
-    if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+    if tool_ID in ["divorce_complaint", "divorce_answer"]:
       interview_order_prior_cases
     
   test_end_screen
@@ -214,10 +214,10 @@ code: |
   if children[i].legal_parent != "both":
     children[i].not_included_in_divorce_info
   
-  elif ((children[i].origin == "premarital_with_another" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order") and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived" and children[i].legal_parent == "both")) and children[i].parentage_plan_to_revoke:
+  elif ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived" and children[i].legal_parent == "both")) and children[i].parentage_plan_to_revoke:
     children[i].parentage_revocation_info
 
-  elif children[i].origin == "premarital_with_another" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order") and children[i].how_conceived == "assisted_reproduction":
+  elif children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "assisted_reproduction":
     children[i].complicated_issue_kickout
 
   children[i].show_parentage_info
@@ -467,7 +467,7 @@ code: |
     children[i].legal_parent = "both"
   elif children[i].origin == "premarital_with_another" and children[i].parentage_established == "no":
     children[i].legal_parent = children[i].bio_parent
-  elif children[i].origin == "premarital_with_another" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order") and children[i].how_conceived == "assisted_reproduction":
+  elif children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "assisted_reproduction":
     children[i].legal_parent = "both"
   
 ---
@@ -678,7 +678,7 @@ fields:
       val("children[i].parentage_established") == "affidavit" || val("children[i].parentage_established") == "court_order"
 ---
 id: parentage revocation questions, user is bio parent
-if: ((children[i].origin == "premarital_with_another" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order") and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived")) and children[i].bio_parent == "user"
+if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived")) and children[i].bio_parent == "user"
 Question: Legal parentage status for ${children[i]}
 fields:
   - Has your spouse's parentage been revoked (canceled) by a court order? This would only happen if you, your spouse, or ${children[i]}’s other biological parent filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].legal_parent
@@ -696,11 +696,11 @@ fields:
   - note: |
       If you answer **Yes,** your ${ filing_name } will state that you plan to file a motion asking to revoke your spouse's parentage.
     js show if: |
-      val("children[i].legal_parent") == "both" && ${ "true" if (tool_ID == "divorce_complaint" or tool_ID == "divorce_answer") and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" }  
+      val("children[i].legal_parent") == "both" && ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer"] and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" }  
 # NOTE: see above for another way to to do js show if logic without json.dumps!
 ---
 id: parentage revocation questions, spouse is bio parent
-if: ((children[i].origin == "premarital_with_another" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order") and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived")) and children[i].bio_parent == "other_party"
+if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived")) and children[i].bio_parent == "other_party"
 Question: Legal parentage status for ${children[i]}
 fields:
   - Has your parentage been revoked (canceled) by a court order? This would only happen if you, your spouse, or ${children[i]}’s other biological parent filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].legal_parent
@@ -718,10 +718,10 @@ fields:
   - note: |
       If you answer **Yes,** your ${ filing_name } will state that you plan to file a motion asking to revoke your parentage.
     js show if: |
-      val("children[i].legal_parent") == "both" && ${ "true" if (tool_ID == "divorce_complaint" or tool_ID == "divorce_answer") and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" }  
+      val("children[i].legal_parent") == "both" && ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer"] and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" }  
 ---
 id: info about revoking parentage
-if: ((children[i].origin == "premarital_with_another" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order") and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived" and children[i].legal_parent == "both")) and children[i].parentage_plan_to_revoke
+if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived" and children[i].legal_parent == "both")) and children[i].parentage_plan_to_revoke
 continue button field: children[i].parentage_revocation_info
 question: Information about revoking parentage
 subquestion: |
@@ -730,7 +730,7 @@ subquestion: |
   % if children[i].parentage_established == "affidavit":
   
   % if children[i].bio_parent == "other_party":
-  % if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+  % if tool_ID in ["divorce_complaint", "divorce_answer"]:
   Your ${ filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
   
   % endif
@@ -739,7 +739,7 @@ subquestion: |
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
   
   % elif children[i].bio_parent == "user":
-  % if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+  % if tool_ID in ["divorce_complaint", "divorce_answer"]:
   Your ${ filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
 
   % endif
@@ -765,7 +765,7 @@ subquestion: |
   % elif children[i].origin == "marital_third_party_conceived":
   
   % if children[i].bio_parent == "other_party":
-  % if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+  % if tool_ID in ["divorce_complaint", "divorce_answer"]:
   Your ${ filing_name } will say that you plan to file a Motion to Determine Child Born Out of Wedlock for ${ children[i] }.
 
   % endif
@@ -776,7 +776,7 @@ subquestion: |
   If nobody files a Motion to Determine Child Born Out of Wedlock, you will remain a legal parent. This means the judge can award you custody and/or parenting time, and you may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
   
   % elif children[i].bio_parent == "user":
-  % if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+  % if tool_ID in ["divorce_complaint", "divorce_answer"]:
   Your ${ filing_name } will say that you plan to file a Motion to Determine Child Born Out of Wedlock for ${ children[i] }.
 
   % endif
@@ -802,7 +802,7 @@ subquestion: |
   % endif
 ---
 id: kickout for complex situations involving assisted reproduction
-if: ((children[i].origin == "premarital_with_another" and (children[i].parentage_established == "affidavit" or children[i].parentage_established == "court_order")) or children[i].origin == "marital_third_party_conceived") and children[i].how_conceived == "assisted_reproduction"
+if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"]) or children[i].origin == "marital_third_party_conceived") and children[i].how_conceived == "assisted_reproduction"
 event: children[i].complicated_issue_kickout
 question: This tool is not right for you
 subquestion: |
@@ -1361,7 +1361,7 @@ fields:
   - note: |
       ${ collapse_template(custody_PT_definitions) }
 ---
-if: (PT_type == "specific" or PT_type == "supervised") and county_choice != "Muskegon"
+if: PT_type in ["specific", "supervised"] and county_choice != "Muskegon"
 id: specific parenting time options
 question: |
   Specific Parenting Time Schedules
@@ -1386,7 +1386,7 @@ fields:
       - "Use a sample schedule from my county’s Friend of the Court office (If you choose this option, you can either find the schedule on your court website or ask the Friend of the Court how to get one).": FOC_sample
 
 ---
-if: (PT_type == "specific" or PT_type == "supervised") and county_choice == "Muskegon"
+if: PT_type in ["specific", "supervised"] and county_choice == "Muskegon"
 id: specific parenting time info
 continue button field: Muskegon_specific_PT_info
 question: |
@@ -1619,9 +1619,9 @@ fields:
   - label: |
       % if tool_ID == "JOD_only":
       Are there any prior custody or support orders in Michigan or any other state regarding ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') }?
-      % elif tool_ID == "custody_complaint" or tool_ID == "custody_answer":
+      % elif tool_ID in ["custody_complaint", "custody_answer"]:
       Are there any pending or resolved **family division** court cases or orders involving you and ${ OP_label }? 
-      % elif tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+      % elif tool_ID in ["divorce_complaint", "divorce_answer"]:
       % if there_are_marital_children:
       Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } or you and your spouse?
       % else:
@@ -1631,7 +1631,7 @@ fields:
     field: prior_family_cases.there_are_any
     datatype: yesnoradio
   - note: |
-      % if tool_ID == "custody_complaint" or tool_ID == "custody_answer" or tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+      % if tool_ID in ["custody_complaint", "custody_answer", "divorce_complaint", "divorce_answer"]:
       ${ collapse_template(family_division_info) }
       % endif
   - note: |
@@ -1700,7 +1700,7 @@ content: |
   **Family Division cases in Michigan** include:
   
   * Divorce, annulment, or separate maintenance (sometimes called legal separation)
-  % if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+  % if tool_ID in ["divorce_complaint", "divorce_answer"]:
   * Custody
   * Paternity
   * Child support
@@ -1730,9 +1730,9 @@ fields:
   - label: |
       % if tool_ID == "JOD_only":
       Are there any more prior custody or support orders in Michigan or any other state regarding ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') }?
-      % elif tool_ID == "custody_complaint" or tool_ID == "custody_answer":
+      % elif tool_ID in ["custody_complaint", "custody_answer"]:
       Are there any more pending or resolved **family division** court cases or orders involving you and ${ OP_label }? 
-      % elif tool_ID == "divorce_complaint" or tool_ID == "divorce_answer":
+      % elif tool_ID in ["divorce_complaint", "divorce_answer"]:
       % if there_are_marital_children:
       Are there any more pending or resolved **family division** court cases or orders in Michigan or any other state involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } or you and your spouse?
       % else:
@@ -1869,7 +1869,7 @@ subquestion: |
   These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
 fields:
   - label: |
-      % if prior_family_cases[i].status == "stayed" or prior_family_cases[i].status == "pending": 
+      % if prior_family_cases[i].status in ["stayed", "pending"]: 
       Is there a custody or parenting time order in this case?
       % elif prior_family_cases[i].status == "dismissed":
       Was a temporary custody or parenting time order entered in that case when the case was pending?
@@ -1954,7 +1954,7 @@ code: |
                               ['emancipation', 'Emancipation'],
                               ['other', 'Other']
                             ]
-  if tool_ID == "custody_answer" or tool_ID == "custody_complaint":
+  if tool_ID in ["custody_answer", "custody_complaint"]:
     prior_family_case_types.remove("['paternity', 'Paternity']", "['custody', 'Custody']")
   if tool_ID == "custody_complaint":
     prior_family_case_types.remove("['divorce', 'Divorce']")
@@ -2767,7 +2767,7 @@ fields:
 ---
 id: other party SSN and DL
 question: |
-  % if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer" or tool_ID == "JOD_only":
+  % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
   Your spouse's identity documents
   % else:
   The plaintiff's identity documents
@@ -2805,7 +2805,7 @@ content: |
 ---
 id: other party eye color, hair color, weight
 question: |
-  % if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer" or tool_ID == "JOD_only":
+  % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
   Your spouse's physical description
   % else:
   The plaintiff's physical description
@@ -2861,7 +2861,7 @@ fields:
 ---
 id: other party race
 question: |
-  % if tool_ID == "divorce_complaint" or tool_ID == "divorce_answer" or tool_ID == "JOD_only":
+  % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
   Your spouse's race
   % else:
   The plaintiff's race
