@@ -1,0 +1,3328 @@
+# example interview tag for testing
+code: |
+  tool_ID = "divorce_complaint"
+# options: "JOD_only", "divorce_complaint", "divorce_answer", "custody_complaint", "custody_answer"
+---
+# maybe just set these directly in each main interview yml?
+code: |
+  if tool_ID in ["JOD_only", "divorce_complaint", "divorce_answer"]:
+    OP_label = "your spouse"
+    case_label = "divorce"
+    if tool_ID == "divorce_complaint":
+      filing_name = "Complaint for Divorce"
+    elif tool_ID == "divorce_answer":
+      filng_name = "Counterclaim for Divorce"
+  elif user_ask_role == "plaintiff":
+    OP_label = "the defendant"
+    case_label = "custody"
+  elif user_ask_role == "defendant":
+    OP_label = "the plaintiff"
+    case_label = "custody"
+---
+# maybe just set these directly in each main interview yml?
+# these labels are only needed for the spousal support section
+code: |
+  if tool_ID == "divorce_complaint":
+    user_party_label = "the Plaintiff"
+    OP_party_label = "the Defendant"
+  elif tool_ID == "divorce_answer":
+    user_party_label = "the Defendant"
+    OP_party_label = "the Plaintiff"    
+---
+### need the stuff in this section (copied from main yml) here for now to run just this yml
+features:
+  labels above fields: True
+---
+include:
+  - docassemble.AssemblyLine:assembly_line.yml
+  - docassemble.ALToolbox:collapse_template.yml
+  - docassemble.mlhframework:mlh_interview_framework.yml
+  - question_bank.yml
+---
+modules:
+  - docassemble.ALToolbox.al_income
+---
+# example date for testing
+code: |
+  marriage.date = "2015-07-20T00:00:00-04:00" 
+---
+# for testing:
+code: |
+  confidential_contact_info_yn = False
+---
+code: |
+  github_repo_name = 'docassemble-MLHDivorceAndCustody'
+---
+### need the above for now to run just this yml
+### below objects are not included in question bank yml
+objects:
+  - children: ALPeopleList.using(
+      complete_attribute="complete",
+      )
+  - users[0].insurance: DAList.using(
+      complete_attribute="complete",
+      object_type = DAObject
+      )
+  - other_parties[0].insurance: DAList.using(
+      complete_attribute="complete",
+      object_type = DAObject
+      )
+  - prior_family_cases: DAList.using(
+      complete_attribute="complete",
+      object_type = DAObject
+      )
+  - children_previous_address: DAList.using(
+      complete_attribute="complete",
+      object_type = ALAddress
+      )
+  - users[0].job: ALJob
+  - users[0].income: ALIncome
+  - other_parties[0].job: ALJob
+  - other_parties[0].income: ALIncome
+---
+### possibly move the below to main yml
+terms:
+  - phrases:
+      - assisted reproduction
+    definition: |
+      Assisted reproduction is a way to become pregnant that is not sexual intercourse. It includes:
+
+      * Donor insemination
+      * Sperm or egg donation
+      * Embryo donation
+      * In vitro fertilization (IVF) and embryo transfer
+      * Intracytoplasmic sperm injection
+      * Assisted reproductive technology
+  - phrases:
+      - parenting time
+    definition: |
+      Sometimes called "visitation".
+  - phrases:
+      - minor
+    definition: |
+      A child is a minor if they are 17 years old or younger.
+---
+### possibly move the below to main yml
+code: |
+  US_states_and_territories_list = ["Alabama", "Alaska", "American Samoa", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "District of Columbia", "Florida", "Georgia", "Guam", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', "New Jersey", "New Mexico", "New York", 'North Carolina', 'North Dakota', 'Northern Mariana Islands', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Puerto Rico', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'US Virgin Islands', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming']
+# currently includes all 5 inhabited US territories and DC. But note that American Samoans are not US citizens. Not sure they should be on this list. 
+---
+table: children.table
+rows: children
+columns:
+  - Name: row_item.name
+  - Date of birth: row_item.birthdate
+  - Entered family before or during marriage: |
+      "before marriage" if row_item.timing == "premarital" else "during marriage"
+edit:
+  - name.first
+  - timing
+  - origin
+  - bio_parent
+  - parentage_established
+  - legal_parent
+  - not_included_in_divorce_info
+  - parentage_revocation_info
+  - complicated_issue_kickout
+  - show_parentage_info # just for testing purposes
+delete buttons: True
+confirm: True
+---
+# trying using filter() method from https://docassemble.org/docs/objects.html
+# if not, try using list comprehension something like "[child for child in children if child.legal_parent=="both"]"
+id: child questions
+mandatory: True # remove later
+code: |
+  spousal_support_intro
+  
+  
+  children_intro
+  children.gather()
+  set_marital_children_or_not
+  
+  if there_are_marital_children:
+
+    guidepost_marital_children
+    if tool_ID in ["divorce_complaint", "divorce_answer"]:
+      if kids_had_other_custodian:
+        other_custodian_kickout
+      if third_party_custody_claim:
+        third_party_custody_kickout
+      if need_temporary_order:
+        if temporary_order_exit:
+          exit_general
+
+    interview_order_home_state              
+
+    if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
+      if not children_live_with_parent:
+        children_live_with_third_party_kickout
+      if children_now_live_with_which_parent == "depends_on_child":
+        for child in children:
+          if child.legal_parent == "both":
+            child.lives_with
+              
+
+    if tool_ID in ["divorce_complaint", "divorce_answer"]:
+      if not confidential_contact_info_yn and (children_now_live_with_which_parent in ["depends_on_child", "users[0]"]):
+        child_address_not_confidential_warning
+      children_lived_with_which_parent_past
+      children_previous_address.gather()
+
+    legal_custody_who
+    if PT_type in ["specific", "supervised"]:
+      if county_choice == "Muskegon":
+        Muskegon_specific_PT_info
+      if county_choice != "Muskegon":
+        specific_PT_how
+      if county_choice == "Muskegon" or (county_choice != "Muskegon" and specific_PT_how == "custom"):
+        custom_PT_details
+    hague_convention_info
+    child_domicile_info
+    if legal_custody_who != "both":
+      hundred_mile_rule
+    child_support_basic
+    if tool_ID != "JOD_only":
+      allow_child_support_overpayment_correction
+
+    if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0:
+      guidepost_stepchildren
+      interview_order_stepchild_address
+  
+    users[0].insurance.gather()
+    other_parties[0].insurance.gather()
+    if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
+      marriage.cobra_coverage
+    interview_order_user_employment
+    if tool_ID != "JOD_only":
+      interview_order_user_income
+    interview_order_user_identifying_info
+    interview_order_other_party_employment
+    if tool_ID != "JOD_only":
+      interview_order_other_party_income
+    interview_order_other_party_identifying_info
+    interview_order_income_tax
+    interview_order_prior_cases
+
+  else:
+    if tool_ID in ["JOD_only", "divorce_complaint", "divorce_answer"]:
+      marriage.cobra_coverage
+    if tool_ID == "divorce_complaint":
+      interview_order_user_income
+    if tool_ID in ["divorce_complaint", "divorce_answer"]:
+      interview_order_prior_cases
+    
+  test_end_screen
+---
+# --------------------------------------------------------------------
+## spousal support
+# --------------------------------------------------------------------
+---
+id: spousal support intro
+question: What is spousal support?
+subquestion: |
+  Spousal support (also called alimony) is money that one spouse pays to the other spouse during or after a divorce case. Spousal support can be short-term or long-term. It can be agreed on by the parties or a judge can order it. 
+
+  Spousal support is not a part of every divorce case. If you or your spouse asks the judge for spousal support and the other spouse does not agree, the judge will base their decision on many different factors. To learn more, read [Spousal Support (Alimony)](https://michiganlegalhelp.org/resources/family/spousal-support-alimony-nutshell). 
+---
+id: wants temporary spousal support?
+question: Temporary spousal support (while case is pending)
+fields: 
+  - Do you need spousal support for the period of time **before your divorce is final?**: wants_temporary_support_order
+    datatype: yesnoradio
+---
+id: temporary spousal support instructions
+question: Temporary spousal support **during the divorce case**
+subquestion: |
+      This tool can't help you ask the judge to order spousal support during your divorce. If you need to do this, you either need to:
+      
+      * find a lawyer to help you, or 
+      * file a motion for temporary spousal support on your own, after you file the forms to start the divorce case. ${ MLH_GUIDE_FULL }
+      
+      To file a motion for temporary spousal support on your own, you can use the generic [Notice of Hearing and Motion](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf) form. In your motion, you will need to include facts showing that you need spousal support, and that the other party is able to pay. To learn more, read [Spousal Support (Alimony)](https://michiganlegalhelp.org/resources/family/spousal-support-alimony-nutshell). Also read [How to Fill Out, Serve, and File Court Forms](https://michiganlegalhelp.org/resources/going-court/how-fill-out-serve-and-file-court-forms). 
+      
+      You will need the generic [order form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc327.pdf) after the judge makes a decision on your motion. If the judge grants your request, you will also need the [Uniform Spousal Support Order](https://www.courts.michigan.gov/siteassets/forms/scao-approved/foc10b.pdf).
+---
+id: wants post-divorce spousal support
+question: Spousal support after divorce
+fields:
+  - Do you need spousal support **after your divorce case is finished?**: wants_post_divorce_support
+    datatype: yesnoradio
+  - note: |
+      If you and your spouse don't agree about spousal support, you may want to **find a lawyer to help you.** Asking for spousal support is complicated, and a lawyer can present evidence and make legal arguments for you at your court hearing. ${ MLH_GUIDE_FULL } 
+
+      But if hiring a lawyer is not an option for you, you can use this tool to include a request for spousal support in your ${ filing_name }. 
+    show if:
+      variable: wants_post_divorce_support
+      is: True
+  - Do you want to continue using this tool?: continue_with_spousal_support_request
+    datatype: yesnoradio
+    show if:
+      variable: wants_post_divorce_support
+      is: True
+---
+id: spousal support factors intro
+question: Asking for spousal support for after your divorce
+subquestion: |
+  The next pages will go through each of the 14 spousal support factors that the judge in your case will consider before making a spousal support decision. 
+  
+  Read about each factor, including the help text, and consider if each factor applies to your need for spousal support or your spouse’s ability to pay. If it applies, include the facts in your case that relate to that factor. 
+  
+  **It is ok if you don't have an answer for each factor. Not every factor applies in every case.** Some factors are similar to each other and will overlap. Note that the examples in the help text do not cover every possible situation.
+
+  Tips for answering: 
+  ${ ss_factor_tips }
+---
+template: ss_factor_tips
+subject: Tips for answering
+content: |
+  * Type in complete sentences with capitalization and punctuation. 
+  * Call yourself "${ user_party_label }" and call your spouse “${ user_party_label }.” Avoid using “I” and “my.” 
+  * If a question does not apply to you, leave it blank.
+---
+id: spousal support factor 1
+question: "Factor 1: The past relations and conduct of the parties"
+subquestion: |
+  This factor has two parts:
+  
+  * how you and your spouse conducted your marriage (divided work inside and outside the home), and 
+  * fault in the breakdown of the marriage.
+
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - Explain how you and your spouse divided work inside and outside the home. If this was an intentional or expected arrangement between you, you may want to include that.: ss_factor_one_division_labor
+    input type: area
+  - note: ${ collapse_template(ss_factor_one_division_labor_help) }
+  - If it is relevant, describe your spouses's (${ OP_party_label }'s) wrongful behavior or actions that contributed to the breakdown of the marriage. If their actions impacted your ability to keep a job or advance in your career, include this.: ss_factor_one_fault
+    input type: area
+  - note: ${ collapse_template(ss_factor_one_fault_help) }
+---
+template: ss_factor_one_division_labor_help
+subject: What do you mean by "divided work inside and outside the home"?
+content: |
+  This includes who worked outside the house and contributed financially versus who did the unpaid work of maintaining the home (and children, if you have them). 
+  
+  If you both expected that ${ OP_party_label } would work and pay for everything or most things while you contributed in other ways (for example: cooking meals and cleaning, being the primary caregiver of the children), then include and explain this. For example: “During the marriage, the parties both expected that ${ user_party_label } would manage the home and be the primary caregiver for the children while ${ OP_party_label } provided for the family financially.”
+
+  If your work taking care of your home and family helped enable your spouse to pursue their education or advance in their career, you can mention that.
+
+  If you both worked outside the home but you worked part-time so you did not have to pay for as much childcare, you can include that.
+---
+template: ss_factor_one_fault_help
+subject: Examples of fault in the breakdown of the marriage
+content: |
+  Examples of fault are:
+  
+  * violence, 
+  * threats of harm, 
+  * controlling behavior, 
+  * a gambling problem, or 
+  * infidelity (cheating). 
+  
+  Fault on its own will not justify an award of spousal support, but this is one factor the judge can consider. 
+  
+  If this applies to your marriage, briefly explain what actions or behavior of your spouse (${ OP_party_label }) contributed to the breakdown of the marriage. For example: “${ capitalize(OP_party_label) } has been controlling throughout the marriage. They did not allow the Plaintiff to work outside the home, so ${ user_party_label } lost the opportunity to build their career for ten years.”
+---
+id: spousal support factor 2
+question: "Factor 2: The length of the marriage"
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - How long was your marriage?: ss_factor_two_length
+  - note: |
+      ${ collapse_template(ss_factor_two_length_help) }
+---
+template: ss_factor_two_length_help
+subject: Does the marriage have to be a certain length to get spousal support?
+content: |
+  No, the law does not require a specific number of years you have to be married to get spousal support. 
+  
+  But a spousal support award is most likely if one spouse in a **long-term marriage** does not have a career and will likely have a lower standard of living because of the divorce.
+---
+id: spousal support factor 3
+question: "Factor 3: The ability of each party to work"
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - Describe your ability to work.: ss_factor_three_work_user
+    input type: area
+  - note: |
+      ${ collapse_template(ss_factor_three_work_user_help) }
+  - Describe your spouse’s ability to work.: ss_factor_three_work_OP
+    input type: area
+  - note: |
+      ${ collapse_template(ss_factor_three_work_OP_help) }
+---
+template: ss_factor_three_work_user_help
+subject: What should I include?
+content: |
+  * Your highest level of education. 
+  * Your work history, including the type of job, how much you earned, hours worked, and how long the job lasted. If the job ended, explain why. 
+    * Start with your most recent employment. If you had a series of similar jobs, you can summarize them and include the range of your earnings. (Example: ${ capitalize(user_party_label) } worked at Kroger as a cashier earning $16.00 per hour, 15-20 hours per week, from November through December 2024. She quit the job because her sister was injured and was unable to provide free childcare, and ${ user_party_label }'s wages barely covered the cost of a babysitter for the child. ${ capitalize(user_party_label) } worked before the child was born. She had five different restaurant server and cashier jobs between 2015 and 2020. Her highest earnings were in 2019 when she earned up to $2,300/month as a server, but most of her jobs brought in $1,200 to $1,500 per month.)
+  * If you have applied to jobs but did not get the jobs or did not get interviews, and you believe this is related to how long you have been out of work, you may want to include that.
+  * If you have significant caregiving responsibilities at home (such as being a full-time caregiver for your young children, your child with disabilities, homeschooling, and/or being a caregiver for another family member), you can include that.
+
+  **Do not** include if you have an illness, injury, or disability that limits your ability to work or prevents you from working. Save that information for Factor 9 (the parties' health).
+---
+template: ss_factor_three_work_OP_help
+subject: What should I include?
+content: |
+  Include all of the following information about your spouse (${ OP_party_label }):
+
+  * Their highest level of education. (Example: ${ capitalize(OP_party_label) } has a BS in Computer Science from Michigan State University.) 
+  * Information about their current job, including their job title, when their employment began, and how much they earn.
+  * Similar information about your spouse’s previous jobs may be relevant. If they have worked many different jobs, you can mention the number of years they have been employed during your marriage, the field they work in, and their wage or salary range.
+
+  **Do not** include if ${ OP_party_label } has an illness, injury, or disability that limits their ability to work. Save that information for Factor 9 (the parties’ health).
+---
+id: spousal support factor 4
+question: "Factor 4: The source and amount of property awarded to the parties"
+continue button field: ss_factor_four_property
+subquestion: |
+  The judge will consider the division of property in the divorce in determining whether spousal support should also be ordered. You are not expected to include anything about this factor now since it is unlikely you have reached a property settlement before filing for divorce. 
+  
+  But if you go to trial on the issue of spousal support, be aware that you should consider if this factor is relevant at that time.
+---
+id: spousal support factor 5
+question: "Factor 5: The parties' ages"
+continue button field: ss_factor_five_ages
+subquestion: |
+  This tool will pull your age and your spouse’s age from the birthdates you entered before.
+
+  ${ collapse_template(ss_factor_five_ages_help) }
+---
+template: ss_factor_five_ages_help
+subject: Why do our ages matter?
+content: |
+  If the person asking for support is older, this may weigh into the judge's determination of whether that person is able to work.
+---
+id: spousal support factor 6
+question: "Factor 6: The ability to pay spousal support"
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - Is there anything else you would like the judge to know about your spouse's ability to pay support? (Other than their current job, income, and work history.): ss_factor_six_ability_to_pay
+    input type: area
+  - note: ${ collapse_template(ss_factor_six_ability_to_pay_help) }
+---
+template: ss_factor_six_ability_to_pay_help
+subject: Examples
+content: |
+  * The judge can consider if your spouse has an **unexercised ability to earn.** An example of this is when someone voluntarily takes a lower-paying job or reduces their income to avoid paying spousal support. If you believe your spouse has done this, you can include that.
+  * In some cases the judge may also consider a person's other sources of income besides their wages or salary in deciding if they are able to pay spousal support. If your spouse's income from their job is not significant, but they have other sources of income, you can include that.
+---
+id: spousal support factor 7
+question: "Factor 7: The parties' present situation"
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - Is there anything else about your situation or your spouse's situation that helps explain your need for support or their ability to pay support? If so, please describe below.: ss_factor_seven_situation
+    input type: area
+  - note: ${ collapse_template(ss_factor_seven_situation_help) }
+---
+template: ss_factor_seven_situation_help
+subject: Example
+content: |
+  In some cases a person may be awarded spousal support so they can continue caring for an adult child of the spouses who is disabled.
+---
+id: spousal support factor 8
+question: "Factor 8: The needs of the parties"
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - Include anything else that is relevant to your need for support.: ss_factor_eight_need
+    input type: area
+  - note: ${ collapse_template(ss_factor_eight_need_help) }
+---
+template: ss_factor_eight_need_help
+subject: Example
+content: |
+  For example, if you are going to college in order to improve your earning capacity, you may need spousal support to help with expenses while you are at school. 
+
+  If you are nearing typical retirement age and you didn’t work enough to qualify for Social Security retirement, and you are unlikely to find a job to get sufficient retirement benefits or to support yourself, you may need spousal support.
+---
+id: spousal support factor 9
+question: "Factor 9: The parties' health"
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - Do you have any illness, injury, or disability that limits your ability to work or prevents you from working? Does this illness, injury, or disability create certain needs/expenses that you need support to help with?: ss_factor_nine_health
+    input type: area
+  - note: ${ collapse_template(ss_factor_nine_health_help) }
+---
+template: ss_factor_nine_health_help
+subject: What else can I include here?
+content: |
+  * Are there any surgeries/procedures that you need that your health insurance will not fully cover?
+  * Is your health condition due to mistreatment or abuse by your spouse?
+---
+id: spousal support factor 10
+question: "Factor 10: The prior standard of living of the parties and whether either is responsible for the support of others."
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - Is there anything about your standard of living during the marriage that would be helpful for the judge to know?: ss_factor_ten_standards
+    input type: area
+  - note: ${ collapse_template(ss_factor_ten_standards_help) }
+  - note: |
+      If you are responsible for supporting someone, explain below.
+      
+      ${ collapse_template(ss_factor_ten_responsibilities_help) }
+  - Explain your relationship to the person you are supporting and other facts that will help the court understand what this responsibility involves.: ss_factor_ten_responsibilities
+    input type: area
+---
+template: ss_factor_ten_standards_help
+subject: What does this mean?
+content: |
+  Even if spousal support is short-term, the judge may look at how much support is appropriate based on the standard of living during the marriage. If there are some regular purchases you made during your marriage that are important to you or your children and you won't be able to afford it on your own after divorce, you may want to explain that.
+---
+template: ss_factor_ten_responsibilities_help
+subject: Example
+content: |
+  If you are responsible for supporting someone else, such as your adult child with a disability, include that.
+---
+id: spousal support factor 11
+question: "Factor 11: The contributions of the parties to the joint estate."
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - Explain what you and your spouse contributed to the marriage. Contributing is not just about earning money. The judge will consider what each party contributed in money, time, and energy to the home and the family.: ss_factor_eleven_contributions
+    input type: area
+  - note: ${ collapse_template(ss_factor_eleven_contributions_help) }
+---
+template: ss_factor_eleven_contributions_help
+subject: Examples
+content: |
+  If you were a homemaker and cooked, cleaned, paid bills, and cared for the children, include that. If you saved your family the cost of daycare because you were the full-time caregiver, you can include that. 
+---
+id: spousal support factor 12
+question: "Factor 12: A party’s fault in causing the divorce."
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - If there is something about fault in the breakdown of the marriage that you did not include in Factor 1, include it below if it relates to your need for support or your spouse's ability to pay.: ss_factor_twelve_fault_redux
+    input type: area
+  - note: ${ collapse_template(ss_factor_twelve_fault_redux_help) }
+---
+template: ss_factor_twelve_fault_redux_help
+subject: Example
+content: |
+  For example, if your spouse told you they wanted a divorce and it came as a surprise to you, you may need spousal support to help navigate the unexpected change.
+---
+id: spousal support factor 13
+question: "Factor 13: The effect of cohabitation on a party’s financial status."
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - If you are living with an unrelated adult, say so, and explain if you intend for it to be temporary or permanent, and whether any of your expenses are shared with this person.: ss_factor_thirteen_cohabitation
+    input type: area
+  - note: ${ collapse_template(ss_factor_thirteen_cohabitation_help) }
+---
+template: ss_factor_thirteen_cohabitation_help
+subject: Why is this important?
+content: |
+  Cohabitating, or living with an unrelated adult, does not automatically mean you can't get spousal support. But if you do live with an unrelated adult, this may influence how the judge views your need for spousal support. 
+  
+  The judge may consider several things: 
+  1. Whether you actually live together in the same home; 
+  2. If the relationship appears permanent; and 
+  3. If you share expenses such as rent or mortgage payments and day-to-day expenses.
+---
+id: spousal support factor 14
+question: "Factor 14: General principles of equity."
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+
+  Along with the other factors, a judge considers what is fair (equitable) and reasonable under the circumstances when making a spousal support decision.
+fields:
+  - If relevant, include other reasons why it is fair for you to be awarded spousal support.: ss_factor_fourteen_equity
+    input type: area
+  - note: ${ collapse_template(ss_factor_fourteen_equity_help) }
+---
+template: ss_factor_fourteen_equity_help
+subject: What is an example of fairness in this context?
+content: |
+  In one Michigan Court of Appeals case, the Court emphasized that the parties had agreed the wife would stay at home during the 27-year marriage. The Court determined that spousal support was a fair way of repaying her for the lost opportunity of learning marketable skills.
+---
+# --------------------------------------------------------------------
+## child gathering
+# --------------------------------------------------------------------
+---
+code: |
+  children[i].name.first
+  children[i].timing 
+  children[i].origin
+
+  if children[i].origin == "marital_third_party_conceived" and children[i].how_conceived == "assisted_reproduction":
+    children[i].complicated_issue_kickout
+  
+  children[i].legal_parent
+
+  if children[i].legal_parent != "both":
+    children[i].not_included_in_divorce_info
+  
+  elif ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived" and children[i].legal_parent == "both")) and children[i].parentage_plan_to_revoke:
+    children[i].parentage_revocation_info
+
+  elif children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "assisted_reproduction":
+    children[i].complicated_issue_kickout
+
+  children[i].show_parentage_info
+
+  children[i].complete = True
+# TODO: IF (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) and children[i].legal_parent == "both" and children[i].parentage_plan_to_revoke: we need to say in the complaint and Answer? that user intends to file motion to establish child born out of wedlock
+---
+# TODO: this must recalculate in review block if child gathering is edited
+id: divorce with or without children tag
+code: |
+  if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
+    there_are_marital_children = True
+  else: 
+    there_are_marital_children = False
+
+  set_marital_children_or_not = True
+---
+id: other_parties_0_gender
+question: |
+  What is your spouse's gender?
+fields:
+  - code: |
+      other_parties[0].gender_fields(show_help=True)
+---
+id: users_0_pregnant
+question: |
+  Pregnancy
+fields:
+  - label: To the best of your knowledge are you pregnant?
+    field: users[0].pregnant
+    datatype: yesnoradio
+---
+id: other_parties_0_pregnant
+question: |
+  Pregnancy
+fields:
+  - label: To the best of your knowledge is your spouse pregnant?
+    field: other_parties[0].pregnant
+    datatype: yesnoradio
+---
+id: children intro
+continue button field: children_intro
+question: Children
+subquestion: |
+  This tool will ask questions about {minor} children next.
+
+  ${ collapse_template(minor_children_info) }
+  
+  Important! If you and your spouse have a child **between 18 years old and 19 years and 6 months,** you may be able to ask for child support for that child, but this tool can’t help you with that.
+  
+  ${ collapse_template(adult_children_info) }
+  
+---
+template: minor_children_info
+subject: |
+  More info about minor children and divorce
+content: |
+  If you and your spouse have any **minor children together**, your divorce must address custody, parenting time, and child support. 
+
+  **Minor children of just one spouse** must also be listed in the divorce paperwork. However, the divorce will not cover their custody, parenting time, or child support.
+---
+template: adult_children_info
+subject: |
+  More info about children who are 18 to 19-and-a-half years old
+content: |
+  If you and your spouse have a **child between 18 years old and 19 years and 6 months**, it is possible to ask the court for child support if:
+
+  * The child is enrolled full time in high school,
+  * You reasonably expect the child to graduate, **and**
+  * The child lives with one parent full time.
+
+  If all of these things are true and you ask for child support, the judge **may** grant the request. It is not a guarantee. This can be complicated. If you want to ask for child support in this situation, you may want to talk to a lawyer. ${MLH_GUIDE_FULL} 
+  
+  You can make your divorce forms using this tool, but the forms **will not** include a child support request for your adult child.
+---
+if: tool_ID == "divorce_complaint"
+id: any children divorce complaint
+question: |
+  Minor children
+subquestion: |
+  This includes stepchildren and children of just one of you.
+fields:
+  - Do you or your spouse have any living {minor} children? This includes children you had together and children you had separately.: children.there_are_any
+    datatype: yesnoradio
+---
+if: tool_ID == "JOD_only"
+id: any children JOD-only
+question: |
+  Minor children
+subquestion: |
+  Answer yes if there are:
+  
+  * any minor children who have you and your spouse as legal parents, or
+  * any minor children of either spouse, and you're not sure who their legal parents are.
+fields:
+  - Do you and your spouse have any living {minor} children?: children.there_are_any
+    datatype: yesnoradio
+---
+id: any more children
+question: |
+  Any more children?
+subquestion: |
+  % if tool_ID == "divorce_complaint":
+  Please list **all minor children** that you or your spouse have, either separately or together.
+  % elif tool_ID == "JOD_only":
+  Please include:
+
+  * all minor children who have you and your spouse as legal parents, and
+  * all minor children of either spouse, if you're not sure who their legal parents are.
+  % endif
+  
+  You have already told us about:
+
+  ${children.table}
+fields:
+  - Are there any more minor children to add?: children.there_is_another
+    datatype: yesnoradio
+---
+# Emily note: not sure if this is needed as it does not mirror Jack's patterns. It's possible it can be done in a different way. Cannot remember my thinking when I added it.
+# alternatively, may need to add this for the other lists I create in this yml.
+on change:
+  children.there_are_any: |
+    if not children.there_are_any:
+      children.target_number = 0
+      children.clear()
+---
+id: children info
+sets:
+  - children[i].name.first
+  - children[i].name.middle
+  - children[i].name.last
+  - children[i].name.suffix
+question: |
+  ${ capitalize(ordinal(i)) } child's information
+subquestion: |
+  ${children.question_text_table_template}
+fields:
+  - code: |
+      children[i].name_fields()
+  - Date of birth: children[i].birthdate
+    datatype: BirthDate
+  - My spouse and I **adopted** this child together during our marriage.: children[i].adopted_during_marriage
+    required: False
+    datatype: yesno
+  # need help text saying don't include children who were born to or adopted by either spouse prior to marriage
+  - Gender: children[i].gender
+    datatype: radio
+    choices:
+      - Female: female
+      - Male: male
+  - Social security number: children[i].ssn
+    datatype: ssn
+    required: False
+---
+code: |
+  if children[i].adopted_during_marriage:
+    children[i].timing = "marital"
+    children[i].origin = "adoption"
+  else:
+    if int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) < 0:
+      children[i].timing = "premarital"
+    elif int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) > 0:
+      children[i].timing = "marital"
+---
+if: not children[i].adopted_during_marriage and int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) == 0
+Question: Which was first?
+fields:
+  - Was ${children[i]} born before or after you got married?: children[i].timing
+    datatype: radio
+    choices: 
+      - ${children[i]} was born before we got married.: premarital
+      - ${children[i]} was born after we got married.: marital
+---
+id: marital children's origin
+if: children[i].timing == "marital" and not children[i].adopted_during_marriage
+question: |
+  About ${children[i]}
+fields:
+  - Who gave birth to ${children[i]}?: children[i].marital_birth
+    datatype: radio
+    choices:
+      - "**My spouse or I** gave birth to ${children[i]}.": True
+      - "**Someone else** gave birth to ${children[i]}.": False
+  - Which of these applies to ${children[i]}?: children[i].origin
+    datatype: radio
+    choices:
+      - My spouse and I had ${children[i]} together through sex or assisted reproduction.: marital_sex_AR
+      - My spouse or I had ${children[i]} with somebody else.: marital_third_party_conceived
+    show if:
+      variable: children[i].marital_birth 
+      is: True
+  - Which of these applies to ${children[i]}?: children[i].origin
+    datatype: radio
+    choices:
+      - ${children[i]} was born through a surrogacy agreement.: marital_surrogacy
+      - My spouse or I conceived ${children[i]} with someone else. That other person gave birth to ${children[i]}.: third_party_birth
+    show if:
+      variable: children[i].marital_birth
+      is: False
+  - note: |
+      ${ collapse_template(why_ask_child_origin) }
+      ${ collapse_template(help_assisted_repro) }
+---
+id: extramarital third party birth
+if: children[i].timing == "marital" and children[i].origin == "third_party_birth"
+question: ${children[i]}'s legal parent 
+subquestion: ${ collapse_template(why_ask_child_origin) }
+fields:
+  - Who is ${children[i]}'s biological parent?: children[i].legal_parent
+    datatype: radio
+    choices:
+      - I am.: user
+      - My spouse is.: other_party
+---
+template: why_ask_child_origin
+subject: |
+  Why are you asking this?
+content: |
+  Depending on your answer, we may need to give you more information about parentage.
+---
+template: help_assisted_repro
+subject: |
+  What does "assisted reproduction" mean?
+content: |
+  Assisted reproduction is a way to become pregnant that is not sexual intercourse. It includes:
+  
+    * Donor insemination
+    * Sperm or egg donation
+    * Embryo donation
+    * In vitro fertilization (IVF) and embryo transfer
+    * Intracytoplasmic sperm injection
+    * Assisted reproductive technology
+---
+id: adopted child set origin and legal parents
+code: |
+  if children[i].adopted_during_marriage:
+    children[i].origin = "marital_adoption"
+    children[i].legal_parent = "both"
+---
+id: set legal parents for certain situations
+code: |
+  if children[i].origin == "marital_sex_AR":
+    children[i].legal_parent = "both"
+  elif children[i].origin == "premarital_with_spouse" and children[i].how_conceived == "premarital_sex_or_assisted_repro_with_spouse" and (children[i].parentage_established == "yes" or (children[i].parentage_established == "unknown" and children[i].both_on_birth_cert == True)):
+    children[i].legal_parent = "both"
+  elif children[i].origin == "premarital_with_another" and children[i].parentage_established == "stepparent_adoption": 
+    children[i].legal_parent = "both"
+  elif children[i].origin == "premarital_with_another" and children[i].parentage_established == "no":
+    children[i].legal_parent = children[i].bio_parent
+  elif children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "assisted_reproduction":
+    children[i].legal_parent = "both"
+  
+---
+id: premarital children's origin
+if: children[i].timing == "premarital" 
+question: |
+  About ${children[i]}
+fields:
+  - Which of these applies to ${children[i]}?: children[i].origin
+    datatype: radio
+    choices:
+      - My current spouse and I had ${children[i]} **together**.: premarital_with_spouse
+        help: |
+          This includes children conceived through sex, assisted reproduction, or a surrogacy agreement.
+      - My current spouse or I had ${children[i]} **with someone else**.: premarital_with_another
+        help: |
+          This includes children who were conceived through sex, assisted reproduction, or a surrogacy agreement, or who were adopted.
+      - My current spouse or I had ${children[i]} **alone**, through a **single-parent adoption** or through **assisted reproduction *without*** another parent.: premarital_alone
+        help: |
+          This answer is only for someone who became a single parent **on purpose** through:
+          
+          * adoption or 
+          * assisted reproduction. 
+          
+          If there *was* another parent but they did not or could not act as a parent, choose a different answer.
+  - How was ${children[i]} conceived?: children[i].how_conceived
+    datatype: radio
+    choices:
+      - By sexual intercourse or assisted reproduction: premarital_sex_or_assisted_repro_with_spouse
+      - Through a surrogacy agreement: premarital_surrogacy_with_spouse
+    show if:
+      variable: children[i].origin
+      is: premarital_with_spouse
+  - Who had ${children[i]} with someone else?: children[i].bio_parent
+    datatype: radio
+    choices:
+      - I did.: user
+      - My spouse did.: other_party
+    show if:
+      variable: children[i].origin
+      is: premarital_with_another
+  - note: |
+      ${ collapse_template(why_ask_child_origin) }
+      ${ collapse_template(help_assisted_repro) }
+---
+id: premarital children of sex, assisted repro
+if: children[i].timing == "premarital" and children[i].origin == "premarital_with_spouse" and children[i].how_conceived == "premarital_sex_or_assisted_repro_with_spouse" and children[i].bio_parent == "user"
+question: ${children[i]}'s legal parents 
+subquestion: ${ collapse_template(why_ask_child_origin) }
+fields:
+  - Did your spouse become a legal parent of ${children[i]}?: children[i].parentage_established
+    datatype: radio
+    choices:
+      - Yes: yes
+      - No: no
+      - I don't know.: unknown
+  - note: |
+      **Before you can use this tool** to get divorce forms, your spouse needs to become a legal parent so your divorce can include custody, parenting time, and child support for all children in common. To learn more, read [How to Become a Legal Parent](https://michiganlegalhelp.org/resources/family/how-become-legal-parent).
+    show if:
+      variable: children[i].parentage_established
+      is: no
+  - Are both your and your spouse's names listed on ${children[i]}'s birth certificate as parents?: children[i].both_on_birth_cert
+    datatype: yesnoradio
+    show if: 
+      variable: children[i].parentage_established
+      is: unknown
+  - note: |
+      If your spouse is not listed on the birth certificate, this could mean either that:
+      
+      * you are the only legal parent, **or**
+      * the birth certificate was not updated after your spouse became a legal parent. 
+      
+      Make sure that your spouse is a legal parent **before you use this tool** to get divorce forms. This is so your divorce can include custody, parenting time, and child support for all your children in common with your spouse. To learn more, read [How to Become a Legal Parent](https://michiganlegalhelp.org/resources/family/how-become-legal-parent).
+    show if:
+      variable: children[i].both_on_birth_cert
+      is: False
+validation code: |
+  if children[i].parentage_established == "no":
+    validation_error("Both parents must become legal parents before you can use this tool to get divorce forms.", field="children[i].parentage_established")
+  elif children[i].parentage_established == "unknown" and children[i].both_on_birth_cert == False:
+    validation_error("Both parents must become legal parents before you can use this tool to get divorce forms.", field="children[i].both_on_birth_cert")
+---
+id: premarital children of sex, assisted repro
+if: children[i].timing == "premarital" and children[i].origin == "premarital_with_spouse" and children[i].how_conceived == "premarital_sex_or_assisted_repro_with_spouse" and children[i].bio_parent == "other_party"
+question: ${children[i]}'s legal parents 
+subquestion: ${ collapse_template(why_ask_child_origin) }
+fields:
+  - Did you become a legal parent of ${children[i]}?: children[i].parentage_established
+    datatype: radio
+    choices:
+      - Yes: yes
+      - No: no
+      - I don't know.: unknown
+  - note: |
+      **Before you can use this tool** to get divorce forms, you need to become a legal parent so your divorce can include custody, parenting time, and child support for all children in common. To learn more, read [How to Become a Legal Parent](https://michiganlegalhelp.org/resources/family/how-become-legal-parent).
+    show if:
+      variable: children[i].parentage_established
+      is: no
+  - note: |
+  - Are both your and your spouse's names listed on ${children[i]}'s birth certificate as parents?: children[i].both_on_birth_cert
+    datatype: yesnoradio
+    show if: 
+      variable: children[i].parentage_established
+      is: unknown
+  - note: |
+      If you are not listed on the birth certificate, this could mean either that:
+      
+      * your spouse is the only legal parent, **or** 
+      * the birth certificate was not updated after you became a legal parent. 
+      
+      Make sure that you are a legal parent **before you use this tool** to get divorce forms. This is so your divorce can include custody, parenting time, and child support for all your children in common with your spouse. To learn more, read [How to Become a Legal Parent](https://michiganlegalhelp.org/resources/family/how-become-legal-parent).
+    show if:
+      variable: children[i].both_on_birth_cert
+      is: False
+validation code: |
+  if children[i].parentage_established == "no":
+    validation_error("Both parents must become legal parents before you can use this tool to get divorce forms.", field="children[i].parentage_established")
+  elif children[i].parentage_established == "unknown" and children[i].both_on_birth_cert == False:
+    validation_error("Both parents must become legal parents before you can use this tool to get divorce forms.", field="children[i].both_on_birth_cert")
+---
+id: premarital solo child
+if: children[i].origin == "premarital_alone"
+question: About ${children[i]}
+fields:
+  - Who had ${children[i]} on their own before the marriage?: children[i].bio_parent
+    datatype: radio
+    choices:
+      - I did.: user
+      - My spouse did.: other_party
+  - Did you become ${children[i]}'s legal parent through adoption, Affidavit of Parentage, or another court order (like a *Judgment of Parentage*)?: children[i].legal_parent
+    datatype: radio
+    choices:
+      - Yes: both
+      - No: other_party   # NOTE: does this work????   
+    show if:
+      variable: children[i].bio_parent
+      is: other_party
+  - Did your spouse become ${children[i]}'s legal parent through adoption, Affidavit of Parentage, or another court order (like a *Judgment of Parentage*)?: children[i].legal_parent
+    datatype: radio
+    choices:
+      - Yes: both
+      - No: user     # NOTE: does this work????   
+    show if:
+      variable: children[i].bio_parent
+      is: user
+---
+id: surrogacy agreement compliance
+if: (children[i].origin == "premarital_with_spouse" and children[i].how_conceived == "premarital_surrogacy_with_spouse") or children[i].origin == "marital_surrogacy"
+question: Your surrogacy agreement for ${children[i]}
+subquestion: ${ collapse_template(why_ask_child_origin) }
+fields:
+  - Did you have a lawyer to make sure your surrogacy agreement was legally valid?: children[i].legal_parent
+    datatype: radio
+    choices:
+      - Yes: both
+      - No: neither
+  - note: |
+      There may be issues about legal parentage in your divorce.  
+      
+      **Before you use this tool to get divorce forms, talk to a lawyer.** ${MLH_GUIDE_FULL} 
+      
+      To learn more, read [How to Become a Legal Parent](https://michiganlegalhelp.org/resources/family/how-become-legal-parent).
+    show if:
+      variable: children[i].legal_parent
+      is: neither
+validation code: |
+  if children[i].legal_parent == "neither": 
+    validation_error("You need to talk to a lawyer to confirm the validity of your surrogacy agreement before continuing.")
+---
+id: premarital children with third party user is original parent
+if: children[i].timing == "premarital" and children[i].origin == "premarital_with_another" and children[i].bio_parent == "user"
+question: ${children[i]}'s legal parents 
+subquestion: ${ collapse_template(why_ask_child_origin) }
+fields:
+  - Did your spouse become ${children[i]}'s legal parent?: children[i].parentage_established
+    datatype: radio
+    choices:
+      - "**No**": no
+      - Yes, they became ${children[i]}'s legal parent through **stepparent adoption**.: stepparent_adoption
+      - Yes, they became ${children[i]}'s legal parent by an **Affidavit of Parentage.**: affidavit
+      - Yes, they became ${children[i]}'s legal parent by a **court order** of parentage (for example, an *Order of Filiation* or a *Judgment of Parentage*).: court_order
+  - How was ${children[i]} conceived?: children[i].how_conceived
+    datatype: radio
+    choices:
+      - By sexual intercourse: sex   # trigger revocation questions and message
+      - By assisted reproduction: assisted_reproduction # trigger complicated issue kickout
+    js show if: |
+      val("children[i].parentage_established") == "affidavit" || val("children[i].parentage_established") == "court_order"
+---
+id: premarital children with third party spouse is original parent
+if: children[i].timing == "premarital" and children[i].origin == "premarital_with_another" and children[i].bio_parent == "other_party"
+question: ${children[i]}'s legal parents 
+subquestion: ${ collapse_template(why_ask_child_origin) }
+fields:
+  - Did you become ${children[i]}'s legal parent?: children[i].parentage_established
+    datatype: radio
+    choices:
+      - "**No**": no
+      - Yes, I became ${children[i]}'s legal parent through **stepparent adoption**.: stepparent_adoption
+      - Yes, I became ${children[i]}'s legal parent by an **Affidavit of Parentage.**: affidavit
+      - Yes, I became ${children[i]}'s legal parent by a **court order** of parentage (for example, an *Order of Filiation* or a *Judgment of Parentage*).: court_order
+  - How was ${children[i]} conceived?: children[i].how_conceived
+    datatype: radio
+    choices:
+      - By sexual intercourse: sex   # trigger revocation questions and message
+      - By assisted reproduction: assisted_reproduction # trigger complicated issue kickout
+    js show if: |
+      val("children[i].parentage_established") == "affidavit" || val("children[i].parentage_established") == "court_order"
+---
+id: parentage revocation questions, user is bio parent
+if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived")) and children[i].bio_parent == "user"
+Question: Legal parentage status for ${children[i]}
+fields:
+  - Has your spouse's parentage been revoked (canceled) by a court order? This would only happen if you, your spouse, or ${children[i]}’s other biological parent filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].legal_parent
+    datatype: radio
+    choices:
+      - Yes: user
+      - No: both
+  - Do you plan to ask the court to revoke (cancel) your spouse's legal parentage of ${children[i]} as part of your divorce case?: children[i].parentage_plan_to_revoke
+    datatype: radio
+    choices:
+      - Yes, I want to ask the court to revoke my spouse's parentage.: True
+      - No, I want my spouse to continue as legal parent.: False
+    js show if: |
+      val("children[i].legal_parent") == "both"
+  - note: |
+      If you answer **Yes,** your ${ filing_name } will state that you plan to file a motion asking to revoke your spouse's parentage.
+    js show if: |
+      val("children[i].legal_parent") == "both" && ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer"] and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" }  
+# NOTE: see above for another way to to do js show if logic without json.dumps!
+---
+id: parentage revocation questions, spouse is bio parent
+if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived")) and children[i].bio_parent == "other_party"
+Question: Legal parentage status for ${children[i]}
+fields:
+  - Has your parentage been revoked (canceled) by a court order? This would only happen if you, your spouse, or ${children[i]}’s other biological parent filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].legal_parent
+    datatype: radio
+    choices:
+      - Yes: other_party
+      - No: both
+  - Do you plan to ask the court to revoke (cancel) your legal parentage of ${children[i]} as part of your divorce case?: children[i].parentage_plan_to_revoke
+    datatype: radio
+    choices:
+      - Yes, I want to ask the court to revoke my parentage.: True
+      - No, I want to continue as legal parent.: False
+    js show if: |
+      val("children[i].legal_parent") == "both"
+  - note: |
+      If you answer **Yes,** your ${ filing_name } will state that you plan to file a motion asking to revoke your parentage.
+    js show if: |
+      val("children[i].legal_parent") == "both" && ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer"] and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" }  
+---
+id: info about revoking parentage
+if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived" and children[i].legal_parent == "both")) and children[i].parentage_plan_to_revoke
+continue button field: children[i].parentage_revocation_info
+question: Information about revoking parentage
+subquestion: |
+  % if children[i].origin == "premarital_with_another":
+  
+  % if children[i].parentage_established == "affidavit":
+  
+  % if children[i].bio_parent == "other_party":
+  % if tool_ID in ["divorce_complaint", "divorce_answer"]:
+  Your ${ filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
+  
+  % endif
+  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to consider finding a lawyer to help you.
+      
+  If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+  
+  % elif children[i].bio_parent == "user":
+  % if tool_ID in ["divorce_complaint", "divorce_answer"]:
+  Your ${ filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
+
+  % endif
+  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to consider finding a lawyer to help you.
+      
+  If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+  % endif
+
+  % elif children[i].parentage_established =="court_order":
+  
+  % if children[i].bio_parent == "other_party":
+  To do this, you can file a [Motion to Set Aside Order of Filiation](https://www.courts.michigan.gov/4a8194/siteassets/forms/scao-approved/cc437.pdf) in the same case that the Order of Filiation was entered in. You may want to consider finding a lawyer to help you.
+  
+  If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+
+  % elif children[i].bio_parent == "user":
+  To do this, file a [Motion to Set Aside Order of Filiation](https://www.courts.michigan.gov/4a8194/siteassets/forms/scao-approved/cc437.pdf) in the same case that the Order of Filiation was entered in. You may want to consider finding a lawyer to help you.
+
+  If the judge revokes your spouse’s parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+  % endif
+  % endif
+  
+  % elif children[i].origin == "marital_third_party_conceived":
+  
+  % if children[i].bio_parent == "other_party":
+  % if tool_ID in ["divorce_complaint", "divorce_answer"]:
+  Your ${ filing_name } will say that you plan to file a Motion to Determine Child Born Out of Wedlock for ${ children[i] }.
+
+  % endif
+  You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). You will need to start the divorce case before you can file the parentage motion.
+
+  If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, and then re-downloading the Judgment of Divorce form.
+
+  If nobody files a Motion to Determine Child Born Out of Wedlock, you will remain a legal parent. This means the judge can award you custody and/or parenting time, and you may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
+  
+  % elif children[i].bio_parent == "user":
+  % if tool_ID in ["divorce_complaint", "divorce_answer"]:
+  Your ${ filing_name } will say that you plan to file a Motion to Determine Child Born Out of Wedlock for ${ children[i] }.
+
+  % endif
+  You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your spouse's legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). You will need to start the divorce case before you can file the parentage motion.
+
+  If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, and then re-downloading the Judgment of Divorce form.
+
+  If nobody files a Motion to Determine Child Born Out of Wedlock, your spouse will remain a legal parent. This means the judge can award them custody and/or parenting time, and they may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
+  % endif
+  % endif
+---
+id: info about nonmarital children
+if: children[i].legal_parent != "both"
+continue button field: children[i].not_included_in_divorce_info
+question: Important!
+subquestion: |
+  % if children[i].legal_parent == "other_party":
+  Because you are not ${children[i]}'s legal parent, ${children[i].familiar()} can't be included in the custody, parenting time, and child support sections of your judgment of divorce (final divorce order). 
+
+    If you are concerned about your ability to be a part of ${children[i].familiar()}'s life, talk to a lawyer. ${MLH_GUIDE_FULL}
+  % elif children[i].legal_parent == "user":
+  Because your spouse is not ${children[i]}'s legal parent, ${children[i].familiar()} can't be included in the custody, parenting time, and child support sections of your judgment of divorce (final divorce order). 
+  % endif
+---
+id: kickout for complex situations involving assisted reproduction
+if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"]) or children[i].origin == "marital_third_party_conceived") and children[i].how_conceived == "assisted_reproduction"
+event: children[i].complicated_issue_kickout
+question: This tool is not right for you
+subquestion: |
+  We're sorry. You can't use this tool to make divorce forms. 
+  
+  Legal parentage of ${children[i]} may be a complicated issue in your divorce. You will need to find a lawyer to help you. ${MLH_GUIDE_FULL}
+---
+id: who is birth parent
+if: (children[i].origin == "premarital_with_spouse" and children[i].how_conceived == "premarital_sex_or_assisted_repro_with_spouse") or children[i].origin == "marital_third_party_conceived"
+question: ${children[i]}'s birth parent
+subquestion: |
+  ${ collapse_template(why_ask_child_origin) }
+fields:
+  - Who gave birth to ${children[i]}?: children[i].bio_parent
+    datatype: radio
+    choices:
+      - I did.: user
+      - My spouse did.: other_party
+  - How was ${children[i]} conceived?: children[i].how_conceived
+    datatype: radio
+    choices:
+      - By sexual intercourse: sex   # trigger revocation questions and message
+      - By assisted reproduction: assisted_reproduction # trigger complicated issue kickout
+    js show if: |
+      (val("children[i].bio_parent") == "user" || val("children[i].bio_parent") == "other_party") && ${ json.dumps(children[i].origin) } === "marital_third_party_conceived"
+---
+id: display parentage interview for testing purposes
+question: Parentage Result
+continue button field: children[i].show_parentage_info
+subquestion: |
+  ${children[i]}'s legal parents is/are:
+
+  % if children[i].legal_parent == "both":
+  **Both** the user and their spouse. (Custody, etc., will be decided in the divorce.)
+  % elif children[i].legal_parent == "user":
+  **Only the user**. (${children[i].familiar()} will be listed as a stepchild only.)
+  % elif children[i].legal_parent == "other_party":
+  **Only the user's spouse**. 
+  
+  (${children[i].familiar()} will be listed as a stepchild only.)
+  % endif
+
+  origin code: ${children[i].origin}
+  
+  timing code: ${children[i].timing}
+---
+######## start children qualification/address/home state questions #######
+# LHI "(Marital) Minor Children Information" (first part)
+---
+id: guidepost_marital_children
+continue button field: guidepost_marital_children
+question: More information about the children of your marriage
+subquestion: |
+  The next few questions are all about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() }: 
+  
+  **${ comma_and_list(children.filter(legal_parent='both')) }**.
+
+  % if len(children.filter(legal_parent="both")) > 1:
+  The divorce may decide issues of custody and child support for these children.
+  % else:
+  The divorce may decide issues of custody and child support for ${ comma_and_list(children.filter(legal_parent='both')) }
+  % endif
+---
+id: where children live
+question: |
+  % if len(children.filter(legal_parent="both")) > 1:
+  Who your minor children live with now
+  % else:
+  Who ${ children.filter(legal_parent='both') } lives with now
+  % endif
+subquestion: |
+  This question is about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() }: 
+  
+  **${ comma_and_list(children.filter(legal_parent='both')) }**.
+fields:
+  - label: |
+      % if len(children.filter(legal_parent="both")) > 1:
+      Do all of your and ${ other_parties[0] }'s minor children currently live with you or ${ other_parties[0] }?
+      % else:
+      Does your child ${ children.filter(legal_parent='both') } currently live with you or ${ other_parties[0] }?
+      % endif
+    field: children_live_with_parent
+    datatype: yesnoradio
+  - label: |
+      % if len(children.filter(legal_parent="both")) > 1:
+      Who do your and ${ other_parties[0] }'s minor children currently live with?
+      % else:
+      Who does your child ${ children.filter(legal_parent='both') } currently live with?
+      % endif
+    field: children_now_live_with_which_parent
+    datatype: radio
+    code: |
+      child_lives_with_choices
+    show if:
+      variable: children_live_with_parent
+      is: True
+---
+# TODO: going to have to clear this out and rebuild if # of children changes
+code: |
+  child_lives_with_choices = [
+                  ['users[0]', 'Me'],
+                  ['other_parties[0]', 'My spouse'],
+                  ['both', 'Both']
+                             ]
+  
+  if len(children.filter(legal_parent="both")) > 1:
+    child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with my spouse.'])
+---
+id: kickout if children don't live with parents
+event: children_live_with_third_party_kickout
+question: This tool is not right for you
+subquestion: |
+  We're sorry. You cannot use this tool if any of your and ${ other_parties[0] }'s minor children are living with someone besides you or your spouse.
+  
+  You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
+---
+id: kickout if children lived with someone else in last 5 years
+event: other_custodian_kickout
+question: This tool is not right for you
+subquestion: |
+  We're sorry. You cannot use this tool if any of your and ${ other_parties[0] }'s minor children have lived with a legal custodian other than a parent during the past five years
+  
+  You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
+---
+id: kickout if children don't live with parents
+event: third_party_custody_kickout
+question: This tool is not right for you
+subquestion: |
+  We're sorry. You cannot use this tool if there are any other adults (besides you and ${ other_parties[0] }) who may have a legal right to custody or parenting time of any of your and ${ other_parties[0] }'s minor children.
+  
+  You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
+---
+id: children disqualifiers
+question: |
+  Minor children -- special situations
+subquestion: |
+  These questions are about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() }: **${ comma_and_list(children.filter(legal_parent='both')) }**.
+
+fields:
+  - label: |
+      % if len(children.filter(legal_parent="both")) > 1:
+      Have any of your and ${ other_parties[0] }'s children lived with a legal custodian, other than a parent, during the past five years? (For example, because of a child protective services case, a minor guardianship, or a third-party custody order.)
+      % else:
+      Has your child ${ children.filter(legal_parent='both') } lived with a legal custodian, other than a parent, during the past five years? (For example, because of a child protective services case, a minor guardianship, or a third-party custody order.)
+      % endif
+    field: kids_had_other_custodian
+    datatype: yesnoradio
+  - label: |
+      % if len(children.filter(legal_parent="both")) > 1:
+      Are there any other adults (besides you and your spouse) who may have a legal right to custody or parenting time of any of the minor children?
+      % else:
+      Are there any other adults (besides you and your spouse) who may have a legal right to custody or parenting time for ${ children.filter(legal_parent='both') }?
+      % endif
+    show if:
+      variable: kids_had_other_custodian
+      is: False
+    field: third_party_custody_claim
+    datatype: yesnoradio
+  - label: |
+      % if len(children.filter(legal_parent="both")) > 1:
+      Do you believe that a temporary custody order is needed to protect the children because they have been abused, mistreated, threatened, or neglected?
+      % else:
+      Do you believe that a temporary custody order is needed to protect ${ children.filter(legal_parent='both') } because they have been abused, mistreated, threatened, or neglected?
+      % endif
+    show if:
+      variable: third_party_custody_claim
+      is: False
+    field: need_temporary_order
+    datatype: yesnoradio
+---
+id: temporary order warning
+question: |
+  **WARNING! This tool may not be right for you.**
+subquestion: |
+  You said that you think a temporary custody order is needed to protect ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } because of abuse, mistreatment, threats, or neglect.
+  
+  Getting temporary orders for custody is not simple. Neither this tool nor the Michigan Legal Help website will create temporary orders. **The forms created by this tool will not let the judge know that a temporary order is needed or that the children in this case have been abused, mistreated, threatened, or neglected.**
+  
+  You can still use this tool to prepare your forms and begin the divorce process, but this tool will not create any motions for temporary custody orders or proposed temporary custody orders. 
+  
+  You may want to speak to a lawyer. ${MLH_GUIDE_FULL}
+fields:
+  - Do you want to continue?: temporary_order_exit
+    datatype: noyesradio
+---
+id: specify which parent child lives with
+question: Who ${ children[i] } lives with
+fields:
+  - Who does ${ children[i] } live with?: children[i].lives_with
+    datatype: radio
+    choices:
+      - ${ users[0] }: users[0]
+      - ${ other_parties[0] }: other_parties[0]
+---
+#####
+######## Home State logic
+#####
+---
+code: |
+  for child in children:
+      if child.legal_parent == "both":
+        if child.currently_resides_in_type == "Michigan":
+          child.currently_resides_in_locality = "Michigan"
+        child.current_residence_is_home_state
+        if child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.currently_resides_in_locality != "Michigan":
+          child.spent_six_months_in_michigan
+        if not (child.currently_resides_in_type == "Michigan" and child.current_residence_is_home_state) and not (child.age_in_months() >= 6 and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months"):
+          if child.home_state_exit:
+            exit_general
+  set_children_home_state_info
+
+  interview_order_home_state = True
+---
+only sets: set_children_home_state_info
+code: |
+  for child in children:
+      if child.legal_parent == "both":
+        if child.current_residence_is_home_state:
+          child.home_state = child.currently_resides_in_locality
+          if child.home_state == "Michigan":
+            child.MI_jurisdiction = True
+          else: 
+            child.MI_jurisdiction = False
+        elif child.age_in_months() >= 6 and child.currently_resides_in_locality != "Michigan" and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months":
+          child.home_state = "none"
+          child.MI_jurisdiction = True
+        else:
+          child.home_state = "none"
+          child.MI_jurisdiction = False
+
+  MI_has_jurisdiction_all_kids = True
+  for child in children:
+      if child.legal_parent == "both":
+        if child.MI_jurisdiction == False:
+          MI_has_jurisdiction_all_kids = False
+  
+  set_children_home_state_info = True
+---
+id: home state inquiry -- current residence
+question: ${ children[i] }'s legal "home state", part 1
+subquestion: |
+  ${ collapse_template(home_state_info) }
+fields:
+  - Where does ${ children[i] } currently live?: children[i].currently_resides_in_type
+    datatype: radio
+    choices:
+      - on land governed by a Native American tribe (a tribal reservation): tribal_lands
+      - in Michigan: Michigan
+      - in a different US state or territory: other_US_state
+      - in a foreign country: foreign_country
+  - Please name the tribal reservation where ${ children[i] } lives:: children[i].currently_resides_in_locality
+    show if:
+      variable: children[i].currently_resides_in_type
+      is: tribal_lands
+  - Please name the foreign country where ${ children[i] } lives:: children[i].currently_resides_in_locality
+    show if:
+      variable: children[i].currently_resides_in_type
+      is: foreign_country
+  - Select the state or territory where ${ children[i] } lives:: children[i].currently_resides_in_locality
+    code: |
+      US_states_and_territories_list
+    exclude: |
+      "Michigan"
+    show if: 
+      variable: children[i].currently_resides_in_type
+      is: other_US_state
+---
+id: home state inquiry -- length of current residence
+question: ${ children[i] }'s legal "home state", part 2
+subquestion: |
+  ${ collapse_template(home_state_info) }
+fields:
+  - label: |
+      % if children[i].age_in_months() >= 6:
+      Has ${ children[i] } been living in ${ children[i].currently_resides_in_locality } **for the last 6 months?**
+      % else:
+      Has ${ children[i] } lived in ${ children[i].currently_resides_in_locality } **since birth?**
+      % endif
+    field: children[i].current_residence_is_home_state
+    datatype: radio
+    choices:
+      - Yes.: True
+      - No, ${ children[i].familiar() } ${ f"moved to { children[i].currently_resides_in_locality } within the last 6 months." if children[i].age_in_months() >= 6 else "used to live in a different state, country, or tribal reservation." }: False
+  - note: |
+      ${ collapse_template(home_state_trip_info) }
+---
+template: home_state_info
+subject: What is a "home state" and why does it matter?
+content: |
+  Usually, a Michigan court can enter an order about child custody when Michigan is the “home state” of a child. This matters in a divorce case because the final order in the case will include custody.
+
+  The home state of a child is the state where the child has lived with a parent (or a person acting as a parent) for at least 6 consecutive months (6 months in a row). If the child is less than 6 months old, the home state is the state where the child lived from birth with a parent or person acting as a parent. A short-term absence of a parent is included as part of the 6 months.
+
+  We ask where ${ children[i].familiar() } lived to find out if a Michigan court can issue a custody order.
+---
+template: home_state_trip_info
+subject: What if ${ children[i].familiar() } went on a trip?
+content: |
+  % if children[i].age_in_months() >= 6:
+  A short absence is still part of the six consecutive months. 
+  
+  For example:
+  
+  * A child may have lived with you in Michigan for four months.
+  * Then you both go to visit relatives in Ohio for a week. 
+  * Then, you return to Michigan with the child, where you live for two more months. 
+  * Then you file your divorce case.
+  
+  In this case, the week in Ohio counts as part of the time the child lived in Michigan. The child in the example has lived in Michigan for the last six months.
+  % else:
+  A short absence is OK. 
+  
+  For example:
+  
+  * A child might be born and live with you in Michigan for two months. 
+  * Then you both go to visit relatives in Ohio for a week. 
+  * Then, you return to Michigan with the child, where you live for another month. 
+  * Then you file your divorce case. 
+  
+  In this case, the week in Ohio counts as part of the time the child lived in Michigan. The child in the example has lived in Michigan from birth.
+  % endif
+---
+id: Michigan was previous home state prong
+question: ${ children[i] }'s legal "home state", part 3
+subquestion: |
+  ${ collapse_template(home_state_info) }
+fields: 
+  - Did your child ${ children[i] } **ever** live in the state of Michigan for at least 6 months in a row in the past?: children[i].spent_six_months_in_michigan
+    datatype: yesnoradio
+  - When did that time of 6 or more consecutive months end?: children[i].MI_stay_ended_when
+    datatype: radio
+    choices: 
+      - Within the last 6 months: within_six_months
+      - More than 6 months ago: more_than_six_months_ago
+    show if:
+      variable: children[i].spent_six_months_in_michigan
+      is: True
+---
+id: MI has no custody jurisdiction warning
+question: It's important for you to talk to a lawyer
+subquestion: |
+  Based on your answers, Michigan is not ${ children[i] }'s legal "home state". 
+  
+  When another state, country, or Native American tribe is considered the child’s home state, a judge in a Michigan court may not be able to enter an order dealing with child custody, parenting time, and child support. This means that you may need to file in a separate court to get an order dealing with those issues.
+
+  It is important for you to talk to a lawyer if you file for divorce in a Michigan court. There are some legal exceptions that could allow a Michigan court to enter an order about your minor child, but this is complicated. If you have low income you may qualify for free legal services. ${ MLH_GUIDE_FULL }
+
+  % if children[i].currently_resides_in_type == "tribal_lands":
+  If a lawyer advises you to file a divorce case in tribal court, some forms are available on tribal court websites. If not, you may want to call the court to find out if they have divorce forms.
+
+  ${ collapse_template(tribal_divorce_forms) }
+  % endif
+fields:
+  - Do you want to stop using this tool?: children[i].home_state_exit
+    datatype: radio
+    choices:
+      - "Yes, I want to stop.": True
+      - "No, I want to continue.": False
+  - "Do you understand that if you make your divorce forms using this tool and file a divorce case in a Michigan court, it is important to find a lawyer to help you?": children[i].acknowledge_home_state_warning
+    datatype: radio
+    choices:
+      - "Yes, I understand.": True
+      - "No, I don't understand.": False
+    show if:
+      variable: children[i].home_state_exit
+      is: False
+  - note: |
+      Please read the information above. It's important that you understand this information before you continue.
+    show if:
+      variable: children[i].acknowledge_home_state_warning
+      is: False
+validation code: |
+  if children[i].home_state_exit == False and children[i].acknowledge_home_state_warning == False:
+    validation_error("You need to understand the importance of speaking with a lawyer before you continue.", field="children[i].acknowledge_home_state_warning")
+---
+template: tribal_divorce_forms
+subject: Forms for filing in tribal courts
+content: |
+  * Bay Mills Indian Community: [Complaint for Divorce with Minor Children](https://baymillstribalcourt.org/wp-content/uploads/2018/11/Complaint_divorce_no_children2.pdf)
+  * Grand Traverse Band of Ottawa and Chippewa Indians: [Complaint for Divorce with Minor Children](https://www.gtbindians.org/downloads/divorce_w_children.pdf)
+  * Hannahville Indian Community: *Divorce forms not found online.*
+  * Nottawaseppi Huron Band of Potawatomi: *Divorce forms not found online.*
+  * Keweenaw Bay Indian Community: [Complaint for divorce](https://www.kbic-nsn.gov/wp-content/uploads/2023/07/complaint_of_divorce_revised_07072022.pdf)
+  * Lac Vieux Desert Band of Lake Superior Chippewa Indians: [Petition for Divorce](https://lvd-nsn.gov//media/banners/Petition%20for%20Divorce.pdf)
+  * Little River Band of Ottawa Indians: [Summons, Complaint, and Proof of Service](https://lrboi-nsn.gov/sites/default/files/pages/Summons-Complaint-Proof-of-Service-Divorce05_02_24.pdf). See [other divorce court forms on this page](https://lrboi-nsn.gov/government/tribal-judicial/tribal-court/tribal-court-documentation).
+  * Little Traverse Bay Bands of Odawa Indians: *Divorce forms not found online.*
+  * Pokagon Band of Potawatomi Indians: *Divorce forms not found online.*
+  * Saginaw Chippewa Indian Tribe: [Divorce packet](https://www.sagchip.org/tribalcourt/forms/2022/Divorce%20Packet%202022.pdf)
+  * Sault Ste. Marie Tribe of Chippewa Indians: *Divorce forms not found online.*
+  * Match-E-Be-Nash-She-Wish Band of Pottawatomi Indians (Gun Lake Tribe): *Divorce forms not found online.*
+---
+# LHI this appears on "Children Addresses"
+# TODO: Brett has a note saying currently JOD_only does not have condfidential option, so this doesn't apply to JOD_only. Is that desired to continue?
+id: child_address_not_confidential_warning
+continue button field: child_address_not_confidential_warning
+question: |
+  Reminder: your address is not confidential
+subquestion: |
+  Earlier, you said that you did not want to keep your address and telephone number confidential. 
+  
+  If the health or safety of your children will be put at risk by having your address on court papers, you should go back and change your previous answer. 
+
+  **Need to decide what to say here. Give direct link or send to review/edit screen?**
+---
+id: children's previous addresses
+question: Children's previous addresses
+subquestion: |
+  You already told us who ${ comma_and_list(children.filter(legal_parent='both')) } **currently** ${ children.does_verb("live") } with.
+fields:
+  - label: |
+      % if len(children.filter(legal_parent="both")) > 1:
+      Have any of these children lived at any **other addresses** in the past five years?
+      % else:
+      Has ${ children.filter(legal_parent='both') } lived at any **other addresses** in the past five years?
+      % endif
+    field: children_previous_address.there_are_any
+    datatype: yesnoradio
+  - note: |
+      You will enter those other addresses on the next page.
+    show if:
+      variable: children_previous_address.there_are_any
+      is: True
+  - label: |
+      % if len(children.filter(legal_parent="both")) > 1:
+      During the last five years, who have your children lived with?
+      % else:
+      During the last five years, who has ${ children.filter(legal_parent='both') } lived with?
+      % endif
+    field: children_lived_with_which_parent_past
+    datatype: radio
+    choices:
+      - Me: users[0]
+      - ${ other_parties[0] }: other_parties[0]
+      - Both of us: both
+---
+code: |
+  children_previous_address[i].address
+  children_previous_address[i].complete = True
+---
+table: children_previous_address.table
+rows: children_previous_address
+columns:
+  - Address: row_item.on_one_line()
+edit:
+  - address.address
+delete buttons: True
+confirm: True
+---
+#TODO possibly revisit this address and use similar code to marriage.real_property's address for real interview if having defaults seems helpful.
+id: children's previous address
+question: |
+  ${capitalize(ordinal(i))} previous address
+subquestion: |
+  Enter the ${ordinal(i)} previous address where ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } lived in the last five years.
+fields:
+  - label: Street Address or PO Box
+    field: children_previous_address[i].address
+    address autocomplete: True
+  - label: Apartment, suite, etc
+    field: children_previous_address[i].unit
+    required: False
+  - label: City
+    field: children_previous_address[i].city
+  - label: State or Province (two-letter abbreviation for U.S. states)
+    field: children_previous_address[i].state
+    default: MI
+    input type: datalist
+    code: |
+      states_list()
+    required: False
+  - label: Zip or Postal Code
+    field: children_previous_address[i].zip
+    required: False
+  - label: Country
+    field: children_previous_address[i].country
+    default: "US"
+    code: |
+      countries_list()
+    required: False
+---
+id: any more previous child addresses?
+question: |
+  Any more previous addresses?
+subquestion: |
+  So far, you have listed&colon;
+
+  ${children_previous_address.table}
+fields:
+  - label: |
+      Are there any more previous address where ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } lived in the last five years?
+    field: children_previous_address.there_is_another
+    datatype: yesnoradio
+---
+######## start custody questions #######
+---
+id: custody parenting time questions
+question: |
+  Custody and Parenting Time
+subquestion: | 
+  ${ collapse_template(custody_PT_guidance, collapsed=False) }
+fields:
+  - Who should have legal custody?: legal_custody_who
+    datatype: radio
+    choices:
+      - Only me: user
+      - Only my spouse: other_party
+      - "Both of us, jointly": both
+  - Who should have physical custody?: physical_custody_who
+    datatype: radio
+    choices:
+      - Only me: user
+      - Only my spouse: other_party
+      - "Both of us, jointly": both
+  - note: |
+      Because you have selected joint physical custody, both parents will have parenting time.
+    show if: 
+      variable: physical_custody_who
+      is: both
+  - Who should have parenting time (visitation) with the children?: PT_who
+    datatype: radio
+    choices: 
+      - Only me: user
+      - Both of us: both
+    show if:
+      variable: physical_custody_who
+      is: user
+  - Who should have parenting time (visitation) with the children?: PT_who
+    datatype: radio
+    choices: 
+      - Only my spouse: other_party
+      - Both of us: both
+    show if:
+      variable: physical_custody_who
+      is: other_party
+  - What type of parenting time do you believe is appropriate?: PT_type
+    datatype: radio
+    choices:
+      - Reasonable: reasonable
+      - Specific: specific
+    js show if: |
+      val("PT_who") == "both" || val("physical_custody_who") == "both"
+  - What type of parenting time do you believe is appropriate?: PT_type
+    datatype: radio
+    choices:
+      - Reasonable: reasonable
+      - Specific: specific
+      - Specific and supervised: supervised
+    js show if: |
+      val("PT_who") == "both" && val("physical_custody_who") != "both"
+  - label: "If you know the name of the person or agency you want to supervise parenting time, enter it here. If you don't know, leave this blank."
+    field: PT_supervisor
+    show if: 
+      variable: PT_type
+      is: supervised
+    required: False
+  - note: |
+      ${ collapse_template(custody_PT_definitions) }
+---
+if: PT_type in ["specific", "supervised"] and county_choice != "Muskegon"
+id: specific parenting time options
+question: |
+  Specific Parenting Time Schedules
+subquestion: | 
+  You will need a specific parenting time schedule. If you are able to work with the other parent, you may want to come up with the schedule together.
+
+  The [Michigan Parenting Time Guideline](https://www.courts.michigan.gov/4a537f/siteassets/court-administration/standardsguidelines/foc/pt_gdlns.pdf), created by the Friend of the Court Bureau, is a helpful resource for putting together a parenting time schedule. We recommend that you **review the Guideline before** creating a custom parenting time schedule for your family. 
+
+  ${ collapse_template(MI_PT_guideline_info) }
+
+  You may also be able to get a sample schedule from your county's Friend of the Court (FOC) office. Check their website or ask the Friend of the Court how to get one. 
+  
+  % if not user_logged_in():
+  If you need time to come up with a schedule, please create an account and sign in to save your answers for later.
+  % endif
+  
+fields:
+  - Do you want to write your own parenting time schedule or use a sample schedule?: specific_PT_how
+    datatype: radio
+    choices:
+      - Write my own: custom
+      - "Use a sample schedule from my county’s Friend of the Court office (If you choose this option, you can either find the schedule on your court website or ask the Friend of the Court how to get one).": FOC_sample
+
+---
+if: PT_type in ["specific", "supervised"] and county_choice == "Muskegon"
+id: specific parenting time info
+continue button field: Muskegon_specific_PT_info
+question: |
+  Specific Parenting Time Schedules
+subquestion: | 
+  You will need a specific parenting time schedule. If you are able to work with the other parent, you may want to come up with the schedule together.
+
+  The [Michigan Parenting Time Guideline](https://www.courts.michigan.gov/4a537f/siteassets/court-administration/standardsguidelines/foc/pt_gdlns.pdf), created by the Friend of the Court Bureau, is a helpful resource for putting together a parenting time schedule. We recommend that you **review the Guideline before** creating a custom parenting time schedule for your family. 
+
+  ${ collapse_template(MI_PT_guideline_info) }
+
+  % if not user_logged_in():
+  If you need time to come up with a schedule, please create an account and sign in to save your answers for later.
+  % endif
+---
+template: MI_PT_guideline_info
+subject: |
+  More information about the Michigan Parenting Time Guideline
+content: |
+  The [Michigan Parenting Time Guideline](https://www.courts.michigan.gov/4a537f/siteassets/court-administration/standardsguidelines/foc/pt_gdlns.pdf) includes sample schedules you can use as a starting place to create your family's schedule. It also has information about the developmental needs of children at different ages in connection to parenting time. The Guideline addresses specific topics such as long distance parenting time, parenting time with a parent who is in prison, and domestic violence situations.
+---
+template: custody_PT_guidance
+subject: |
+  How to answer the custody and parenting time questions:
+content: |
+  % if tool_ID == "JOD_only":
+  
+  1. If the **judge issued temporary orders** for custody or {parenting time}, you should match the judge's orders.
+  
+  2. If there are **no temporary orders** for custody or {parenting time}:
+      * if you and your spouse **agree** on a question, use your agreed answer.
+      * if you and your spouse **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
+  
+  % elif tool_ID == "divorce_complaint":
+  * If you and your spouse **agree** on a question, use your agreed answer.
+  * If you and your spouse **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
+
+  You may have to come back to this tool later and change the custody and parenting time terms if you and your spouse change your agreement or if the judge orders terms that are different than those you enter now.  
+  % if not user_logged_in():
+  You must create an account and log in to save your answers.
+  % endif
+  % endif
+---
+template: custody_PT_definitions
+subject: |
+  What do these questions mean?
+terms:
+  noncustodial parent: |
+    The "**noncustodial parent**" is the parent who does **not** have sole or primary physical custody of the children. 
+    
+    The "custodial parent" generally refers to the parent with whom the children live most of the time.
+  
+content: |
+  ===== **Legal Custody** =====
+  
+  Having legal custody of your children means having the right to make important decisions about their lives, like where they go to school, what religion they are, and major medical decisions. Either parent can have sole legal custody, or parents can have joint legal custody. 
+  
+  When parents have joint legal custody, they both have the right to weigh in on important decisions about their kids. Both parents must agree on important decisions. If they can’t agree, they may have to ask the judge to decide. 
+  
+  If a parent has sole legal custody, that parent can make these important decisions without the other parent’s agreement.
+
+  ===== **Physical Custody** =====
+  
+  Having physical custody of your children means your children will live with you at least some of the time. Either parent can have sole physical custody, or parents can have joint physical custody. 
+  
+  When parents have joint physical custody, the children take turns living with each parent. 
+  
+  If one parent has sole physical custody, the other parent will usually have regular parenting time, or “visitation,” with the children.
+
+  ===== **Parenting Time Types** =====
+  
+  **Reasonable**: If a judge orders “reasonable” parenting time, specific dates, times, and other conditions are left for the parents to work out. If you believe that you and your spouse can agree on parenting time arrangements, you may ask for reasonable parenting time rather than a specific parenting time schedule. However, if the judge orders reasonable parenting time, and you and your spouse can’t agree, the judge may not be able to enforce the order or judgment. You will need to return to court and ask for a specific parenting time schedule in order for the judge to enforce the judgment.
+
+  **Specific**: If a judge orders “specific” parenting time, all of the dates, times, and conditions for visits are included in the court order. Many counties have standard parenting time schedules that you can use in your case. You can contact the Friend of the Court in the county where your case will be filed and ask if there is a standard parenting time schedule. You can also choose one of our common parenting time schedules for families that have joint physical custody, for families with school-age children, for families with children younger than school age, or for long distance parenting time of school-age children.
+
+  **Specific and supervised**: If a judge orders “specific and supervised” parenting time, all of the dates, times, and conditions for visits are included in the court order. The judge will order parenting time to be supervised by a third party – such as a relative, friend, or supervised parenting time center. Supervised parenting time may be appropriate if the {noncustodial parent} is a risk to the children. The supervisor must be willing to supervise parenting time.
+
+---
+id: custom parenting time schedule
+if: county_choice == "Muskegon" or (county_choice != "Muskegon" and specific_PT_how == "custom")
+question: Parenting Time Schedule
+subquestion: |
+  What parenting time schedule do you want the judge to order?
+  
+   - Write in complete sentences and include all important details, including days and times.
+   - Refer to yourself and your spouse by your full names, or as Plaintiff and Defendant.
+   - Do **not** use words like “I”, “we”, “him”, or “her”.
+
+  Review the [Michigan Parenting Time Guideline](https://www.courts.michigan.gov/4a537f/siteassets/court-administration/standardsguidelines/foc/pt_gdlns.pdf) for help creating a schedule that fits your family’s needs. 
+fields:
+  - label: "Your parenting time schedule:"
+    field: custom_PT_details
+    input type: area
+    rows: 10
+---
+id: Hague Convention warning
+continue button field: hague_convention_info
+question: Parenting Time in a Foreign Country and the Hague Convention
+subquestion: |
+  The Hague Convention is a treaty that helps parents get a kidnapped child back from other countries that have agreed to the treaty. [Countries that are treaty partners](https://travel.state.gov/content/travel/en/International-Parental-Child-Abduction/abductions/hague-abduction-country-list.html) have agreed to return a child who has been taken to or kept in another Hague country in violation of a parent's custodial rights.
+
+  An abducted child is returned to where the child was a **habitual resident.** This means the country where the child has been living. It doesn’t necessarily mean the country where the child or the child’s parents are citizens. After the child is returned to the country of habitual residence, custody decisions are made in the courts there. The Hague Convention does not decide who should have custody of the child. It only decides where the custody case will happen.
+
+  It can be much harder to return a kidnapped child from a country that has not signed on to the Hague Convention. Because of this, Michigan law requires your Judgment of Divorce to include a paragraph that prevents parenting time in a non-Hague Convention country. The Judgment includes a place where you and your spouse can agree to allow parenting time in a specific country that is not a Hague Convention country, but you cannot do this using this tool.
+
+  The Hague Convention is complicated, and it is an important tool for a parent whose spouse abducts their child and keeps the child in another country. If you want your spouse to have parenting time in a country that is **not** a party to the Hague Convention, you may want to consider talking to a lawyer to make sure you understand the risks involved.
+
+---
+# LHI Domicile and Residence of Minor Children Part 1
+id: generic domicile provisions
+continue button field: child_domicile_info
+question: Domicile and Residence of Minor Children 
+subquestion: |
+  If your Judgment of Divorce has custody provisions, the following will apply:
+
+  % if len(children.complete_elements()) > 1:
+  * If you have sole or joint physical custody of your children and you move, you must give the Friend of the Court the child’s new address in writing.
+  * The minor children may not be moved from the state of Michigan without the judge’s prior approval. Even if you and your spouse agree that the children can move out of state, you must get a court order first.
+  * Neither you nor your spouse may move more than 100 miles away from where you lived at the beginning of the case (within Michigan) except in certain situations. This is called the “100-mile rule.” **If one parent is granted sole legal custody of the minor children, the 100-mile rule will not apply.**
+  % else:
+  * If you have sole or joint physical custody of your child and you move, you must give the Friend of the Court the child’s new address in writing.
+  * The minor child may not be moved from the state of Michigan without the judge’s prior approval. Even if you and your spouse agree that the child can move out of state, you must get a court order first.
+  * Neither you nor your spouse may move more than 100 miles away from where you lived at the beginning of the case (within Michigan) except in certain situations. This is referred to as the “100-mile rule.” **If one parent is granted sole legal custody of the minor child, the 100-mile rule will not apply.**
+  % endif
+
+---
+# LHI Domicile and Residence of Minor Children Part 2
+id: 100 mile rule
+continue button field: hundred_mile_rule
+question: 100-Mile Rule
+fields:
+  - Do you and your spouse currently live more than 100 miles away from each other?: already_over_100_miles
+    datatype: yesnoradio
+  - note: |
+      **The 100-mile rule will not apply in your case** because you and your spouse live more than 100 miles away from each other at the start of your divorce case. 
+    show if:
+      variable: already_over_100_miles
+      is: True
+  - "Do you and your spouse agree that either of you may move more than 100 miles from where you currently live, as long as you still live within the state of Michigan?": allow_over_100_miles
+    datatype: yesnoradio
+    show if:
+      variable: already_over_100_miles
+      is: False
+  - note: |
+      **The 100-mile rule will not apply in your case** if you and your spouse agree that it will not apply. 
+    show if:
+      variable: allow_over_100_miles
+      is: True
+  - note: |
+      According to your answers, the minor child will have a legal residence with each parent, (meaning you and your spouse will be granted joint legal custody), and **the 100-mile rule will apply in your case.** 
+      
+      Your Judgment of Divorce will state that “neither party shall move more than 100 miles away from where he or she lived at the beginning of this case, and the child has a legal residence with each parent. For more information, read [Moving with Children After Separation or Divorce](https://michiganlegalhelp.org/resources/family/moving-children-after-separation-or-divorce).
+    show if:
+      variable: allow_over_100_miles
+      is: False
+---
+# LHI Child Support
+id: child support basic info
+continue button field: child_support_basic
+question: Child Support
+subquestion: |
+  % if tool_ID == "divorce_complaint":
+  Your Complaint for Divorce will ask the judge to order child support. 
+  % endif
+  Michigan law requires judges to order child support based on the Michigan Child Support Formula. In many counties, the Friend of the Court will calculate child support for you. The amount of child support is based on the income of each parent, the number of overnights that each parent has with the child, and a number of other factors. You can use the [MiChildSupport Calculator](https://micase.state.mi.us/calculatorapp/public/welcome/load.html) on the Michigan Department of Health and Human Services website to find out what the support amount might be in your case.
+
+  In some situations, the judge can order support that is less than what is required by the Michigan Child Support Formula, or order no child support at all—but this is uncommon. If you think there is a reason to have less child support than required by the Formula or none at all, you may want to contact a lawyer. ${MLH_GUIDE_FULL} 
+  
+  To learn more about child support, read [Child Support in a Nutshell](https://michiganlegalhelp.org/resources/family/child-support-nutshell).
+---
+# LHI Child Support Part 2
+# note: do not include in JOD-only, but do include in other 4 tools
+id: child support errors
+question: Child support processing errors
+subquestion: |
+  If you end up **receiving** child support, the Michigan IV-D child support program will process the payments. If an error is made and you receive money that you were not owed or you are overpaid, the program will take steps to correct the error.
+fields:
+  - Do you want to give the program permission to pay back any error or overpayment by keeping a percentage from your future child support payments until the mistake is corrected?: allow_child_support_overpayment_correction
+    datatype: yesnoradio
+  - note: |
+      ${ collapse_template(child_support_overpayment_correction_info) }  
+  - "If an error is made, what percentage do you permit the child support program to withhold from your payments until the error is corrected?": child_support_overpayment_percentage
+    datatype: radio
+    choices:
+      - 10%: ten
+      - 20%: twenty
+      - 30%: thirty
+    show if:
+      variable: allow_child_support_overpayment_correction
+      is: True
+---
+template: child_support_overpayment_correction_info
+subject: |
+  More information
+content:
+  Select "No" if you would like to be contacted before the child support program tries to recover an amount from your support payments.
+
+  If you change your mind later, you must contact the Friend of the Court (FOC). Your answer has no effect on your eligibility for child support services.
+---
+######## end custody questions ########
+---
+# --------------------------------------------------------------------
+## prior cases
+# --------------------------------------------------------------------
+# for JOD-only, this is only shown if there are marital children. For other divorce filing types, there are questions needed here even if no marital children. 
+---
+code: |
+  has_prior_civil_cases
+  prior_family_cases.gather()
+  interview_order_prior_cases = True
+---
+id: prior family cases table
+table: prior_family_cases.table
+rows: prior_family_cases
+columns:
+  - Name: row_item.company_name
+#  - Entered family before or during marriage: |
+#      "before marriage" if row_item.timing == "premarital" else "during marriage"
+edit:
+  - company_name
+delete buttons: True
+confirm: True
+---
+# LHI Prior Court Cases Part 1
+# TODO: question for Amy: should the help text for family division cases exclude custody, paternity, and child support for custody interviews? (See Prior Court Cases Part 1 Dialog in Brett's materials.)
+# TODO: maybe ask about prior civil cases AFTER collecting custody/support orders and family division cases? This screen is long and clunky as-is.
+id: prior court cases
+question: Past court cases
+fields:
+  - label: |
+      % if tool_ID == "JOD_only":
+      Are there any prior custody or support orders in Michigan or any other state regarding ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') }?
+      % elif tool_ID in ["custody_complaint", "custody_answer"]:
+      Are there any pending or resolved **family division** court cases or orders involving you and ${ OP_label }? 
+      % elif tool_ID in ["divorce_complaint", "divorce_answer"]:
+      % if there_are_marital_children:
+      Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } or you and your spouse?
+      % else:
+      Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving you and your spouse?
+      % endif
+      % endif
+    field: prior_family_cases.there_are_any
+    datatype: yesnoradio
+  - note: |
+      % if tool_ID in ["custody_complaint", "custody_answer", "divorce_complaint", "divorce_answer"]:
+      ${ collapse_template(family_division_info) }
+      % endif
+  - note: |
+      % if tool_ID == "JOD_only":
+      You will enter information for **prior custody cases** on the next page.
+      % else:
+      You will enter information for **prior family division court cases** on the next page.
+      % endif
+    js show if: |
+      val("prior_family_cases.there_are_any") === true
+  - Is a request for child support **currently pending** in another state?: child_support_request_pending
+    datatype: yesnoradio
+    js show if: |
+      (val("prior_family_cases.there_are_any") === true || val("prior_family_cases.there_are_any") === false) && (${ json.dumps(tool_ID) } === "JOD_only" || ${ json.dumps(tool_ID) } === "divorce_complaint")
+  - label: |
+      % if tool_ID == "divorce_complaint":
+      Do you know of any other pending or resolved **civil** actions (not family law cases) between you and ${ OP_label } related to your marriage? For example, has one spouse previously sued the other spouse for a tort, such as assault?
+      % elif tool_ID == "custody_complaint":
+      Do you know of any other pending or resolved **civil** actions (not family law cases or personal protection order cases) between you and ${ other_parties[0] }? For example, has one parent previously sued the other parent for a tort, such as assault?
+      % endif
+    field: has_prior_civil_cases
+    datatype: yesnoradio
+    js show if: |
+      (val("child_support_request_pending") === true || val("child_support_request_pending") === false) && (${ json.dumps(tool_ID) } === "custody_complaint" || ${ json.dumps(tool_ID) } === "divorce_complaint")
+  - Is that case still active (pending)?: prior_civil_case_is_pending
+    datatype: yesnoradio
+    required: False
+    js show if: |
+      val("has_prior_civil_cases") === true
+  - If the case was filed in Michigan, select the county:: prior_civil_case_county
+    required: False
+    code: court_list._load_courts()["address_county"].unique() + " County"
+    js show if: |
+      val("has_prior_civil_cases") === true && val("prior_civil_case_filed_outside_MI") === false
+  - The case was filed outside the state of Michigan: prior_civil_case_filed_outside_MI
+    required: False
+    datatype: yesno
+    js show if: |
+      val("has_prior_civil_cases") === true
+  - Type of court: MI_court_type
+    required: False
+    datatype: radio
+    choices:
+      - Circuit
+      - District
+      - Probate
+    js show if: |
+      val("has_prior_civil_cases") === true && val("prior_civil_case_filed_outside_MI") === false
+  - What is the name of the court?: prior_civil_case_non_MI_court
+    required: False
+    js show if: |
+      val("has_prior_civil_cases") === true && val("prior_civil_case_filed_outside_MI") === true
+  - What is the case number of that case?: prior_civil_case_number
+    required: False
+    js show if: |
+      val("has_prior_civil_cases") === true
+  - What is the **last name** of the judge assigned to that case?: prior_civil_case_judge
+    required: False
+    js show if: |
+      val("has_prior_civil_cases") === true
+---
+template: family_division_info
+subject: |
+  Family Division Case Types
+content: |
+  **Family Division cases in Michigan** include:
+  
+  * Divorce, annulment, or separate maintenance (sometimes called legal separation)
+  % if tool_ID in ["divorce_complaint", "divorce_answer"]:
+  * Custody
+  * Paternity
+  * Child support
+  % endif
+  * All types of personal protection orders-- whether for a domestic relationship, sexual assault, or nondomestic stalking
+  * Adoption
+  * Child protective proceedings
+  * Cases involving children who are placed in a state institution by the Family Division of Circuit Court
+  * Name change
+  * Emancipation
+  * Juvenile court cases
+
+  **Other states and countries** may call their family court something different. Cases from outside of Michigan that fall within these categories should be listed where the form asks for pending or resolved family law cases in other states or countries.
+---
+id: any more family court cases or custody orders?
+question: |
+  % if tool_ID == "JOD_only":
+  Any more prior custody or support orders?
+  % else:
+  Any more **family division** court cases or orders?
+  % endif
+subquestion: |
+  So far, you have listed&colon;
+
+  ${prior_family_cases.table}
+fields:
+  - label: |
+      % if tool_ID == "JOD_only":
+      Are there any more prior custody or support orders in Michigan or any other state regarding ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') }?
+      % elif tool_ID in ["custody_complaint", "custody_answer"]:
+      Are there any more pending or resolved **family division** court cases or orders involving you and ${ OP_label }? 
+      % elif tool_ID in ["divorce_complaint", "divorce_answer"]:
+      % if there_are_marital_children:
+      Are there any more pending or resolved **family division** court cases or orders in Michigan or any other state involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } or you and your spouse?
+      % else:
+      Are there any more pending or resolved **family division** court cases or orders in Michigan or any other state involving you and your spouse?
+      % endif
+      % endif
+    field: prior_family_cases.there_is_another
+    datatype: yesnoradio
+---
+#code: |
+#  if tool_ID == "JOD_only" and there_are_marital_children:
+#    prior_family_cases[i].status
+#  elif tool ID != "JOD_only":
+#    prior_family_cases[i].status
+#    if there_are_marital_children:
+#      prior_family_cases[i].set_default_case_info
+#      if prior_family_cases[i].type == "divorce":
+#        prior_family_cases[i].included_custody_PT_order
+#      if prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"]:
+#        if prior_family_cases[i].status in ["stayed", "pending", "ended_with_order"]:
+#          prior_family_cases[i].included_custody_PT_order
+#        elif prior_family_cases[i].status == "dismissed" and prior_family_cases[i].type != "paternity":
+#          prior_family_cases[i].included_custody_PT_order
+#  TODO still need to implement other state warnings and children number count rows 191, 200 TODO
+#
+#  prior_family_cases[i].complete = True
+---
+# LHI "Prior Family Cases DLG"
+# JOD_only version should only be asked if there are marital children
+id: prior family case or order collection screen JOD_only IFF with kids
+if: tool_ID == "JOD_only" and there_are_marital_children
+question: ${ capitalize(ordinal(i)) } custody or support order
+subquestion: |
+  ${prior_family_cases.question_text_table_template}
+fields:
+  - State:: prior_family_cases[i].state
+    code: |
+      US_states_and_territories_list
+  - What is the status of this case?: prior_family_cases[i].status
+    choices:
+      - "It has ended and an order was made": ended_with_order
+      - "It has ended but was dismissed by the court": dismissed
+      - "It is active/pending but has been stayed by the court": stayed
+      - "It is active_pending": pending
+  - Case number:: prior_family_cases[i].docket_number
+  - Is there a custody or parenting time order in this case that is currently in effect?: prior_family_cases[i].has_current_custody_PT_order
+    datatype: yesnoradio
+  - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_current_support_order
+    datatype: yesnoradio
+  - note: |
+      **WARNING:** If Michigan is not the ${ children.filter(legal_parent='both').as_noun() }'s home state, a Michigan court may not be able to make decisions about custody and parenting time of your ${ children.filter(legal_parent='both').as_noun() }.
+      
+      You can still use this tool to prepare your divorce forms, but your Judgment of Divorce will not include custody and parenting time arrangements. It will be up to the court to decide whether it has jurisdiction to include custody and parenting time orders in your divorce judgment. ${MLH_GUIDE_FULL}
+    js show if: |
+      val("prior_family_cases[i].state") !== "Michigan" && val("prior_family_cases[i].has_current_custody_PT_order") === true && ${ json.dumps(MI_has_jurisdiction_all_kids) } === false
+  - note: |
+      **WARNING:** If there is a prior custody order from another state and either you, your child, or the other parent resides in that state, a Michigan court may not be able to make decisions about custody and parenting time of your child.
+
+      You can still use this tool to prepare your divorce forms, but your Judgment of Divorce will not include custody and parenting time arrangements. It will be up to the court to decide whether it has jurisdiction to include custody and parenting time orders in your divorce judgment. ${MLH_GUIDE_FULL}
+    js show if: |
+      val("prior_family_cases[i].state") !== "Michigan" && val("prior_family_cases[i].has_current_custody_PT_order") === true && ${ json.dumps(MI_has_jurisdiction_all_kids) } === true && [address matching party logic]
+---
+# LHI "Prior Family Cases DLG"
+id: prior family case or order collection screen NOT JOD_only
+if: tool_ID != "JOD_only"
+question: ${ capitalize(ordinal(i)) } **family division** case or order
+subquestion: |
+  ${prior_family_cases.question_text_table_template}
+fields:
+  - State:: prior_family_cases[i].state
+    code: |
+      US_states_and_territories_list
+  - County: prior_family_cases[i].county
+    code: court_list._load_courts()["address_county"].unique() + " County"
+    show if:
+      variable: prior_family_cases[i].state
+      is: Michigan
+  - County: prior_family_cases[i].county
+    js show if: |
+      val("prior_family_cases[i].state") !== "Michigan" && (${ json.dumps(tool_ID) } === "divorce_complaint" || ${ json.dumps(tool_ID) } === "divorce_answer")
+  - Court Name: prior_family_cases[i].court
+    js show if: |
+      val("prior_family_cases[i].state") !== "Michigan"
+  - Court address: prior_family_cases[i].address
+    js show if: |
+      val("prior_family_cases[i].state") !== "Michigan" && ${ "true" if there_are_marital_children else "false" }
+  - "Case name *(for example, Jones v. Smith or In re: Thomas)*:": prior_family_cases[i].title
+  - Case number:: prior_family_cases[i].docket_number
+  - "Judge's last name *(do not include 'Judge' or 'Hon.')*": prior_family_cases[i].judge
+    js show if: |
+      (${ json.dumps(tool_ID) } === "divorce_complaint" || ${ json.dumps(tool_ID) } === "custody_complaint")
+  - What is the nature of this case?: prior_family_cases[i].type
+    code: |
+      prior_family_case_types
+  - Describe the nature of this case:: prior_family_cases[i].type_description
+    show if:
+      variable: prior_family_cases[i].type
+      is: other
+  - What is the status of this case?: prior_family_cases[i].status
+    choices:
+      - "It has ended and an order was made": ended_with_order
+      - "It has ended but was dismissed by the court": dismissed
+      - "It is active/pending but has been stayed by the court": stayed
+      - "It is active_pending": pending
+    js show if: |
+      val("prior_family_cases[i].type") !== "divorce"
+  - What is the status of this case?: prior_family_cases[i].status
+    choices:
+      - "It has ended and a judgment of divorce or a final decree was made": ended_with_order
+      - "It has ended but was dismissed by the court": dismissed
+    js show if: |
+      val("prior_family_cases[i].type") === "divorce"
+---
+# LHI "Prior Family Cases DLG" (start at row 108)
+# not sure how much of this logic makes sense to replicate, but trying to at least record it for now
+id: prior family cases logic for with children NOT JOD_only
+if: tool_ID != "JOD_only" and there_are_marital_children
+code: |
+  if prior_family_cases[i].type == "divorce":
+    prior_family_cases[i].has_current_custody_PT_order = False
+    prior_family_cases[i].has_current_support_order = False
+  if prior_family_cases[i].type in ["adoption", "name_change", "juvenile_delinquency", "emancipation"]:
+    prior_family_cases[i].has_current_support_order = False
+    prior_family_cases[i].included_custody_PT_order = False
+    prior_family_cases[i].has_current_custody_PT_order = False
+
+  prior_family_cases[i].set_default_case_info = True
+---
+# LHI "Prior Family Cases DLG" (start at row 108)
+id: prior family case or order additional info divorce
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type == "divorce"
+question: ${ capitalize(ordinal(i)) } **family division** case or order
+subquestion: |
+  These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
+fields:
+  - label: |
+      % if prior_family_cases[i].status in ["stayed", "pending"]: 
+      Is there a custody or parenting time order in this case?
+      % elif prior_family_cases[i].status == "dismissed":
+      Was a temporary custody or parenting time order entered in that case when the case was pending?
+      % elif prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].type == "divorce":
+      Did this case involve custody or parenting time?
+      % elif prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].type != "divorce":
+      Was there a custody or parenting time order in that case?
+      % endif
+    field: prior_family_cases[i].included_custody_PT_order
+  - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
+    datatype: ThreePartsDate
+    max: |
+     ${ today() }
+    js show if: |
+      val("prior_family_cases[i].included_custody_PT_order") === true
+---
+# LHI "Prior Family Cases DLG" (start at row 132)
+id: prior family case or order additional info 
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and prior_family_cases[i].status == "ended_with_order"
+question: ${ capitalize(ordinal(i)) } **family division** case or order
+subquestion: |
+  These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
+fields:
+  - What is the date of that order?: prior_family_cases[i].final_order_date
+    datatype: ThreePartsDate
+    max: |
+     ${ today() }
+  - Is there a custody or parenting time order in this case?: prior_family_cases[i].included_custody_PT_order
+  - Is the custody or parenting time order currently in effect?: prior_family_cases[i].has_current_custody_PT_order
+    js show if: |
+      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && val("prior_family_cases[i].included_custody_PT_order") === true
+  - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_current_support_order
+    js show if: |
+      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].final_order_date"))
+# TODO: do we care about the final order if it doesn't have custody in it? If not can we switch the question order and standardize the date question with the divorce version?
+---
+# LHI "Prior Family Cases DLG" (start at row 174)
+id: prior family case or order additional info 
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "paternity", "guardianship", "other"] and prior_family_cases[i].status in ["stayed", "pending"]
+question: ${ capitalize(ordinal(i)) } **family division** case or order
+subquestion: |
+  These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
+fields:
+  - Is there a custody or parenting time order in this case?: prior_family_cases[i].included_custody_PT_order
+    # note I'm not sure but perhaps we should assume this order is also CURRENT?
+  - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
+    datatype: ThreePartsDate
+    max: |
+     ${ today() }
+    js show if: |
+      val("prior_family_cases[i].included_custody_PT_order") === true
+  - Is there a support order in this case?: prior_family_cases[i].has_current_support_order
+    js show if: |
+      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].included_custody_PT_order"))
+---
+# LHI "Prior Family Cases DLG" (start at row 151)
+id: prior family case or order additional info 
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "guardianship", "other"] and prior_family_cases[i].status == "dimissed"
+question: ${ capitalize(ordinal(i)) } **family division** case or order
+subquestion: |
+  These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
+fields:
+  - "Was a temporary custody or parenting time order entered in that case when the case was pending?": prior_family_cases[i].included_custody_PT_order
+  - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
+    datatype: ThreePartsDate
+    max: |
+     ${ today() }
+    js show if: |
+      val("prior_family_cases[i].included_custody_PT_order") === true
+---
+code: |
+  prior_family_case_types = [
+                              ['divorce', 'Divorce'],
+                              ['protection_order', 'Protection Order']
+                              ['parental_rights', 'Parental Rights (abuse/neglect)'],
+                              ['adoption', 'Adoption']
+                              ['paternity', 'Paternity'],
+                              ['custody', 'Custody'],
+                              ['guardianship', 'Guardianship']
+                              ['juvenile_delinquency', 'Juvenile Delinquency']
+                              ['name_change', 'Name Change'],
+                              ['emancipation', 'Emancipation'],
+                              ['other', 'Other']
+                            ]
+  if tool_ID in ["custody_answer", "custody_complaint"]:
+    prior_family_case_types.remove("['paternity', 'Paternity']", "['custody', 'Custody']")
+  if tool_ID == "custody_complaint":
+    prior_family_case_types.remove("['divorce', 'Divorce']")
+---
+# --------------------------------------------------------------------
+## stepchildren additional info
+# --------------------------------------------------------------------
+---
+# EKM note: logic surrounding whether stepchild address is printed on forms or kept confidential will need to be done on attachment screens or in separate variable at some point
+code: |
+  for child in children:
+    if child.legal_parent != "both":
+      child.stepchild_lives_with
+
+  interview_order_stepchild_address = True
+---
+id: guidepost_stepchildren
+continue button field: guidepost_stepchildren
+question: More information about stepchildren
+subquestion: |
+  % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 1:
+  The next few questions are about you and ${ other_parties[0] }'s other minor children (stepchildren): 
+  
+  **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**.
+  
+  Stepchildren are children that have only one of you as their legal parent. This ${ case_label } case will not directly affect your stepchildren or ${ other_parties[0] }'s stepchildren, but information about them is required on some of the forms.   
+  % else:
+  The next few questions are about the minor child: 
+  
+  **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**.
+  
+    Stepchildren are children that have only one of you as their legal parent. This ${ case_label } case will not directly affect ${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }, but information about them is required on some of the forms.
+  % endif
+---
+if: children[i].legal_parent == "user"
+id: user's child home
+question: ${ children[i] }'s home address
+fields:
+  - Does ${ children[i] } live with you?: children[i].stepchild_lives_with
+    datatype: radio
+    choices:
+      - Yes: user
+      - No: other
+  - Do you want to keep this child's address confidential?: children[i].stepchild_address_confidential
+    datatype: yesnoradio
+    show if:
+      variable: children[i].stepchild_lives_with
+      is: other
+  - label: Street Address or PO Box
+    field: children[i].address.address
+    address autocomplete: True
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: Apartment, suite, etc
+    field: children[i].address.unit
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: City
+    field: children[i].address.city
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: State or Province (two-letter abbreviation for U.S. states)
+    field: children[i].address.state
+    default: MI
+    input type: datalist
+    code: |
+      states_list()
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: Zip or Postal Code
+    field: children[i].address.zip
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: Country
+    field: children[i].address.country
+    default: "US"
+    code: |
+      countries_list()
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+---
+if: children[i].legal_parent == "other_party"
+id: other party's child home
+question: ${ children[i] }'s home address
+fields:
+  - Does ${ children[i] } live with ${ OP_label }?: children[i].stepchild_lives_with
+    datatype: radio
+    choices:
+      - Yes: other_party
+      - No: other
+  - Do you want to keep this child's address confidential?: children[i].stepchild_address_confidential
+    datatype: yesnoradio
+    show if:
+      variable: children[i].stepchild_lives_with
+      is: other
+  - label: Street Address or PO Box
+    field: children[i].address.address
+    address autocomplete: True
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: Apartment, suite, etc
+    field: children[i].address.unit
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: City
+    field: children[i].address.city
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: State or Province (two-letter abbreviation for U.S. states)
+    field: children[i].address.state
+    default: MI
+    input type: datalist
+    code: |
+      states_list()
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: Zip or Postal Code
+    field: children[i].address.zip
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+  - label: Country
+    field: children[i].address.country
+    default: "US"
+    code: |
+      countries_list()
+    required: False
+    show if:
+      variable: children[i].stepchild_address_confidential
+      is: False
+---
+# --------------------------------------------------------------------
+## health insurance collection
+# --------------------------------------------------------------------
+---
+code: |
+  users[0].insurance[i].company_name
+  users[0].insurance[i].complete = True
+---
+code: |
+  other_parties[0].insurance[i].company_name
+  other_parties[0].insurance[i].complete = True
+---
+id: user insurance table
+table: users[0].insurance.table
+rows: users[0].insurance
+columns:
+  - Name: row_item.company_name
+  - Type: row_item.coverage_type.true_values()
+#  - Entered family before or during marriage: |
+#      "before marriage" if row_item.timing == "premarital" else "during marriage"
+edit:
+  - company_name
+delete buttons: True
+confirm: True
+---
+id: other party insurance table
+table: other_parties[0].insurance.table
+rows: other_parties[0].insurance
+columns:
+  - Name: row_item.company_name
+  - Type: row_item.coverage_type.true_values()
+#  - Covered children: |
+#      row_item.covers_child.true_values() if len(children.filter(legal_parent="both")) > 1 else "during marriage"
+# can't figure out how to get this working for both single and multiple children in single chart
+edit:
+  - company_name
+delete buttons: True
+confirm: True
+---
+# LHI "Health Coverage" (with kids version) (but we're using a different structure)
+id: user's health_coverage (with children)
+question: |
+  Health coverage
+subquestion: |
+fields:
+  - label: |
+      Do you have your own health care coverage, either through an employer, Medicaid or Medicare, or privately? **Do not include health care coverage provided by ${ OP_label } or ${ OP_label }’s employer here.**
+    field: users[0].insurance.there_are_any
+    datatype: yesnoradio
+---
+# LHI "Health Coverage" (with kids version) (but we're using a different structure)
+id: OP's health_coverage (with children)
+question: |
+  Health coverage
+subquestion: |
+fields:
+  - label: |
+      Does ${ OP_label } hold their own health care coverage, either through an employer, Medicaid or Medicare, or privately?
+    field: other_parties[0].insurance.there_are_any
+    datatype: yesnoradio
+---
+id: user has any more health insurance
+question: |
+  Do you have any more health care policies?
+subquestion: |
+  So far, you have listed&colon;
+
+  ${users[0].insurance.table}
+
+  **Do not include health care coverage provided by ${ OP_label } or ${ OP_label }’s employer here.**
+fields:
+  - Do you have another health care policy to add?: users[0].insurance.there_is_another
+    datatype: yesnoradio
+---
+id: OP has any more health insurance
+question: |
+  Does ${ OP_label } have any more health care policies?
+subquestion: |
+  So far, you have listed&colon;
+
+  ${other_parties[0].insurance.table}
+fields:
+  - Does ${ OP_label } have another health care policy to add?: other_parties[0].insurance.there_is_another
+    datatype: yesnoradio
+---
+if: len(children.filter(legal_parent="both")) == 1
+id: user insurance policy info (1 marital child)
+question: |
+  Your ${ ordinal(i) } health care policy
+subquestion: |
+  ${users[0].insurance.question_text_table_template}
+fields:
+  - Are you the named policy holder?: users[0].insurance[i].in_own_name
+    datatype: yesnoradio
+    required: False
+  - Please enter the name of the policy holder: users[0].insurance[i].policyholder
+    required: False
+    show if:
+      variable: users[0].insurance[i].in_own_name
+      is: False
+  - What is the name of the provider?: users[0].insurance[i].company_name
+  - What is the address of the provider?: users[0].insurance[i].company_address
+    required: False
+  - What is the policy number?: users[0].insurance[i].policy_number
+    required: False
+  - What is the certificate number?: users[0].insurance[i].certificate_number
+    required: False
+  - What coverage does the policy provide?: users[0].insurance[i].coverage_type
+    required: False
+    datatype: checkboxes
+    choices:
+      - medical
+      - dental
+      - optical/vision
+      - other
+    none of the above: False
+  - Does this policy cover ${ children }?: users[0].insurance[i].covers_child
+    datatype: yesnoradio
+    required: False
+---
+if: len(children.filter(legal_parent="both")) > 1
+id: user insurance policy info (multiple marital children)
+question: |
+  Your ${ ordinal(i) } health care policy
+subquestion: |
+  ${users[0].insurance.question_text_table_template}
+fields:
+  - Are you the named policy holder?: users[0].insurance[i].in_own_name
+    datatype: yesnoradio
+    required: False
+  - Please enter the name of the policy holder: users[0].insurance[i].policyholder
+    required: False
+    show if:
+      variable: users[0].insurance[i].in_own_name
+      is: False
+  - What is the name of the provider?: users[0].insurance[i].company_name
+  - What is the address of the provider?: users[0].insurance[i].company_address
+    required: False
+  - What is the policy number?: users[0].insurance[i].policy_number
+    required: False
+  - What is the certificate number?: users[0].insurance[i].certificate_number
+    required: False
+  - What coverage does the policy provide?: users[0].insurance[i].coverage_type
+    required: False
+    datatype: checkboxes
+    choices:
+      - medical
+      - dental
+      - optical/vision
+      - other
+    none of the above: False
+  - Does this policy cover any of these children?: users[0].insurance[i].covers_child
+    required: False
+    datatype: checkboxes
+    none of the above: False
+    code: |
+      children.filter(legal_parent="both")    
+---
+if: len(children.filter(legal_parent="both")) == 1
+id: OP insurance policy info (1 marital child)
+question: |
+  ${ capitalize(OP_label) }'s ${ ordinal(i) } health care policy
+subquestion: |
+  ${other_parties[0].insurance.question_text_table_template}
+fields:
+  - Is ${ OP_label } the named policy holder?: other_parties[0].insurance[i].in_own_name
+    datatype: yesnoradio
+    required: False
+  - Please enter the name of the policy holder: other_parties[0].insurance[i].policyholder
+    required: False
+    show if:
+      variable: other_parties[0].insurance[i].in_own_name
+      is: False
+  - What is the name of the provider?: other_parties[0].insurance[i].company_name
+  - What is the address of the provider?: other_parties[0].insurance[i].company_address
+    required: False
+  - What is the policy number?: other_parties[0].insurance[i].policy_number
+    required: False
+  - What is the certificate number?: other_parties[0].insurance[i].certificate_number
+    required: False
+  - What coverage does the policy provide?: other_parties[0].insurance[i].coverage_type
+    required: False
+    datatype: checkboxes
+    choices:
+      - medical
+      - dental
+      - optical/vision
+      - other
+    none of the above: False
+  - Does this policy cover ${ children }?: other_parties[0].insurance[i].covers_child
+    datatype: yesnoradio
+    required: False
+---
+if: len(children.filter(legal_parent="both")) > 1
+id: OP insurance policy info (multiple marital children)
+question: |
+  ${ capitalize(OP_label) }'s ${ ordinal(i) } health care policy
+subquestion: |
+  ${other_parties[0].insurance.question_text_table_template}
+fields:
+  - Is ${ OP_label } the named policy holder?: other_parties[0].insurance[i].in_own_name
+    datatype: yesnoradio
+    required: False
+  - Please enter the name of the policy holder: other_parties[0].insurance[i].policyholder
+    required: False
+    show if:
+      variable: other_parties[0].insurance[i].in_own_name
+      is: False
+  - What is the name of the provider?: other_parties[0].insurance[i].company_name
+  - What is the address of the provider?: other_parties[0].insurance[i].company_address
+    required: False
+  - What is the policy number?: other_parties[0].insurance[i].policy_number
+    required: False
+  - What is the certificate number?: other_parties[0].insurance[i].certificate_number
+    required: False
+  - What coverage does the policy provide?: other_parties[0].insurance[i].coverage_type
+    required: False
+    datatype: checkboxes
+    choices:
+      - medical
+      - dental
+      - optical/vision
+      - other
+  - Does this policy cover any of these children?: other_parties[0].insurance[i].covers_child
+    required: False
+    datatype: checkboxes
+    none of the above: False
+    code: |
+      children.filter(legal_parent="both")    
+---
+# --------------------------------------------------------------------
+## Employment and income info
+# --------------------------------------------------------------------
+---
+code: |
+  users[0].has_job
+  if tool_ID != "JOD_only":
+    users[0].occupation
+  if users[0].has_job:
+    users[0].job.employer
+  users[0].has_professional_license
+
+  interview_order_user_employment = True
+---
+# never asked for JOD_only; always asked for divorce_complaint even if no kids
+code: |
+  if users[0].has_job:
+    users[0].income.value
+  pa_received
+
+  interview_order_user_income = True
+---
+code: |
+  other_parties[0].has_job
+  if tool_ID == "divorce_complaint" and there_are_marital_children:
+    other_parties[0].occupation
+  if other_parties[0].has_job:
+    other_parties[0].job.employer
+  other_parties[0].has_professional_license
+
+  interview_order_other_party_employment = True
+---
+# never asked for JOD_only
+code: |
+  if other_parties[0].has_job:
+    other_parties[0].income.value
+  other_party_pa_received
+  
+  interview_order_other_party_income = True
+
+# note it's possible need to ask occupation of defendant if wants spousal support as well
+# really it's possible that all of this would apply to spousal support as well for divorce complaint (reading interview script)? Except for the occupation question.
+---
+# LHI: "Plaintiff Employer" or "Defendant Employer"
+id: user employment
+question: Your employment
+subquestion: |
+  Answer the following questions about your employment as fully as you can. If you don’t have all the information or if you are afraid to disclose this information to ${ OP_label }, you can leave some answers blank, but the court may require answers later.
+      
+  All of the information you supply in this tool, including your employment information, will be included on forms that you will file with the court and deliver to ${ OP_label }. If you are afraid that sharing your employment information will put you at risk of harm, you should contact a lawyer to help you with your case. For more information, see [Domestic Violence and Divorce](https://michiganlegalhelp.org/resources/family/domestic-violence-and-divorce).   
+fields:
+  - Are you currently employed?: users[0].has_job
+    datatype: yesnoradio
+    required: False
+
+---
+# LHI: "Plaintiff Employer" or "Defendant Employer"
+id: user occupation
+question: Your occupation or field of work
+fields:
+  - What is your occupation?: users[0].occupation
+    required: False
+---
+# LHI: "Plaintiff Employer" or "Defendant Employer"
+id: user job
+question: Your job
+fields:
+  - Employer name: users[0].job.employer
+    required: False
+  - label: Street Address or PO Box
+    field: users[0].job.employer_address.address
+    address autocomplete: True
+    required: False
+  - label: Apartment, suite, etc
+    field: users[0].job.employer_address.unit
+    required: False
+  - label: City
+    field: users[0].job.employer_address.city
+    required: False
+  - label: State or Province (two-letter abbreviation for U.S. states)
+    field: users[0].job.employer_address.state
+    default: MI
+    input type: datalist
+    code: |
+      states_list()
+    required: False
+  - label: Zip or Postal Code
+    field: users[0].job.employer_address.zip
+    required: False
+  - label: Country
+    field: users[0].job.employer_address.country
+    default: "US"
+    code: |
+      countries_list()
+    required: False
+  - Phone: users[0].job.employer_phone
+  - "Federal Employer Identification Number (FEIN), if known": users[0].job.FEIN
+---
+# LHI: "Plaintiff Occupational License" or "Defendant Occupational License"
+id: user professional license
+question: Professional license?
+fields:
+  - Do you hold a professional or occupational license?: users[0].has_professional_license
+    datatype: yesnoradio
+    required: False
+  - What is the license number: users[0].professional_license_number
+    required: False
+    show if:
+      variable: users[0].has_professional_license
+      is: True
+  - What type of license is it?: users[0].professional_license_type
+    required: False
+    show if:
+      variable: users[0].has_professional_license
+      is: True
+    #TODO should this be limited to US stated plus Virgin Islands and PR? If so should we change initial question to US license? Given it's not required anyway, OK to leave as fill-in?
+  - What state or territory issued the license?: users[0].professional_license_state
+    required: False
+    show if:
+      variable: users[0].has_professional_license
+      is: True
+  - What date was the license issued?: users[0].professional_license_date
+    required: False
+    show if:
+      variable: users[0].has_professional_license
+      is: True
+    datatype: ThreePartsDate
+    max: |
+     ${ today() }
+     
+---
+# LHI: "Plaintiff Income" or "Defendant Income"
+id: user income
+question: Your income
+fields:
+  - How often are you paid?: users[0].income.times_per_year
+    datatype: radio
+    required: False
+    choices:
+      - Once a week: 52
+      - Every two weeks: 26
+      - Twice a month: 24
+      - Once a month: 12
+  - "What is the amount of your paycheck, before taxes?": users[0].income.value
+    required: False
+    datatype: currency
+    min: 0
+    step: 0.01
+---
+# LHI: "Plaintiff Income" or "Defendant Income"
+id: user public assistance
+question: Do you receive public assistance?
+subquestion: |
+  ${ collapse_template(public_assistance_template) }
+
+  **NOTE**: THIS IS STILL UNDER CONSTRUCTION. NEED TO DECIDE HOW MUCH TO PULL FROM FEE WAIVER CODE VS JUST REBUILD HERE.
+fields:
+  - Do you get public assistance that is **based on having low income**?: pa_received
+    datatype: radio
+    required: False
+    choices:
+      - "Applied, but not yet receiving assistance": applied
+      - Currently receiving assistance: gets_assistance
+      - Neither: none
+      - Unknown: unknown
+# not done need to know whether to standardize with fee waiver tool or not, this question probable needs to be separate because we need the neither, applied, etc. options. But maybe list can be shared?
+# note divorce tool currently only asks for SSI case number if there is no MDHHS case number. (And in that case prints a PII form.) Fee waiver tool only uses SSI case number if there's no MDHHS and no "Other" case number. So probably should follow same logic here. 
+# note, if they choose "applied, but not receiving", only ask for specific type of aid if there are children or possibly if they're asking for spousal support. (Note that for complaint we do ask the income questions even if there's no kids or spousal support.)
+---
+# taken almost directly from fee waiver for now
+template: public_assistance_template
+subject: |
+  What are some examples?
+content: |
+  This may include help such as SNAP or food stamps, Medicaid, TANF, WIC, cash assistance, child care assistance, or SSI (Supplemental Security Income).
+  
+  **Note:** Social Security Disability Insurance benefits (SSDI) are **not** based on having low income, so if that is the only benefit received, select **No**.
+---
+# LHI: "Plaintiff Employer" or "Defendant Employer"
+id: other party employment
+question: ${ other_parties[0] }'s employment
+subquestion: |
+  Answer these questions as fully as you can. If you don’t have all the information, you can leave some answers blank, but the court may require answers later.
+fields:
+  - To the best of your knowledge, is ${ other_parties[0] } currently employed?: other_parties[0].has_job
+    required: False
+    datatype: yesnoradio
+---
+# LHI: "Plaintiff Employer" or "Defendant Employer"
+id: other party occupation
+question: ${ other_parties[0] }'s occupation or field of work
+fields:
+  - What is ${ other_parties[0] }'s occupation?: other_parties[0].occupation
+    required: False
+---
+# LHI: "Plaintiff Employer" or "Defendant Employer"
+id: other party job
+question: ${ other_parties[0] }'s job
+fields:
+  - Employer name: other_parties[0].job.employer
+    required: False
+  - label: Street Address or PO Box
+    field: other_parties[0].job.employer_address.address
+    address autocomplete: True
+    required: False
+  - label: Apartment, suite, etc
+    field: other_parties[0].job.employer_address.unit
+    required: False
+  - label: City
+    field: other_parties[0].job.employer_address.city
+    required: False
+  - label: State or Province (two-letter abbreviation for U.S. states)
+    field: other_parties[0].job.employer_address.state
+    default: MI
+    input type: datalist
+    code: |
+      states_list()
+    required: False
+  - label: Zip or Postal Code
+    field: other_parties[0].job.employer_address.zip
+    required: False
+  - label: Country
+    field: other_parties[0].job.employer_address.country
+    default: "US"
+    code: |
+      countries_list()
+    required: False
+  - Phone: other_parties[0].job.employer_phone
+  - "Federal Employer Identification Number (FEIN), if known": other_parties[0].job.FEIN
+---
+# LHI: "Plaintiff Occupational License" or "Defendant Occupational License"
+id: other party professional license
+question: Professional license?
+fields:
+  - Does ${ other_parties[0] } hold a professional or occupational license?: other_parties[0].has_professional_license
+    datatype: yesnoradio
+    required: False
+  - What is the license number: other_parties[0].professional_license_number
+    required: False
+    show if:
+      variable: other_parties[0].has_professional_license
+      is: True
+  - What type of license is it?: other_parties[0].professional_license_type
+    required: False
+    #TODO should this be limited to US stated plus Virgin Islands and PR? If so should we change initial question to US license? Given it's not required anyway, OK to leave as fill-in?
+    show if:
+      variable: other_parties[0].has_professional_license
+      is: True
+  - What state or territory issued the license?: other_parties[0].professional_license_state
+    required: False
+    show if:
+      variable: other_parties[0].has_professional_license
+      is: True
+  - What date was the license issued?: other_parties[0].professional_license_date
+    required: False
+    show if:
+      variable: other_parties[0].has_professional_license
+      is: True
+    datatype: ThreePartsDate
+    max: |
+     ${ today() }
+---
+# LHI: "Plaintiff Income" or "Defendant Income"
+id: other party income
+question: Your income
+fields:
+  - How often are you paid?: other_parties[0].income.times_per_year
+    datatype: radio
+    required: False
+    choices:
+      - Once a week: 52
+      - Every two weeks: 26
+      - Twice a month: 24
+      - Once a month: 12
+  - "What is the amount of your paycheck, before taxes?": other_parties[0].income.value
+    required: False
+    datatype: currency
+    min: 0
+    step: 0.01
+---
+# LHI: "Plaintiff Income" or "Defendant Income"
+id: other party public assistance
+question: Does ${ OP_label } receive public assistance?
+subquestion: |
+  ${ collapse_template(public_assistance_template) }
+
+  **NOTE:** under construction, not built out yet.
+fields:
+  - Does ${ OP_label } get public assistance that is **based on having low income**?: other_party_pa_received
+    datatype: radio
+    required: False
+    choices:
+      - "Applied, but not yet receiving assistance": applied
+      - Currently receiving assistance: gets_assistance
+      - Neither: none
+      - Unknown: unknown
+# not done need to know whether to standardize with fee waiver tool or not, this question probable needs to be separate because we need the neither, applied, etc. options. But maybe list can be shared?
+# not finished yet, see notes on user version
+---  
+# --------------------------------------------------------------------
+## Party Identifying Information
+# --------------------------------------------------------------------
+#LHI: "Plaintiff Identifying Information" or "Defendant Identifying Information"
+---
+code: |
+  users[0].ssn
+  if tool_ID != "JOD_only":
+    users[0].eye_color
+    users[0].height_feet
+    users[0].race
+  
+  interview_order_user_identifying_info = True
+---
+code: |
+  other_parties[0].ssn
+  if tool_ID != "JOD_only":
+    other_parties[0].eye_color
+    other_parties[0].height_feet
+    other_parties[0].race
+  
+  interview_order_other_party_identifying_info = True
+---
+id: user SSN and DL
+question: |
+  Your identity documents
+subquestion: |
+  ${ collapse_template(why_need_SSN)}
+fields:
+  - Please enter your social security number: users[0].ssn
+    required: False
+    datatype: ssn
+  - Enter your driver's license number: users[0].license_number
+    required: False
+  - What state issued your driver's license?: users[0].license_state
+    required: False
+    # probably we should just make a consistent dropdown with states plus DC, PR, Guam, Virgin Islands (what about northern mariana islands (citizens) and american samoa (not citizens)?)
+  - Are you a citizen of any country other than the US?: users[0].has_foreign_citizenship
+    required: False
+    datatype: yesnoradio
+    js show if: |
+      ${ json.dumps(tool_ID) } !== "JOD_only" && (true || val("users[0].ssn"))
+  - List all other countries that you are a citizen of: users[0].countries_of_citizenship
+    required: False
+    js show if: |
+      ${ json.dumps(tool_ID) } !== "JOD_only" && val("users[0].has_foreign_citizenship") === true
+  - "List any foreign/international identifying numbers and sources. *For example: 'German Passport #12345-AA; Canadian driver's license # CAN-999'*": users[0].foreign_identity_documents
+    required: False
+    js show if: |
+      ${ json.dumps(tool_ID) } !== "JOD_only" && val("users[0].has_foreign_citizenship") === true
+---
+template: why_need_SSN
+subject: |
+  Why are you asking for a social security number?
+content: |
+  Social security numbers are only used in child support documents. If you don't want to type it here, you can hand write the number on the documents after you print them.
+---
+id: user eye color, hair color, weight
+question: |
+  Your physical description
+fields:
+  - What color eyes do you have?: users[0].eye_color
+    required: False
+    choices:
+      - Black: Black
+      - Blue: Blue
+      - Brown: Brown
+      - Gray: Gray
+      - Green: Green
+      - Hazel: Hazel
+      - Unknown: Unknown
+  - What color hair do you have?: users[0].hair_color
+    required: False
+    choices:
+      - Bald: Bald
+      - Black: Black
+      - Blonde or Strawberry: Blonde
+      - Brown: Brown
+      - Gray or Partially Gray: Gray
+      - Red or Auburn: Red
+      - Sandy: Sandy
+      - White: White
+      - Other: other
+  - "How much do you weigh, in pounds?": users[0].weight
+    datatype: integer
+    required: False
+    min: 0
+    max: 2000
+  - "Briefly list any identifying scars, tattoos, or other identifying marks that you have. *Please limit your answer to 220 characters or less.*": users[0].other_identifying_info
+    required: False
+    maxlength: 220
+
+---
+id: user height
+question: |
+  How tall are you?
+fields:
+  - Feet: users[0].height_feet
+    label above field: False
+    datatype: integer
+    required: False
+    min: 1
+    max: 10
+  - Inches: users[0].height_inches
+    label above field: False
+    datatype: integer
+    required: False
+    min: 0
+    max: 11
+---
+id: user race
+question: Your race
+fields:
+  - What is your race?: users[0].race
+    required: False
+    choices:
+      - White, not Hispanic or Latino: white
+      - Hispanic or Latino: hispanic_latino
+      - American Indian or Alaska Native: american_indian_AK_native
+      - Asian: asian
+      - African American: african_american
+      - Native Hawaiian or Other Pacific Islander: HI_native_pacific_islander
+      - Other: other
+  - What is the other race?: users[0].other_race_description
+    required: False
+    show if: 
+      variable: users[0].race 
+      is: other
+---
+id: other party SSN and DL
+question: |
+  % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
+  Your spouse's identity documents
+  % else:
+  The plaintiff's identity documents
+  % endif
+subquestion: |
+  ${ collapse_template(why_need_SSN)}
+fields:
+  - Please enter ${ OP_label }'s social security number: other_parties[0].ssn
+    required: False
+    datatype: ssn
+  - Please enter ${ OP_label }'s driver's license number: other_parties[0].license_number
+    required: False
+  - What state issued ${ OP_label }'s driver's license?: other_parties[0].license_state
+    required: False
+    # probably we should just make a consistent dropdown with states plus DC, PR, Guam, Virgin Islands (what about northern mariana islands (citizens) and american samoa (not citizens)?)
+  - Is ${ OP_label } a citizen of any country other than the US?: other_parties[0].has_foreign_citizenship
+    required: False
+    datatype: yesnoradio
+    js show if: |
+      ${ json.dumps(tool_ID) } !== "JOD_only" && (true || val("other_parties[0].ssn"))
+  - List all other countries that ${ OP_label } is a citizen of: other_parties[0].countries_of_citizenship
+    required: False
+    js show if: |
+      ${ json.dumps(tool_ID) } !== "JOD_only" && val("other_parties[0].has_foreign_citizenship") === true
+  - "List any foreign/international identifying numbers and sources. *For example: 'German Passport #12345-AA; Canadian driver's license # CAN-999'*": other_parties[0].foreign_identity_documents
+    required: False
+    js show if: |
+      ${ json.dumps(tool_ID) } !== "JOD_only" && val("other_parties[0].has_foreign_citizenship") === true
+---
+template: why_need_SSN
+subject: |
+  Why are you asking for a social security number?
+content: |
+  Social security numbers are only used in child support documents. If you don't want to type it here, you can hand write the number on the documents after you print them.
+---
+id: other party eye color, hair color, weight
+question: |
+  % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
+  Your spouse's physical description
+  % else:
+  The plaintiff's physical description
+  % endif
+fields:
+  - What color eyes does ${ OP_label } have?: other_parties[0].eye_color
+    required: False
+    choices:
+      - Black: Black
+      - Blue: Blue
+      - Brown: Brown
+      - Gray: Gray
+      - Green: Green
+      - Hazel: Hazel
+      - Unknown: Unknown
+  - What color hair does ${ OP_label } have?: other_parties[0].hair_color
+    required: False
+    choices:
+      - Bald: Bald
+      - Black: Black
+      - Blonde or Strawberry: Blonde
+      - Brown: Brown
+      - Gray or Partially Gray: Gray
+      - Red or Auburn: Red
+      - Sandy: Sandy
+      - White: White
+      - Other: other
+  - "How much does ${ OP_label } weigh, in pounds?": other_parties[0].weight
+    datatype: integer
+    required: False
+    min: 0
+    max: 2000
+  - "Briefly list any identifying scars, tattoos, or other identifying marks that ${ OP_label } has. *Please limit your answer to 220 characters or less.*": other_parties[0].other_identifying_info
+    required: False
+    maxlength: 220
+---
+id: other party height
+question: |
+  How tall is ${ OP_label }?
+fields:
+  - Feet: other_parties[0].height_feet
+    label above field: False
+    datatype: integer
+    required: False
+    min: 1
+    max: 10
+  - Inches: other_parties[0].height_inches
+    label above field: False
+    datatype: integer
+    required: False
+    min: 0
+    max: 11
+---
+id: other party race
+question: |
+  % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
+  Your spouse's race
+  % else:
+  The plaintiff's race
+  % endif
+fields:
+  - What is ${ OP_label }'s race?: other_parties[0].race
+    required: False
+    choices:
+      - White, not Hispanic or Latino: white
+      - Hispanic or Latino: hispanic_latino
+      - American Indian or Alaska Native: american_indian_AK_native
+      - Asian: asian
+      - African American: african_american
+      - Native Hawaiian or Other Pacific Islander: HI_native_pacific_islander
+      - Other: other
+  - What is the other race?: other_parties[0].other_race_description
+    required: False
+    show if: 
+      variable: users[0].race 
+      is: other
+
+# --------------------------------------------------------------------
+## income tax info
+# --------------------------------------------------------------------
+---
+code: |
+  income_tax_method
+  if income_tax_method == "specify_per_child":
+    for child in children:
+      if child.legal_parent == "both":
+        child.tax_parent
+  elif income_tax_method == "alternate_years":
+    tax_deductions_who_first
+  interview_order_income_tax = True
+---
+# LHI "Income Taxes", (only used in divorce_complaint and JOD_only per Brett spreadsheet)
+id: income tax question
+question: Income taxes
+subquestion: |
+  Under federal tax law, the parent who a child lives with for the greater number of nights during the year is entitled to claim tax deductions, credits, and exemptions for that child. This includes state, federal, and local deductions, credits, and exemptions. 
+
+  ${ collapse_template(federal_tax_default_info) }
+
+  Even though the parent with the greater number of overnights is entitled to claim the child, you and your spouse may agree to something different. For example, even if you will have more parenting time overnights, you may agree that your spouse can claim your child for tax purposes in exchange for something you want in your property settlement. 
+fields:
+  - label: |
+      % if len(children.filter(legal_parent="both")) == 1:
+      How will income tax deductions, credits, and exemptions for ${ children.filter(legal_parent='both') } be divided between you and your spouse? 
+      % elif len(children.filter(legal_parent="both")) > 1:
+      How will income tax deductions, credits, and exemptions for the children be divided between you and your spouse? 
+      % endif
+    field: income_tax_method
+    datatype: radio
+    code: |
+      tax_choices
+  - Beginning in what year?: tax_start_year
+    datatype: integer
+    min: |
+     ${ today().year - 10 }
+    max: 3000
+    js show if: |
+      val("income_tax_method") === "user" || val("income_tax_method") === "other_party" || val("income_tax_method") === "specify_per_child" || val("income_tax_method") === "alternate_years"
+---
+# TO DO: going to have to clear this out and rebuild if # of children changes
+code: |
+  tax_choices = [
+                  ['default', f'Based on federal tax law, the parent with whom the { children.filter(legal_parent='both').as_noun() } { children.does_verb("live") } for the greater number of nights during the year will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years.'],
+                  ['user', f'{ users[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years.'],
+                  ['other_party', f'{ other_parties[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years.']
+                ]
+  
+  if len(children.filter(legal_parent="both")) > 1:
+    tax_choices.append(['specify_per_child', f'{ users[0] } and { other_parties[0] } will claim the deductions, credits, and exemptions for different children, including state, federal, or local tax returns.'])
+  
+  tax_choices.append(['alternate_years', f'{ users[0] } and { other_parties[0] } will claim all deductions, credits, and exemptions for the { children.filter(legal_parent='both').as_noun() } in alternating years, including state, federal, or local tax returns.'])
+---
+id: income tax deductions starting year
+Question: Who gets income tax deductions first?
+subquestion: |
+  You said that you and ${ other_parties[0] } will claim income tax deductions in alternating years, starting in tax year ${ tax_start_year }. 
+fields:
+  - Who will be awarded the income tax deductions for tax year ${ tax_start_year }?: tax_deductions_who_first
+    datatype: radio
+    choices:
+      - I will: users[0]
+      - My spouse will: other_parties[0]
+  - note: |
+      OK, You will get the deductions, credits, and exemptions for tax year ${ tax_start_year }. ${ other_parties[0] } will claim them for tax year ${ tax_start_year + 1 }.
+    show if:
+      variable: tax_deductions_who_first
+      is: users[0]
+  - note: |
+      OK, ${ other_parties[0] } will get the deductions, credits, and exemptions for tax year ${ tax_start_year }. You will claim them for tax year ${ tax_start_year + 1 }.
+    show if:
+      variable: tax_deductions_who_first
+      is: other_parties[0]
+---
+template: federal_tax_default_info
+subject: |
+  More info about giving tax benefits based on the actual number overnights (the first option)
+content: |
+  Choosing this option can have a  different effect than specifically giving the tax deductions, credits, and exemptions to the parent who has the greater number of parenting time overnights based on the Judgment of Divorce. 
+  
+  If the parties do not follow their Judgment of Divorce, and the parent who was supposed to have more overnights ends up having less than 50% of the overnights in one year, then this provision would allow the parent who **actually had over 50% of the overnights** to claim the tax credits, etc., **instead of the parent who was awarded more overnights.**)
+---
+id: specific child tax election
+question: Tax deductions, exemptions, and credits for ${ children[i] }
+fields:
+  - Who will claim the deductions, exemptions, and credits for ${ children[i] }?: children[i].tax_parent
+    datatype: radio
+    choices:
+      - I will: users[0]
+      - My spouse will: other_parties[0]
+---
+event: test_end_screen
+question: Thank you for testing!
+subquestion: You have finished the initial child questions test interview.
