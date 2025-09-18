@@ -133,8 +133,7 @@ confirm: True
 id: child questions
 mandatory: True # remove later
 code: |
-  spousal_support_intro
-  
+  interview_order_spousal_support  
   
   children_intro
   children.gather()
@@ -218,7 +217,35 @@ code: |
 ## spousal support
 # --------------------------------------------------------------------
 ---
+code: |
+  if tool_ID in ["divorce_complaint", "divorce_answer"]:
+    spousal_support_intro
+    if wants_temporary_support_order:
+      temp_spousal_support_info
+    if wants_post_divorce_support:
+      if continue_with_spousal_support_request:
+        spousal_support_factors_intro
+        ss_factor_one_division_labor
+        ss_factor_two_length
+        ss_factor_three_work_user
+        ss_factor_four_property
+        ss_factor_five_ages
+        ss_factor_six_ability_to_pay
+        ss_factor_seven_situation
+        ss_factor_eight_need
+        ss_factor_nine_health
+        ss_factor_ten_standards
+        ss_factor_eleven_contributions
+        ss_factor_twelve_fault_redux
+        ss_factor_thirteen_cohabitation
+        ss_factor_fourteen_equity
+      else:
+        exit_general
+
+  interview_order_spousal_support = True
+---
 id: spousal support intro
+continue button field: spousal_support_intro
 question: What is spousal support?
 subquestion: |
   Spousal support (also called alimony) is money that one spouse pays to the other spouse during or after a divorce case. Spousal support can be short-term or long-term. It can be agreed on by the parties or a judge can order it. 
@@ -233,6 +260,7 @@ fields:
 ---
 id: temporary spousal support instructions
 question: Temporary spousal support **during the divorce case**
+continue button field: temp_spousal_support_info
 subquestion: |
       This tool can't help you ask the judge to order spousal support during your divorce. If you need to do this, you either need to:
       
@@ -263,6 +291,7 @@ fields:
 ---
 id: spousal support factors intro
 question: Asking for spousal support for after your divorce
+continue button field: spousal_support_factors_intro
 subquestion: |
   The next pages will go through each of the 14 spousal support factors that the judge in your case will consider before making a spousal support decision. 
   
@@ -271,13 +300,14 @@ subquestion: |
   **It is ok if you don't have an answer for each factor. Not every factor applies in every case.** Some factors are similar to each other and will overlap. Note that the examples in the help text do not cover every possible situation.
 
   Tips for answering: 
+  
   ${ ss_factor_tips }
 ---
 template: ss_factor_tips
 subject: Tips for answering
 content: |
   * Type in complete sentences with capitalization and punctuation. 
-  * Call yourself "${ user_party_label }" and call your spouse “${ user_party_label }.” Avoid using “I” and “my.” 
+  * Call yourself "${ user_party_label }" and call your spouse “${ OP_party_label }.” Avoid using “I” and “my.” 
   * If a question does not apply to you, leave it blank.
 ---
 id: spousal support factor 1
@@ -291,9 +321,11 @@ subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
   - Explain how you and your spouse divided work inside and outside the home. If this was an intentional or expected arrangement between you, you may want to include that.: ss_factor_one_division_labor
+    required: False
     input type: area
   - note: ${ collapse_template(ss_factor_one_division_labor_help) }
   - If it is relevant, describe your spouses's (${ OP_party_label }'s) wrongful behavior or actions that contributed to the breakdown of the marriage. If their actions impacted your ability to keep a job or advance in your career, include this.: ss_factor_one_fault
+    required: False
     input type: area
   - note: ${ collapse_template(ss_factor_one_fault_help) }
 ---
@@ -345,10 +377,12 @@ subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
   - Describe your ability to work.: ss_factor_three_work_user
+    required: False
     input type: area
   - note: |
       ${ collapse_template(ss_factor_three_work_user_help) }
   - Describe your spouse’s ability to work.: ss_factor_three_work_OP
+    required: False
     input type: area
   - note: |
       ${ collapse_template(ss_factor_three_work_OP_help) }
@@ -358,7 +392,8 @@ subject: What should I include?
 content: |
   * Your highest level of education. 
   * Your work history, including the type of job, how much you earned, hours worked, and how long the job lasted. If the job ended, explain why. 
-    * Start with your most recent employment. If you had a series of similar jobs, you can summarize them and include the range of your earnings. (Example: ${ capitalize(user_party_label) } worked at Kroger as a cashier earning $16.00 per hour, 15-20 hours per week, from November through December 2024. She quit the job because her sister was injured and was unable to provide free childcare, and ${ user_party_label }'s wages barely covered the cost of a babysitter for the child. ${ capitalize(user_party_label) } worked before the child was born. She had five different restaurant server and cashier jobs between 2015 and 2020. Her highest earnings were in 2019 when she earned up to $2,300/month as a server, but most of her jobs brought in $1,200 to $1,500 per month.)
+      * Start with your most recent employment. If you had a series of similar jobs, you can summarize them and include the range of your earnings. 
+      * (*Example:* ${ capitalize(user_party_label) } worked at Kroger as a cashier earning $16.00 per hour, 15-20 hours per week, from November through December 2024. She quit the job because her sister was injured and was unable to provide free childcare, and ${ user_party_label }'s wages barely covered the cost of a babysitter for the child. ${ capitalize(user_party_label) } worked before the child was born. She had five different restaurant server and cashier jobs between 2015 and 2020. Her highest earnings were in 2019 when she earned up to $2,300/month as a server, but most of her jobs brought in $1,200 to $1,500 per month.)
   * If you have applied to jobs but did not get the jobs or did not get interviews, and you believe this is related to how long you have been out of work, you may want to include that.
   * If you have significant caregiving responsibilities at home (such as being a full-time caregiver for your young children, your child with disabilities, homeschooling, and/or being a caregiver for another family member), you can include that.
 
@@ -402,6 +437,7 @@ subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
   - Is there anything else you would like the judge to know about your spouse's ability to pay support? (Other than their current job, income, and work history.): ss_factor_six_ability_to_pay
+    required: False
     input type: area
   - note: ${ collapse_template(ss_factor_six_ability_to_pay_help) }
 ---
@@ -417,6 +453,7 @@ subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
   - Is there anything else about your situation or your spouse's situation that helps explain your need for support or their ability to pay support? If so, please describe below.: ss_factor_seven_situation
+    required: False
     input type: area
   - note: ${ collapse_template(ss_factor_seven_situation_help) }
 ---
@@ -432,6 +469,7 @@ subquestion: |
 fields:
   - Include anything else that is relevant to your need for support.: ss_factor_eight_need
     input type: area
+    required: False
   - note: ${ collapse_template(ss_factor_eight_need_help) }
 ---
 template: ss_factor_eight_need_help
@@ -447,6 +485,7 @@ subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
   - Do you have any illness, injury, or disability that limits your ability to work or prevents you from working? Does this illness, injury, or disability create certain needs/expenses that you need support to help with?: ss_factor_nine_health
+    required: False
     input type: area
   - note: ${ collapse_template(ss_factor_nine_health_help) }
 ---
@@ -463,6 +502,7 @@ subquestion: |
 fields:
   - Is there anything about your standard of living during the marriage that would be helpful for the judge to know?: ss_factor_ten_standards
     input type: area
+    required: False
   - note: ${ collapse_template(ss_factor_ten_standards_help) }
   - note: |
       If you are responsible for supporting someone, explain below.
@@ -470,6 +510,7 @@ fields:
       ${ collapse_template(ss_factor_ten_responsibilities_help) }
   - Explain your relationship to the person you are supporting and other facts that will help the court understand what this responsibility involves.: ss_factor_ten_responsibilities
     input type: area
+    required: False
 ---
 template: ss_factor_ten_standards_help
 subject: What does this mean?
@@ -488,6 +529,7 @@ subquestion: |
 fields:
   - Explain what you and your spouse contributed to the marriage. Contributing is not just about earning money. The judge will consider what each party contributed in money, time, and energy to the home and the family.: ss_factor_eleven_contributions
     input type: area
+    required: False
   - note: ${ collapse_template(ss_factor_eleven_contributions_help) }
 ---
 template: ss_factor_eleven_contributions_help
@@ -502,6 +544,7 @@ subquestion: |
 fields:
   - If there is something about fault in the breakdown of the marriage that you did not include in Factor 1, include it below if it relates to your need for support or your spouse's ability to pay.: ss_factor_twelve_fault_redux
     input type: area
+    required: False
   - note: ${ collapse_template(ss_factor_twelve_fault_redux_help) }
 ---
 template: ss_factor_twelve_fault_redux_help
@@ -516,6 +559,7 @@ subquestion: |
 fields:
   - If you are living with an unrelated adult, say so, and explain if you intend for it to be temporary or permanent, and whether any of your expenses are shared with this person.: ss_factor_thirteen_cohabitation
     input type: area
+    required: False
   - note: ${ collapse_template(ss_factor_thirteen_cohabitation_help) }
 ---
 template: ss_factor_thirteen_cohabitation_help
@@ -536,6 +580,7 @@ subquestion: |
   Along with the other factors, a judge considers what is fair (equitable) and reasonable under the circumstances when making a spousal support decision.
 fields:
   - If relevant, include other reasons why it is fair for you to be awarded spousal support.: ss_factor_fourteen_equity
+    required: False
     input type: area
   - note: ${ collapse_template(ss_factor_fourteen_equity_help) }
 ---
