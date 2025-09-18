@@ -1987,7 +1987,8 @@ content:
 ---
 code: |
   has_prior_civil_cases
-  prior_family_cases.gather()
+  prior_family_cases.gather() 
+  
   interview_order_prior_cases = True
 ---
 id: prior family cases table
@@ -2134,23 +2135,62 @@ fields:
     field: prior_family_cases.there_is_another
     datatype: yesnoradio
 ---
-#code: |
-#  if tool_ID == "JOD_only" and there_are_marital_children:
-#    prior_family_cases[i].status
-#  elif tool ID != "JOD_only":
-#    prior_family_cases[i].status
-#    if there_are_marital_children:
-#      prior_family_cases[i].set_default_case_info
-#      if prior_family_cases[i].type == "divorce":
-#        prior_family_cases[i].included_custody_PT_order
-#      if prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"]:
-#        if prior_family_cases[i].status in ["stayed", "pending", "ended_with_order"]:
-#          prior_family_cases[i].included_custody_PT_order
-#        elif prior_family_cases[i].status == "dismissed" and prior_family_cases[i].type != "paternity":
-#          prior_family_cases[i].included_custody_PT_order
-#  TODO still need to implement other state warnings and children number count rows 191, 200 TODO
-#
-#  prior_family_cases[i].complete = True
+id: prior family cases gather logic
+code: |
+  if tool_ID == "JOD_only" and there_are_marital_children:
+    prior_family_cases[i].status
+  elif tool_ID != "JOD_only":
+    prior_family_cases[i].status
+    if there_are_marital_children:
+      if prior_family_cases[i].type == "divorce":
+        prior_family_cases[i].included_custody_PT_order
+      if prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"]:
+        if prior_family_cases[i].status == "ended_with_order":
+          prior_family_cases[i].included_custody_PT_order
+        elif prior_family_cases[i].status in ["stayed", "pending"]:
+          prior_family_cases[i].has_current_custody_PT_order
+        elif prior_family_cases[i].status == "dismissed" and prior_family_cases[i].type != "paternity":
+          prior_family_cases[i].included_custody_PT_order
+  
+      prior_family_cases[i].set_default_case_info
+  
+      if prior_family_cases[i].state != "Michigan":
+        if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type != "divorce" and (prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order) or (prior_family_cases[i].status in ["stayed", "pending"] and prior_family_cases[i].has_current_custody_PT_order)):
+          if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids:
+            custody_order_in_another_state_warning 
+
+      if tool_ID == "divorce_complaint" and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order:
+        prior_family_cases[i].children_involved = True
+        if len(children.filter(legal_parent="both")) == 1:
+          prior_family_cases[i].children_involved_number = 1
+        else:
+          prior_family_cases[i].children_involved_number
+      else:
+        prior_family_cases[i].children_involved = False
+
+  prior_family_cases[i].complete = True
+---
+id: custody_order_in_another_state_warning
+continue_button_field: custody_order_in_another_state_warning
+question: Warning! Custody order in another state
+subquestion: |
+  % if MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]:
+  ${ prior_custody_warning }
+  % elif not MI_has_jurisdiction_all_kids:
+  ${ prior_custody_warning_home_state }
+  % endif
+---
+template: prior_custody_warning_home_state
+content: |
+  **WARNING:** If Michigan is not the ${ children.filter(legal_parent='both').as_noun() }'s home state, a Michigan court may not be able to make decisions about custody and parenting time of your ${ children.filter(legal_parent='both').as_noun() }.
+      
+  You can still use this tool to prepare your divorce forms, but your Judgment of Divorce will not include custody and parenting time arrangements. It will be up to the court to decide whether it has jurisdiction to include custody and parenting time orders in your divorce judgment. ${MLH_GUIDE_FULL}
+---
+template: prior_custody_warning
+content: |
+  **WARNING:** If there is a prior custody order from another state and either you, your child, or the other parent resides in that state, a Michigan court may not be able to make decisions about custody and parenting time of your child.
+
+  You can still use this tool to prepare your divorce forms, but your Judgment of Divorce will not include custody and parenting time arrangements. It will be up to the court to decide whether it has jurisdiction to include custody and parenting time orders in your divorce judgment. ${MLH_GUIDE_FULL}
 ---
 # LHI "Prior Family Cases DLG"
 # JOD_only version should only be asked if there are marital children
@@ -2175,17 +2215,32 @@ fields:
   - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_current_support_order
     datatype: yesnoradio
   - note: |
-      **WARNING:** If Michigan is not the ${ children.filter(legal_parent='both').as_noun() }'s home state, a Michigan court may not be able to make decisions about custody and parenting time of your ${ children.filter(legal_parent='both').as_noun() }.
-      
-      You can still use this tool to prepare your divorce forms, but your Judgment of Divorce will not include custody and parenting time arrangements. It will be up to the court to decide whether it has jurisdiction to include custody and parenting time orders in your divorce judgment. ${MLH_GUIDE_FULL}
+      ${ prior_custody_warning_home_state }
     js show if: |
       val("prior_family_cases[i].state") !== "Michigan" && val("prior_family_cases[i].has_current_custody_PT_order") === true && ${ json.dumps(MI_has_jurisdiction_all_kids) } === false
   - note: |
-      **WARNING:** If there is a prior custody order from another state and either you, your child, or the other parent resides in that state, a Michigan court may not be able to make decisions about custody and parenting time of your child.
-
-      You can still use this tool to prepare your divorce forms, but your Judgment of Divorce will not include custody and parenting time arrangements. It will be up to the court to decide whether it has jurisdiction to include custody and parenting time orders in your divorce judgment. ${MLH_GUIDE_FULL}
+      ${ prior_custody_warning }
     js show if: |
-      val("prior_family_cases[i].state") !== "Michigan" && val("prior_family_cases[i].has_current_custody_PT_order") === true && ${ json.dumps(MI_has_jurisdiction_all_kids) } === true && [address matching party logic]
+      val("prior_family_cases[i].state") !== "Michigan" && val("prior_family_cases[i].has_current_custody_PT_order") === true && ${ json.dumps(MI_has_jurisdiction_all_kids) } === true && ${ "true" if prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"] else "false" }
+---
+code: |
+  prior_family_case_types = [
+                              ['divorce', 'Divorce'],
+                              ['protection_order', 'Protection Order']
+                              ['parental_rights', 'Parental Rights (abuse/neglect)'],
+                              ['adoption', 'Adoption']
+                              ['paternity', 'Paternity'],
+                              ['custody', 'Custody'],
+                              ['guardianship', 'Guardianship']
+                              ['juvenile_delinquency', 'Juvenile Delinquency']
+                              ['name_change', 'Name Change'],
+                              ['emancipation', 'Emancipation'],
+                              ['other', 'Other']
+                            ]
+  if tool_ID in ["custody_answer", "custody_complaint"]:
+    prior_family_case_types.remove("['paternity', 'Paternity']", "['custody', 'Custody']")
+  if tool_ID == "custody_complaint":
+    prior_family_case_types.remove("['divorce', 'Divorce']")
 ---
 # LHI "Prior Family Cases DLG"
 id: prior family case or order collection screen NOT JOD_only
@@ -2239,36 +2294,17 @@ fields:
       val("prior_family_cases[i].type") === "divorce"
 ---
 # LHI "Prior Family Cases DLG" (start at row 108)
-# not sure how much of this logic makes sense to replicate, but trying to at least record it for now
-id: prior family cases logic for with children NOT JOD_only
-if: tool_ID != "JOD_only" and there_are_marital_children
-code: |
-  if prior_family_cases[i].type == "divorce":
-    prior_family_cases[i].has_current_custody_PT_order = False
-    prior_family_cases[i].has_current_support_order = False
-  if prior_family_cases[i].type in ["adoption", "name_change", "juvenile_delinquency", "emancipation"]:
-    prior_family_cases[i].has_current_support_order = False
-    prior_family_cases[i].included_custody_PT_order = False
-    prior_family_cases[i].has_current_custody_PT_order = False
-
-  prior_family_cases[i].set_default_case_info = True
----
-# LHI "Prior Family Cases DLG" (start at row 108)
-id: prior family case or order additional info divorce
+id: prior family divorce case or order additional info
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type == "divorce"
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
 fields:
   - label: |
-      % if prior_family_cases[i].status in ["stayed", "pending"]: 
-      Is there a custody or parenting time order in this case?
-      % elif prior_family_cases[i].status == "dismissed":
+      if prior_family_cases[i].status == "dismissed":
       Was a temporary custody or parenting time order entered in that case when the case was pending?
-      % elif prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].type == "divorce":
+      % elif prior_family_cases[i].status == "ended_with_order":
       Did this case involve custody or parenting time?
-      % elif prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].type != "divorce":
-      Was there a custody or parenting time order in that case?
       % endif
     field: prior_family_cases[i].included_custody_PT_order
   - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
@@ -2305,17 +2341,16 @@ question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
 fields:
-  - Is there a custody or parenting time order in this case?: prior_family_cases[i].included_custody_PT_order
-    # note I'm not sure but perhaps we should assume this order is also CURRENT?
+  - Is there a custody or parenting time order in this case?: prior_family_cases[i].has_current_custody_PT_order
   - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
     datatype: ThreePartsDate
     max: |
      ${ today() }
     js show if: |
-      val("prior_family_cases[i].included_custody_PT_order") === true
+      val("prior_family_cases[i].has_current_custody_PT_order") === true
   - Is there a support order in this case?: prior_family_cases[i].has_current_support_order
     js show if: |
-      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].included_custody_PT_order"))
+      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].has_current_custody_PT_order"))
 ---
 # LHI "Prior Family Cases DLG" (start at row 151)
 id: prior family case or order additional info 
@@ -2332,24 +2367,53 @@ fields:
     js show if: |
       val("prior_family_cases[i].included_custody_PT_order") === true
 ---
+# LHI "Prior Family Cases DLG" (start at row 200)--rest is in "prior family cases gather logic"
+id: number of children involved in case
+question: ${ capitalize(ordinal(i)) } **family division** case or order
+subquestion: |
+  This question is about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
+fields:
+  - How many children were involved in this case?: prior_family_cases[i].children_involved_number
+---
+# LHI "Prior Family Cases DLG" (start at row 108)
+# not sure how much of this logic makes sense to replicate, but trying to at least record it for now
+id: prior family cases logic for with children NOT JOD_only
+if: tool_ID != "JOD_only" and there_are_marital_children
 code: |
-  prior_family_case_types = [
-                              ['divorce', 'Divorce'],
-                              ['protection_order', 'Protection Order']
-                              ['parental_rights', 'Parental Rights (abuse/neglect)'],
-                              ['adoption', 'Adoption']
-                              ['paternity', 'Paternity'],
-                              ['custody', 'Custody'],
-                              ['guardianship', 'Guardianship']
-                              ['juvenile_delinquency', 'Juvenile Delinquency']
-                              ['name_change', 'Name Change'],
-                              ['emancipation', 'Emancipation'],
-                              ['other', 'Other']
-                            ]
-  if tool_ID in ["custody_answer", "custody_complaint"]:
-    prior_family_case_types.remove("['paternity', 'Paternity']", "['custody', 'Custody']")
-  if tool_ID == "custody_complaint":
-    prior_family_case_types.remove("['divorce', 'Divorce']")
+  if prior_family_cases[i].type == "divorce":
+    prior_family_cases[i].has_current_custody_PT_order = False
+    prior_family_cases[i].has_current_support_order = False
+  
+  elif prior_family_cases[i].type in ["adoption", "name_change", "juvenile_delinquency", "emancipation"]:
+    prior_family_cases[i].included_custody_PT_order = False
+    prior_family_cases[i].has_current_support_order = False
+    prior_family_cases[i].has_current_custody_PT_order = False
+  
+  elif prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "paternity", "guardianship", "other"]:
+    if prior_family_cases[i].status == "ended_with_order":
+        if (not prior_family_cases[i].included_custody_PT_order) or tool_ID == "custody_answer": 
+          prior_family_cases[i].has_current_custody_PT_order == False
+        if tool_ID == "custody_answer":
+          prior_family_cases[i].has_current_support_order == False  
+    elif prior_family_cases[i].status in ["stayed", "pending"]:
+      prior_family_cases[i].included_custody_PT_order = prior_family_cases[i].has_current_support_order
+      if tool_ID == "custody_answer":
+          prior_family_cases[i].has_current_support_order == False     
+    elif prior_family_cases[i].status == "dismissed":
+      if prior_family_cases[i].type == "paternity":
+        prior_family_cases[i].included_custody_PT_order = False
+        prior_family_cases[i].has_current_support_order = False
+        prior_family_cases[i].has_current_custody_PT_order = False
+      elif prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "guardianship", "other"]:
+        prior_family_cases[i].has_current_support_order = False
+        prior_family_cases[i].has_current_custody_PT_order = False
+  
+  
+  prior_family_cases[i].set_default_case_info = True
+---
+code: |
+
+      
 ---
 # --------------------------------------------------------------------
 ## stepchildren additional info
