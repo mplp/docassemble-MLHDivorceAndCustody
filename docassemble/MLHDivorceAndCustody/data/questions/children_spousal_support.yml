@@ -1,36 +1,12 @@
+---
+# needed during testing this as separate yml
+include:
+  - divorce_custody_setup.yml
+---
 # example interview tag for testing
 code: |
   tool_ID = "divorce_complaint"
 # options: "JOD_only", "divorce_complaint", "divorce_answer", "custody_complaint", "custody_answer"
----
-# maybe just set these directly in each main interview yml?
-code: |
-  if tool_ID in ["JOD_only", "divorce_complaint", "divorce_answer"]:
-    OP_label = "your spouse"
-    case_label = "divorce"
-    if tool_ID == "divorce_complaint":
-      filing_name = "Complaint for Divorce"
-    elif tool_ID == "divorce_answer":
-      filng_name = "Counterclaim for Divorce"
-  elif user_ask_role == "plaintiff":
-    OP_label = "the defendant"
-    case_label = "custody"
-  elif user_ask_role == "defendant":
-    OP_label = "the plaintiff"
-    case_label = "custody"
----
-### need the stuff in this section (copied from main yml) here for now to run just this yml
-features:
-  labels above fields: True
----
-include:
-  - docassemble.AssemblyLine:assembly_line.yml
-  - docassemble.ALToolbox:collapse_template.yml
-  - docassemble.mlhframework:mlh_interview_framework.yml
-  - question_bank.yml
----
-modules:
-  - docassemble.ALToolbox.al_income
 ---
 # example date for testing
 code: |
@@ -39,9 +15,6 @@ code: |
 # for testing:
 code: |
   confidential_contact_info_yn = False
----
-code: |
-  github_repo_name = 'docassemble-MLHDivorceAndCustody'
 ---
 ### need the above for now to run just this yml
 ### below objects are not included in question bank yml
@@ -70,33 +43,6 @@ objects:
   - other_parties[0].job: ALJob
   - other_parties[0].income: ALIncome
 ---
-### possibly move the below to main yml
-terms:
-  - phrases:
-      - assisted reproduction
-    definition: |
-      Assisted reproduction is a way to become pregnant that is not sexual intercourse. It includes:
-
-      * Donor insemination
-      * Sperm or egg donation
-      * Embryo donation
-      * In vitro fertilization (IVF) and embryo transfer
-      * Intracytoplasmic sperm injection
-      * Assisted reproductive technology
-  - phrases:
-      - parenting time
-    definition: |
-      Sometimes called "visitation".
-  - phrases:
-      - minor
-    definition: |
-      A child is a minor if they are 17 years old or younger.
----
-### possibly move the below to main yml
-code: |
-  US_states_and_territories_list = ["Alabama", "Alaska", "American Samoa", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "District of Columbia", "Florida", "Georgia", "Guam", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', "New Jersey", "New Mexico", "New York", 'North Carolina', 'North Dakota', 'Northern Mariana Islands', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Puerto Rico', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'US Virgin Islands', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming']
-# currently includes all 5 inhabited US territories and DC. But note that American Samoans are not US citizens. Not sure they should be on this list. 
----
 table: children.table
 rows: children
 columns:
@@ -123,6 +69,8 @@ confirm: True
 id: child questions
 mandatory: True # remove later
 code: |
+  interview_order_spousal_support  
+  
   children_intro
   children.gather()
   set_marital_children_or_not
@@ -200,6 +148,386 @@ code: |
       interview_order_prior_cases
     
   test_end_screen
+---
+# --------------------------------------------------------------------
+## spousal support
+# --------------------------------------------------------------------
+---
+code: |
+  if tool_ID in ["divorce_complaint", "divorce_answer"]:
+    spousal_support_intro
+    if wants_temporary_spousal_support:
+      temp_spousal_support_info
+    if wants_post_divorce_support:
+      if continue_with_spousal_support_request:
+        spousal_support_factors_intro
+        ss_factor_one_division_labor
+        ss_factor_two_length
+        ss_factor_three_work_user
+        ss_factor_four_property
+        ss_factor_five_ages
+        ss_factor_six_ability_to_pay
+        ss_factor_seven_situation
+        ss_factor_eight_need
+        ss_factor_nine_health
+        ss_factor_ten_standards
+        ss_factor_eleven_contributions
+        ss_factor_twelve_fault_redux
+        ss_factor_thirteen_cohabitation
+        ss_factor_fourteen_equity
+      else:
+        exit_general
+
+  interview_order_spousal_support = True
+---
+id: spousal support intro
+continue button field: spousal_support_intro
+question: What is spousal support?
+subquestion: |
+  Spousal support (also called alimony) is money that one spouse pays to the other spouse during or after a divorce case. Spousal support can be short-term or long-term. It can be agreed on by the parties or a judge can order it. 
+
+  Spousal support is not a part of every divorce case. If you or your spouse asks the judge for spousal support and the other spouse does not agree, the judge will base their decision on many different factors. To learn more, read [Spousal Support (Alimony)](https://michiganlegalhelp.org/resources/family/spousal-support-alimony-nutshell). 
+---
+id: wants temporary spousal support?
+question: Temporary spousal support (while case is pending)
+fields: 
+  - Do you need spousal support for the period of time **before your divorce is final?**: wants_temporary_spousal_support
+    datatype: yesnoradio
+---
+id: temporary spousal support instructions
+question: Temporary spousal support **during the divorce case**
+continue button field: temp_spousal_support_info
+subquestion: |
+      This tool can't help you ask the judge to order spousal support during your divorce. If you need to do this, you either need to:
+      
+      * find a lawyer to help you, or 
+      * file a motion for temporary spousal support on your own, after you file the forms to start the divorce case. ${ MLH_GUIDE_FULL }
+      
+      To file a motion for temporary spousal support on your own, you can use the generic [Notice of Hearing and Motion](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf) form. In your motion, you will need to include facts showing that you need spousal support, and that the other party is able to pay. To learn more, read [Spousal Support (Alimony)](https://michiganlegalhelp.org/resources/family/spousal-support-alimony-nutshell). Also read [How to Fill Out, Serve, and File Court Forms](https://michiganlegalhelp.org/resources/going-court/how-fill-out-serve-and-file-court-forms). 
+      
+      You will need the generic [order form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc327.pdf) after the judge makes a decision on your motion. If the judge grants your request, you will also need the [Uniform Spousal Support Order](https://www.courts.michigan.gov/siteassets/forms/scao-approved/foc10b.pdf).
+---
+id: wants post-divorce spousal support
+question: Spousal support after divorce
+fields:
+  - Do you need spousal support **after your divorce case is finished?**: wants_post_divorce_support
+    datatype: yesnoradio
+  - note: |
+      If you and your spouse don't agree about spousal support, you may want to **find a lawyer to help you.** Asking for spousal support is complicated, and a lawyer can present evidence and make legal arguments for you at your court hearing. ${ MLH_GUIDE_FULL } 
+
+      But if hiring a lawyer is not an option for you, you can use this tool to include a request for spousal support in your ${ filing_name }. 
+    show if:
+      variable: wants_post_divorce_support
+      is: True
+  - Do you want to continue using this tool?: continue_with_spousal_support_request
+    datatype: yesnoradio
+    show if:
+      variable: wants_post_divorce_support
+      is: True
+---
+id: spousal support factors intro
+question: Asking for spousal support for after your divorce
+continue button field: spousal_support_factors_intro
+subquestion: |
+  The next pages will go through each of the 14 spousal support factors that the judge in your case will consider before making a spousal support decision. 
+  
+  Read about each factor, including the help text, and consider if each factor applies to your need for spousal support or your spouse’s ability to pay. If it applies, include the facts in your case that relate to that factor. 
+  
+  **It is ok if you don't have an answer for each factor. Not every factor applies in every case.** Some factors are similar to each other and will overlap. Note that the examples in the help text do not cover every possible situation.
+
+  Tips for answering: 
+  
+  ${ ss_factor_tips }
+---
+template: ss_factor_tips
+subject: Tips for answering
+content: |
+  * Type in complete sentences with capitalization and punctuation. 
+  * Call yourself "${ user_party_label }" and call your spouse “${ OP_party_label }.” Avoid using “I” and “my.” 
+  * If a question does not apply to you, leave it blank.
+---
+id: spousal support factor 1
+question: "Factor 1: The past relations and conduct of the parties"
+subquestion: |
+  This factor has two parts:
+  
+  * how you and your spouse conducted your marriage (divided work inside and outside the home), and 
+  * fault in the breakdown of the marriage.
+
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - Explain how you and your spouse divided work inside and outside the home. If this was an intentional or expected arrangement between you, you may want to include that.: ss_factor_one_division_labor
+    required: False
+    input type: area
+  - note: ${ collapse_template(ss_factor_one_division_labor_help) }
+  - If it is relevant, describe your spouses's (${ OP_party_label }'s) wrongful behavior or actions that contributed to the breakdown of the marriage. If their actions impacted your ability to keep a job or advance in your career, include this.: ss_factor_one_fault
+    required: False
+    input type: area
+  - note: ${ collapse_template(ss_factor_one_fault_help) }
+---
+template: ss_factor_one_division_labor_help
+subject: What do you mean by "divided work inside and outside the home"?
+content: |
+  This includes who worked outside the house and contributed financially versus who did the unpaid work of maintaining the home (and children, if you have them). 
+  
+  If you both expected that ${ OP_party_label } would work and pay for everything or most things while you contributed in other ways (for example: cooking meals and cleaning, being the primary caregiver of the children), then include and explain this. For example: “During the marriage, the parties both expected that ${ user_party_label } would manage the home and be the primary caregiver for the children while ${ OP_party_label } provided for the family financially.”
+
+  If your work taking care of your home and family helped enable your spouse to pursue their education or advance in their career, you can mention that.
+
+  If you both worked outside the home but you worked part-time so you did not have to pay for as much childcare, you can include that.
+---
+template: ss_factor_one_fault_help
+subject: Examples of fault in the breakdown of the marriage
+content: |
+  Examples of fault are:
+  
+  * violence, 
+  * threats of harm, 
+  * controlling behavior, 
+  * a gambling problem, or 
+  * infidelity (cheating). 
+  
+  Fault on its own will not justify an award of spousal support, but this is one factor the judge can consider. 
+  
+  If this applies to your marriage, briefly explain what actions or behavior of your spouse (${ OP_party_label }) contributed to the breakdown of the marriage. For example: “${ capitalize(OP_party_label) } has been controlling throughout the marriage. They did not allow the Plaintiff to work outside the home, so ${ user_party_label } lost the opportunity to build their career for ten years.”
+---
+id: spousal support factor 2
+question: "Factor 2: The length of the marriage"
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - How long was your marriage?: ss_factor_two_length
+  - note: |
+      ${ collapse_template(ss_factor_two_length_help) }
+---
+template: ss_factor_two_length_help
+subject: Does the marriage have to be a certain length to get spousal support?
+content: |
+  No, the law does not require a specific number of years you have to be married to get spousal support. 
+  
+  But a spousal support award is most likely if one spouse in a **long-term marriage** does not have a career and will likely have a lower standard of living because of the divorce.
+---
+id: spousal support factor 3
+question: "Factor 3: The ability of each party to work"
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - Describe your ability to work.: ss_factor_three_work_user
+    required: False
+    input type: area
+  - note: |
+      ${ collapse_template(ss_factor_three_work_user_help) }
+  - Describe your spouse’s ability to work.: ss_factor_three_work_OP
+    required: False
+    input type: area
+  - note: |
+      ${ collapse_template(ss_factor_three_work_OP_help) }
+---
+template: ss_factor_three_work_user_help
+subject: What should I include?
+content: |
+  * Your highest level of education. 
+  * Your work history, including the type of job, how much you earned, hours worked, and how long the job lasted. If the job ended, explain why. 
+      * Start with your most recent employment. If you had a series of similar jobs, you can summarize them and include the range of your earnings. 
+      * (*Example:* ${ capitalize(user_party_label) } worked at Kroger as a cashier earning $16.00 per hour, 15-20 hours per week, from November through December 2024. She quit the job because her sister was injured and was unable to provide free childcare, and ${ user_party_label }'s wages barely covered the cost of a babysitter for the child. ${ capitalize(user_party_label) } worked before the child was born. She had five different restaurant server and cashier jobs between 2015 and 2020. Her highest earnings were in 2019 when she earned up to $2,300/month as a server, but most of her jobs brought in $1,200 to $1,500 per month.)
+  * If you have applied to jobs but did not get the jobs or did not get interviews, and you believe this is related to how long you have been out of work, you may want to include that.
+  * If you have significant caregiving responsibilities at home (such as being a full-time caregiver for your young children, your child with disabilities, homeschooling, and/or being a caregiver for another family member), you can include that.
+
+  **Do not** include if you have an illness, injury, or disability that limits your ability to work or prevents you from working. Save that information for Factor 9 (the parties' health).
+---
+template: ss_factor_three_work_OP_help
+subject: What should I include?
+content: |
+  Include all of the following information about your spouse (${ OP_party_label }):
+
+  * Their highest level of education. (Example: ${ capitalize(OP_party_label) } has a BS in Computer Science from Michigan State University.) 
+  * Information about their current job, including their job title, when their employment began, and how much they earn.
+  * Similar information about your spouse’s previous jobs may be relevant. If they have worked many different jobs, you can mention the number of years they have been employed during your marriage, the field they work in, and their wage or salary range.
+
+  **Do not** include if ${ OP_party_label } has an illness, injury, or disability that limits their ability to work. Save that information for Factor 9 (the parties’ health).
+---
+id: spousal support factor 4
+question: "Factor 4: The source and amount of property awarded to the parties"
+continue button field: ss_factor_four_property
+subquestion: |
+  The judge will consider the division of property in the divorce in determining whether spousal support should also be ordered. You are not expected to include anything about this factor now since it is unlikely you have reached a property settlement before filing for divorce. 
+  
+  But if you go to trial on the issue of spousal support, be aware that you should consider if this factor is relevant at that time.
+---
+id: spousal support factor 5
+question: "Factor 5: The parties' ages"
+continue button field: ss_factor_five_ages
+subquestion: |
+  This tool will pull your age and your spouse’s age from the birthdates you entered before.
+
+  ${ collapse_template(ss_factor_five_ages_help) }
+---
+template: ss_factor_five_ages_help
+subject: Why do our ages matter?
+content: |
+  If the person asking for support is older, this may weigh into the judge's determination of whether that person is able to work.
+---
+id: spousal support factor 6
+question: "Factor 6: The ability to pay spousal support"
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - Is there anything else you would like the judge to know about your spouse's ability to pay support? (Other than their current job, income, and work history.): ss_factor_six_ability_to_pay
+    required: False
+    input type: area
+  - note: ${ collapse_template(ss_factor_six_ability_to_pay_help) }
+---
+template: ss_factor_six_ability_to_pay_help
+subject: Examples
+content: |
+  * The judge can consider if your spouse has an **unexercised ability to earn.** An example of this is when someone voluntarily takes a lower-paying job or reduces their income to avoid paying spousal support. If you believe your spouse has done this, you can include that.
+  * In some cases the judge may also consider a person's other sources of income besides their wages or salary in deciding if they are able to pay spousal support. If your spouse's income from their job is not significant, but they have other sources of income, you can include that.
+---
+id: spousal support factor 7
+question: "Factor 7: The parties' present situation"
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - Is there anything else about your situation or your spouse's situation that helps explain your need for support or their ability to pay support? If so, please describe below.: ss_factor_seven_situation
+    required: False
+    input type: area
+  - note: ${ collapse_template(ss_factor_seven_situation_help) }
+---
+template: ss_factor_seven_situation_help
+subject: Example
+content: |
+  In some cases a person may be awarded spousal support so they can continue caring for an adult child of the spouses who is disabled.
+---
+id: spousal support factor 8
+question: "Factor 8: The needs of the parties"
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - Include anything else that is relevant to your need for support.: ss_factor_eight_need
+    input type: area
+    required: False
+  - note: ${ collapse_template(ss_factor_eight_need_help) }
+---
+template: ss_factor_eight_need_help
+subject: Example
+content: |
+  For example, if you are going to college in order to improve your earning capacity, you may need spousal support to help with expenses while you are at school. 
+
+  If you are nearing typical retirement age and you didn’t work enough to qualify for Social Security retirement, and you are unlikely to find a job to get sufficient retirement benefits or to support yourself, you may need spousal support.
+---
+id: spousal support factor 9
+question: "Factor 9: The parties' health"
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - Do you have any illness, injury, or disability that limits your ability to work or prevents you from working? Does this illness, injury, or disability create certain needs/expenses that you need support to help with?: ss_factor_nine_health
+    required: False
+    input type: area
+  - note: ${ collapse_template(ss_factor_nine_health_help) }
+---
+template: ss_factor_nine_health_help
+subject: What else can I include here?
+content: |
+  * Are there any surgeries/procedures that you need that your health insurance will not fully cover?
+  * Is your health condition due to mistreatment or abuse by your spouse?
+---
+id: spousal support factor 10
+question: "Factor 10: The prior standard of living of the parties and whether either is responsible for the support of others."
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - Is there anything about your standard of living during the marriage that would be helpful for the judge to know?: ss_factor_ten_standards
+    input type: area
+    required: False
+  - note: ${ collapse_template(ss_factor_ten_standards_help) }
+  - note: |
+      If you are responsible for supporting someone, explain below.
+      
+      ${ collapse_template(ss_factor_ten_responsibilities_help) }
+  - Explain your relationship to the person you are supporting and other facts that will help the court understand what this responsibility involves.: ss_factor_ten_responsibilities
+    input type: area
+    required: False
+---
+template: ss_factor_ten_standards_help
+subject: What does this mean?
+content: |
+  Even if spousal support is short-term, the judge may look at how much support is appropriate based on the standard of living during the marriage. If there are some regular purchases you made during your marriage that are important to you or your children and you won't be able to afford it on your own after divorce, you may want to explain that.
+---
+template: ss_factor_ten_responsibilities_help
+subject: Example
+content: |
+  If you are responsible for supporting someone else, such as your adult child with a disability, include that.
+---
+id: spousal support factor 11
+question: "Factor 11: The contributions of the parties to the joint estate."
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - Explain what you and your spouse contributed to the marriage. Contributing is not just about earning money. The judge will consider what each party contributed in money, time, and energy to the home and the family.: ss_factor_eleven_contributions
+    input type: area
+    required: False
+  - note: ${ collapse_template(ss_factor_eleven_contributions_help) }
+---
+template: ss_factor_eleven_contributions_help
+subject: Examples
+content: |
+  If you were a homemaker and cooked, cleaned, paid bills, and cared for the children, include that. If you saved your family the cost of daycare because you were the full-time caregiver, you can include that. 
+---
+id: spousal support factor 12
+question: "Factor 12: A party’s fault in causing the divorce."
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - If there is something about fault in the breakdown of the marriage that you did not include in Factor 1, include it below if it relates to your need for support or your spouse's ability to pay.: ss_factor_twelve_fault_redux
+    input type: area
+    required: False
+  - note: ${ collapse_template(ss_factor_twelve_fault_redux_help) }
+---
+template: ss_factor_twelve_fault_redux_help
+subject: Example
+content: |
+  For example, if your spouse told you they wanted a divorce and it came as a surprise to you, you may need spousal support to help navigate the unexpected change.
+---
+id: spousal support factor 13
+question: "Factor 13: The effect of cohabitation on a party’s financial status."
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+fields:
+  - If you are living with an unrelated adult, say so, and explain if you intend for it to be temporary or permanent, and whether any of your expenses are shared with this person.: ss_factor_thirteen_cohabitation
+    input type: area
+    required: False
+  - note: ${ collapse_template(ss_factor_thirteen_cohabitation_help) }
+---
+template: ss_factor_thirteen_cohabitation_help
+subject: Why is this important?
+content: |
+  Cohabitating, or living with an unrelated adult, does not automatically mean you can't get spousal support. But if you do live with an unrelated adult, this may influence how the judge views your need for spousal support. 
+  
+  The judge may consider several things: 
+  1. Whether you actually live together in the same home; 
+  2. If the relationship appears permanent; and 
+  3. If you share expenses such as rent or mortgage payments and day-to-day expenses.
+---
+id: spousal support factor 14
+question: "Factor 14: General principles of equity."
+subquestion: |
+  ${ collapse_template(ss_factor_tips) }
+
+  Along with the other factors, a judge considers what is fair (equitable) and reasonable under the circumstances when making a spousal support decision.
+fields:
+  - If relevant, include other reasons why it is fair for you to be awarded spousal support.: ss_factor_fourteen_equity
+    required: False
+    input type: area
+  - note: ${ collapse_template(ss_factor_fourteen_equity_help) }
+---
+template: ss_factor_fourteen_equity_help
+subject: What is an example of fairness in this context?
+content: |
+  In one Michigan Court of Appeals case, the Court emphasized that the parties had agreed the wife would stay at home during the 27-year marriage. The Court determined that spousal support was a fair way of repaying her for the lost opportunity of learning marketable skills.
+---
+# --------------------------------------------------------------------
+## child gathering
+# --------------------------------------------------------------------
 ---
 code: |
   children[i].name.first
@@ -1595,18 +1923,27 @@ content:
 ---
 code: |
   has_prior_civil_cases
-  prior_family_cases.gather()
+  prior_family_cases.gather() 
+  
   interview_order_prior_cases = True
 ---
 id: prior family cases table
 table: prior_family_cases.table
 rows: prior_family_cases
 columns:
-  - Name: row_item.company_name
+  - Case name: row_item.title
+  - Type: row_item.type
+  - State: row_item.state
+  - County: row_item.county
 #  - Entered family before or during marriage: |
 #      "before marriage" if row_item.timing == "premarital" else "during marriage"
 edit:
-  - company_name
+  - status
+  - included_custody_PT_order
+  - has_current_custody_PT_order
+  - custody_order_in_another_state_warning 
+  - children_involved_number
+      
 delete buttons: True
 confirm: True
 ---
@@ -1742,23 +2079,53 @@ fields:
     field: prior_family_cases.there_is_another
     datatype: yesnoradio
 ---
-#code: |
-#  if tool_ID == "JOD_only" and there_are_marital_children:
-#    prior_family_cases[i].status
-#  elif tool ID != "JOD_only":
-#    prior_family_cases[i].status
-#    if there_are_marital_children:
-#      prior_family_cases[i].set_default_case_info
-#      if prior_family_cases[i].type == "divorce":
-#        prior_family_cases[i].included_custody_PT_order
-#      if prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"]:
-#        if prior_family_cases[i].status in ["stayed", "pending", "ended_with_order"]:
-#          prior_family_cases[i].included_custody_PT_order
-#        elif prior_family_cases[i].status == "dismissed" and prior_family_cases[i].type != "paternity":
-#          prior_family_cases[i].included_custody_PT_order
-#  TODO still need to implement other state warnings and children number count rows 191, 200 TODO
-#
-#  prior_family_cases[i].complete = True
+id: prior family cases gather logic
+code: |
+  if tool_ID == "JOD_only" and there_are_marital_children:
+    prior_family_cases[i].status
+  elif tool_ID != "JOD_only":
+    prior_family_cases[i].status
+    if there_are_marital_children:
+      if prior_family_cases[i].type == "divorce":
+        prior_family_cases[i].included_custody_PT_order
+      if prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"]:
+        if prior_family_cases[i].status == "ended_with_order":
+          prior_family_cases[i].included_custody_PT_order
+        elif prior_family_cases[i].status in ["stayed", "pending"]:
+          prior_family_cases[i].has_current_custody_PT_order
+        elif prior_family_cases[i].status == "dismissed" and prior_family_cases[i].type != "paternity":
+          prior_family_cases[i].included_custody_PT_order
+  
+      if prior_family_cases[i].state != "Michigan":
+        if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and (prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order) or (prior_family_cases[i].status in ["stayed", "pending"] and prior_family_cases[i].has_current_custody_PT_order)):
+          if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids:
+            prior_family_cases[i].custody_order_in_another_state_warning 
+
+      prior_family_cases[i].children_involved_number
+
+  prior_family_cases[i].complete = True
+---
+id: custody_order_in_another_state_warning
+continue_button_field: prior_family_cases[i].custody_order_in_another_state_warning
+question: Warning! Custody order in another state
+subquestion: |
+  % if MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]:
+  ${ prior_custody_warning }
+  % elif not MI_has_jurisdiction_all_kids:
+  ${ prior_custody_warning_home_state }
+  % endif
+---
+template: prior_custody_warning_home_state
+content: |
+  **WARNING:** If Michigan is not the ${ children.filter(legal_parent='both').as_noun() }'s home state, a Michigan court may not be able to make decisions about custody and parenting time of your ${ children.filter(legal_parent='both').as_noun() }.
+      
+  You can still use this tool to prepare your divorce forms, but your Judgment of Divorce will not include custody and parenting time arrangements. It will be up to the court to decide whether it has jurisdiction to include custody and parenting time orders in your divorce judgment. ${MLH_GUIDE_FULL}
+---
+template: prior_custody_warning
+content: |
+  **WARNING:** If there is a prior custody order from another state and either you, your child, or the other parent resides in that state, a Michigan court may not be able to make decisions about custody and parenting time of your child.
+
+  You can still use this tool to prepare your divorce forms, but your Judgment of Divorce will not include custody and parenting time arrangements. It will be up to the court to decide whether it has jurisdiction to include custody and parenting time orders in your divorce judgment. ${MLH_GUIDE_FULL}
 ---
 # LHI "Prior Family Cases DLG"
 # JOD_only version should only be asked if there are marital children
@@ -1780,20 +2147,35 @@ fields:
   - Case number:: prior_family_cases[i].docket_number
   - Is there a custody or parenting time order in this case that is currently in effect?: prior_family_cases[i].has_current_custody_PT_order
     datatype: yesnoradio
-  - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_current_support_order
+  - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
   - note: |
-      **WARNING:** If Michigan is not the ${ children.filter(legal_parent='both').as_noun() }'s home state, a Michigan court may not be able to make decisions about custody and parenting time of your ${ children.filter(legal_parent='both').as_noun() }.
-      
-      You can still use this tool to prepare your divorce forms, but your Judgment of Divorce will not include custody and parenting time arrangements. It will be up to the court to decide whether it has jurisdiction to include custody and parenting time orders in your divorce judgment. ${MLH_GUIDE_FULL}
+      ${ prior_custody_warning_home_state }
     js show if: |
       val("prior_family_cases[i].state") !== "Michigan" && val("prior_family_cases[i].has_current_custody_PT_order") === true && ${ json.dumps(MI_has_jurisdiction_all_kids) } === false
   - note: |
-      **WARNING:** If there is a prior custody order from another state and either you, your child, or the other parent resides in that state, a Michigan court may not be able to make decisions about custody and parenting time of your child.
-
-      You can still use this tool to prepare your divorce forms, but your Judgment of Divorce will not include custody and parenting time arrangements. It will be up to the court to decide whether it has jurisdiction to include custody and parenting time orders in your divorce judgment. ${MLH_GUIDE_FULL}
+      ${ prior_custody_warning }
     js show if: |
-      val("prior_family_cases[i].state") !== "Michigan" && val("prior_family_cases[i].has_current_custody_PT_order") === true && ${ json.dumps(MI_has_jurisdiction_all_kids) } === true && [address matching party logic]
+      val("prior_family_cases[i].state") !== "Michigan" && val("prior_family_cases[i].has_current_custody_PT_order") === true && ${ json.dumps(MI_has_jurisdiction_all_kids) } === true && ${ "true" if prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"] else "false" }
+---
+code: |
+  prior_family_case_types = [
+                              ['divorce', 'Divorce'],
+                              ['protection_order', 'Protection Order'],
+                              ['parental_rights', 'Parental Rights (abuse/neglect)'],
+                              ['adoption', 'Adoption'],
+                              ['paternity', 'Paternity'],
+                              ['custody', 'Custody'],
+                              ['guardianship', 'Guardianship'],
+                              ['juvenile_delinquency', 'Juvenile Delinquency'],
+                              ['name_change', 'Name Change'],
+                              ['emancipation', 'Emancipation'],
+                              ['other', 'Other']
+                            ]
+  if tool_ID in ["custody_answer", "custody_complaint"]:
+    prior_family_case_types.remove("['paternity', 'Paternity']", "['custody', 'Custody']")
+  if tool_ID == "custody_complaint":
+    prior_family_case_types.remove("['divorce', 'Divorce']")
 ---
 # LHI "Prior Family Cases DLG"
 id: prior family case or order collection screen NOT JOD_only
@@ -1823,7 +2205,7 @@ fields:
   - Case number:: prior_family_cases[i].docket_number
   - "Judge's last name *(do not include 'Judge' or 'Hon.')*": prior_family_cases[i].judge
     js show if: |
-      (${ json.dumps(tool_ID) } === "divorce_complaint" || ${ json.dumps(tool_ID) } === "custody_complaint")
+      ${ "true" if tool_ID in ["divorce_complaint", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].state"))
   - What is the nature of this case?: prior_family_cases[i].type
     code: |
       prior_family_case_types
@@ -1836,7 +2218,7 @@ fields:
       - "It has ended and an order was made": ended_with_order
       - "It has ended but was dismissed by the court": dismissed
       - "It is active/pending but has been stayed by the court": stayed
-      - "It is active_pending": pending
+      - "It is active/pending": pending
     js show if: |
       val("prior_family_cases[i].type") !== "divorce"
   - What is the status of this case?: prior_family_cases[i].status
@@ -1847,38 +2229,20 @@ fields:
       val("prior_family_cases[i].type") === "divorce"
 ---
 # LHI "Prior Family Cases DLG" (start at row 108)
-# not sure how much of this logic makes sense to replicate, but trying to at least record it for now
-id: prior family cases logic for with children NOT JOD_only
-if: tool_ID != "JOD_only" and there_are_marital_children
-code: |
-  if prior_family_cases[i].type == "divorce":
-    prior_family_cases[i].has_current_custody_PT_order = False
-    prior_family_cases[i].has_current_support_order = False
-  if prior_family_cases[i].type in ["adoption", "name_change", "juvenile_delinquency", "emancipation"]:
-    prior_family_cases[i].has_current_support_order = False
-    prior_family_cases[i].included_custody_PT_order = False
-    prior_family_cases[i].has_current_custody_PT_order = False
-
-  prior_family_cases[i].set_default_case_info = True
----
-# LHI "Prior Family Cases DLG" (start at row 108)
-id: prior family case or order additional info divorce
+id: prior family divorce case or order additional info
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type == "divorce"
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
 fields:
   - label: |
-      % if prior_family_cases[i].status in ["stayed", "pending"]: 
-      Is there a custody or parenting time order in this case?
-      % elif prior_family_cases[i].status == "dismissed":
+      % if prior_family_cases[i].status == "dismissed":
       Was a temporary custody or parenting time order entered in that case when the case was pending?
-      % elif prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].type == "divorce":
+      % elif prior_family_cases[i].status == "ended_with_order":
       Did this case involve custody or parenting time?
-      % elif prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].type != "divorce":
-      Was there a custody or parenting time order in that case?
       % endif
     field: prior_family_cases[i].included_custody_PT_order
+    datatype: yesnoradio
   - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
     datatype: ThreePartsDate
     max: |
@@ -1898,10 +2262,13 @@ fields:
     max: |
      ${ today() }
   - Is there a custody or parenting time order in this case?: prior_family_cases[i].included_custody_PT_order
+    datatype: yesnoradio
   - Is the custody or parenting time order currently in effect?: prior_family_cases[i].has_current_custody_PT_order
+    datatype: yesnoradio
     js show if: |
       ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && val("prior_family_cases[i].included_custody_PT_order") === true
-  - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_current_support_order
+  - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_child_support_order
+    datatype: yesnoradio
     js show if: |
       ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].final_order_date"))
 # TODO: do we care about the final order if it doesn't have custody in it? If not can we switch the question order and standardize the date question with the divorce version?
@@ -1913,17 +2280,18 @@ question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
 fields:
-  - Is there a custody or parenting time order in this case?: prior_family_cases[i].included_custody_PT_order
-    # note I'm not sure but perhaps we should assume this order is also CURRENT?
+  - Is there a custody or parenting time order in this case?: prior_family_cases[i].has_current_custody_PT_order
+    datatype: yesnoradio
   - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
     datatype: ThreePartsDate
     max: |
      ${ today() }
     js show if: |
-      val("prior_family_cases[i].included_custody_PT_order") === true
-  - Is there a support order in this case?: prior_family_cases[i].has_current_support_order
+      val("prior_family_cases[i].has_current_custody_PT_order") === true
+  - Is there a support order in this case?: prior_family_cases[i].has_child_support_order
+    datatype: yesnoradio
     js show if: |
-      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].included_custody_PT_order"))
+      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].has_current_custody_PT_order"))
 ---
 # LHI "Prior Family Cases DLG" (start at row 151)
 id: prior family case or order additional info 
@@ -1933,6 +2301,7 @@ subquestion: |
   These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
 fields:
   - "Was a temporary custody or parenting time order entered in that case when the case was pending?": prior_family_cases[i].included_custody_PT_order
+    datatype: yesnoradio
   - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
     datatype: ThreePartsDate
     max: |
@@ -1941,23 +2310,61 @@ fields:
       val("prior_family_cases[i].included_custody_PT_order") === true
 ---
 code: |
-  prior_family_case_types = [
-                              ['divorce', 'Divorce'],
-                              ['protection_order', 'Protection Order']
-                              ['parental_rights', 'Parental Rights (abuse/neglect)'],
-                              ['adoption', 'Adoption']
-                              ['paternity', 'Paternity'],
-                              ['custody', 'Custody'],
-                              ['guardianship', 'Guardianship']
-                              ['juvenile_delinquency', 'Juvenile Delinquency']
-                              ['name_change', 'Name Change'],
-                              ['emancipation', 'Emancipation'],
-                              ['other', 'Other']
-                            ]
-  if tool_ID in ["custody_answer", "custody_complaint"]:
-    prior_family_case_types.remove("['paternity', 'Paternity']", "['custody', 'Custody']")
-  if tool_ID == "custody_complaint":
-    prior_family_case_types.remove("['divorce', 'Divorce']")
+  if tool_ID == "divorce_complaint" and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order:
+    if len(children.filter(legal_parent="both")) == 1:
+      prior_family_cases[i].children_involved_number = 1
+  else:
+    prior_family_cases[i].children_involved_number = 0
+---
+# LHI "Prior Family Cases DLG" (start at row 200)--rest is in "prior family cases gather logic"
+id: number of children involved in case
+if: tool_ID == "divorce_complaint" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order and len(children.filter(legal_parent="both")) > 1
+question: ${ capitalize(ordinal(i)) } **family division** case or order
+subquestion: |
+  This question is about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
+fields:
+  - How many children were involved in this case?: prior_family_cases[i].children_involved_number
+---
+# LHI "Prior Family Cases DLG" (start at row 108)
+# not sure how much of this logic makes sense to replicate, but trying to at least record it for now
+# this was causing errors and I'm not sure it's necessary, commenting out for now, but saving logic
+# id: prior family cases logic for with children NOT JOD_only
+# if: tool_ID != "JOD_only" and there_are_marital_children
+# code: |
+#   if prior_family_cases[i].type == "divorce":
+#     prior_family_cases[i].has_current_custody_PT_order = False
+#     prior_family_cases[i].has_child_support_order = False
+#   
+#   elif prior_family_cases[i].type in ["adoption", "name_change", "juvenile_delinquency", "emancipation"]:
+#     prior_family_cases[i].included_custody_PT_order = False
+#     prior_family_cases[i].has_child_support_order = False
+#     prior_family_cases[i].has_current_custody_PT_order = False
+#   
+#   elif prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "paternity", "guardianship", "other"]:
+#     if prior_family_cases[i].status == "ended_with_order":
+#         if (not prior_family_cases[i].included_custody_PT_order) or tool_ID == "custody_answer": 
+#           prior_family_cases[i].has_current_custody_PT_order == False
+#         if tool_ID == "custody_answer":
+#           prior_family_cases[i].has_child_support_order == False  
+#     elif prior_family_cases[i].status in ["stayed", "pending"]:
+#       prior_family_cases[i].included_custody_PT_order = prior_family_cases[i].has_child_support_order
+#       if tool_ID == "custody_answer":
+#           prior_family_cases[i].has_child_support_order == False     
+#     elif prior_family_cases[i].status == "dismissed":
+#       if prior_family_cases[i].type == "paternity":
+#         prior_family_cases[i].included_custody_PT_order = False
+#         prior_family_cases[i].has_child_support_order = False
+#         prior_family_cases[i].has_current_custody_PT_order = False
+#       elif prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "guardianship", "other"]:
+#         prior_family_cases[i].has_child_support_order = False
+#         prior_family_cases[i].has_current_custody_PT_order = False
+#   
+#   
+#   prior_family_cases[i].set_default_case_info = True
+# ---
+code: |
+
+      
 ---
 # --------------------------------------------------------------------
 ## stepchildren additional info
@@ -2928,15 +3335,15 @@ fields:
 # TO DO: going to have to clear this out and rebuild if # of children changes
 code: |
   tax_choices = [
-                  ['default', f'Based on federal tax law, the parent with whom the { children.filter(legal_parent='both').as_noun() } { children.does_verb("live") } for the greater number of nights during the year will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years.'],
-                  ['user', f'{ users[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years.'],
-                  ['other_party', f'{ other_parties[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years.']
+                  ['default', f"Based on federal tax law, the parent with whom the { children.filter(legal_parent='both').as_noun() } { children.does_verb('live') } for the greater number of nights during the year will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years."],
+                  ['user', f"{ users[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years."],
+                  ['other_party', f"{ other_parties[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years."]
                 ]
   
   if len(children.filter(legal_parent="both")) > 1:
-    tax_choices.append(['specify_per_child', f'{ users[0] } and { other_parties[0] } will claim the deductions, credits, and exemptions for different children, including state, federal, or local tax returns.'])
+    tax_choices.append(['specify_per_child', f"{ users[0] } and { other_parties[0] } will claim the deductions, credits, and exemptions for different children, including state, federal, or local tax returns."])
   
-  tax_choices.append(['alternate_years', f'{ users[0] } and { other_parties[0] } will claim all deductions, credits, and exemptions for the { children.filter(legal_parent='both').as_noun() } in alternating years, including state, federal, or local tax returns.'])
+  tax_choices.append(['alternate_years', f"{ users[0] } and { other_parties[0] } will claim all deductions, credits, and exemptions for the { children.filter(legal_parent='both').as_noun() } in alternating years, including state, federal, or local tax returns."])
 ---
 id: income tax deductions starting year
 Question: Who gets income tax deductions first?
