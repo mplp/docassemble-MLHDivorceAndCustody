@@ -156,7 +156,7 @@ code: |
 code: |
   if tool_ID in ["divorce_complaint", "divorce_answer"]:
     spousal_support_intro
-    if wants_temporary_support_order:
+    if wants_temporary_spousal_support:
       temp_spousal_support_info
     if wants_post_divorce_support:
       if continue_with_spousal_support_request:
@@ -191,7 +191,7 @@ subquestion: |
 id: wants temporary spousal support?
 question: Temporary spousal support (while case is pending)
 fields: 
-  - Do you need spousal support for the period of time **before your divorce is final?**: wants_temporary_support_order
+  - Do you need spousal support for the period of time **before your divorce is final?**: wants_temporary_spousal_support
     datatype: yesnoradio
 ---
 id: temporary spousal support instructions
@@ -1941,7 +1941,6 @@ edit:
   - status
   - included_custody_PT_order
   - has_current_custody_PT_order
-  - set_default_case_info
   - custody_order_in_another_state_warning 
   - children_involved_number
       
@@ -2097,10 +2096,8 @@ code: |
         elif prior_family_cases[i].status == "dismissed" and prior_family_cases[i].type != "paternity":
           prior_family_cases[i].included_custody_PT_order
   
-      prior_family_cases[i].set_default_case_info
-  
       if prior_family_cases[i].state != "Michigan":
-        if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type != "divorce" and (prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order) or (prior_family_cases[i].status in ["stayed", "pending"] and prior_family_cases[i].has_current_custody_PT_order)):
+        if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and (prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order) or (prior_family_cases[i].status in ["stayed", "pending"] and prior_family_cases[i].has_current_custody_PT_order)):
           if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids:
             prior_family_cases[i].custody_order_in_another_state_warning 
 
@@ -2150,7 +2147,7 @@ fields:
   - Case number:: prior_family_cases[i].docket_number
   - Is there a custody or parenting time order in this case that is currently in effect?: prior_family_cases[i].has_current_custody_PT_order
     datatype: yesnoradio
-  - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_current_support_order
+  - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
   - note: |
       ${ prior_custody_warning_home_state }
@@ -2270,7 +2267,8 @@ fields:
     datatype: yesnoradio
     js show if: |
       ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && val("prior_family_cases[i].included_custody_PT_order") === true
-  - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_current_support_order
+  - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_child_support_order
+    datatype: yesnoradio
     js show if: |
       ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].final_order_date"))
 # TODO: do we care about the final order if it doesn't have custody in it? If not can we switch the question order and standardize the date question with the divorce version?
@@ -2290,7 +2288,8 @@ fields:
      ${ today() }
     js show if: |
       val("prior_family_cases[i].has_current_custody_PT_order") === true
-  - Is there a support order in this case?: prior_family_cases[i].has_current_support_order
+  - Is there a support order in this case?: prior_family_cases[i].has_child_support_order
+    datatype: yesnoradio
     js show if: |
       ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].has_current_custody_PT_order"))
 ---
@@ -2328,40 +2327,41 @@ fields:
 ---
 # LHI "Prior Family Cases DLG" (start at row 108)
 # not sure how much of this logic makes sense to replicate, but trying to at least record it for now
-id: prior family cases logic for with children NOT JOD_only
-if: tool_ID != "JOD_only" and there_are_marital_children
-code: |
-  if prior_family_cases[i].type == "divorce":
-    prior_family_cases[i].has_current_custody_PT_order = False
-    prior_family_cases[i].has_current_support_order = False
-  
-  elif prior_family_cases[i].type in ["adoption", "name_change", "juvenile_delinquency", "emancipation"]:
-    prior_family_cases[i].included_custody_PT_order = False
-    prior_family_cases[i].has_current_support_order = False
-    prior_family_cases[i].has_current_custody_PT_order = False
-  
-  elif prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "paternity", "guardianship", "other"]:
-    if prior_family_cases[i].status == "ended_with_order":
-        if (not prior_family_cases[i].included_custody_PT_order) or tool_ID == "custody_answer": 
-          prior_family_cases[i].has_current_custody_PT_order == False
-        if tool_ID == "custody_answer":
-          prior_family_cases[i].has_current_support_order == False  
-    elif prior_family_cases[i].status in ["stayed", "pending"]:
-      prior_family_cases[i].included_custody_PT_order = prior_family_cases[i].has_current_support_order
-      if tool_ID == "custody_answer":
-          prior_family_cases[i].has_current_support_order == False     
-    elif prior_family_cases[i].status == "dismissed":
-      if prior_family_cases[i].type == "paternity":
-        prior_family_cases[i].included_custody_PT_order = False
-        prior_family_cases[i].has_current_support_order = False
-        prior_family_cases[i].has_current_custody_PT_order = False
-      elif prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "guardianship", "other"]:
-        prior_family_cases[i].has_current_support_order = False
-        prior_family_cases[i].has_current_custody_PT_order = False
-  
-  
-  prior_family_cases[i].set_default_case_info = True
----
+# this was causing errors and I'm not sure it's necessary, commenting out for now, but saving logic
+# id: prior family cases logic for with children NOT JOD_only
+# if: tool_ID != "JOD_only" and there_are_marital_children
+# code: |
+#   if prior_family_cases[i].type == "divorce":
+#     prior_family_cases[i].has_current_custody_PT_order = False
+#     prior_family_cases[i].has_child_support_order = False
+#   
+#   elif prior_family_cases[i].type in ["adoption", "name_change", "juvenile_delinquency", "emancipation"]:
+#     prior_family_cases[i].included_custody_PT_order = False
+#     prior_family_cases[i].has_child_support_order = False
+#     prior_family_cases[i].has_current_custody_PT_order = False
+#   
+#   elif prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "paternity", "guardianship", "other"]:
+#     if prior_family_cases[i].status == "ended_with_order":
+#         if (not prior_family_cases[i].included_custody_PT_order) or tool_ID == "custody_answer": 
+#           prior_family_cases[i].has_current_custody_PT_order == False
+#         if tool_ID == "custody_answer":
+#           prior_family_cases[i].has_child_support_order == False  
+#     elif prior_family_cases[i].status in ["stayed", "pending"]:
+#       prior_family_cases[i].included_custody_PT_order = prior_family_cases[i].has_child_support_order
+#       if tool_ID == "custody_answer":
+#           prior_family_cases[i].has_child_support_order == False     
+#     elif prior_family_cases[i].status == "dismissed":
+#       if prior_family_cases[i].type == "paternity":
+#         prior_family_cases[i].included_custody_PT_order = False
+#         prior_family_cases[i].has_child_support_order = False
+#         prior_family_cases[i].has_current_custody_PT_order = False
+#       elif prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "guardianship", "other"]:
+#         prior_family_cases[i].has_child_support_order = False
+#         prior_family_cases[i].has_current_custody_PT_order = False
+#   
+#   
+#   prior_family_cases[i].set_default_case_info = True
+# ---
 code: |
 
       
