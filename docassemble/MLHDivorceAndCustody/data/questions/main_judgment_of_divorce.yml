@@ -1,16 +1,6 @@
 ---
 include:
-  - docassemble.AssemblyLine:assembly_line.yml
-  - docassemble.ALAnyState:any_state.yml
-  - docassemble.ALToolbox:collapse_template.yml
-  - docassemble.mlhframework:mlh_interview_framework.yml
-  - review.yml
-  - question_bank.yml
----
-modules:
-  - docassemble.ALToolbox.al_income
-  - docassemble.ALToolbox.ThreePartsDate
-  - .jod_functions
+  - divorce_custody_setup.yml
 ---
 # TODO subtitle? & confirm description
 metadata:
@@ -23,10 +13,6 @@ metadata:
   authors:
     - Michigan Legal Help
     - Lemma Legal
----
-features:
-  labels above fields: True
-  css: mlh-divorce-and-custody.css
 ---
 sections:
   - signpost_intro: "Introduction"
@@ -42,12 +28,12 @@ sections:
   - signpost_done: "Done"
   - review_full: "✎ <u>Review / Edit</u>"
 ---
-code:  |
-  github_repo_name = 'docassemble-MLHDivorceAndCustody' if get_config('debug') else 'docassemble-UserFeedback'
----
 # TODO need survey url
 code: |
   survey_link_url_only = "https://www.surveymonkey.com/r/xxxxxx"
+---
+code: |
+  tool_ID = "JOD_only"
 ---
 # TODO need survey script
 template: survey_embed_script
@@ -83,8 +69,7 @@ id: interview_order_michigan_judgment_of_divorce
 mandatory: True
 scan for variables: False
 code: |
-  set_interview_terms
-  reconsider("set_interview_terms") # TODO remove before publishing
+  set_persistent_labels
   nav.set_section("review_full")
   nav.set_section("signpost_intro")
   MLH_standard_intro_pages
@@ -98,6 +83,7 @@ code: |
   the_court
   docket_number
   user_ask_role
+  set_JOD_party_labels
 
   if not marriage.breakdown:
     exit_no_marriage_breakdown
@@ -260,16 +246,6 @@ code: |
     if not marriage.vehicles.keep_own:
       marriage.vehicles.gather()
   interview_order_vehicles = True
----
-code: |
-  update_terms(
-    {
-      "investments": """Stocks, bonds, Certificates of Deposit (CDs), mutual funds, Money Market Accounts, or other investments, not including pensions or retirement accounts.""",
-      "vehicles_make": """Make refers to the name of the company that manufactured the vehicle. Examples of vehicle "makes" are Ford, General Motors, Chrysler, and Toyota.""",
-      "vehicles_model": """Model refers to the type of car. Examples of "models" are Focus, Cutlass, Town and Country, and Highlander.""",
-    }
-  )
-  set_interview_terms = True
 ---
 
 # ====================================================================

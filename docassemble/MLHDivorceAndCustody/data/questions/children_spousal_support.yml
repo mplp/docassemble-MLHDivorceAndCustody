@@ -1,46 +1,12 @@
+---
+# needed during testing this as separate yml
+include:
+  - divorce_custody_setup.yml
+---
 # example interview tag for testing
 code: |
   tool_ID = "divorce_complaint"
 # options: "JOD_only", "divorce_complaint", "divorce_answer", "custody_complaint", "custody_answer"
----
-# maybe just set these directly in each main interview yml?
-code: |
-  if tool_ID in ["JOD_only", "divorce_complaint", "divorce_answer"]:
-    OP_label = "your spouse"
-    case_label = "divorce"
-    if tool_ID == "divorce_complaint":
-      filing_name = "Complaint for Divorce"
-    elif tool_ID == "divorce_answer":
-      filng_name = "Counterclaim for Divorce"
-  elif user_ask_role == "plaintiff":
-    OP_label = "the defendant"
-    case_label = "custody"
-  elif user_ask_role == "defendant":
-    OP_label = "the plaintiff"
-    case_label = "custody"
----
-# maybe just set these directly in each main interview yml?
-# these labels are only needed for the spousal support section
-code: |
-  if tool_ID == "divorce_complaint":
-    user_party_label = "the Plaintiff"
-    OP_party_label = "the Defendant"
-  elif tool_ID == "divorce_answer":
-    user_party_label = "the Defendant"
-    OP_party_label = "the Plaintiff"    
----
-### need the stuff in this section (copied from main yml) here for now to run just this yml
-features:
-  labels above fields: True
----
-include:
-  - docassemble.AssemblyLine:assembly_line.yml
-  - docassemble.ALToolbox:collapse_template.yml
-  - docassemble.mlhframework:mlh_interview_framework.yml
-  - question_bank.yml
----
-modules:
-  - docassemble.ALToolbox.al_income
 ---
 # example date for testing
 code: |
@@ -49,9 +15,6 @@ code: |
 # for testing:
 code: |
   confidential_contact_info_yn = False
----
-code: |
-  github_repo_name = 'docassemble-MLHDivorceAndCustody'
 ---
 ### need the above for now to run just this yml
 ### below objects are not included in question bank yml
@@ -79,33 +42,6 @@ objects:
   - users[0].income: ALIncome
   - other_parties[0].job: ALJob
   - other_parties[0].income: ALIncome
----
-### possibly move the below to main yml
-terms:
-  - phrases:
-      - assisted reproduction
-    definition: |
-      Assisted reproduction is a way to become pregnant that is not sexual intercourse. It includes:
-
-      * Donor insemination
-      * Sperm or egg donation
-      * Embryo donation
-      * In vitro fertilization (IVF) and embryo transfer
-      * Intracytoplasmic sperm injection
-      * Assisted reproductive technology
-  - phrases:
-      - parenting time
-    definition: |
-      Sometimes called "visitation".
-  - phrases:
-      - minor
-    definition: |
-      A child is a minor if they are 17 years old or younger.
----
-### possibly move the below to main yml
-code: |
-  US_states_and_territories_list = ["Alabama", "Alaska", "American Samoa", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "District of Columbia", "Florida", "Georgia", "Guam", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', "New Jersey", "New Mexico", "New York", 'North Carolina', 'North Dakota', 'Northern Mariana Islands', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Puerto Rico', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'US Virgin Islands', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming']
-# currently includes all 5 inhabited US territories and DC. But note that American Samoans are not US citizens. Not sure they should be on this list. 
 ---
 table: children.table
 rows: children
@@ -1995,11 +1931,20 @@ id: prior family cases table
 table: prior_family_cases.table
 rows: prior_family_cases
 columns:
-  - Name: row_item.company_name
+  - Case name: row_item.title
+  - Type: row_item.type
+  - State: row_item.state
+  - County: row_item.county
 #  - Entered family before or during marriage: |
 #      "before marriage" if row_item.timing == "premarital" else "during marriage"
 edit:
-  - company_name
+  - status
+  - included_custody_PT_order
+  - has_current_custody_PT_order
+  - set_default_case_info
+  - custody_order_in_another_state_warning 
+  - children_involved_number
+      
 delete buttons: True
 confirm: True
 ---
@@ -2157,21 +2102,14 @@ code: |
       if prior_family_cases[i].state != "Michigan":
         if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type != "divorce" and (prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order) or (prior_family_cases[i].status in ["stayed", "pending"] and prior_family_cases[i].has_current_custody_PT_order)):
           if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids:
-            custody_order_in_another_state_warning 
+            prior_family_cases[i].custody_order_in_another_state_warning 
 
-      if tool_ID == "divorce_complaint" and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order:
-        prior_family_cases[i].children_involved = True
-        if len(children.filter(legal_parent="both")) == 1:
-          prior_family_cases[i].children_involved_number = 1
-        else:
-          prior_family_cases[i].children_involved_number
-      else:
-        prior_family_cases[i].children_involved = False
+      prior_family_cases[i].children_involved_number
 
   prior_family_cases[i].complete = True
 ---
 id: custody_order_in_another_state_warning
-continue_button_field: custody_order_in_another_state_warning
+continue_button_field: prior_family_cases[i].custody_order_in_another_state_warning
 question: Warning! Custody order in another state
 subquestion: |
   % if MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]:
@@ -2226,13 +2164,13 @@ fields:
 code: |
   prior_family_case_types = [
                               ['divorce', 'Divorce'],
-                              ['protection_order', 'Protection Order']
+                              ['protection_order', 'Protection Order'],
                               ['parental_rights', 'Parental Rights (abuse/neglect)'],
-                              ['adoption', 'Adoption']
+                              ['adoption', 'Adoption'],
                               ['paternity', 'Paternity'],
                               ['custody', 'Custody'],
-                              ['guardianship', 'Guardianship']
-                              ['juvenile_delinquency', 'Juvenile Delinquency']
+                              ['guardianship', 'Guardianship'],
+                              ['juvenile_delinquency', 'Juvenile Delinquency'],
                               ['name_change', 'Name Change'],
                               ['emancipation', 'Emancipation'],
                               ['other', 'Other']
@@ -2270,7 +2208,7 @@ fields:
   - Case number:: prior_family_cases[i].docket_number
   - "Judge's last name *(do not include 'Judge' or 'Hon.')*": prior_family_cases[i].judge
     js show if: |
-      (${ json.dumps(tool_ID) } === "divorce_complaint" || ${ json.dumps(tool_ID) } === "custody_complaint")
+      ${ "true" if tool_ID in ["divorce_complaint", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].state"))
   - What is the nature of this case?: prior_family_cases[i].type
     code: |
       prior_family_case_types
@@ -2283,7 +2221,7 @@ fields:
       - "It has ended and an order was made": ended_with_order
       - "It has ended but was dismissed by the court": dismissed
       - "It is active/pending but has been stayed by the court": stayed
-      - "It is active_pending": pending
+      - "It is active/pending": pending
     js show if: |
       val("prior_family_cases[i].type") !== "divorce"
   - What is the status of this case?: prior_family_cases[i].status
@@ -2301,12 +2239,13 @@ subquestion: |
   These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
 fields:
   - label: |
-      if prior_family_cases[i].status == "dismissed":
+      % if prior_family_cases[i].status == "dismissed":
       Was a temporary custody or parenting time order entered in that case when the case was pending?
       % elif prior_family_cases[i].status == "ended_with_order":
       Did this case involve custody or parenting time?
       % endif
     field: prior_family_cases[i].included_custody_PT_order
+    datatype: yesnoradio
   - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
     datatype: ThreePartsDate
     max: |
@@ -2326,7 +2265,9 @@ fields:
     max: |
      ${ today() }
   - Is there a custody or parenting time order in this case?: prior_family_cases[i].included_custody_PT_order
+    datatype: yesnoradio
   - Is the custody or parenting time order currently in effect?: prior_family_cases[i].has_current_custody_PT_order
+    datatype: yesnoradio
     js show if: |
       ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && val("prior_family_cases[i].included_custody_PT_order") === true
   - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_current_support_order
@@ -2342,6 +2283,7 @@ subquestion: |
   These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
 fields:
   - Is there a custody or parenting time order in this case?: prior_family_cases[i].has_current_custody_PT_order
+    datatype: yesnoradio
   - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
     datatype: ThreePartsDate
     max: |
@@ -2360,6 +2302,7 @@ subquestion: |
   These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
 fields:
   - "Was a temporary custody or parenting time order entered in that case when the case was pending?": prior_family_cases[i].included_custody_PT_order
+    datatype: yesnoradio
   - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
     datatype: ThreePartsDate
     max: |
@@ -2367,8 +2310,16 @@ fields:
     js show if: |
       val("prior_family_cases[i].included_custody_PT_order") === true
 ---
+code: |
+  if tool_ID == "divorce_complaint" and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order:
+    if len(children.filter(legal_parent="both")) == 1:
+      prior_family_cases[i].children_involved_number = 1
+  else:
+    prior_family_cases[i].children_involved_number = 0
+---
 # LHI "Prior Family Cases DLG" (start at row 200)--rest is in "prior family cases gather logic"
 id: number of children involved in case
+if: tool_ID == "divorce_complaint" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order and len(children.filter(legal_parent="both")) > 1
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
   This question is about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
@@ -3384,15 +3335,15 @@ fields:
 # TO DO: going to have to clear this out and rebuild if # of children changes
 code: |
   tax_choices = [
-                  ['default', f'Based on federal tax law, the parent with whom the { children.filter(legal_parent='both').as_noun() } { children.does_verb("live") } for the greater number of nights during the year will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years.'],
-                  ['user', f'{ users[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years.'],
-                  ['other_party', f'{ other_parties[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years.']
+                  ['default', f"Based on federal tax law, the parent with whom the { children.filter(legal_parent='both').as_noun() } { children.does_verb('live') } for the greater number of nights during the year will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years."],
+                  ['user', f"{ users[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years."],
+                  ['other_party', f"{ other_parties[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years."]
                 ]
   
   if len(children.filter(legal_parent="both")) > 1:
-    tax_choices.append(['specify_per_child', f'{ users[0] } and { other_parties[0] } will claim the deductions, credits, and exemptions for different children, including state, federal, or local tax returns.'])
+    tax_choices.append(['specify_per_child', f"{ users[0] } and { other_parties[0] } will claim the deductions, credits, and exemptions for different children, including state, federal, or local tax returns."])
   
-  tax_choices.append(['alternate_years', f'{ users[0] } and { other_parties[0] } will claim all deductions, credits, and exemptions for the { children.filter(legal_parent='both').as_noun() } in alternating years, including state, federal, or local tax returns.'])
+  tax_choices.append(['alternate_years', f"{ users[0] } and { other_parties[0] } will claim all deductions, credits, and exemptions for the { children.filter(legal_parent='both').as_noun() } in alternating years, including state, federal, or local tax returns."])
 ---
 id: income tax deductions starting year
 Question: Who gets income tax deductions first?
