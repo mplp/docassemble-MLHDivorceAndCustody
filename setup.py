@@ -57,4 +57,3 @@ setup(name='docassemble.MLHDivorceAndCustody',
       zip_safe=False,
       package_data=find_package_data(where='docassemble/MLHDivorceAndCustody/', package='docassemble.MLHDivorceAndCustody'),
      )
-
