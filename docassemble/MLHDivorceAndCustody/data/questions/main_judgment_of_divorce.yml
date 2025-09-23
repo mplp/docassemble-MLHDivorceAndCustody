@@ -16,16 +16,15 @@ metadata:
 ---
 sections:
   - signpost_intro: "Introduction"
-  - signpost_qualify: "Do you qualify?"
+  - signpost_qualify: "Is this tool right for you?"
   - signpost_user: "Your Information"
   - signpost_spouse: "Spouse's Information"
   - signpost_marriage: "Marriage Information"
-  - signpost_personal_property: "Personal Property"
-  - signpost_debts: "Debts"
-  - signpost_vehicles: "Vehicles"
-  - signpost_real_property: "Real Property"
+  - signpost_children: "Children"
+  - signpost_income_etc: "Income, Insurance, etc."
+  - signpost_personal_property: "Property and Debt"
   - signpost_judgment_information: "Judgment Information"
-  - signpost_done: "Done"
+  - signpost_done: "Get Your Forms"
   - review_full: "✎ <u>Review / Edit</u>"
 ---
 # TODO need survey url
@@ -154,28 +153,38 @@ code: |
 
   nav.set_section("signpost_marriage")
 
+  interview_order_spousal_support
+  
   marriage.date
   marriage.address.city
   if not marriage.living_together_yn:
     marriage.living_together_stopped_date
 
-  marriage.health_coverage
+  nav.set_section("signpost_children")
+  interview_order_children
 
-  nav.set_section("signpost_personal_property")
+  if there_are_marital_children:
+    interview_order_prior_cases
+
+    nav.set_section("signpost_income_etc")
+    users[0].insurance.gather()
+    other_parties[0].insurance.gather()
+    if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
+      marriage.cobra_coverage
+    interview_order_user_employment
+    interview_order_user_identifying_info
+    interview_order_other_party_employment
+    interview_order_other_party_identifying_info
+    interview_order_income_tax
+
+  nav.set_section("signpost_property")
 
   interview_order_personal_property
-
-  nav.set_section("signpost_debts")
-
   interview_order_debts
-
-  nav.set_section("signpost_vehicles")
-
   interview_order_vehicles
-
-  nav.set_section("signpost_real_property")
-
   marriage.real_property.gather()
+  if not there_are_marital_children:
+    marriage.cobra_coverage
 
   nav.set_section("signpost_judgment_information")
 
@@ -196,58 +205,8 @@ code: |
   MLH_standard_outro_pages
   MLH_download
 ---
-code: |
-  if confidential_contact_info_yn:
-    users[0].address.address
-  else:
-    users[0].address.address
-    if users[0].address.state == "MI":
-      users[0].village_or_township_yn
-    if users[0].mailing_address.yesno:
-      users[0].mailing_address.address
-  users[0].phone_number
-  users[0].email
-  interview_order_user_contact_info = True
+# EKM note: interview_order code blocks moved from here to question_bank.yml
 ---
-code: |
-  if other_parties[0].has_attorney:
-    other_parties[0].attorney.name.first
-    other_parties[0].attorney.address.address
-    other_parties[0].attorney.phone_number
-  interview_order_other_parties_attorney = True
----
-code: |
-  marriage.accounts
-  marriage.other_pp
-  marriage.mobile_home
-  marriage.personal_property_info
-  if marriage.personal_property_acquired:
-    if not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual:
-      marriage.accounts.gather()
-      marriage.other_pp.gather()
-      marriage.mobile_home.gather()
-  interview_order_personal_property = True
----
-code: |
-  marriage.debts.info
-  if marriage.debts.any:
-    if not marriage.debts.pay_debts_in_own_names:
-      marriage.debts.agree_responsibility_debts_own_name
-    if marriage.debts.any_in_both_names:
-      marriage.debts.agree_responsibility_debts_both_names
-    if not marriage.debts.pay_debts_in_own_names or marriage.debts.any_in_both_names:
-      marriage.debts.gather()
-  interview_order_debts = True
----
-code: |
-  marriage.vehicles
-  marriage.vehicles.info
-  if marriage.vehicles.any:
-    if not marriage.vehicles.keep_own:
-      marriage.vehicles.gather()
-  interview_order_vehicles = True
----
-
 # ====================================================================
 ## documents
 # ====================================================================

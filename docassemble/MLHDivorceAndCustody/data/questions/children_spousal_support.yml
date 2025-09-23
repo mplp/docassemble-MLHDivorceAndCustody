@@ -67,9 +67,9 @@ confirm: True
 # trying using filter() method from https://docassemble.org/docs/objects.html
 # if not, try using list comprehension something like "[child for child in children if child.legal_parent=="both"]"
 id: child questions
-mandatory: True # remove later
+# mandatory: True # remove later
 code: |
-  interview_order_spousal_support  
+  # interview_order_spousal_support  
   
   children_intro
   children.gather()
@@ -124,38 +124,16 @@ code: |
       guidepost_stepchildren
       interview_order_stepchild_address
   
-    users[0].insurance.gather()
-    other_parties[0].insurance.gather()
-    if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
-      marriage.cobra_coverage
-    interview_order_user_employment
-    if tool_ID != "JOD_only":
-      interview_order_user_income
-    interview_order_user_identifying_info
-    interview_order_other_party_employment
-    if tool_ID != "JOD_only":
-      interview_order_other_party_income
-    interview_order_other_party_identifying_info
-    interview_order_income_tax
-    interview_order_prior_cases
-
-  else:
-    if tool_ID in ["JOD_only", "divorce_complaint", "divorce_answer"]:
-      marriage.cobra_coverage
-    if tool_ID == "divorce_complaint":
-      interview_order_user_income
-    if tool_ID in ["divorce_complaint", "divorce_answer"]:
-      interview_order_prior_cases
-    
-  test_end_screen
+  # test_end_screen
+  interview_order_children = True
 ---
 # --------------------------------------------------------------------
 ## spousal support
 # --------------------------------------------------------------------
 ---
 code: |
+  spousal_support_intro
   if tool_ID in ["divorce_complaint", "divorce_answer"]:
-    spousal_support_intro
     if wants_temporary_spousal_support:
       temp_spousal_support_info
     if wants_post_divorce_support:
@@ -2204,8 +2182,8 @@ fields:
   - "Case name *(for example, Jones v. Smith or In re: Thomas)*:": prior_family_cases[i].title
   - Case number:: prior_family_cases[i].docket_number
   - "Judge's last name *(do not include 'Judge' or 'Hon.')*": prior_family_cases[i].judge
-    js show if: |
-      ${ "true" if tool_ID in ["divorce_complaint", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].state"))
+    show if:
+      code: tool_ID in ["divorce_complaint", "custody_complaint"]
   - What is the nature of this case?: prior_family_cases[i].type
     code: |
       prior_family_case_types
@@ -2269,8 +2247,8 @@ fields:
       ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && val("prior_family_cases[i].included_custody_PT_order") === true
   - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
-    js show if: |
-      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].final_order_date"))
+    show if: 
+      code: tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] 
 # TODO: do we care about the final order if it doesn't have custody in it? If not can we switch the question order and standardize the date question with the divorce version?
 ---
 # LHI "Prior Family Cases DLG" (start at row 174)
@@ -2290,8 +2268,8 @@ fields:
       val("prior_family_cases[i].has_current_custody_PT_order") === true
   - Is there a support order in this case?: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
-    js show if: |
-      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].has_current_custody_PT_order"))
+    show if: 
+      code: tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] 
 ---
 # LHI "Prior Family Cases DLG" (start at row 151)
 id: prior family case or order additional info 
@@ -3083,8 +3061,8 @@ fields:
   - Are you a citizen of any country other than the US?: users[0].has_foreign_citizenship
     required: False
     datatype: yesnoradio
-    js show if: |
-      ${ json.dumps(tool_ID) } !== "JOD_only" && (true || val("users[0].ssn"))
+    show if: 
+      code: tool_ID != "JOD_only"
   - List all other countries that you are a citizen of: users[0].countries_of_citizenship
     required: False
     js show if: |
@@ -3193,8 +3171,8 @@ fields:
   - Is ${ OP_label } a citizen of any country other than the US?: other_parties[0].has_foreign_citizenship
     required: False
     datatype: yesnoradio
-    js show if: |
-      ${ json.dumps(tool_ID) } !== "JOD_only" && (true || val("other_parties[0].ssn"))
+    show if: 
+      code: tool_ID != "JOD_only"
   - List all other countries that ${ OP_label } is a citizen of: other_parties[0].countries_of_citizenship
     required: False
     js show if: |
@@ -3386,3 +3364,87 @@ fields:
 event: test_end_screen
 question: Thank you for testing!
 subquestion: You have finished the initial child questions test interview.
+---
+#### documentation of child-dependent question logic
+#### as of 9/23/25 EKM believed this logic to be accurate for the child-dependent questions (though it has not been extensively tested), at least for the Divorce complaint and JOD-only.  Divorce Answer and Custody logic should be rechecked when we get to those. Saving a spare copy of this logic here before I start weaving it into the main interview orders. 
+#id: child questions
+#mandatory: True # remove later
+#code: |
+#  children_intro
+#  children.gather()
+#  set_marital_children_or_not
+#  
+#  if there_are_marital_children:
+#
+#    guidepost_marital_children
+#    if tool_ID in ["divorce_complaint", "divorce_answer"]:
+#      if kids_had_other_custodian:
+#        other_custodian_kickout
+#      if third_party_custody_claim:
+#        third_party_custody_kickout
+#      if need_temporary_order:
+#        if temporary_order_exit:
+#          exit_general
+#
+#    interview_order_home_state              
+#
+#    if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
+#      if not children_live_with_parent:
+#        children_live_with_third_party_kickout
+#      if children_now_live_with_which_parent == "depends_on_child":
+#        for child in children:
+#          if child.legal_parent == "both":
+#            child.lives_with
+#              
+#
+#    if tool_ID in ["divorce_complaint", "divorce_answer"]:
+#      if not confidential_contact_info_yn and (children_now_live_with_which_parent in ["depends_on_child", "users[0]"]):
+#        child_address_not_confidential_warning
+#      children_lived_with_which_parent_past
+#      children_previous_address.gather()
+#
+#    legal_custody_who
+#    if PT_type in ["specific", "supervised"]:
+#      if county_choice == "Muskegon":
+#        Muskegon_specific_PT_info
+#      if county_choice != "Muskegon":
+#        specific_PT_how
+#      if county_choice == "Muskegon" or (county_choice != "Muskegon" and specific_PT_how == "custom"):
+#        custom_PT_details
+#    hague_convention_info
+#    child_domicile_info
+#    if legal_custody_who != "both":
+#      hundred_mile_rule
+#    child_support_basic
+#    if tool_ID != "JOD_only":
+#      allow_child_support_overpayment_correction
+#
+#    if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0:
+#      guidepost_stepchildren
+#      interview_order_stepchild_address
+#  
+#    users[0].insurance.gather()
+#    other_parties[0].insurance.gather()
+#    if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
+#      marriage.cobra_coverage
+#    interview_order_user_employment
+#    if tool_ID != "JOD_only":
+#      interview_order_user_income
+#    interview_order_user_identifying_info
+#    interview_order_other_party_employment
+#    if tool_ID != "JOD_only":
+#      interview_order_other_party_income
+#    interview_order_other_party_identifying_info
+#    interview_order_income_tax
+#    interview_order_prior_cases
+#
+#  else:
+#    if tool_ID in ["JOD_only", "divorce_complaint", "divorce_answer"]:
+#      marriage.cobra_coverage
+#    if tool_ID == "divorce_complaint":
+#      interview_order_user_income
+#    if tool_ID in ["divorce_complaint", "divorce_answer"]:
+#      interview_order_prior_cases
+#    
+#  test_end_screen
+#---

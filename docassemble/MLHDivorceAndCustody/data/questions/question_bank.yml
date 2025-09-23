@@ -264,32 +264,6 @@ fields:
     field: marriage.breakdown
     datatype: yesnoradio
 ---
-id: marriage.request_spousal_support
-question: |
-  Spousal support
-fields:
-  - label: Do you plan to ask the judge to order your spouse to support you financially, other than with child support?
-    field: marriage.request_spousal_support
-    datatype: yesnoradio
-  - note: |
-      WARNING! This tool cannot help you ask for spousal support. A spousal request must be made in either the Complaint for Divorce or Counterclaim for Divorce. Asking for spousal support is complicated, and the form produced by this tool cannot do that. If you want to ask for spousal support, find a lawyer to help you. To get lawyer referral information, use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
-
-      If you and your spouse agree that one of you will pay spousal support, or if the judge orders spousal support in your case, you can indicate that in the spousal support paragraph of the Judgment of Divorce that you will get from this tool, and fill out a [Uniform Spousal Support Order](https://www.courts.michigan.gov/4a7e2f/siteassets/forms/scao-approved/foc10b.pdf) to attach.
-    show if:
-      variable: marriage.request_spousal_support
-      is: True
-  - note: |
-      WARNING! If you don't ask for spousal support now, you will not be allowed to come back to court later and ask for it. If you are unsure whether you might want or need spousal support in the future, you should request it now to preserve your right to ask for it later.
-    show if:
-      variable: marriage.request_spousal_support
-      is: False
-  - label: Do you want to continue?
-    field: marriage.request_spousal_support_continue
-    datatype: yesnoradio
-    hide if:
-      variable: marriage.request_spousal_support
-      is: None
----
 id: marriage.have_pension_retirement
 question: |
   Pension and/or retirement accounts
@@ -1703,4 +1677,61 @@ fields:
     show if:
       variable: marriage.true_statement
       is: False
+---
+# ====================================================================
+## interview order sub-part blocks
+# ====================================================================
+# note: these were originally created by Jack and housed in main_judgment_of_divorce.yml
+# trying out sharing them, because I believe they will apply to several interviews, but it's possible we'll eventually decide we want them to be separate for each interview
+---
+code: |
+  if confidential_contact_info_yn:
+    users[0].address.address
+  else:
+    users[0].address.address
+    if users[0].address.state == "MI":
+      users[0].village_or_township_yn
+    if users[0].mailing_address.yesno:
+      users[0].mailing_address.address
+  users[0].phone_number
+  users[0].email
+  interview_order_user_contact_info = True
+---
+code: |
+  if other_parties[0].has_attorney:
+    other_parties[0].attorney.name.first
+    other_parties[0].attorney.address.address
+    other_parties[0].attorney.phone_number
+  interview_order_other_parties_attorney = True
+---
+code: |
+  marriage.accounts
+  marriage.other_pp
+  marriage.mobile_home
+  marriage.personal_property_info
+  if marriage.personal_property_acquired:
+    if not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual:
+      marriage.accounts.gather()
+      marriage.other_pp.gather()
+      marriage.mobile_home.gather()
+  interview_order_personal_property = True
+---
+code: |
+  marriage.debts.info
+  if marriage.debts.any:
+    if not marriage.debts.pay_debts_in_own_names:
+      marriage.debts.agree_responsibility_debts_own_name
+    if marriage.debts.any_in_both_names:
+      marriage.debts.agree_responsibility_debts_both_names
+    if not marriage.debts.pay_debts_in_own_names or marriage.debts.any_in_both_names:
+      marriage.debts.gather()
+  interview_order_debts = True
+---
+code: |
+  marriage.vehicles
+  marriage.vehicles.info
+  if marriage.vehicles.any:
+    if not marriage.vehicles.keep_own:
+      marriage.vehicles.gather()
+  interview_order_vehicles = True
 ---
