@@ -134,10 +134,12 @@ code: |
 code: |
   spousal_support_intro
   if tool_ID in ["divorce_complaint", "divorce_answer"]:
-    if wants_temporary_spousal_support:
+    if user_wants_temporary_spousal_support:
       temp_spousal_support_info
-    if wants_post_divorce_support:
+    if user_wants_post_divorce_support:
       if continue_with_spousal_support_request:
+        if spousal_support_provisions == "OP_agrees_to_pay_spousal_support":
+          spousal_support_is_immutable
         spousal_support_factors_intro
         ss_factor_one_division_labor
         ss_factor_two_length
@@ -155,7 +157,10 @@ code: |
         ss_factor_fourteen_equity
       else:
         exit_general
-
+    elif not user_wants_post_divorce_support:
+      if spousal_support_provisions == "user_agrees_to_pay_spousal_support":
+        spousal_support_is_immutable
+  
   interview_order_spousal_support = True
 ---
 id: spousal support intro
@@ -169,7 +174,7 @@ subquestion: |
 id: wants temporary spousal support?
 question: Temporary spousal support (while case is pending)
 fields: 
-  - Do you need spousal support for the period of time **before your divorce is final?**: wants_temporary_spousal_support
+  - Do you need spousal support for the period of time **before your divorce is final?**: user_wants_temporary_spousal_support
     datatype: yesnoradio
 ---
 id: temporary spousal support instructions
@@ -188,19 +193,19 @@ subquestion: |
 id: wants post-divorce spousal support
 question: Spousal support after divorce
 fields:
-  - Do you need spousal support **after your divorce case is finished?**: wants_post_divorce_support
+  - Do you need spousal support **after your divorce case is finished?**: user_wants_post_divorce_support
     datatype: yesnoradio
   - note: |
       If you and your spouse don't agree about spousal support, you may want to **find a lawyer to help you.** Asking for spousal support is complicated, and a lawyer can present evidence and make legal arguments for you at your court hearing. ${ MLH_GUIDE_FULL } 
 
       But if hiring a lawyer is not an option for you, you can use this tool to include a request for spousal support in your ${ filing_name }. 
     show if:
-      variable: wants_post_divorce_support
+      variable: user_wants_post_divorce_support
       is: True
   - Do you want to continue using this tool?: continue_with_spousal_support_request
     datatype: yesnoradio
     show if:
-      variable: wants_post_divorce_support
+      variable: user_wants_post_divorce_support
       is: True
 ---
 id: spousal support factors intro
@@ -502,6 +507,124 @@ template: ss_factor_fourteen_equity_help
 subject: What is an example of fairness in this context?
 content: |
   In one Michigan Court of Appeals case, the Court emphasized that the parties had agreed the wife would stay at home during the 27-year marriage. The Court determined that spousal support was a fair way of repaying her for the lost opportunity of learning marketable skills.
+---
+id: spousal support options if user does not want post-divorce spousal support
+if: not user_wants_post_divorce_support
+question: Other spousal support situations
+fields:
+  - Choose the situation that applies to you and ${ other_parties[0] }.: spousal_support_provisions
+    datatype: radio
+    choices:
+      - ${ other_parties[0] } wants spousal support, but I do not agree to pay it.: someone_wants_spousal_support_no_agreement
+      - I'm not sure if ${ other_parties[0] } is going to ask for spousal support.: OP_position_unknown
+      - ${ other_parties[0] } and I both agree that neither one of us will pay spousal support when the divorce is done, but either of us can ask for spousal support in the future.: agree_no_current_spousal_support_but_may_change
+      - ${ other_parties[0] } and I both agree that neither one of us will ever pay spousal support to the other. We are both willing to give up our right to ever ask for spousal support, even if circumstances change.: agree_never_spousal_support
+      - We agreed that I will pay spousal support to ${ other_parties[0] }.: user_agrees_to_pay_spousal_support
+  - "Based on your agreement, when will you begin paying spousal support to ${ other_parties[0] }?": spousal_support_start_date
+    datatype: ThreePartsDate
+    show if: 
+      variable: spousal_support_provisions
+      is: user_agrees_to_pay_spousal_support
+  - What is the monthly amount you agreed to pay?: spousal_support_amount
+    datatype: currency
+    min: 0
+    step: 0.01
+    show if: 
+      variable: spousal_support_provisions
+      is: user_agrees_to_pay_spousal_support
+	- When will the payments end?: spousal_support_end_type
+    datatype: radio
+    choices:
+      - On a certain date we agreed to.: at_certain_date
+  		- Once I have paid a certain amount.: at_certain_amount
+  		- When ${ other_parties[0] } remarries.: at_recipient_marriage
+  		- Payments will continue until one of us dies.: at_death
+  		- Other: other
+    show if: 
+      variable: spousal_support_provisions
+      is: user_agrees_to_pay_spousal_support
+  - Enter that date:: spousal_support_end_date
+    datatype: ThreePartsDate
+    show if: 
+      variable: spousal_support_end_type
+      is: at_certain_date
+  - Enter the amount:: spousal_support_end_amount
+    datatype: currency
+    min: 0
+    step: 0.01
+    show if: 
+      variable: spousal_support_end_type
+      is: at_certain_amount
+  - Describe when payments will end:: spousal_support_end_custom
+    input type: area
+    show if: 
+      variable: spousal_support_end_type
+      is: other
+---
+id: spousal support agreement immutable?
+question: Do you both want to give up the right to change the spousal support agreement?
+subquestion: |
+  Normally after a spousal support order is in place, either ex-spouse can ask the judge to change the order if there is a change in circumstances. 
+  
+  But if you want to, you and ${ other_parties[0] } can agree that:
+
+  * The spousal support order will be the final spousal support order, and
+  * Both parties will give up their right to ask the judge to change the spousal support order in the future.
+fields:
+  - Have you and ${ other_parties[0] } agreed to both of those things?: spousal_support_is_immutable
+    datatype: yesnoradio
+---
+id: spousal support options if user wants post-divorce spousal support
+if: user_wants_post_divorce_support
+question: Spousal support details
+fields:
+  - Has ${ other_parties[0] } agreed to pay you spousal support?: spousal_support_provisions
+    datatype: radio
+    choices:
+      - No, ${ other_parties[0] } **does not agree to pay** spousal support.: someone_wants_spousal_support_no_agreement
+      - "**I'm not sure** if ${ other_parties[0] } will agree to pay spousal support.": OP_position_unknown
+      - Yes, ${ other_parties[0] } **has agreed to pay** spousal support to me.: OP_agrees_to_pay_spousal_support
+  - "Based on your agreement, when will ${ other_parties[0] } begin paying spousal support?": spousal_support_start_date
+    datatype: ThreePartsDate
+    show if: 
+      variable: spousal_support_provisions
+      is: OP_agrees_to_pay_spousal_support
+  - What is the monthly amount they agreed to pay?: spousal_support_amount
+    datatype: currency
+    min: 0
+    step: 0.01
+    show if: 
+      variable: spousal_support_provisions
+      is: OP_agrees_to_pay_spousal_support
+  - When will the payments end?: spousal_support_end_type
+    datatype: radio
+    choices:
+      - On a certain date we agreed to.: at_certain_date
+  		- Once they have paid a certain amount.: at_certain_amount
+  		- When I remarry.: at_recipient_marriage
+  		- Payments will continue until one of us dies.: at_death
+  		- Other: other
+    show if: 
+      variable: spousal_support_provisions
+      is: OP_agrees_to_pay_spousal_support
+  - Enter that date:: spousal_support_end_date
+    datatype: ThreePartsDate
+    show if: 
+      variable: spousal_support_end_type
+      is: at_certain_date
+  - Enter the amount:: spousal_support_end_amount
+    datatype: currency
+    min: 0
+    step: 0.01
+    show if: 
+      variable: spousal_support_end_type
+      is: at_certain_amount
+  - Describe when payments will end:: spousal_support_end_custom
+    input type: area
+    show if: 
+      variable: spousal_support_end_type
+      is: other
+
 ---
 # --------------------------------------------------------------------
 ## child gathering

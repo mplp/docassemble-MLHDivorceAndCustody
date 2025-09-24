@@ -87,10 +87,6 @@ code: |
   if not marriage.breakdown:
     exit_no_marriage_breakdown
 
-  marriage.request_spousal_support
-  if not marriage.request_spousal_support_continue:
-    exit_general
-
   if marriage.have_pension_retirement:
     marriage.pension_retirement_accounts_keep_own
     if not marriage.pension_retirement_accounts_continue:
