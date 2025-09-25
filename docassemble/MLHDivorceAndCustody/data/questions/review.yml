@@ -98,6 +98,12 @@ review:
       ##### Your ${"safe mailing address" if confidential_contact_info_yn else "address"}
         - ${users[0].address.on_one_line()}
   - Edit:
+      - users[0].address.county
+    button: |
+      ##### Your County
+        - ${users[0].address.county}
+    show if: users[0].address.state == "MI"
+  - Edit:
       - users[0].village_or_township_yn
     button: |
       ##### Your village or township
@@ -183,6 +189,11 @@ review:
       ##### Spouse's mailing address
         - ${other_parties[0].mailing_address.on_one_line()}
       % endif
+  - Edit:
+      - other_parties[0].address.county
+    button: |
+      ##### Spouse's County
+        - ${other_parties[0].address.county}
   - Edit:
       - other_parties[0].village_or_township_yn
     button: |

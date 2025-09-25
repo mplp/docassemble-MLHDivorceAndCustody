@@ -42,8 +42,7 @@ content: |
 ---
 # set intro landing screen variables
 code: |
-  # TODO confirm form type
-  MLH_form_type = "Judgment of Divorce"
+  MLH_form_type = "forms"
   MLH_time_min = 15
   MLH_time_max = 45
 
@@ -56,7 +55,7 @@ code: |
 ---
 template: MLH_welcome_message
 content: |
-  Welcome to Michigan Legal Help's Do-It-Yourself ${MLH_form_type} tool.
+ Welcome to the Do-It-Yourself Judgment of Divorce tool.
 
   This tool will help you prepare forms to finish your divorce in Michigan. Use this tool if all you need is a Judgment of Divorce and the forms that go with it.
 ---
@@ -136,11 +135,12 @@ code: |
 
   other_parties[0].address.address
   if other_parties[0].address.state == "MI":
+    other_parties[0].address.county
     other_parties[0].village_or_township_yn
   if other_parties[0].mailing_address.yesno:
     other_parties[0].mailing_address.address
 
-  other_parties[0].phone_number
+  other_parties[0].no_phone_number
   other_parties[0].email
 
   interview_order_other_parties_attorney
@@ -168,7 +168,7 @@ code: |
       other_parties[0].pregnant_exit
 
   if there_are_marital_children:
-    interview_order_prior_cases
+    prior_family_cases.gather()
 
     nav.set_section("signpost_income_etc")
     users[0].insurance.gather()

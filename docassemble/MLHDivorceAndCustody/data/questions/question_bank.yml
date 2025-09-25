@@ -411,7 +411,9 @@ id: marriage.have_experienced_domestic_violence_continue
 question: |
   Domestic violence
 subquestion: |
-  Domestic violence is serious and can impact many issues in your divorce. Domestic violence is often at its worst when a relationship ends. It is important for you to take steps to be as safe as possible. If there has been verbal, emotional, or physical abuse in your marriage, you may want to consider hiring a lawyer. Your local legal aid office or local domestic violence service provider may be able to help you. To learn more about domestic violence and to find contact information for helpful organizations, please see [Domestic Violence and Divorce](https://michiganlegalhelp.org/resources/family/domestic-violence-and-divorce). If you want to hire a lawyer, you can find referral information in the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
+  Domestic violence is often at its worst when a relationship ends. It is important to take steps to be as safe as possible before you start a divorce. If there has been verbal, emotional, or physical abuse in your marriage, you may want to find a lawyer. Your local legal aid office or domestic violence agency may be able to help you. 
+  
+  To learn about how domestic violence can affect a divorce case and what you can do to keep safe, read [Domestic Violence and Divorce](https://michiganlegalhelp.org/resources/family/domestic-violence-and-divorce). To find a lawyer and contact information for local domestic violence agencies, use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help).
 fields:
   - label: Do you want to continue with the tool now?
     field: marriage.have_experienced_domestic_violence_continue
@@ -588,6 +590,12 @@ fields:
     required: False
 validation code: |
   validate_us_state(users[0].address)
+---
+id: users[0].address.county
+question: |
+  County
+fields:
+  - What County do you live in?: users[0].address.county
 ---
 id: users[0].village_or_township
 question: |
@@ -797,6 +805,12 @@ fields:
     required: False
 validation code: |
   validate_us_state(other_parties[0].address)
+---
+id: other_parties[0].address.county
+question: |
+  County
+fields:
+  - What County does your spouse live in?: other_parties[0].address.county
 ---
 id: other_parties[0].village_or_township
 question: |
@@ -1319,7 +1333,7 @@ content: |
   % endif
 
   % if marriage.debts.any_in_both_names:
-  ${"Also, list" if not marriage.debts.pay_debts_in_own_names else "List"}  each jointly held debt (debts in both of your names) that will be divided and indicate whether you or your spouse **${"will" if marriage.attr("debts.agree_responsibility_debts_both_names") else "should"}** be responsible for it.
+  ${"Also, list" if not marriage.debts.pay_debts_in_own_names else "List"} each jointly held debt (debts in both of your names) that will be divided and indicate whether you or your spouse **${"will" if marriage.attr("debts.agree_responsibility_debts_both_names") else "should"}** be responsible for it.
   % endif
 ---
 # --------------------------------------------------------------------
@@ -1699,10 +1713,11 @@ code: |
   else:
     users[0].address.address
     if users[0].address.state == "MI":
+      users[0].address.county
       users[0].village_or_township_yn
     if users[0].mailing_address.yesno:
       users[0].mailing_address.address
-  users[0].phone_number
+  users[0].no_phone_number
   users[0].email
   interview_order_user_contact_info = True
 ---

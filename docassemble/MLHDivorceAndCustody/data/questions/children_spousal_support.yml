@@ -1,20 +1,13 @@
 ---
-# needed during testing this as separate yml
-include:
-  - divorce_custody_setup.yml
+# below sections needed if testing as separate yml
+#include:
+#  - divorce_custody_setup.yml
 ---
-# example interview tag for testing
-code: |
-  tool_ID = "divorce_complaint"
+#code: |
+#  tool_ID = "divorce_complaint"
 # options: "JOD_only", "divorce_complaint", "divorce_answer", "custody_complaint", "custody_answer"
----
-# example date for testing
-code: |
-  marriage.date = "2015-07-20T00:00:00-04:00" 
----
-# for testing:
-code: |
-  confidential_contact_info_yn = False
+# confidential_contact_info_yn = False
+#  marriage.date = "2015-07-20T00:00:00-04:00" 
 ---
 ### need the above for now to run just this yml
 ### below objects are not included in question bank yml
@@ -114,7 +107,7 @@ code: |
         custom_PT_details
     hague_convention_info
     child_domicile_info
-    if legal_custody_who != "both":
+    if legal_custody_who == "both":
       hundred_mile_rule
     child_support_basic
     if tool_ID != "JOD_only":
@@ -173,7 +166,9 @@ question: What is spousal support?
 subquestion: |
   Spousal support (also called alimony) is money that one spouse pays to the other spouse during or after a divorce case. Spousal support can be short-term or long-term. It can be agreed on by the parties or a judge can order it. 
 
-  Spousal support is not a part of every divorce case. If you or your spouse asks the judge for spousal support and the other spouse does not agree, the judge will base their decision on many different factors. To learn more, read [Spousal Support (Alimony)](https://michiganlegalhelp.org/resources/family/spousal-support-alimony-nutshell). 
+  Spousal support is not a part of every divorce case. If you or your spouse asks the judge for spousal support and the other spouse does not agree, the judge will base their decision on many different factors. 
+  
+  To learn more, read [Spousal Support (Alimony)](https://michiganlegalhelp.org/resources/family/spousal-support-alimony-nutshell). 
 ---
 id: wants temporary spousal support?
 question: Temporary spousal support (while case is pending)
@@ -197,7 +192,7 @@ subquestion: |
 id: wants post-divorce spousal support
 question: Spousal support after divorce
 fields:
-  - Do you need spousal support **after your divorce case is finished?**: user_wants_post_divorce_support
+  - Do you need spousal support **when your divorce case is finished?**: user_wants_post_divorce_support
     datatype: yesnoradio
   - note: |
       If you and your spouse don't agree about spousal support, you may want to **find a lawyer to help you.** Asking for spousal support is complicated, and a lawyer can present evidence and make legal arguments for you at your court hearing. ${ MLH_GUIDE_FULL } 
@@ -2012,20 +2007,34 @@ content:
 # --------------------------------------------------------------------
 # for JOD-only, this is only shown if there are marital children. For other divorce filing types, there are questions needed here even if no marital children. 
 ---
-code: |
-  has_prior_civil_cases
-  prior_family_cases.gather() 
-  
-  interview_order_prior_cases = True
----
+if: tool_ID != "JOD_only"
 id: prior family cases table
 table: prior_family_cases.table
 rows: prior_family_cases
 columns:
-  - Case name: row_item.title
+  - Title: row_item.title
   - Type: row_item.type
   - State: row_item.state
   - County: row_item.county
+#  - Entered family before or during marriage: |
+#      "before marriage" if row_item.timing == "premarital" else "during marriage"
+edit:
+  - status
+  - included_custody_PT_order
+  - has_current_custody_PT_order
+  - custody_order_in_another_state_warning 
+  - children_involved_number
+      
+delete buttons: True
+confirm: True
+---
+if: tool_ID == "JOD_only"
+id: prior family cases table
+table: prior_family_cases.table
+rows: prior_family_cases
+columns:
+  - State: row_item.state
+  - Case Number: row_item.docket_number
 #  - Entered family before or during marriage: |
 #      "before marriage" if row_item.timing == "premarital" else "during marriage"
 edit:
@@ -2174,6 +2183,9 @@ id: prior family cases gather logic
 code: |
   if tool_ID == "JOD_only" and there_are_marital_children:
     prior_family_cases[i].status
+    if prior_family_cases[i].state != "Michigan" and prior_family_cases[i].has_current_custody_PT_order:
+      prior_family_cases[i].custody_order_in_another_state_warning 
+  
   elif tool_ID != "JOD_only":
     prior_family_cases[i].status
     if there_are_marital_children:
@@ -2197,7 +2209,7 @@ code: |
   prior_family_cases[i].complete = True
 ---
 id: custody_order_in_another_state_warning
-continue_button_field: prior_family_cases[i].custody_order_in_another_state_warning
+continue button field: prior_family_cases[i].custody_order_in_another_state_warning
 question: Warning! Custody order in another state
 subquestion: |
   % if MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]:
@@ -2240,14 +2252,6 @@ fields:
     datatype: yesnoradio
   - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
-  - note: |
-      ${ prior_custody_warning_home_state }
-    js show if: |
-      val("prior_family_cases[i].state") !== "Michigan" && val("prior_family_cases[i].has_current_custody_PT_order") === true && ${ json.dumps(MI_has_jurisdiction_all_kids) } === false
-  - note: |
-      ${ prior_custody_warning }
-    js show if: |
-      val("prior_family_cases[i].state") !== "Michigan" && val("prior_family_cases[i].has_current_custody_PT_order") === true && ${ json.dumps(MI_has_jurisdiction_all_kids) } === true && ${ "true" if prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"] else "false" }
 ---
 code: |
   prior_family_case_types = [

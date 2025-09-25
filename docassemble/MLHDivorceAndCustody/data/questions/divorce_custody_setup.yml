@@ -17,6 +17,11 @@ features:
   css: mlh-divorce-and-custody.css
   # note css line copied from Jack's main judgment yml-- Ask Jack -- maybe just a placeholder?
 ---
+# for framework court loader logic
+code: |
+  filing_court = "circuit_only"
+  ottawa_circuit_location = "West Olive"
+---
 code: |
   if tool_ID in ["JOD_only", "divorce_complaint", "divorce_answer"]:
     OP_label = "your spouse"
