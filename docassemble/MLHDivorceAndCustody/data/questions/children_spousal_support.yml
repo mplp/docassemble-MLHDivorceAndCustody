@@ -133,13 +133,16 @@ code: |
 ---
 code: |
   spousal_support_intro
+  
   if tool_ID in ["divorce_complaint", "divorce_answer"]:
     if user_wants_temporary_spousal_support:
       temp_spousal_support_info
-    if user_wants_post_divorce_support:
-      if continue_with_spousal_support_request:
-        if spousal_support_provisions == "OP_agrees_to_pay_spousal_support":
-          spousal_support_is_immutable
+  
+  if user_wants_post_divorce_support:
+    if continue_with_spousal_support_request:
+      if spousal_support_provisions == "OP_agrees_to_pay_spousal_support":
+        spousal_support_is_immutable
+      if tool_ID in ["divorce_complaint", "divorce_answer"]:
         spousal_support_factors_intro
         ss_factor_one_division_labor
         ss_factor_two_length
@@ -155,11 +158,12 @@ code: |
         ss_factor_twelve_fault_redux
         ss_factor_thirteen_cohabitation
         ss_factor_fourteen_equity
-      else:
-        exit_general
-    elif not user_wants_post_divorce_support:
-      if spousal_support_provisions == "user_agrees_to_pay_spousal_support":
-        spousal_support_is_immutable
+    else:
+      exit_general
+
+  elif not user_wants_post_divorce_support:
+    if spousal_support_provisions == "user_agrees_to_pay_spousal_support":
+      spousal_support_is_immutable
   
   interview_order_spousal_support = True
 ---
@@ -198,7 +202,9 @@ fields:
   - note: |
       If you and your spouse don't agree about spousal support, you may want to **find a lawyer to help you.** Asking for spousal support is complicated, and a lawyer can present evidence and make legal arguments for you at your court hearing. ${ MLH_GUIDE_FULL } 
 
+      % if tool_ID in ["divorce_complaint", "divorce_answer"]:
       But if hiring a lawyer is not an option for you, you can use this tool to include a request for spousal support in your ${ filing_name }. 
+      % endif
     show if:
       variable: user_wants_post_divorce_support
       is: True
@@ -670,22 +676,6 @@ question: |
 fields:
   - code: |
       other_parties[0].gender_fields(show_help=True)
----
-id: users_0_pregnant
-question: |
-  Pregnancy
-fields:
-  - label: To the best of your knowledge are you pregnant?
-    field: users[0].pregnant
-    datatype: yesnoradio
----
-id: other_parties_0_pregnant
-question: |
-  Pregnancy
-fields:
-  - label: To the best of your knowledge is your spouse pregnant?
-    field: other_parties[0].pregnant
-    datatype: yesnoradio
 ---
 id: children intro
 continue button field: children_intro

@@ -111,16 +111,18 @@ template: x.pregnant_explanation_template
 subject: |
   Why are you asking this?
 content: |
-  The Complaint for Divorce (one of the forms you will file to start your divorce case), must say if either party is pregnant.
+  % if tool_ID == "divorce_complaint":
+  The Complaint for Divorce (one of the forms you will file to start your divorce case), must say if either spouse is pregnant.
+  % elif tool_ID == "JOD_only":
+  The divorce generally cannot be completed while either spouse is pregnant.
+  % endif
 ---
 generic object: ALIndividual
-template: x.pregnant_notice
-subject: |
-  Pregnancy Notice
-content: |
-  WARNING! If either you or your spouse is pregnant, there may be complicated legal parentage issues in your divorce. Consider hiring a lawyer to help you. To get lawyer referral information, use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
-
-  You can use this tool to prepare your divorce forms, but you may have to wait until the birth to schedule your final hearing and enter your Judgment of Divorce, so that provisions for custody, parenting time, and support are complete.
+if: x.pregnant and there_are_marital_children
+question: You may have to update your forms later
+continue button field: x.pregnant_notice
+subquestion: |
+  You can use this tool to prepare your divorce forms, but you may have to wait until the birth or end of the pregnancy to schedule your final hearing and enter your Judgment of Divorce, so that provisions for custody, parenting time, and support are complete.
 
   Children conceived during a marriage are also considered children of the marriage. If a new child is born who was conceived during the marriage, you will need to log back in to your saved answers so you can add that child and include their name and other information. This will allow you to get an updated Judgment of Divorce and other updated forms.
 ---
@@ -193,6 +195,23 @@ subquestion: |
   You may want to contact a lawyer for help. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) on Michigan Legal Help to find a lawyer or a legal services office near you.
 
   If you think you made a mistake, tap **Undo** and change the answer to this question.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
+generic object: ALIndividual
+if: x.pregnant and not there_are_marital_children
+question: You must wait until the pregnancy has ended to use this tool
+event: x.pregnant_exit
+subquestion: |
+  Sorry, if either spouse is currently pregnant, you may not use this tool to prepare your divorce forms. Michigan law requires you to include all children born or conceived during your marriage in the custody, parenting time, and support provisions of your Judgment of Divorce. 
+  
+  You may want to consider hiring a lawyer to help you with your divorce if you want to start the divorce process while your spouse is pregnant. ${ MLH_GUIDE_FULL } 
+  
+  Or you can wait and use this tool after the birth or end of the pregnancy.
 action buttons:
   - label: Exit
     action: https://michiganlegalhelp.org/resources/family
@@ -478,11 +497,6 @@ fields:
   - label: Are you pregnant?
     field: users[0].pregnant
     datatype: yesnoradio
-  - note: |
-      ${users[0].pregnant_notice}
-    show if:
-      variable: users[0].pregnant
-      is: True
 ---
 id: users[0].marriage_number
 question: |
@@ -727,11 +741,6 @@ fields:
   - label: Is your spouse pregnant?
     field: other_parties[0].pregnant
     datatype: yesnoradio
-  - note: |
-      ${other_parties[0].pregnant_notice}
-    show if:
-      variable: other_parties[0].pregnant
-      is: True
 ---
 id: other_parties[0].marriage_number
 question: |

@@ -19,7 +19,7 @@ sections:
   - signpost_qualify: "Is this tool right for you?"
   - signpost_user: "Your Information"
   - signpost_spouse: "Spouse's Information"
-  - signpost_marriage: "Marriage Information"
+  - signpost_support: "Spousal Support"
   - signpost_children: "Children"
   - signpost_prior_cases: "Past Cases"
   - signpost_income_etc: "Income, Insurance, etc."
@@ -72,7 +72,7 @@ code: |
   nav.set_section("signpost_intro")
   MLH_standard_intro_pages
 
-  nav.set_section("marriage")
+  nav.set_section("signpost_support")
   interview_order_spousal_support
 
   nav.set_section("signpost_children")

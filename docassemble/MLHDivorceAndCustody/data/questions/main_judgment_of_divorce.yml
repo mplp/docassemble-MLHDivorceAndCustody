@@ -19,7 +19,7 @@ sections:
   - signpost_qualify: "Is this tool right for you?"
   - signpost_user: "Your Information"
   - signpost_spouse: "Spouse's Information"
-  - signpost_marriage: "Marriage Information"
+  - signpost_support: "Spousal Support"
   - signpost_children: "Children"
   - signpost_income_etc: "Income, Insurance, etc."
   - signpost_personal_property: "Property and Debt"
@@ -118,7 +118,6 @@ code: |
   users[0].previous_last_name_yn
   users[0].new_last_name_yn
   users[0].gender
-  users[0].pregnant
   users[0].marriage_number
   users[0].birthdate
   users[0].birthplace
@@ -131,7 +130,6 @@ code: |
   other_parties[0].name.first
   other_parties[0].previous_last_name_yn
   other_parties[0].gender
-  other_parties[0].pregnant
   other_parties[0].marriage_number
   other_parties[0].birthdate
   other_parties[0].birthplace
@@ -147,7 +145,7 @@ code: |
 
   interview_order_other_parties_attorney
 
-  nav.set_section("signpost_marriage")
+  nav.set_section("signpost_support")
 
   interview_order_spousal_support
   
@@ -158,6 +156,16 @@ code: |
 
   nav.set_section("signpost_children")
   interview_order_children
+  if users[0].pregnant:
+    if there_are_marital_children:
+      users[0].pregnant_notice
+    else:
+      users[0].pregnant_exit
+  if other_parties[0].pregnant:
+    if there_are_marital_children:
+      other_parties[0].pregnant_notice
+    else:
+      other_parties[0].pregnant_exit
 
   if there_are_marital_children:
     interview_order_prior_cases
