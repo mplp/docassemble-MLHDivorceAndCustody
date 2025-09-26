@@ -22,7 +22,7 @@ sections:
   - signpost_support: "Spousal Support"
   - signpost_children: "Children"
   - signpost_income_etc: "Income, Insurance, etc."
-  - signpost_personal_property: "Property and Debt"
+  - signpost_property: "Property and Debt"
   - signpost_judgment_information: "Judgment Information"
   - signpost_done: "Get Your Forms"
   - review_full: "✎ <u>Review / Edit</u>"
@@ -170,7 +170,12 @@ code: |
   if there_are_marital_children:
     prior_family_cases.gather()
 
-    nav.set_section("signpost_income_etc")
+  nav.set_section("signpost_income_etc")
+  
+  if not there_are_marital_children:
+    marriage.cobra_coverage
+  
+  if there_are_marital_children:
     users[0].insurance.gather()
     other_parties[0].insurance.gather()
     if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
@@ -179,7 +184,6 @@ code: |
     interview_order_user_identifying_info
     interview_order_other_party_employment
     interview_order_other_party_identifying_info
-    interview_order_income_tax
 
   nav.set_section("signpost_property")
 
@@ -187,9 +191,9 @@ code: |
   interview_order_debts
   interview_order_vehicles
   marriage.real_property.gather()
-  if not there_are_marital_children:
-    marriage.cobra_coverage
-
+  if there_are_marital_children:
+    interview_order_income_tax
+  
   nav.set_section("signpost_judgment_information")
 
   if marriage.other_provisions_any:

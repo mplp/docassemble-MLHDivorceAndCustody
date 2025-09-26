@@ -34,6 +34,8 @@ code: |
       filing_name = "Counterclaim for Divorce"
       user_party_label = "the Defendant"
       OP_party_label = "the Plaintiff"  
+    elif tool_ID == "JOD_only":
+      filing_name = "Judgment of Divorce"
   elif tool_ID == "custody_complaint":
     OP_label = "the Defendant"
     case_label = "custody"
@@ -85,6 +87,13 @@ terms:
       Make refers to the name of the company that manufactured the vehicle. Examples of vehicle "makes" are Ford, General Motors, Chrysler, and Toyota.
   - vehicles_model: |
       Model refers to the type of car. Examples of "models" are Focus, Cutlass, Town and Country, and Highlander.
+  - divided: |
+      Something has already been divided if:
+      
+      * you and your spouse **agree** who should have that property, and
+      * it is **already in the possession** of the agreed person.
+
+      If something has already been divided, you do not need to add it here.
 ---
 # note currently this is just used for the children/spousal support yml
 code: |

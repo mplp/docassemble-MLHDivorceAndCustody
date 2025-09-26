@@ -367,9 +367,7 @@ review:
       - marriage.debts.any
       - invalidate:
         - marriage.debts.pay_debts_in_own_names
-        - marriage.debts.agree_responsibility_debts_own_name
         - marriage.debts.any_in_both_names
-        - marriage.debts.agree_responsibility_debts_both_names
       - recompute:
         - marriage.debts.gathered_reset
         - interview_order_debts
@@ -378,7 +376,7 @@ review:
         - ${word(yesno(marriage.debts.any))}
 
       % if marriage.debts.attribute_defined("pay_debts_in_own_names"):
-      ##### Do you and your spouse each plan to pay the debts in your own names?
+      ##### Do you and your spouse each plan to pay the debts **in your own names?**
         - ${word(yesno(marriage.debts.pay_debts_in_own_names))}
       % endif
 

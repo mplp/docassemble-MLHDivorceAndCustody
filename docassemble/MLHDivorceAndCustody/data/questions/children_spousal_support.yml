@@ -40,7 +40,8 @@ table: children.table
 rows: children
 columns:
   - Name: row_item.name
-  - Date of birth: row_item.birthdate
+  - Date of birth (not collected for stepchildren): |
+      row_item.birthdate if row_item.legal_parent == "both" else "---"
   - Entered family before or during marriage: |
       "before marriage" if row_item.timing == "premarital" else "during marriage"
 edit:
@@ -112,10 +113,9 @@ code: |
     child_support_basic
     if tool_ID != "JOD_only":
       allow_child_support_overpayment_correction
-
-    if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0:
-      guidepost_stepchildren
-      interview_order_stepchild_address
+      if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0:
+        guidepost_stepchildren
+        interview_order_stepchild_address
   
   # test_end_screen
   interview_order_children = True
@@ -641,6 +641,9 @@ code: |
   
   children[i].legal_parent
 
+  if children[i].legal_parent == "both":
+    children[i].birthdate
+
   if children[i].legal_parent != "both":
     children[i].not_included_in_divorce_info
   
@@ -771,12 +774,25 @@ subquestion: |
 fields:
   - code: |
       children[i].name_fields()
-  - Date of birth: children[i].birthdate
-    datatype: BirthDate
   - My spouse and I **adopted** this child together during our marriage.: children[i].adopted_during_marriage
     required: False
     datatype: yesno
-  # need help text saying don't include children who were born to or adopted by either spouse prior to marriage
+  - Was this child born before or after you married ${other_parties}?: children[i].timing
+    datatype: radio
+    choices: 
+      - They were born before we got married.: premarital
+      - They was born after we got married.: marital
+    hide if:
+      variable: children[i].adopted_during_marriage
+      is: True
+  # TODO? need help text saying don't include children who were born to or adopted by either spouse prior to marriage
+---
+id: additional child info
+if: children[i].legal_parent == "both"
+question: More information about ${ children[i] }
+fields:
+  - Date of birth: children[i].birthdate
+    datatype: BirthDate
   - Gender: children[i].gender
     datatype: radio
     choices:
@@ -785,25 +801,12 @@ fields:
   - Social security number: children[i].ssn
     datatype: ssn
     required: False
+  # TODO? need help text apologizing for gender question
 ---
 code: |
   if children[i].adopted_during_marriage:
     children[i].timing = "marital"
     children[i].origin = "adoption"
-  else:
-    if int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) < 0:
-      children[i].timing = "premarital"
-    elif int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) > 0:
-      children[i].timing = "marital"
----
-if: not children[i].adopted_during_marriage and int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) == 0
-Question: Which was first?
-fields:
-  - Was ${children[i]} born before or after you got married?: children[i].timing
-    datatype: radio
-    choices: 
-      - ${children[i]} was born before we got married.: premarital
-      - ${children[i]} was born after we got married.: marital
 ---
 id: marital children's origin
 if: children[i].timing == "marital" and not children[i].adopted_during_marriage
@@ -818,8 +821,8 @@ fields:
   - Which of these applies to ${children[i]}?: children[i].origin
     datatype: radio
     choices:
-      - My spouse and I had ${children[i]} together through sex or assisted reproduction.: marital_sex_AR
-      - My spouse or I had ${children[i]} with somebody else.: marital_third_party_conceived
+      - My spouse and I had ${children[i]} **together** through sex or assisted reproduction.: marital_sex_AR
+      - My spouse or I had ${children[i]} **with somebody else.**: marital_third_party_conceived
     show if:
       variable: children[i].marital_birth 
       is: True
@@ -1244,7 +1247,7 @@ fields:
       (val("children[i].bio_parent") == "user" || val("children[i].bio_parent") == "other_party") && ${ json.dumps(children[i].origin) } === "marital_third_party_conceived"
 ---
 id: display parentage interview for testing purposes
-question: Parentage Result
+question: Parentage Result [ONLY FOR TESTING]
 continue button field: children[i].show_parentage_info
 subquestion: |
   ${children[i]}'s legal parents is/are:
@@ -2012,7 +2015,7 @@ id: prior family cases table
 table: prior_family_cases.table
 rows: prior_family_cases
 columns:
-  - Title: row_item.title
+  - Case name: row_item.title
   - Type: row_item.type
   - State: row_item.state
   - County: row_item.county
@@ -2848,7 +2851,7 @@ code: |
   if tool_ID != "JOD_only":
     users[0].occupation
   if users[0].has_job:
-    users[0].job.employer
+    users[0].job.employer.name.first
   users[0].has_professional_license
 
   interview_order_user_employment = True
@@ -2866,7 +2869,7 @@ code: |
   if tool_ID == "divorce_complaint" and there_are_marital_children:
     other_parties[0].occupation
   if other_parties[0].has_job:
-    other_parties[0].job.employer
+    other_parties[0].job.employer.name.first
   other_parties[0].has_professional_license
 
   interview_order_other_party_employment = True
@@ -2906,36 +2909,38 @@ fields:
 id: user job
 question: Your job
 fields:
-  - Employer name: users[0].job.employer
+  - Employer name: users[0].job.employer.name.first
     required: False
   - label: Street Address or PO Box
-    field: users[0].job.employer_address.address
+    field: users[0].job.employer.address.address
     address autocomplete: True
     required: False
   - label: Apartment, suite, etc
-    field: users[0].job.employer_address.unit
+    field: users[0].job.employer.address.unit
     required: False
   - label: City
-    field: users[0].job.employer_address.city
+    field: users[0].job.employer.address.city
     required: False
   - label: State or Province (two-letter abbreviation for U.S. states)
-    field: users[0].job.employer_address.state
+    field: users[0].job.employer.address.state
     default: MI
     input type: datalist
     code: |
       states_list()
     required: False
   - label: Zip or Postal Code
-    field: users[0].job.employer_address.zip
+    field: users[0].job.employer.address.zip
     required: False
   - label: Country
-    field: users[0].job.employer_address.country
+    field: users[0].job.employer.address.country
     default: "US"
     code: |
       countries_list()
     required: False
-  - Phone: users[0].job.employer_phone
+  - Phone: users[0].job.employer.phone
+    required: False
   - "Federal Employer Identification Number (FEIN), if known": users[0].job.FEIN
+    required: False
 ---
 # LHI: "Plaintiff Occupational License" or "Defendant Occupational License"
 id: user professional license
@@ -3038,36 +3043,38 @@ fields:
 id: other party job
 question: ${ other_parties[0] }'s job
 fields:
-  - Employer name: other_parties[0].job.employer
+  - Employer name: other_parties[0].job.employer.name.first
     required: False
   - label: Street Address or PO Box
-    field: other_parties[0].job.employer_address.address
+    field: other_parties[0].job.employer.address.address
     address autocomplete: True
     required: False
   - label: Apartment, suite, etc
-    field: other_parties[0].job.employer_address.unit
+    field: other_parties[0].job.employer.address.unit
     required: False
   - label: City
-    field: other_parties[0].job.employer_address.city
+    field: other_parties[0].job.employer.address.city
     required: False
   - label: State or Province (two-letter abbreviation for U.S. states)
-    field: other_parties[0].job.employer_address.state
+    field: other_parties[0].job.employer.address.state
     default: MI
     input type: datalist
     code: |
       states_list()
     required: False
   - label: Zip or Postal Code
-    field: other_parties[0].job.employer_address.zip
+    field: other_parties[0].job.employer.address.zip
     required: False
   - label: Country
-    field: other_parties[0].job.employer_address.country
+    field: other_parties[0].job.employer.address.country
     default: "US"
     code: |
       countries_list()
     required: False
-  - Phone: other_parties[0].job.employer_phone
+  - Phone: other_parties[0].job.employer.phone
+    required: False
   - "Federal Employer Identification Number (FEIN), if known": other_parties[0].job.FEIN
+    required: False
 ---
 # LHI: "Plaintiff Occupational License" or "Defendant Occupational License"
 id: other party professional license
@@ -3430,15 +3437,15 @@ fields:
 # TO DO: going to have to clear this out and rebuild if # of children changes
 code: |
   tax_choices = [
-                  ['default', f"Based on federal tax law, the parent with whom the { children.filter(legal_parent='both').as_noun() } { children.does_verb('live') } for the greater number of nights during the year will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years."],
-                  ['user', f"{ users[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years."],
-                  ['other_party', f"{ other_parties[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years."]
+                  ['default', f"Based on federal tax law, the **parent with whom the { children.filter(legal_parent='both').as_noun() } { children.does_verb('live') } for the greater number of nights during the year** will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() } for all tax years."],
+                  ['user', f"**{ users[0] }** will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() } for all tax years."],
+                  ['other_party', f"**{ other_parties[0] }** will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() } for all tax years."]
                 ]
   
   if len(children.filter(legal_parent="both")) > 1:
-    tax_choices.append(['specify_per_child', f"{ users[0] } and { other_parties[0] } will claim the deductions, credits, and exemptions for different children, including state, federal, or local tax returns."])
+    tax_choices.append(['specify_per_child', f"{ users[0] } and { other_parties[0] } will claim the deductions, credits, and exemptions for **different children.**"])
   
-  tax_choices.append(['alternate_years', f"{ users[0] } and { other_parties[0] } will claim all deductions, credits, and exemptions for the { children.filter(legal_parent='both').as_noun() } in alternating years, including state, federal, or local tax returns."])
+  tax_choices.append(['alternate_years', f"{ users[0] } and { other_parties[0] } will claim all deductions, credits, and exemptions for the { children.filter(legal_parent='both').as_noun() } in **alternating years.**"])
 ---
 id: income tax deductions starting year
 Question: Who gets income tax deductions first?
