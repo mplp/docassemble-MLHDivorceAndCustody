@@ -34,7 +34,9 @@ code: |
   joint.name.text = "Joint (50/50)"
 ---
 code: |
-  sell_and_share.name.text = "Neither, the property should be sold, and we should share equally in the profit or loss from the sale"
+  sell_and_share.real_property_question_label = "The property should be sold, and we should share equally in the profit or loss from the sale."
+  users[0].real_property_question_label = "It should be awarded to me."
+  other_parties[0].real_property_question_label = f"It should be awarded to {other_parties[0]}."
 ---
 # ====================================================================
 ## generics
@@ -62,11 +64,11 @@ subquestion: |
 continue button field: x.revisit
 ---
 generic object: DAList
-id: x.there_is_another
+id: x.there_are_any
 question: |
   ${x.question_text}
 fields:
-  - label: Do you want to include any ${x.noun_pl}?
+  - label: Do you have any ${x.noun_pl} that have **not** already been {divided}?
     field: x.there_are_any
     datatype: yesnoradio
 ---
@@ -81,7 +83,7 @@ subquestion: |
 
   ${x.table}
 fields:
-  - label: Do you want to add another ${x.noun_sl}?
+  - label: Do you have another ${x.noun_sl} to add?
     field: x.there_is_another
     datatype: yesnoradio
 ---
@@ -111,16 +113,18 @@ template: x.pregnant_explanation_template
 subject: |
   Why are you asking this?
 content: |
-  The Complaint for Divorce (one of the forms you will file to start your divorce case), must say if either party is pregnant.
+  % if tool_ID == "divorce_complaint":
+  The Complaint for Divorce (one of the forms you will file to start your divorce case), must say if either spouse is pregnant.
+  % elif tool_ID == "JOD_only":
+  The divorce generally cannot be completed while either spouse is pregnant.
+  % endif
 ---
 generic object: ALIndividual
-template: x.pregnant_notice
-subject: |
-  Pregnancy Notice
-content: |
-  WARNING! If either you or your spouse is pregnant, there may be complicated legal parentage issues in your divorce. Consider hiring a lawyer to help you. To get lawyer referral information, use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
-
-  You can use this tool to prepare your divorce forms, but you may have to wait until the birth to schedule your final hearing and enter your Judgment of Divorce, so that provisions for custody, parenting time, and support are complete.
+if: x.pregnant and there_are_marital_children
+question: You may have to update your forms later
+continue button field: x.pregnant_notice
+subquestion: |
+  You can use this tool to prepare your divorce forms, but you may have to wait until the birth or end of the pregnancy to schedule your final hearing and enter your Judgment of Divorce, so that provisions for custody, parenting time, and support are complete.
 
   Children conceived during a marriage are also considered children of the marriage. If a new child is born who was conceived during the marriage, you will need to log back in to your saved answers so you can add that child and include their name and other information. This will allow you to get an updated Judgment of Divorce and other updated forms.
 ---
@@ -200,6 +204,23 @@ action buttons:
     color: danger
     icon: right-from-bracket
 ---
+generic object: ALIndividual
+if: x.pregnant and not there_are_marital_children
+question: You must wait until the pregnancy has ended to use this tool
+event: x.pregnant_exit
+subquestion: |
+  Sorry, if either spouse is currently pregnant, you may not use this tool to prepare your divorce forms. Michigan law requires you to include all children born or conceived during your marriage in the custody, parenting time, and support provisions of your Judgment of Divorce. 
+  
+  You may want to consider hiring a lawyer to help you with your divorce if you want to start the divorce process while your spouse is pregnant. ${ MLH_GUIDE_FULL } 
+  
+  Or you can wait and use this tool after the birth or end of the pregnancy.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
 # --------------------------------------------------------------------
 ## introduction
 # --------------------------------------------------------------------
@@ -263,32 +284,6 @@ fields:
   - label: Has there been a breakdown of the marriage to the extent that the objects of matrimony have been destroyed and there remains no reasonable likelihood that the marriage can be preserved?
     field: marriage.breakdown
     datatype: yesnoradio
----
-id: marriage.request_spousal_support
-question: |
-  Spousal support
-fields:
-  - label: Do you plan to ask the judge to order your spouse to support you financially, other than with child support?
-    field: marriage.request_spousal_support
-    datatype: yesnoradio
-  - note: |
-      WARNING! This tool cannot help you ask for spousal support. A spousal request must be made in either the Complaint for Divorce or Counterclaim for Divorce. Asking for spousal support is complicated, and the form produced by this tool cannot do that. If you want to ask for spousal support, find a lawyer to help you. To get lawyer referral information, use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
-
-      If you and your spouse agree that one of you will pay spousal support, or if the judge orders spousal support in your case, you can indicate that in the spousal support paragraph of the Judgment of Divorce that you will get from this tool, and fill out a [Uniform Spousal Support Order](https://www.courts.michigan.gov/4a7e2f/siteassets/forms/scao-approved/foc10b.pdf) to attach.
-    show if:
-      variable: marriage.request_spousal_support
-      is: True
-  - note: |
-      WARNING! If you don't ask for spousal support now, you will not be allowed to come back to court later and ask for it. If you are unsure whether you might want or need spousal support in the future, you should request it now to preserve your right to ask for it later.
-    show if:
-      variable: marriage.request_spousal_support
-      is: False
-  - label: Do you want to continue?
-    field: marriage.request_spousal_support_continue
-    datatype: yesnoradio
-    hide if:
-      variable: marriage.request_spousal_support
-      is: None
 ---
 id: marriage.have_pension_retirement
 question: |
@@ -418,7 +413,9 @@ id: marriage.have_experienced_domestic_violence_continue
 question: |
   Domestic violence
 subquestion: |
-  Domestic violence is serious and can impact many issues in your divorce. Domestic violence is often at its worst when a relationship ends. It is important for you to take steps to be as safe as possible. If there has been verbal, emotional, or physical abuse in your marriage, you may want to consider hiring a lawyer. Your local legal aid office or local domestic violence service provider may be able to help you. To learn more about domestic violence and to find contact information for helpful organizations, please see [Domestic Violence and Divorce](https://michiganlegalhelp.org/resources/family/domestic-violence-and-divorce). If you want to hire a lawyer, you can find referral information in the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
+  Domestic violence is often at its worst when a relationship ends. It is important to take steps to be as safe as possible before you start a divorce. If there has been verbal, emotional, or physical abuse in your marriage, you may want to find a lawyer. Your local legal aid office or domestic violence agency may be able to help you. 
+  
+  To learn about how domestic violence can affect a divorce case and what you can do to keep safe, read [Domestic Violence and Divorce](https://michiganlegalhelp.org/resources/family/domestic-violence-and-divorce). To find a lawyer and contact information for local domestic violence agencies, use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help).
 fields:
   - label: Do you want to continue with the tool now?
     field: marriage.have_experienced_domestic_violence_continue
@@ -504,11 +501,6 @@ fields:
   - label: Are you pregnant?
     field: users[0].pregnant
     datatype: yesnoradio
-  - note: |
-      ${users[0].pregnant_notice}
-    show if:
-      variable: users[0].pregnant
-      is: True
 ---
 id: users[0].marriage_number
 question: |
@@ -600,6 +592,12 @@ fields:
     required: False
 validation code: |
   validate_us_state(users[0].address)
+---
+id: users[0].address.county
+question: |
+  County
+fields:
+  - What County do you live in?: users[0].address.county
 ---
 id: users[0].village_or_township
 question: |
@@ -753,11 +751,6 @@ fields:
   - label: Is your spouse pregnant?
     field: other_parties[0].pregnant
     datatype: yesnoradio
-  - note: |
-      ${other_parties[0].pregnant_notice}
-    show if:
-      variable: other_parties[0].pregnant
-      is: True
 ---
 id: other_parties[0].marriage_number
 question: |
@@ -814,6 +807,12 @@ fields:
     required: False
 validation code: |
   validate_us_state(other_parties[0].address)
+---
+id: other_parties[0].address.county
+question: |
+  County
+fields:
+  - What County does your spouse live in?: other_parties[0].address.county
 ---
 id: other_parties[0].village_or_township
 question: |
@@ -996,13 +995,13 @@ id: marriage.personal_property_info
 question: |
   Personal property
 subquestion: |
-  You are now going to be asked about your personal property. Personal property means all of the things you own other than real property (real property is real estate such as a house, condo, or land). Personal property includes things like a mobile home, furniture, jewelry, household goods, and collectibles, as well as cash, stocks, and Certificates of Deposit (CDs). Do not include vehicles (such as cars, boats, trailers, motorcycles, or snowmobiles) in this section. Although vehicles are personal property, you will be asked about vehicles in the next section of this tool.
+  You are now going to be asked about your personal property. Personal property means all of the things you own other than real property (real property is real estate such as a house, condo, or land). Personal property includes things like a mobile home, furniture, jewelry, household goods, and collectibles, as well as cash, stocks, and Certificates of Deposit (CDs). Do not include vehicles (such as cars, boats, trailers, motorcycles, or snowmobiles) in this section. You will be asked about vehicles in the next section of this tool.
 
   - If you and your spouse agree about how all of your property and debt should be divided, use those terms throughout this part of the tool.
   - If you and your spouse don't agree about how your property and debt should be divided, complete this part of the tool using the division of property and debt terms that you want the judge to order.
   - If you and your spouse agree on how to divide some, but not all, of your property and debt, use the terms you do agree on, along with the terms that you want the judge to order for things you don't agree on.
 
-  Normally the party who is awarded specific property, such as a car or home, is responsible for paying the debt related to that property. If you or your spouse need to sign any documents to make property transfers final, such as car title transfers or quitclaim deeds, your Judgment of Divorce will require you to do this within 30 days of when the judgment is final.
+  Normally the party who is awarded specific property, such as a car or home, is responsible for paying the debt related to that property. If you or your spouse need to sign any documents to transfer property, such as car title transfers or quitclaim deeds, your Judgment of Divorce will require you to do this within 30 days of when the judgment is final.
 continue button field: marriage.personal_property_info
 ---
 id: marriage.personal_property
@@ -1020,12 +1019,12 @@ fields:
   - label: Have you and your spouse reached an agreement about how all personal property will be divided?
     field: marriage.personal_property_division_agreement
     datatype: yesnoradio
-  - note: |
-      <hr>_Only answer **Yes** if each of you has in your possession all of the items that you have agreed you will have._
-    show if: marriage.personal_property_division_agreement
   - label: Have you and your spouse **actually divided** all the personal property based on your agreement?
     field: marriage.personal_property_division_actual
     datatype: yesnoradio
+    show if: marriage.personal_property_division_agreement
+  - note: |
+      _Only answer **Yes** if each of you has in your possession all of the items that you have agreed you will have._
     show if: marriage.personal_property_division_agreement
 ---
 # --------------------------------------------------------------------
@@ -1094,7 +1093,7 @@ fields:
 ---
 template: marriage.accounts.there_is_another_template
 content: |
-  Please list each bank account and investment that has not been divided, and select how it should be awarded.
+  Please list each bank account and investment that has not been {divided}, and select how it should be awarded.
 ---
 # --------------------------------------------------------------------
 ## marriage.other_pp
@@ -1153,9 +1152,23 @@ fields:
       - users[0]
       - other_parties[0]
 ---
+id: marriage.other_pp.there_are_any
+subquestion: |
+  ${marriage.other_pp.there_are_any_template}
+question: |
+  ${marriage.other_pp.question_text}
+fields:
+  - label: Do you have any ${marriage.other_pp.noun_pl} that have **not** already been {divided}?
+    field: marriage.other_pp.there_are_any
+    datatype: yesnoradio
+---
+template: marriage.other_pp.there_are_any_template
+content: |
+  Examples include furniture, household items, or artwork.
+---
 template: marriage.other_pp.there_is_another_template
 content: |
-  Please list each other item of personal property that has not been divided and indicate whether you or your spouse will keep it.
+  Please list each other item of personal property that has not been {divided} and indicate whether you or your spouse will keep it.
 ---
 # --------------------------------------------------------------------
 ## marriage.mobile_home
@@ -1206,7 +1219,8 @@ fields:
       - other_parties[0]
 ---
 template: marriage.mobile_home.there_is_another_template
-content: ""
+content: |
+  Please list each mobile home that has not been {divided}.
 ---
 # --------------------------------------------------------------------
 ## marriage.debts
@@ -1251,9 +1265,10 @@ id: marriage.debts.info
 question: |
   ${marriage.debts.question_text}
 subquestion: |
-  The judge assigned to your divorce case will not have any authority over your creditors (those whom you owe money). Your Judgment of Divorce may divide your marital debt, assigning you or your spouse responsibility for paying each debt. However, creditors may continue to treat debts in both of your names as joint debt. If your spouse defaults on a debt that the Judgment of Divorce requires him or her to pay, you can return to the family court to seek repayment from him or her.
-
-  It is important for all debts that are in both of your names to be included in your Judgment of Divorce. That way, if the person who your divorce assigns responsibility for paying the debt defaults, the other party has a remedy in family court.
+  The judge assigned to your divorce case will not have any authority over your creditors (those whom you owe money). Your Judgment of Divorce may divide your marital debt, assigning you or your spouse responsibility for paying each debt. However, creditors may continue to treat debts in both of your names as joint debt. 
+  
+  If your spouse defaults on a debt that the Judgment of Divorce requires them to pay, you can return to the family court to seek repayment from them. For that reason, it's **important for all debts that are in both of your names to be included** in your Judgment of Divorce.
+  
 continue button field: marriage.debts.info
 ---
 id: marriage.debts.any
@@ -1268,17 +1283,15 @@ id: marriage.debts.pay_debts_in_own_names
 question: |
   ${marriage.debts.question_text}
 fields:
-  - label: Do you and your spouse each plan to pay the debts in your own names?
+  - label: Do you and your spouse each plan to pay the debts in **your own names?**
     field: marriage.debts.pay_debts_in_own_names
     datatype: yesnoradio
----
-id: marriage.debts.agree_responsibility_debts_own_name
-question: |
-  ${marriage.debts.question_text}
-fields:
   - label: Do you and your spouse agree on who will be responsible for these debts?
     field: marriage.debts.agree_responsibility_debts_own_name
     datatype: yesnoradio
+    show if:
+      variable: marriage.debts.pay_debts_in_own_names
+      is: False
 ---
 id: marriage.debts.any_in_both_names
 question: |
@@ -1287,14 +1300,12 @@ fields:
   - label: Do you and your spouse have any debts that are in **both** of your names?
     field: marriage.debts.any_in_both_names
     datatype: yesnoradio
----
-id: marriage.debts.agree_responsibility_debts_both_names
-question: |
-  ${marriage.debts.question_text}
-fields:
   - label: Do you and your spouse agree on who will be responsible for these debts?
     field: marriage.debts.agree_responsibility_debts_both_names
     datatype: yesnoradio
+    show if:
+      variable: marriage.debts.any_in_both_names
+      is: True
 ---
 id: marriage.debts[i]
 question: |
@@ -1332,11 +1343,11 @@ fields:
 template: marriage.debts.there_is_another_template
 content: |
   % if not marriage.debts.pay_debts_in_own_names:
-  List each debt that is currently in one spouse's name, but that the other spouse **${"will" if marriage.attr("debts.agree_responsibility_debts_own_name") else "should"}** be responsible for.
+  List each debt that is currently in one spouse's name, but that the other spouse **${"will" if marriage.debts.agree_responsibility_debts_own_name else "should"}** be responsible for.
   % endif
 
   % if marriage.debts.any_in_both_names:
-  ${"Also, list" if not marriage.debts.pay_debts_in_own_names else "List"}  each jointly held debt (debts in both of your names) that will be divided and indicate whether you or your spouse **${"will" if marriage.attr("debts.agree_responsibility_debts_both_names") else "should"}** be responsible for it.
+  ${"Also, list" if not marriage.debts.pay_debts_in_own_names else "List"} each jointly held debt (debts in both of your names) that will be divided and indicate whether you or your spouse **${"will" if marriage.debts.agree_responsibility_debts_both_names else "should"}** be responsible for it.
   % endif
 ---
 # --------------------------------------------------------------------
@@ -1387,9 +1398,11 @@ id: marriage.vehicles.info
 question: |
   ${marriage.vehicles.question_text}
 subquestion: |
-  Next you will be asked about vehicles. Vehicles include cars, boats, trailers, motorcycles, snowmobiles, and other motorized equipment titled to the owner. Mobile homes are vehicles, but do not include them here &mdash; you should have included mobile homes in the previous question about personal property.
+  Next you will be asked about vehicles. Vehicles include cars, boats, trailers, motorcycles, snowmobiles, and other motorized equipment titled to the owner. Please do not include mobile homes here &mdash; to add a mobile home, use the ${MLH_back_button_label} or use the **Review / Edit** feature.
 
-  You will be asked for the Make and Model of each vehicle you own. Make refers to the name of the company that manufactured the vehicle. Examples of vehicle "makes" are Ford, General Motors, Chrysler, and Toyota. Model refers to the type of vehicle. Examples of "models" are Focus, Cutlass, Town and Country, and Highlander. If you are describing a vehicle other than a car, do your best to identify the vehicle using the Make and Model entries. For example, if you are listing a boat, you might say "Starcraft" for Make and "Starfish 226" for Model.
+  You will be asked for the Make and Model of each vehicle you own. Make refers to the name of the company that manufactured the vehicle. Examples of vehicle "makes" are Ford, General Motors, Chrysler, and Toyota. Model refers to the type of vehicle. Examples of "models" are Focus, Cutlass, Town and Country, and Highlander. 
+  
+  If you are describing a vehicle other than a car, do your best to identify the vehicle using the Make and Model entries. For example, if you are listing a boat, you might say "Starcraft" for Make and "Starfish 226" for Model.
 continue button field: marriage.vehicles.info
 ---
 id: marriage.vehicles.any
@@ -1408,7 +1421,7 @@ fields:
     field: marriage.vehicles.keep_own
     input type: radio
     choices:
-      - label: Each party will keep the vehicle(s) now in his or her possession and titled in <u>only</u> his or her name. The party keeping the vehicle(s) is fully responsible to pay any debt related to the vehicle(s). The other party will have no claim to any vehicle(s) in the other's name and possession.
+      - label: Each party will keep the vehicle(s) now in his or her possession and titled in **only** his or her name. The party keeping the vehicle(s) is fully responsible to pay any debt related to the vehicle(s). The other party will have no claim to any vehicle(s) in the other's name and possession.
         value: True
       - label: We need to transfer title to one or more vehicles.
         value: False
@@ -1422,16 +1435,20 @@ subquestion: |
   ${marriage.vehicles.question_text_table_template}
 fields:
   - label: Year
+    label above field: False
     field: marriage.vehicles[i].year
     minlength: 4
     maxlength: 4
   - label: |
       {vehicles_make|Make}
+    label above field: False
     field: marriage.vehicles[i].make
   - label: |
       {vehicles_model|Model}
+    label above field: False
     field: marriage.vehicles[i].model
   - label: VIN
+    label above field: False
     field: marriage.vehicles[i].vin
   - label: Award this vehicle to
     field: marriage.vehicles[i].owner
@@ -1467,6 +1484,8 @@ objects:
 ---
 code: |
   marriage.real_property[i].initializeAttribute("address", ALAddress)
+  if i == 0:
+    marriage.real_property[i].warning
   marriage.real_property[i].address.address
   marriage.real_property[i].desc
   marriage.real_property[i].parcel_number
@@ -1479,7 +1498,8 @@ rows: marriage.real_property
 columns:
   - Address: row_item.address.on_one_line()
   - Description: row_item.desc
-  - Award: row_item.owner
+  - Award: |
+      row_item.owner if row_item.owner in [users[0], other_parties[0]] else "Sell and split value and debt"
 edit:
   - address.address
   - desc
@@ -1498,6 +1518,24 @@ fields:
   - label: Do you or your spouse own real property that was bought or paid for while you were married?
     field: marriage.real_property.there_are_any
     datatype: yesnoradio
+---
+id: marriage.real_property[i].warning
+continue button field: marriage.real_property[i].warning
+question: Important information about real property and divorce
+subquestion: |
+  If you use this tool:
+  
+  * The person who is awarded a piece of real property (home, condo, or land) will also be made responsible for paying the mortgage, insurance, taxes, liens, and any other costs on the property. 
+  * Or if you and the other party are going to sell the property and share equally in the profit or loss from the sale, both of you will be responsible for the mortgage, insurance, taxes, liens, and any other costs on the property until it is sold. 
+
+  These are common ways of assigning the rights and responsibilities of real property in a divorce—but not the only ways. If you don't agree with any of these terms for dividing the real property and the related debt, you should talk to a lawyer before finalizing your divorce. You may want to talk to a lawyer anyway to ensure the best possible outcome. ${ MLH_GUIDE_FULL }
+  
+  Please review the articles [Divorce Basics: Dividing Your Property and Debt](https://michiganlegalhelp.org/resources/family/divorce-basics-dividing-your-property-and-debt) and [Real Estate and Divorce](https://michiganlegalhelp.org/resources/family/real-estate-and-divorce) for more information.
+
+  As part of the Judgment of Divorce, the person who is awarded the property may be ordered to refinance the home in his or her name alone. However, refinancing might not be possible if the property is worth less than the amount of the mortgage, if the person required to refinance has poor credit, or for other reasons.
+
+  The person who is not awarded the property may be required to complete a quitclaim deed giving the other spouse their share of the property.
+
 ---
 id: marriage.real_property
 sets:
@@ -1518,28 +1556,32 @@ id: marriage.real_property
 question: |
   Describe the ${ordinal(i)} property
 subquestion: |
-  ${marriage.real_property.question_text_table_template}
+  Address: ${marriage.real_property[i].address.on_one_line()}
 fields:
   - label: Legal description
+    required: False
     field: marriage.real_property[i].desc
     input type: area
     rows: 10
   - label: Parcel number
+    required: False
     field: marriage.real_property[i].parcel_number
 ---
 id: marriage.real_property
 question: |
   What should happen with the ${ordinal(i)} property?
 subquestion: |
-  ${marriage.real_property.question_text_table_template}
+  Address: ${marriage.real_property[i].address.on_one_line()}
 fields:
   - label: Do you and the ${op_ask_role.capitalize()} agree on what should happen with this property?
     field: marriage.real_property[i].agree
     datatype: yesnoradio
 
-  - label: Award this property to
+  - label: "What should happen with the property?"
     field: marriage.real_property[i].owner
     datatype: object_radio
+    object labeler: |
+      lambda y: y.real_property_question_label
     choices:
       - users[0]
       - other_parties[0]
@@ -1552,7 +1594,7 @@ fields:
       val("marriage.real_property[i].owner") === "users[0]" || val("marriage.real_property[i].owner") === "other_parties[0]"
 
   - note: |
-      <strong>The person who is not keeping the property will need to sign a quitclaim deed giving his or her share of the property to the other person.</strong>
+      **The person who is not keeping the property will need to sign a quitclaim deed giving his or her share of the property to the other person.**
     js show if: |
       val("marriage.real_property[i].titled_together") === true
 
@@ -1563,7 +1605,7 @@ fields:
       val("marriage.real_property[i].titled_together") === false
 
   - note: |
-      <strong>The person who is not keeping the property will need to sign a quitclaim deed giving his or her share of the property to the other person.</strong>
+      **The person who is not keeping the property will need to sign a quitclaim deed giving his or her share of the property to the other person.**
     js show if: |
       val("marriage.real_property[i].title_award_to_named") === false
 
@@ -1586,23 +1628,21 @@ fields:
       val("marriage.real_property[i].mortgage_or_loan_together") === false
 
   - note: |
-      <strong>The person who is keeping the property will be required to refinance the loan so that it is in his or her name alone.</strong>
+      **The person who is keeping the property will be required to refinance the loan so that it is in his or her name alone.**
     js show if: |
       val("marriage.real_property[i].mortgage_or_loan_together") === true || val("marriage.real_property[i].mortgage_or_loan_award_to_named") === false
 
   - note: |
-      <strong>The Real Estate Addendum of your proposed Judgment of Divorce will say that the property is awarded to both you and the Defendant, and will be sold within a reasonable time after the judgment is entered. It will also say that both of you are responsible for the mortgage, insurance, taxes, liens, and any other costs and debts associated with the property. If you want something different, use the Guide to Legal Help to look for a lawyer or legal services near you.</strong>
+      The Real Estate Addendum of your proposed Judgment of Divorce will say that:
+      
+      * the property is awarded to both you and the Defendant, 
+      * the property will be sold within a reasonable time after the judgment is entered, and
+      * both of you are responsible for the mortgage, insurance, taxes, liens, and any other costs and debts associated with the property. 
+      
+      **If you want something different, use the ${ MLH_GUIDE } to look for a lawyer or legal services near you.**
     js show if: |
       val("marriage.real_property[i].owner") === "sell_and_share"
 
-  - note: |
-      <strong>In this tool, the person who is awarded a piece of real property (home, condo, or land) will also be made responsible for paying the mortgage, insurance, taxes, liens, and any other costs on the property. Or if you and the other party are going to sell the property and share equally in the profit or loss from the sale, both of you will be responsible for the mortgage, insurance, taxes, liens, and any other costs on the property until it is sold. These are common ways of assigning the rights and responsibilities of real property in a divorce—but not the only ways. If you don't agree with any of these terms for dividing this real property and the related debt, you should consult with an attorney before finalizing your divorce. You may want to consider talking to a lawyer to assure you get the best possible outcome. Please review the articles Divorce Basics: Dividing Your Property and Debt and Real Estate and Divorce for more information on this topic.
-
-      As part of the Judgment of Divorce, the person who is awarded the property may be ordered to refinance the home in his or her name alone. However, refinancing might not be possible if the property is worth less than the amount of the mortgage, if the person required to refinance has poor credit, or for other reasons.
-
-      The person who is not awarded the property may be required to complete a quitclaim deed giving the other spouse his or her share of the property.</strong>
-    js show if: |
-      val("marriage.real_property[i].owner") !== null
 ---
 template: marriage.real_property.there_is_another_template
 content: ""
@@ -1640,8 +1680,6 @@ fields:
     datatype: yesnoradio
   - note: |
       If a temporary order was entered previously, you should have already filed a [Domestic Relations Judgment Information form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/foc100.pdf). This tool will produce a second Domestic Relations Judgment Information form, which you will need to file with your Judgment of Divorce.
-
-      Click on the link below to see what information the form asks for.
 
       ${collapse_template(marriage.temporary_order_changed_template)}
     show if: marriage.temporary_order
@@ -1703,4 +1741,60 @@ fields:
     show if:
       variable: marriage.true_statement
       is: False
+---
+# ====================================================================
+## interview order sub-part blocks
+# ====================================================================
+# note: these were originally created by Jack and housed in main_judgment_of_divorce.yml
+# trying out sharing them, because I believe they will apply to several interviews, but it's possible we'll eventually decide we want them to be separate for each interview
+---
+code: |
+  if confidential_contact_info_yn:
+    users[0].address.address
+  else:
+    users[0].address.address
+    if users[0].address.state == "MI":
+      users[0].address.county
+      users[0].village_or_township_yn
+    if users[0].mailing_address.yesno:
+      users[0].mailing_address.address
+  users[0].no_phone_number
+  users[0].email
+  interview_order_user_contact_info = True
+---
+code: |
+  if other_parties[0].has_attorney:
+    other_parties[0].attorney.name.first
+    other_parties[0].attorney.address.address
+    other_parties[0].attorney.phone_number
+  interview_order_other_parties_attorney = True
+---
+code: |
+  marriage.accounts
+  marriage.other_pp
+  marriage.mobile_home
+  marriage.personal_property_info
+  if marriage.personal_property_acquired:
+    if not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual:
+      marriage.accounts.gather()
+      marriage.other_pp.gather()
+      marriage.mobile_home.gather()
+  interview_order_personal_property = True
+---
+code: |
+  marriage.debts.info
+  if marriage.debts.any:
+    marriage.debts.pay_debts_in_own_names
+    marriage.debts.any_in_both_names
+    if not marriage.debts.pay_debts_in_own_names or marriage.debts.any_in_both_names:
+      marriage.debts.gather()
+  interview_order_debts = True
+---
+code: |
+  marriage.vehicles
+  marriage.vehicles.info
+  if marriage.vehicles.any:
+    if not marriage.vehicles.keep_own:
+      marriage.vehicles.gather()
+  interview_order_vehicles = True
 ---

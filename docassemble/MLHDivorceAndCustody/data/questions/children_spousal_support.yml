@@ -1,20 +1,13 @@
 ---
-# needed during testing this as separate yml
-include:
-  - divorce_custody_setup.yml
+# below sections needed if testing as separate yml
+#include:
+#  - divorce_custody_setup.yml
 ---
-# example interview tag for testing
-code: |
-  tool_ID = "divorce_complaint"
+#code: |
+#  tool_ID = "divorce_complaint"
 # options: "JOD_only", "divorce_complaint", "divorce_answer", "custody_complaint", "custody_answer"
----
-# example date for testing
-code: |
-  marriage.date = "2015-07-20T00:00:00-04:00" 
----
-# for testing:
-code: |
-  confidential_contact_info_yn = False
+# confidential_contact_info_yn = False
+#  marriage.date = "2015-07-20T00:00:00-04:00" 
 ---
 ### need the above for now to run just this yml
 ### below objects are not included in question bank yml
@@ -47,7 +40,8 @@ table: children.table
 rows: children
 columns:
   - Name: row_item.name
-  - Date of birth: row_item.birthdate
+  - Date of birth (not collected for stepchildren): |
+      row_item.birthdate if row_item.legal_parent == "both" else "---"
   - Entered family before or during marriage: |
       "before marriage" if row_item.timing == "premarital" else "during marriage"
 edit:
@@ -67,9 +61,9 @@ confirm: True
 # trying using filter() method from https://docassemble.org/docs/objects.html
 # if not, try using list comprehension something like "[child for child in children if child.legal_parent=="both"]"
 id: child questions
-mandatory: True # remove later
+# mandatory: True # remove later
 code: |
-  interview_order_spousal_support  
+  # interview_order_spousal_support  
   
   children_intro
   children.gather()
@@ -114,52 +108,34 @@ code: |
         custom_PT_details
     hague_convention_info
     child_domicile_info
-    if legal_custody_who != "both":
+    if legal_custody_who == "both":
       hundred_mile_rule
     child_support_basic
     if tool_ID != "JOD_only":
       allow_child_support_overpayment_correction
-
-    if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0:
-      guidepost_stepchildren
-      interview_order_stepchild_address
+      if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0:
+        guidepost_stepchildren
+        interview_order_stepchild_address
   
-    users[0].insurance.gather()
-    other_parties[0].insurance.gather()
-    if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
-      marriage.cobra_coverage
-    interview_order_user_employment
-    if tool_ID != "JOD_only":
-      interview_order_user_income
-    interview_order_user_identifying_info
-    interview_order_other_party_employment
-    if tool_ID != "JOD_only":
-      interview_order_other_party_income
-    interview_order_other_party_identifying_info
-    interview_order_income_tax
-    interview_order_prior_cases
-
-  else:
-    if tool_ID in ["JOD_only", "divorce_complaint", "divorce_answer"]:
-      marriage.cobra_coverage
-    if tool_ID == "divorce_complaint":
-      interview_order_user_income
-    if tool_ID in ["divorce_complaint", "divorce_answer"]:
-      interview_order_prior_cases
-    
-  test_end_screen
+  # test_end_screen
+  interview_order_children = True
 ---
 # --------------------------------------------------------------------
 ## spousal support
 # --------------------------------------------------------------------
 ---
 code: |
+  spousal_support_intro
+  
   if tool_ID in ["divorce_complaint", "divorce_answer"]:
-    spousal_support_intro
-    if wants_temporary_spousal_support:
+    if user_wants_temporary_spousal_support:
       temp_spousal_support_info
-    if wants_post_divorce_support:
-      if continue_with_spousal_support_request:
+  
+  if user_wants_post_divorce_support:
+    if continue_with_spousal_support_request:
+      if spousal_support_provisions == "OP_agrees_to_pay_spousal_support":
+        spousal_support_is_immutable
+      if tool_ID in ["divorce_complaint", "divorce_answer"]:
         spousal_support_factors_intro
         ss_factor_one_division_labor
         ss_factor_two_length
@@ -175,9 +151,13 @@ code: |
         ss_factor_twelve_fault_redux
         ss_factor_thirteen_cohabitation
         ss_factor_fourteen_equity
-      else:
-        exit_general
+    else:
+      exit_general
 
+  elif not user_wants_post_divorce_support:
+    if spousal_support_provisions == "user_agrees_to_pay_spousal_support":
+      spousal_support_is_immutable
+  
   interview_order_spousal_support = True
 ---
 id: spousal support intro
@@ -186,12 +166,14 @@ question: What is spousal support?
 subquestion: |
   Spousal support (also called alimony) is money that one spouse pays to the other spouse during or after a divorce case. Spousal support can be short-term or long-term. It can be agreed on by the parties or a judge can order it. 
 
-  Spousal support is not a part of every divorce case. If you or your spouse asks the judge for spousal support and the other spouse does not agree, the judge will base their decision on many different factors. To learn more, read [Spousal Support (Alimony)](https://michiganlegalhelp.org/resources/family/spousal-support-alimony-nutshell). 
+  Spousal support is not a part of every divorce case. If you or your spouse asks the judge for spousal support and the other spouse does not agree, the judge will base their decision on many different factors. 
+  
+  To learn more, read [Spousal Support (Alimony)](https://michiganlegalhelp.org/resources/family/spousal-support-alimony-nutshell). 
 ---
 id: wants temporary spousal support?
 question: Temporary spousal support (while case is pending)
 fields: 
-  - Do you need spousal support for the period of time **before your divorce is final?**: wants_temporary_spousal_support
+  - Do you need spousal support for the period of time **before your divorce is final?**: user_wants_temporary_spousal_support
     datatype: yesnoradio
 ---
 id: temporary spousal support instructions
@@ -210,19 +192,21 @@ subquestion: |
 id: wants post-divorce spousal support
 question: Spousal support after divorce
 fields:
-  - Do you need spousal support **after your divorce case is finished?**: wants_post_divorce_support
+  - Do you need spousal support **when your divorce case is finished?**: user_wants_post_divorce_support
     datatype: yesnoradio
   - note: |
       If you and your spouse don't agree about spousal support, you may want to **find a lawyer to help you.** Asking for spousal support is complicated, and a lawyer can present evidence and make legal arguments for you at your court hearing. ${ MLH_GUIDE_FULL } 
 
+      % if tool_ID in ["divorce_complaint", "divorce_answer"]:
       But if hiring a lawyer is not an option for you, you can use this tool to include a request for spousal support in your ${ filing_name }. 
+      % endif
     show if:
-      variable: wants_post_divorce_support
+      variable: user_wants_post_divorce_support
       is: True
   - Do you want to continue using this tool?: continue_with_spousal_support_request
     datatype: yesnoradio
     show if:
-      variable: wants_post_divorce_support
+      variable: user_wants_post_divorce_support
       is: True
 ---
 id: spousal support factors intro
@@ -525,6 +509,124 @@ subject: What is an example of fairness in this context?
 content: |
   In one Michigan Court of Appeals case, the Court emphasized that the parties had agreed the wife would stay at home during the 27-year marriage. The Court determined that spousal support was a fair way of repaying her for the lost opportunity of learning marketable skills.
 ---
+id: spousal support options if user does not want post-divorce spousal support
+if: not user_wants_post_divorce_support
+question: Other spousal support situations
+fields:
+  - Choose the situation that applies to you and ${ other_parties[0] }.: spousal_support_provisions
+    datatype: radio
+    choices:
+      - ${ other_parties[0] } wants spousal support, but I do not agree to pay it.: someone_wants_spousal_support_no_agreement
+      - I'm not sure if ${ other_parties[0] } is going to ask for spousal support.: OP_position_unknown
+      - ${ other_parties[0] } and I both agree that neither one of us will pay spousal support when the divorce is done, but either of us can ask for spousal support in the future.: agree_no_current_spousal_support_but_may_change
+      - ${ other_parties[0] } and I both agree that neither one of us will ever pay spousal support to the other. We are both willing to give up our right to ever ask for spousal support, even if circumstances change.: agree_never_spousal_support
+      - We agreed that I will pay spousal support to ${ other_parties[0] }.: user_agrees_to_pay_spousal_support
+  - "Based on your agreement, when will you begin paying spousal support to ${ other_parties[0] }?": spousal_support_start_date
+    datatype: ThreePartsDate
+    show if: 
+      variable: spousal_support_provisions
+      is: user_agrees_to_pay_spousal_support
+  - What is the monthly amount you agreed to pay?: spousal_support_amount
+    datatype: currency
+    min: 0
+    step: 0.01
+    show if: 
+      variable: spousal_support_provisions
+      is: user_agrees_to_pay_spousal_support
+	- When will the payments end?: spousal_support_end_type
+    datatype: radio
+    choices:
+      - On a certain date we agreed to.: at_certain_date
+  		- Once I have paid a certain amount.: at_certain_amount
+  		- When ${ other_parties[0] } remarries.: at_recipient_marriage
+  		- Payments will continue until one of us dies.: at_death
+  		- Other: other
+    show if: 
+      variable: spousal_support_provisions
+      is: user_agrees_to_pay_spousal_support
+  - Enter that date:: spousal_support_end_date
+    datatype: ThreePartsDate
+    show if: 
+      variable: spousal_support_end_type
+      is: at_certain_date
+  - Enter the amount:: spousal_support_end_amount
+    datatype: currency
+    min: 0
+    step: 0.01
+    show if: 
+      variable: spousal_support_end_type
+      is: at_certain_amount
+  - Describe when payments will end:: spousal_support_end_custom
+    input type: area
+    show if: 
+      variable: spousal_support_end_type
+      is: other
+---
+id: spousal support agreement immutable?
+question: Do you both want to give up the right to change the spousal support agreement?
+subquestion: |
+  Normally after a spousal support order is in place, either ex-spouse can ask the judge to change the order if there is a change in circumstances. 
+  
+  But if you want to, you and ${ other_parties[0] } can agree that:
+
+  * The spousal support order will be the final spousal support order, and
+  * Both parties will give up their right to ask the judge to change the spousal support order in the future.
+fields:
+  - Have you and ${ other_parties[0] } agreed to both of those things?: spousal_support_is_immutable
+    datatype: yesnoradio
+---
+id: spousal support options if user wants post-divorce spousal support
+if: user_wants_post_divorce_support
+question: Spousal support details
+fields:
+  - Has ${ other_parties[0] } agreed to pay you spousal support?: spousal_support_provisions
+    datatype: radio
+    choices:
+      - No, ${ other_parties[0] } **does not agree to pay** spousal support.: someone_wants_spousal_support_no_agreement
+      - "**I'm not sure** if ${ other_parties[0] } will agree to pay spousal support.": OP_position_unknown
+      - Yes, ${ other_parties[0] } **has agreed to pay** spousal support to me.: OP_agrees_to_pay_spousal_support
+  - "Based on your agreement, when will ${ other_parties[0] } begin paying spousal support?": spousal_support_start_date
+    datatype: ThreePartsDate
+    show if: 
+      variable: spousal_support_provisions
+      is: OP_agrees_to_pay_spousal_support
+  - What is the monthly amount they agreed to pay?: spousal_support_amount
+    datatype: currency
+    min: 0
+    step: 0.01
+    show if: 
+      variable: spousal_support_provisions
+      is: OP_agrees_to_pay_spousal_support
+  - When will the payments end?: spousal_support_end_type
+    datatype: radio
+    choices:
+      - On a certain date we agreed to.: at_certain_date
+  		- Once they have paid a certain amount.: at_certain_amount
+  		- When I remarry.: at_recipient_marriage
+  		- Payments will continue until one of us dies.: at_death
+  		- Other: other
+    show if: 
+      variable: spousal_support_provisions
+      is: OP_agrees_to_pay_spousal_support
+  - Enter that date:: spousal_support_end_date
+    datatype: ThreePartsDate
+    show if: 
+      variable: spousal_support_end_type
+      is: at_certain_date
+  - Enter the amount:: spousal_support_end_amount
+    datatype: currency
+    min: 0
+    step: 0.01
+    show if: 
+      variable: spousal_support_end_type
+      is: at_certain_amount
+  - Describe when payments will end:: spousal_support_end_custom
+    input type: area
+    show if: 
+      variable: spousal_support_end_type
+      is: other
+
+---
 # --------------------------------------------------------------------
 ## child gathering
 # --------------------------------------------------------------------
@@ -538,6 +640,9 @@ code: |
     children[i].complicated_issue_kickout
   
   children[i].legal_parent
+
+  if children[i].legal_parent == "both":
+    children[i].birthdate
 
   if children[i].legal_parent != "both":
     children[i].not_included_in_divorce_info
@@ -569,22 +674,6 @@ question: |
 fields:
   - code: |
       other_parties[0].gender_fields(show_help=True)
----
-id: users_0_pregnant
-question: |
-  Pregnancy
-fields:
-  - label: To the best of your knowledge are you pregnant?
-    field: users[0].pregnant
-    datatype: yesnoradio
----
-id: other_parties_0_pregnant
-question: |
-  Pregnancy
-fields:
-  - label: To the best of your knowledge is your spouse pregnant?
-    field: other_parties[0].pregnant
-    datatype: yesnoradio
 ---
 id: children intro
 continue button field: children_intro
@@ -685,12 +774,25 @@ subquestion: |
 fields:
   - code: |
       children[i].name_fields()
-  - Date of birth: children[i].birthdate
-    datatype: BirthDate
   - My spouse and I **adopted** this child together during our marriage.: children[i].adopted_during_marriage
     required: False
     datatype: yesno
-  # need help text saying don't include children who were born to or adopted by either spouse prior to marriage
+  - Was this child born before or after you married ${other_parties}?: children[i].timing
+    datatype: radio
+    choices: 
+      - They were born before we got married.: premarital
+      - They was born after we got married.: marital
+    hide if:
+      variable: children[i].adopted_during_marriage
+      is: True
+  # TODO? need help text saying don't include children who were born to or adopted by either spouse prior to marriage
+---
+id: additional child info
+if: children[i].legal_parent == "both"
+question: More information about ${ children[i] }
+fields:
+  - Date of birth: children[i].birthdate
+    datatype: BirthDate
   - Gender: children[i].gender
     datatype: radio
     choices:
@@ -699,25 +801,12 @@ fields:
   - Social security number: children[i].ssn
     datatype: ssn
     required: False
+  # TODO? need help text apologizing for gender question
 ---
 code: |
   if children[i].adopted_during_marriage:
     children[i].timing = "marital"
     children[i].origin = "adoption"
-  else:
-    if int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) < 0:
-      children[i].timing = "premarital"
-    elif int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) > 0:
-      children[i].timing = "marital"
----
-if: not children[i].adopted_during_marriage and int(date_difference(starting=marriage.date, ending=children[i].birthdate).days) == 0
-Question: Which was first?
-fields:
-  - Was ${children[i]} born before or after you got married?: children[i].timing
-    datatype: radio
-    choices: 
-      - ${children[i]} was born before we got married.: premarital
-      - ${children[i]} was born after we got married.: marital
 ---
 id: marital children's origin
 if: children[i].timing == "marital" and not children[i].adopted_during_marriage
@@ -732,8 +821,8 @@ fields:
   - Which of these applies to ${children[i]}?: children[i].origin
     datatype: radio
     choices:
-      - My spouse and I had ${children[i]} together through sex or assisted reproduction.: marital_sex_AR
-      - My spouse or I had ${children[i]} with somebody else.: marital_third_party_conceived
+      - My spouse and I had ${children[i]} **together** through sex or assisted reproduction.: marital_sex_AR
+      - My spouse or I had ${children[i]} **with somebody else.**: marital_third_party_conceived
     show if:
       variable: children[i].marital_birth 
       is: True
@@ -1158,7 +1247,7 @@ fields:
       (val("children[i].bio_parent") == "user" || val("children[i].bio_parent") == "other_party") && ${ json.dumps(children[i].origin) } === "marital_third_party_conceived"
 ---
 id: display parentage interview for testing purposes
-question: Parentage Result
+question: Parentage Result [ONLY FOR TESTING]
 continue button field: children[i].show_parentage_info
 subquestion: |
   ${children[i]}'s legal parents is/are:
@@ -1509,14 +1598,14 @@ validation code: |
 template: tribal_divorce_forms
 subject: Forms for filing in tribal courts
 content: |
-  * Bay Mills Indian Community: [Complaint for Divorce with Minor Children](https://baymillstribalcourt.org/wp-content/uploads/2018/11/Complaint_divorce_no_children2.pdf)
+  * Bay Mills Indian Community: [Complaint for Divorce with Minor Children](https://baymillstribalcourt.org/wp-content/uploads/2018/11/Complaint_divorce_children2.pdf)
   * Grand Traverse Band of Ottawa and Chippewa Indians: [Complaint for Divorce with Minor Children](https://www.gtbindians.org/downloads/divorce_w_children.pdf)
   * Hannahville Indian Community: *Divorce forms not found online.*
   * Nottawaseppi Huron Band of Potawatomi: *Divorce forms not found online.*
   * Keweenaw Bay Indian Community: [Complaint for divorce](https://www.kbic-nsn.gov/wp-content/uploads/2023/07/complaint_of_divorce_revised_07072022.pdf)
   * Lac Vieux Desert Band of Lake Superior Chippewa Indians: [Petition for Divorce](https://lvd-nsn.gov//media/banners/Petition%20for%20Divorce.pdf)
   * Little River Band of Ottawa Indians: [Summons, Complaint, and Proof of Service](https://lrboi-nsn.gov/sites/default/files/pages/Summons-Complaint-Proof-of-Service-Divorce05_02_24.pdf). See [other divorce court forms on this page](https://lrboi-nsn.gov/government/tribal-judicial/tribal-court/tribal-court-documentation).
-  * Little Traverse Bay Bands of Odawa Indians: *Divorce forms not found online.*
+  * Little Traverse Bay Bands of Odawa Indians: [Petition for Dissolution of Marriage (with Children)](https://ltbbodawa-nsn.gov/wp-content/uploads/2020/12/Petition-for-Dissolution-of-Marriage-With-Children.pdf)
   * Pokagon Band of Potawatomi Indians: *Divorce forms not found online.*
   * Saginaw Chippewa Indian Tribe: [Divorce packet](https://www.sagchip.org/tribalcourt/forms/2022/Divorce%20Packet%202022.pdf)
   * Sault Ste. Marie Tribe of Chippewa Indians: *Divorce forms not found online.*
@@ -1921,12 +2010,7 @@ content:
 # --------------------------------------------------------------------
 # for JOD-only, this is only shown if there are marital children. For other divorce filing types, there are questions needed here even if no marital children. 
 ---
-code: |
-  has_prior_civil_cases
-  prior_family_cases.gather() 
-  
-  interview_order_prior_cases = True
----
+if: tool_ID != "JOD_only"
 id: prior family cases table
 table: prior_family_cases.table
 rows: prior_family_cases
@@ -1935,6 +2019,25 @@ columns:
   - Type: row_item.type
   - State: row_item.state
   - County: row_item.county
+#  - Entered family before or during marriage: |
+#      "before marriage" if row_item.timing == "premarital" else "during marriage"
+edit:
+  - status
+  - included_custody_PT_order
+  - has_current_custody_PT_order
+  - custody_order_in_another_state_warning 
+  - children_involved_number
+      
+delete buttons: True
+confirm: True
+---
+if: tool_ID == "JOD_only"
+id: prior family cases table
+table: prior_family_cases.table
+rows: prior_family_cases
+columns:
+  - State: row_item.state
+  - Case Number: row_item.docket_number
 #  - Entered family before or during marriage: |
 #      "before marriage" if row_item.timing == "premarital" else "during marriage"
 edit:
@@ -2083,6 +2186,9 @@ id: prior family cases gather logic
 code: |
   if tool_ID == "JOD_only" and there_are_marital_children:
     prior_family_cases[i].status
+    if prior_family_cases[i].state != "Michigan" and prior_family_cases[i].has_current_custody_PT_order:
+      prior_family_cases[i].custody_order_in_another_state_warning 
+  
   elif tool_ID != "JOD_only":
     prior_family_cases[i].status
     if there_are_marital_children:
@@ -2106,7 +2212,7 @@ code: |
   prior_family_cases[i].complete = True
 ---
 id: custody_order_in_another_state_warning
-continue_button_field: prior_family_cases[i].custody_order_in_another_state_warning
+continue button field: prior_family_cases[i].custody_order_in_another_state_warning
 question: Warning! Custody order in another state
 subquestion: |
   % if MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]:
@@ -2149,14 +2255,6 @@ fields:
     datatype: yesnoradio
   - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
-  - note: |
-      ${ prior_custody_warning_home_state }
-    js show if: |
-      val("prior_family_cases[i].state") !== "Michigan" && val("prior_family_cases[i].has_current_custody_PT_order") === true && ${ json.dumps(MI_has_jurisdiction_all_kids) } === false
-  - note: |
-      ${ prior_custody_warning }
-    js show if: |
-      val("prior_family_cases[i].state") !== "Michigan" && val("prior_family_cases[i].has_current_custody_PT_order") === true && ${ json.dumps(MI_has_jurisdiction_all_kids) } === true && ${ "true" if prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"] else "false" }
 ---
 code: |
   prior_family_case_types = [
@@ -2204,8 +2302,8 @@ fields:
   - "Case name *(for example, Jones v. Smith or In re: Thomas)*:": prior_family_cases[i].title
   - Case number:: prior_family_cases[i].docket_number
   - "Judge's last name *(do not include 'Judge' or 'Hon.')*": prior_family_cases[i].judge
-    js show if: |
-      ${ "true" if tool_ID in ["divorce_complaint", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].state"))
+    show if:
+      code: tool_ID in ["divorce_complaint", "custody_complaint"]
   - What is the nature of this case?: prior_family_cases[i].type
     code: |
       prior_family_case_types
@@ -2269,8 +2367,8 @@ fields:
       ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && val("prior_family_cases[i].included_custody_PT_order") === true
   - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
-    js show if: |
-      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].final_order_date"))
+    show if: 
+      code: tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] 
 # TODO: do we care about the final order if it doesn't have custody in it? If not can we switch the question order and standardize the date question with the divorce version?
 ---
 # LHI "Prior Family Cases DLG" (start at row 174)
@@ -2290,8 +2388,8 @@ fields:
       val("prior_family_cases[i].has_current_custody_PT_order") === true
   - Is there a support order in this case?: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
-    js show if: |
-      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && (true || val("prior_family_cases[i].has_current_custody_PT_order"))
+    show if: 
+      code: tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] 
 ---
 # LHI "Prior Family Cases DLG" (start at row 151)
 id: prior family case or order additional info 
@@ -2753,7 +2851,7 @@ code: |
   if tool_ID != "JOD_only":
     users[0].occupation
   if users[0].has_job:
-    users[0].job.employer
+    users[0].job.employer.name.first
   users[0].has_professional_license
 
   interview_order_user_employment = True
@@ -2771,7 +2869,7 @@ code: |
   if tool_ID == "divorce_complaint" and there_are_marital_children:
     other_parties[0].occupation
   if other_parties[0].has_job:
-    other_parties[0].job.employer
+    other_parties[0].job.employer.name.first
   other_parties[0].has_professional_license
 
   interview_order_other_party_employment = True
@@ -2811,36 +2909,38 @@ fields:
 id: user job
 question: Your job
 fields:
-  - Employer name: users[0].job.employer
+  - Employer name: users[0].job.employer.name.first
     required: False
   - label: Street Address or PO Box
-    field: users[0].job.employer_address.address
+    field: users[0].job.employer.address.address
     address autocomplete: True
     required: False
   - label: Apartment, suite, etc
-    field: users[0].job.employer_address.unit
+    field: users[0].job.employer.address.unit
     required: False
   - label: City
-    field: users[0].job.employer_address.city
+    field: users[0].job.employer.address.city
     required: False
   - label: State or Province (two-letter abbreviation for U.S. states)
-    field: users[0].job.employer_address.state
+    field: users[0].job.employer.address.state
     default: MI
     input type: datalist
     code: |
       states_list()
     required: False
   - label: Zip or Postal Code
-    field: users[0].job.employer_address.zip
+    field: users[0].job.employer.address.zip
     required: False
   - label: Country
-    field: users[0].job.employer_address.country
+    field: users[0].job.employer.address.country
     default: "US"
     code: |
       countries_list()
     required: False
-  - Phone: users[0].job.employer_phone
+  - Phone: users[0].job.employer.phone
+    required: False
   - "Federal Employer Identification Number (FEIN), if known": users[0].job.FEIN
+    required: False
 ---
 # LHI: "Plaintiff Occupational License" or "Defendant Occupational License"
 id: user professional license
@@ -2943,36 +3043,38 @@ fields:
 id: other party job
 question: ${ other_parties[0] }'s job
 fields:
-  - Employer name: other_parties[0].job.employer
+  - Employer name: other_parties[0].job.employer.name.first
     required: False
   - label: Street Address or PO Box
-    field: other_parties[0].job.employer_address.address
+    field: other_parties[0].job.employer.address.address
     address autocomplete: True
     required: False
   - label: Apartment, suite, etc
-    field: other_parties[0].job.employer_address.unit
+    field: other_parties[0].job.employer.address.unit
     required: False
   - label: City
-    field: other_parties[0].job.employer_address.city
+    field: other_parties[0].job.employer.address.city
     required: False
   - label: State or Province (two-letter abbreviation for U.S. states)
-    field: other_parties[0].job.employer_address.state
+    field: other_parties[0].job.employer.address.state
     default: MI
     input type: datalist
     code: |
       states_list()
     required: False
   - label: Zip or Postal Code
-    field: other_parties[0].job.employer_address.zip
+    field: other_parties[0].job.employer.address.zip
     required: False
   - label: Country
-    field: other_parties[0].job.employer_address.country
+    field: other_parties[0].job.employer.address.country
     default: "US"
     code: |
       countries_list()
     required: False
-  - Phone: other_parties[0].job.employer_phone
+  - Phone: other_parties[0].job.employer.phone
+    required: False
   - "Federal Employer Identification Number (FEIN), if known": other_parties[0].job.FEIN
+    required: False
 ---
 # LHI: "Plaintiff Occupational License" or "Defendant Occupational License"
 id: other party professional license
@@ -3083,8 +3185,8 @@ fields:
   - Are you a citizen of any country other than the US?: users[0].has_foreign_citizenship
     required: False
     datatype: yesnoradio
-    js show if: |
-      ${ json.dumps(tool_ID) } !== "JOD_only" && (true || val("users[0].ssn"))
+    show if: 
+      code: tool_ID != "JOD_only"
   - List all other countries that you are a citizen of: users[0].countries_of_citizenship
     required: False
     js show if: |
@@ -3193,8 +3295,8 @@ fields:
   - Is ${ OP_label } a citizen of any country other than the US?: other_parties[0].has_foreign_citizenship
     required: False
     datatype: yesnoradio
-    js show if: |
-      ${ json.dumps(tool_ID) } !== "JOD_only" && (true || val("other_parties[0].ssn"))
+    show if: 
+      code: tool_ID != "JOD_only"
   - List all other countries that ${ OP_label } is a citizen of: other_parties[0].countries_of_citizenship
     required: False
     js show if: |
@@ -3335,15 +3437,15 @@ fields:
 # TO DO: going to have to clear this out and rebuild if # of children changes
 code: |
   tax_choices = [
-                  ['default', f"Based on federal tax law, the parent with whom the { children.filter(legal_parent='both').as_noun() } { children.does_verb('live') } for the greater number of nights during the year will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years."],
-                  ['user', f"{ users[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years."],
-                  ['other_party', f"{ other_parties[0] } will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() }, including state, federal, or local tax returns, for all tax years."]
+                  ['default', f"Based on federal tax law, the **parent with whom the { children.filter(legal_parent='both').as_noun() } { children.does_verb('live') } for the greater number of nights during the year** will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() } for all tax years."],
+                  ['user', f"**{ users[0] }** will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() } for all tax years."],
+                  ['other_party', f"**{ other_parties[0] }** will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() } for all tax years."]
                 ]
   
   if len(children.filter(legal_parent="both")) > 1:
-    tax_choices.append(['specify_per_child', f"{ users[0] } and { other_parties[0] } will claim the deductions, credits, and exemptions for different children, including state, federal, or local tax returns."])
+    tax_choices.append(['specify_per_child', f"{ users[0] } and { other_parties[0] } will claim the deductions, credits, and exemptions for **different children.**"])
   
-  tax_choices.append(['alternate_years', f"{ users[0] } and { other_parties[0] } will claim all deductions, credits, and exemptions for the { children.filter(legal_parent='both').as_noun() } in alternating years, including state, federal, or local tax returns."])
+  tax_choices.append(['alternate_years', f"{ users[0] } and { other_parties[0] } will claim all deductions, credits, and exemptions for the { children.filter(legal_parent='both').as_noun() } in **alternating years.**"])
 ---
 id: income tax deductions starting year
 Question: Who gets income tax deductions first?
@@ -3386,3 +3488,87 @@ fields:
 event: test_end_screen
 question: Thank you for testing!
 subquestion: You have finished the initial child questions test interview.
+---
+#### documentation of child-dependent question logic
+#### as of 9/23/25 EKM believed this logic to be accurate for the child-dependent questions (though it has not been extensively tested), at least for the Divorce complaint and JOD-only.  Divorce Answer and Custody logic should be rechecked when we get to those. Saving a spare copy of this logic here before I start weaving it into the main interview orders. 
+#id: child questions
+#mandatory: True # remove later
+#code: |
+#  children_intro
+#  children.gather()
+#  set_marital_children_or_not
+#  
+#  if there_are_marital_children:
+#
+#    guidepost_marital_children
+#    if tool_ID in ["divorce_complaint", "divorce_answer"]:
+#      if kids_had_other_custodian:
+#        other_custodian_kickout
+#      if third_party_custody_claim:
+#        third_party_custody_kickout
+#      if need_temporary_order:
+#        if temporary_order_exit:
+#          exit_general
+#
+#    interview_order_home_state              
+#
+#    if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
+#      if not children_live_with_parent:
+#        children_live_with_third_party_kickout
+#      if children_now_live_with_which_parent == "depends_on_child":
+#        for child in children:
+#          if child.legal_parent == "both":
+#            child.lives_with
+#              
+#
+#    if tool_ID in ["divorce_complaint", "divorce_answer"]:
+#      if not confidential_contact_info_yn and (children_now_live_with_which_parent in ["depends_on_child", "users[0]"]):
+#        child_address_not_confidential_warning
+#      children_lived_with_which_parent_past
+#      children_previous_address.gather()
+#
+#    legal_custody_who
+#    if PT_type in ["specific", "supervised"]:
+#      if county_choice == "Muskegon":
+#        Muskegon_specific_PT_info
+#      if county_choice != "Muskegon":
+#        specific_PT_how
+#      if county_choice == "Muskegon" or (county_choice != "Muskegon" and specific_PT_how == "custom"):
+#        custom_PT_details
+#    hague_convention_info
+#    child_domicile_info
+#    if legal_custody_who != "both":
+#      hundred_mile_rule
+#    child_support_basic
+#    if tool_ID != "JOD_only":
+#      allow_child_support_overpayment_correction
+#
+#    if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0:
+#      guidepost_stepchildren
+#      interview_order_stepchild_address
+#  
+#    users[0].insurance.gather()
+#    other_parties[0].insurance.gather()
+#    if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
+#      marriage.cobra_coverage
+#    interview_order_user_employment
+#    if tool_ID != "JOD_only":
+#      interview_order_user_income
+#    interview_order_user_identifying_info
+#    interview_order_other_party_employment
+#    if tool_ID != "JOD_only":
+#      interview_order_other_party_income
+#    interview_order_other_party_identifying_info
+#    interview_order_income_tax
+#    interview_order_prior_cases
+#
+#  else:
+#    if tool_ID in ["JOD_only", "divorce_complaint", "divorce_answer"]:
+#      marriage.cobra_coverage
+#    if tool_ID == "divorce_complaint":
+#      interview_order_user_income
+#    if tool_ID in ["divorce_complaint", "divorce_answer"]:
+#      interview_order_prior_cases
+#    
+#  test_end_screen
+#---

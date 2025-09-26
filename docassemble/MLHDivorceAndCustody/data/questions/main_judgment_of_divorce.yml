@@ -16,16 +16,15 @@ metadata:
 ---
 sections:
   - signpost_intro: "Introduction"
-  - signpost_qualify: "Do you qualify?"
+  - signpost_qualify: "Is this tool right for you?"
   - signpost_user: "Your Information"
   - signpost_spouse: "Spouse's Information"
-  - signpost_marriage: "Marriage Information"
-  - signpost_personal_property: "Personal Property"
-  - signpost_debts: "Debts"
-  - signpost_vehicles: "Vehicles"
-  - signpost_real_property: "Real Property"
+  - signpost_support: "Spousal Support"
+  - signpost_children: "Children"
+  - signpost_income_etc: "Income, Insurance, etc."
+  - signpost_property: "Property and Debt"
   - signpost_judgment_information: "Judgment Information"
-  - signpost_done: "Done"
+  - signpost_done: "Get Your Forms"
   - review_full: "✎ <u>Review / Edit</u>"
 ---
 # TODO need survey url
@@ -43,8 +42,7 @@ content: |
 ---
 # set intro landing screen variables
 code: |
-  # TODO confirm form type
-  MLH_form_type = "Judgment of Divorce"
+  MLH_form_type = "forms"
   MLH_time_min = 15
   MLH_time_max = 45
 
@@ -57,7 +55,7 @@ code: |
 ---
 template: MLH_welcome_message
 content: |
-  Welcome to Michigan Legal Help's Do-It-Yourself ${MLH_form_type} tool.
+ Welcome to the Do-It-Yourself Judgment of Divorce tool.
 
   This tool will help you prepare forms to finish your divorce in Michigan. Use this tool if all you need is a Judgment of Divorce and the forms that go with it.
 ---
@@ -87,10 +85,6 @@ code: |
 
   if not marriage.breakdown:
     exit_no_marriage_breakdown
-
-  marriage.request_spousal_support
-  if not marriage.request_spousal_support_continue:
-    exit_general
 
   if marriage.have_pension_retirement:
     marriage.pension_retirement_accounts_keep_own
@@ -123,7 +117,6 @@ code: |
   users[0].previous_last_name_yn
   users[0].new_last_name_yn
   users[0].gender
-  users[0].pregnant
   users[0].marriage_number
   users[0].birthdate
   users[0].birthplace
@@ -136,47 +129,71 @@ code: |
   other_parties[0].name.first
   other_parties[0].previous_last_name_yn
   other_parties[0].gender
-  other_parties[0].pregnant
   other_parties[0].marriage_number
   other_parties[0].birthdate
   other_parties[0].birthplace
 
   other_parties[0].address.address
   if other_parties[0].address.state == "MI":
+    other_parties[0].address.county
     other_parties[0].village_or_township_yn
   if other_parties[0].mailing_address.yesno:
     other_parties[0].mailing_address.address
 
-  other_parties[0].phone_number
+  other_parties[0].no_phone_number
   other_parties[0].email
 
   interview_order_other_parties_attorney
 
-  nav.set_section("signpost_marriage")
+  nav.set_section("signpost_support")
 
+  interview_order_spousal_support
+  
   marriage.date
   marriage.address.city
   if not marriage.living_together_yn:
     marriage.living_together_stopped_date
 
-  marriage.health_coverage
+  nav.set_section("signpost_children")
+  interview_order_children
+  if users[0].pregnant:
+    if there_are_marital_children:
+      users[0].pregnant_notice
+    else:
+      users[0].pregnant_exit
+  if other_parties[0].pregnant:
+    if there_are_marital_children:
+      other_parties[0].pregnant_notice
+    else:
+      other_parties[0].pregnant_exit
 
-  nav.set_section("signpost_personal_property")
+  if there_are_marital_children:
+    prior_family_cases.gather()
+
+  nav.set_section("signpost_income_etc")
+  
+  if not there_are_marital_children:
+    marriage.cobra_coverage
+  
+  if there_are_marital_children:
+    users[0].insurance.gather()
+    other_parties[0].insurance.gather()
+    if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
+      marriage.cobra_coverage
+    interview_order_user_employment
+    interview_order_user_identifying_info
+    interview_order_other_party_employment
+    interview_order_other_party_identifying_info
+
+  nav.set_section("signpost_property")
 
   interview_order_personal_property
-
-  nav.set_section("signpost_debts")
-
   interview_order_debts
-
-  nav.set_section("signpost_vehicles")
-
   interview_order_vehicles
-
-  nav.set_section("signpost_real_property")
-
   marriage.real_property.gather()
-
+  if there_are_marital_children:
+    interview_order_income_tax
+  
   nav.set_section("signpost_judgment_information")
 
   if marriage.other_provisions_any:
@@ -196,58 +213,8 @@ code: |
   MLH_standard_outro_pages
   MLH_download
 ---
-code: |
-  if confidential_contact_info_yn:
-    users[0].address.address
-  else:
-    users[0].address.address
-    if users[0].address.state == "MI":
-      users[0].village_or_township_yn
-    if users[0].mailing_address.yesno:
-      users[0].mailing_address.address
-  users[0].phone_number
-  users[0].email
-  interview_order_user_contact_info = True
+# EKM note: interview_order code blocks moved from here to question_bank.yml
 ---
-code: |
-  if other_parties[0].has_attorney:
-    other_parties[0].attorney.name.first
-    other_parties[0].attorney.address.address
-    other_parties[0].attorney.phone_number
-  interview_order_other_parties_attorney = True
----
-code: |
-  marriage.accounts
-  marriage.other_pp
-  marriage.mobile_home
-  marriage.personal_property_info
-  if marriage.personal_property_acquired:
-    if not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual:
-      marriage.accounts.gather()
-      marriage.other_pp.gather()
-      marriage.mobile_home.gather()
-  interview_order_personal_property = True
----
-code: |
-  marriage.debts.info
-  if marriage.debts.any:
-    if not marriage.debts.pay_debts_in_own_names:
-      marriage.debts.agree_responsibility_debts_own_name
-    if marriage.debts.any_in_both_names:
-      marriage.debts.agree_responsibility_debts_both_names
-    if not marriage.debts.pay_debts_in_own_names or marriage.debts.any_in_both_names:
-      marriage.debts.gather()
-  interview_order_debts = True
----
-code: |
-  marriage.vehicles
-  marriage.vehicles.info
-  if marriage.vehicles.any:
-    if not marriage.vehicles.keep_own:
-      marriage.vehicles.gather()
-  interview_order_vehicles = True
----
-
 # ====================================================================
 ## documents
 # ====================================================================
