@@ -55,9 +55,22 @@ code: |
 ---
 template: MLH_welcome_message
 content: |
- Welcome to the Do-It-Yourself Judgment of Divorce tool.
+ Welcome to the Do-It-Yourself Judgment of Divorce tool. 
 
-  This tool will help you prepare forms to finish your divorce in Michigan. Use this tool if all you need is a Judgment of Divorce and the forms that go with it.
+ A Judgment of Divorce is the **final order** you need for the end of a divorce case. Use this tool if:
+  
+   * you already have an active divorce case, and
+   * all you need is a Judgment of Divorce and the forms that go with it.
+---
+id: JOD_only special instructions
+question: How to answer the questions in this tool
+subquestion: |
+  1. If you are preparing your Judgment of Divorce **before** the final hearing:
+      * if you and your spouse **agree** on a question, use your agreed answer.
+      * if you and your spouse **don't agree** on a question, give the answer that you want the judge to order.
+      * *note*: you may have to come back and change your answers if you and your spouse change your agreement or if the judge orders terms that are different than those you enter now.  
+  
+  2. If you are preparing your Judgment of Divorce **after** the final hearing, give answers that match what the judge ordered at the final hearing.
 ---
 # ====================================================================
 ## interview_order
