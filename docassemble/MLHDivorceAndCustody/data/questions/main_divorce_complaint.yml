@@ -85,21 +85,31 @@ code: |
     other_parties[0].insurance.gather()
     if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
       marriage.cobra_coverage
+  
+  elif not there_are_marital_children: 
+    nav.set_section("signpost_prior_cases")
+    interview_order_prior_cases
+    nav.set_section("signpost_income_etc")
+    marriage.cobra_coverage
+
+  if there_are_marital_children or (user_wants_post_divorce_support and continue_with_spousal_support_request):
     interview_order_user_employment
     interview_order_user_income
     interview_order_user_identifying_info
     interview_order_other_party_employment
     interview_order_other_party_income
     interview_order_other_party_identifying_info
-    interview_order_income_tax
-  
-  if not there_are_marital_children: 
-    nav.set_section("signpost_prior_cases")
-    interview_order_prior_cases
-    nav.set_section("signpost_income_etc")
-    marriage.cobra_coverage
+  else:
     interview_order_user_income
 
+  nav.set_section("signpost_property")
+
+  interview_order_personal_property
+  interview_order_debts
+  interview_order_vehicles
+  marriage.real_property.gather()
+  if there_are_marital_children:
+    interview_order_income_tax
 
   if there_are_marital_children:
     if marriage.temporary_order:

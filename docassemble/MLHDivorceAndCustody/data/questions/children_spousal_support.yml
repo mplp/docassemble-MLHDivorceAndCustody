@@ -2866,7 +2866,7 @@ code: |
 ---
 code: |
   other_parties[0].has_job
-  if tool_ID == "divorce_complaint" and there_are_marital_children:
+  if tool_ID == "divorce_complaint":
     other_parties[0].occupation
   if other_parties[0].has_job:
     other_parties[0].job.employer.name.first
