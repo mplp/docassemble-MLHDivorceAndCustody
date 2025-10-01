@@ -1,0 +1,153 @@
+---
+attachment:
+  name: Uniform Child Support Order
+  variable name: foc10_main[i]
+  skip undefined: True
+  editable: False
+  pdf template file: uniform_child_support_order_foc_10.pdf
+  fields:
+    - trial_court: ${ the_court.number }
+    - trial_court_court: ${ county_choice.upper() }
+    - case_number_1: ${ docket_number }
+    - case_number_2: ${ docket_number }
+    - case_number_3: ${ docket_number }
+    - case_number_4: ${ docket_number }
+    - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+    - trial_court_phone_number: ${ the_court.phone }
+    - plaintiff_block: |
+        % if user_ask_role == "plaintiff":
+        ${ users[0].name_full() }
+        ${ users[0].address.line_one() }
+        ${ users[0].address.line_two() }
+        ${ word("Does not have phone") if users[0].no_phone_number else users[0].phone_numbers() }
+        % elif user_ask_role == "defendant":
+        ${ other_parties[0].name_full() }
+        ${ other_parties[0].address.line_one() }
+        ${ other_parties[0].address.line_two() }
+        ${ word("Does not have phone") if other_parties[0].no_phone_number else other_parties[0].phone_numbers() }
+        % endif
+    - defendant_block: |
+        % if user_ask_role == "defendant":
+        ${ users[0].name_full() }
+        ${ users[0].address.line_one() }
+        ${ users[0].address.line_two() }
+        ${ word("Does not have phone") if users[0].no_phone_number else users[0].phone_numbers() }
+        % elif user_ask_role == "plaintiff":
+        ${ other_parties[0].name_full() }
+        ${ other_parties[0].address.line_one() }
+        ${ other_parties[0].address.line_two() }
+        ${ word("Does not have phone") if other_parties[0].no_phone_number else other_parties[0].phone_numbers() }
+        % endif
+    - plaintiffs_attorney_block: |
+        % if user_ask_role == "plaintiff":
+        ${ users[0].attorney.name_full() }
+        ${ users[0].attorney.address.line_one() }
+        ${ users[0].attorney.address.line_two() }
+        ${ word("Does not have phone") if users[0].attorney.no_phone_number else users[0].attorney.phone_numbers() }
+        % elif user_ask_role == "defendant":
+        ${ other_parties[0].attorney.name_full() }
+        ${ other_parties[0].attorney.address.line_one() }
+        ${ other_parties[0].attorney.address.line_two() }
+        ${ word("Does not have phone") if other_parties[0].attorney.no_phone_number else other_parties[0].attorney.phone_numbers() }
+        % endif
+    - defendants_attorney_block: |
+        % if user_ask_role == "defendant":
+        ${ users[0].attorney.name_full() }
+        ${ users[0].attorney.address.line_one() }
+        ${ users[0].attorney.address.line_two() }
+        ${ word("Does not have phone") if users[0].attorney.no_phone_number else users[0].attorney.phone_numbers() }
+        % elif user_ask_role == "plaintiff":
+        ${ other_parties[0].attorney.name_full() }
+        ${ other_parties[0].attorney.address.line_one() }
+        ${ other_parties[0].attorney.address.line_two() }
+        ${ word("Does not have phone") if other_parties[0].attorney.no_phone_number else other_parties[0].attorney.phone_numbers() }
+        % endif
+
+    #Note: Tags below use hypothetical variables. May need to be changed once they are
+    # defined and incorporated into the interview.
+    - ex_parte_child_support_order: ${ ex_parte_child_support_order }
+    - temporary_child_support_order: ${ temporary_child_support_order }
+    - final_child_support_order: ${ final_child_support_order }
+    - modified_child_support_order: ${ modified_child_support_order }
+
+    - children1: ${ children[0] }
+    - children2: ${ children[1] if len(children) > 1 else "" }
+    - children3: ${ children[2] if len(children) > 2 else "" }
+    - children4: ${ children[3] if len(children) > 3 else "" }
+    - children5: ${ children[4] if len(children) > 4 else "" }
+    - more_children: ${ "See Addendum" if len(children) > 5 else "" }
+
+    - child1_support: ${ child1_support }
+    - child2_support: ${ child2_support }
+    - child3_support: ${ child3_support }
+    - child4_support: ${ child4_support }
+    - child5_support: ${ child5_support }
+
+    - child1_premium_adjust: ${ child1_premium_adjust }
+    - child2_premium_adjust: ${ child2_premium_adjust }
+    - child3_premium_adjust: ${ child3_premium_adjust }
+    - child4_premium_adjust: ${ child4_premium_adjust }
+    - child5_premium_adjust: ${ child5_premium_adjust }
+
+    - child1_subtotal: ${ child1_subtotal }
+    - child2_subtotal: ${ child2_subtotal }
+    - child3_subtotal: ${ child3_subtotal }
+    - child4_subtotal: ${ child4_subtotal }
+    - child5_subtotal: ${ child5_subtotal }
+
+    - child1_ordinary_medical: ${ child1_ordinary_medical }
+    - child2_ordinary_medical: ${ child2_ordinary_medical }
+    - child3_ordinary_medical: ${ child3_ordinary_medical }
+    - child4_ordinary_medical: ${ child4_ordinary_medical }
+    - child5_ordinary_medical: ${ child5_ordinary_medical }
+
+    - child1_child_care: ${ child1_child_care }
+    - child2_child_care: ${ child2_child_care }
+    - child3_child_care: ${ child3_child_care }
+    - child4_child_care: ${ child4_child_care }
+    - child5_child_care: ${ child5_child_care }
+
+    - child1_other: ${ child1_other }
+    - child2_other: ${ child2_other }
+    - child3_other: ${ child3_other }
+    - child4_other: ${ child4_other }
+    - child5_other: ${ child5_other }
+
+    - child1_benefit_credit: ${ child1_benefit_credit }
+    - child2_benefit_credit: ${ child2_benefit_credit }
+    - child3_benefit_credit: ${ child3_benefit_credit }
+    - child4_benefit_credit: ${ child4_benefit_credit }
+    - child5_benefit_credit: ${ child5_benefit_credit }
+
+    - child1_obligation_total: ${ child1_obligation_total }
+    - child2_obligation_total: ${ child2_obligation_total }
+    - child3_obligation_total: ${ child3_obligation_total }
+    - child4_obligation_total: ${ child4_obligation_total }
+    - child5_obligation_total: ${ child5_obligation_total }
+
+    - child_support_reduced: ${ child_support_reduced }
+    - child_support_shared_med_expenses: ${ child_support_shared_med_expenses }
+    - child_support_med_percent_plaintiff: ${ child_support_med_percent_plaintiff }
+    - child_support_med_percent_defendant: ${ child_support_med_percent_defendant }
+    - post_majority_support: ${ post_majority_support }
+    - post_majority_support_children: ${ post_majority_support_children }
+    - child_care_children: ${ child_care_children }
+    - plaintiff_maintains_child_healthcare: ${ plaintiff_maintains_child_healthcare }
+    - defendant_maintains_child_healthcare: ${ defendant_maintains_child_healthcare }
+
+    - up_to_max_plaintiff: ${ up_to_max_plaintiff }
+    - up_to_max_defendant: ${ up_to_max_defendant }
+    - max_amount_plaintiff: ${ max_amount_plaintiff }
+    - max_amount_defendant: ${ max_amount_defendant }
+    - six_percent_income_limit: ${ six_percent_income_limit }
+    - abatement_payer_incapacitated: ${ abatement_payer_incapacitated }
+    - child_support_formula_180_days: ${ child_support_formula_180_days }
+    - child_support_formula_custom: ${ child_support_formula_custom }
+    - child_support_formula_custom_days: ${ child_support_formula_custom_days }
+    - support_charges_reinstated_60_days: ${ support_charges_reinstated_60_days }
+    - support_charges_reinstated_custom: ${ support_charges_reinstated_custom }
+    - support_charges_reinstated_custom_days: ${ support_charges_reinstated_custom_days }
+    - include_child_support_other: ${ include_child_support_other }
+    - child_support_other: ${ child_support_other }
+---
+
