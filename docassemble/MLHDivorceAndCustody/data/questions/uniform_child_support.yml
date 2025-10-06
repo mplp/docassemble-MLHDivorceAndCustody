@@ -6,6 +6,9 @@ attachment:
   editable: False
   pdf template file: uniform_child_support_order_foc_10.pdf
   fields:
+    # Note: Tags below may use placeholder variables. These may need to be changed once they are
+    # actually defined and incorporated into the interview.
+    
     - trial_court: ${ the_court.number }
     - trial_court_court: ${ county_choice.upper() }
     - case_number_1: ${ docket_number }
@@ -14,6 +17,7 @@ attachment:
     - case_number_4: ${ docket_number }
     - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
     - trial_court_phone_number: ${ the_court.phone }
+
     - plaintiff_block: |
         % if user_ask_role == "plaintiff":
         ${ users[0].name_full() }
@@ -26,6 +30,7 @@ attachment:
         ${ other_parties[0].address.line_two() }
         ${ word("Does not have phone") if other_parties[0].no_phone_number else other_parties[0].phone_numbers() }
         % endif
+
     - defendant_block: |
         % if user_ask_role == "defendant":
         ${ users[0].name_full() }
@@ -38,6 +43,7 @@ attachment:
         ${ other_parties[0].address.line_two() }
         ${ word("Does not have phone") if other_parties[0].no_phone_number else other_parties[0].phone_numbers() }
         % endif
+
     - plaintiffs_attorney_block: |
         % if user_ask_role == "plaintiff":
         ${ users[0].attorney.name_full() }
@@ -50,6 +56,7 @@ attachment:
         ${ other_parties[0].attorney.address.line_two() }
         ${ word("Does not have phone") if other_parties[0].attorney.no_phone_number else other_parties[0].attorney.phone_numbers() }
         % endif
+
     - defendants_attorney_block: |
         % if user_ask_role == "defendant":
         ${ users[0].attorney.name_full() }
@@ -63,9 +70,6 @@ attachment:
         ${ word("Does not have phone") if other_parties[0].attorney.no_phone_number else other_parties[0].attorney.phone_numbers() }
         % endif
 
-    #Note: Tags below use hypothetical variables. May need to be changed once they are
-    # defined and incorporated into the interview.
-
     - children1: ${ children[0] }
     - children2: ${ children[1] if len(children) > 1 else "" }
     - children3: ${ children[2] if len(children) > 2 else "" }
@@ -73,4 +77,3 @@ attachment:
     - children5: ${ children[4] if len(children) > 4 else "" }
     - more_children: ${ "See Addendum" if len(children) > 5 else "" }
 ---
-
