@@ -285,6 +285,54 @@ fields:
     field: marriage.breakdown
     datatype: yesnoradio
 ---
+id: incompetent spouse
+question: |
+  Your spouse's legal competence
+fields:
+  - To the best of your knowledge, has a judge found your spouse to be legally incompetent?: spouse_is_incompetent
+    datatype: yesnoradio    
+  - note: |
+      If your spouse does not file an answer to your divorce complaint, you may be entering a default judgment of divorce against him or her. You may not enter a default judgment against a person who is not legally competent to understand the divorce proceedings.
+    show if:
+      variable: spouse_is_incompetent
+      is: True
+---
+id: military spouse
+question: |
+  Spouse in the military?
+subquestion: |
+  ${collapse_template(military_spouse_info)}
+fields:
+  - Is your spouse currently on active military duty in the United States armed forces?: spouse_is_in_military
+    datatype: yesnoradio
+  - note: |
+      If your spouse is on active military duty, you may only use this tool to prepare your divorce forms if your spouse:
+      
+      * agrees to the divorce, 
+      * agrees to all the terms of the divorce, and 
+      * will sign a Consent Judgment of Divorce. 
+      
+      If your spouse is on active military duty and doesn't agree to the divorce or all the terms of the divorce, you may want to talk to a lawyer to help you complete your divorce.
+    show if:
+      variable: spouse_is_in_military
+      is: True
+  - Will you and your spouse be filing a Consent Judgment of Divorce?: military_spouse_agrees_consent_judgment
+    datatype: radio
+    choices:
+      - Yes: yes
+      - No: no
+      - "I don't know": unknown
+    show if:
+      variable: spouse_is_in_military
+      is: True
+---
+template: military_spouse_info
+subject: What if I'm not sure?
+content: |
+  If your spouse is or may be on active military duty, you may only use this tool to prepare your divorce forms if your spouse agrees to the divorce, agrees to all of the terms of the divorce, and will sign a Consent Judgment of Divorce. 
+  
+  Please return to use this tool when you have determined whether your spouse is currently on active military duty. 
+---
 id: marriage.have_pension_retirement
 question: |
   Pension and/or retirement accounts

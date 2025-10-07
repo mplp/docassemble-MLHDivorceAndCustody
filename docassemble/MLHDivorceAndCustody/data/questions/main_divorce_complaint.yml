@@ -7,7 +7,7 @@ metadata:
   title: Michigan Complaint for Divorce
   short title: Michigan Divorce Complaint
   description: |
-    Self-help interview to get a Judgment of Divorce and other documents needed to finish a divorce in Michigan.
+    Self-help interview to get documents needed to file for divorce in Michigan.
   tags:
     - Family
   authors:
@@ -43,8 +43,8 @@ content: |
 ---
 # set intro landing screen variables
 code: |
-  MLH_time_min = 15
-  MLH_time_max = 45
+  MLH_time_min = 20
+  MLH_time_max = 60
 
   # TODO need resource url & confirm page name
   resource_page_url_only = "https://michiganlegalhelp.org/node/xxxx"
@@ -55,7 +55,7 @@ template: MLH_welcome_message
 content: |
   Welcome to the Do-It-Yourself Divorce tool.
 
-  This tool will help you prepare the forms you need to ask the court for a divorce.
+  This tool will help you prepare the forms you need to ask the court for a divorce. This tool may not be able to help you with every aspect of your divorce. In some cases, you may want to have a lawyer help you finish the divorce process. ${MLH_GUIDE_FULL}
 ---
 # ====================================================================
 ## interview_order
@@ -69,6 +69,42 @@ code: |
   nav.set_section("review_full")
   nav.set_section("signpost_intro")
   MLH_standard_intro_pages
+
+  nav.set_section("signpost_qualify")
+  if marriage.pending_divorce:
+    exit_general
+
+  if not marriage.breakdown:
+    exit_no_marriage_breakdown
+  if spouse_is_incompetent:
+    exit_general
+  if spouse_is_in_military and military_spouse_agrees_consent_judgment != "yes":
+    exit_general
+
+  if marriage.have_pension_retirement:
+    marriage.pension_retirement_accounts_keep_own
+    if not marriage.pension_retirement_accounts_continue:
+      exit_general
+
+  if marriage.have_financial_instruments:
+    if marriage.financial_instruments_held_together:
+      marriage.financial_instruments_held_together_agree_about_division
+      if not marriage.financial_instruments_held_together_continue:
+        exit_general
+    else:
+      if marriage.financial_instruments_keep_or_divide == "divide":
+        exit_general
+      elif marriage.financial_instruments_keep_or_divide == "keep":
+        if not marriage.financial_instruments_keep_own_continue:
+          exit_general
+
+  if marriage.have_business:
+    exit_general
+
+  if marriage.have_experienced_domestic_violence:
+    if not marriage.have_experienced_domestic_violence_continue:
+      exit_general
+  
 
   nav.set_section("signpost_support")
   interview_order_spousal_support

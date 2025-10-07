@@ -64,13 +64,16 @@ content: |
 ---
 id: JOD_only special instructions
 question: How to answer the questions in this tool
+continue button field: JOD_only_instructions
 subquestion: |
-  1. If you are preparing your Judgment of Divorce **before** the final hearing:
-      * if you and your spouse **agree** on a question, use your agreed answer.
-      * if you and your spouse **don't agree** on a question, give the answer that you want the judge to order.
-      * *note*: you may have to come back and change your answers if you and your spouse change your agreement or if the judge orders terms that are different than those you enter now.  
+  To prepare a Judgment of Divorce **before** the final hearing:
   
-  2. If you are preparing your Judgment of Divorce **after** the final hearing, give answers that match what the judge ordered at the final hearing.
+  * if you and your spouse **agree** on a question, use your agreed answer;
+  * if you and your spouse **don't agree** on a question, give the answer that you want the judge to order. 
+  
+  To prepare a Judgment of Divorce **after** the final hearing:
+  
+  * give answers that match what the judge ordered at the final hearing.
 ---
 # ====================================================================
 ## interview_order
@@ -83,7 +86,12 @@ code: |
   set_persistent_labels
   nav.set_section("review_full")
   nav.set_section("signpost_intro")
-  MLH_standard_intro_pages
+  MLH_intro_landing
+  JOD_only_instructions
+  MLH_agree_terms
+  MLH_intro_navigate_save
+  if MLH_intro_agree_no_pii == False:
+    MLH_intro_agree_no_pii_exit
 
   nav.set_section("signpost_qualify")
   if not marriage.pending_divorce:
