@@ -170,23 +170,9 @@ code: |
 
   interview_order_spousal_support
   
-  marriage.date
-  marriage.address.city
-  if not marriage.living_together_yn:
-    marriage.living_together_stopped_date
-
   nav.set_section("signpost_children")
   interview_order_children
-  if users[0].pregnant:
-    if there_are_marital_children:
-      users[0].pregnant_notice
-    else:
-      users[0].pregnant_exit
-  if other_parties[0].pregnant:
-    if there_are_marital_children:
-      other_parties[0].pregnant_notice
-    else:
-      other_parties[0].pregnant_exit
+  interview_order_pregnancy
 
   if there_are_marital_children:
     prior_family_cases.gather()
@@ -205,19 +191,26 @@ code: |
   if there_are_marital_children or (user_wants_post_divorce_support and continue_with_spousal_support_request):
     interview_order_user_employment
     interview_order_user_identifying_info
+    users[0].has_alias
     interview_order_other_party_employment
     interview_order_other_party_identifying_info
+    other_parties[0].has_alias
 
   nav.set_section("signpost_property")
 
   interview_order_personal_property
-  interview_order_debts
   interview_order_vehicles
+  interview_order_debts
   marriage.real_property.gather()
   if there_are_marital_children:
     interview_order_income_tax
   
   nav.set_section("signpost_judgment_information")
+
+  marriage.date
+  marriage.address.city
+  if not marriage.living_together_yn:
+    marriage.living_together_stopped_date
 
   if marriage.other_provisions_any:
     marriage.other_provisions
@@ -233,7 +226,7 @@ code: |
   defendants
 
   nav.set_section("signpost_done")
-  MLH_standard_outro_pages
+  MLH_standard_outro_pages  
   MLH_download
 ---
 # EKM note: interview_order code blocks moved from here to question_bank.yml

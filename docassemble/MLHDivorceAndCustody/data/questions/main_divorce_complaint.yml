@@ -104,45 +104,84 @@ code: |
   if marriage.have_experienced_domestic_violence:
     if not marriage.have_experienced_domestic_violence_continue:
       exit_general
-  
+
+  if need_temporary_order:
+    if not temporary_order_continue:
+      exit_general
+
+  ########### UNDER CONSTRUCTION do qualification part 2 screening here ###########
+  nav.set_section("signpost_user")
+
+  users.gather()
+  users[0].name.first
+  users[0].has_previous_name
+  users[0].new_last_name_yn
+  users[0].gender
+  users[0].marriage_number
+  users[0].birthdate
+  users[0].birthplace
+
+  interview_order_user_contact_info
+
+  nav.set_section("signpost_spouse")
+
+  other_parties.gather()
+  other_parties[0].name.first
+  other_parties[0].has_previous_name
+  other_parties[0].gender
+  other_parties[0].marriage_number
+  other_parties[0].birthdate
+  other_parties[0].birthplace
+
+  other_parties[0].address.address
+  if other_parties[0].address.state == "MI":
+    other_parties[0].address.county
+    other_parties[0].village_or_township_yn
+  if other_parties[0].mailing_address.yesno:
+    other_parties[0].mailing_address.address
+
+  other_parties[0].no_phone_number
+  other_parties[0].email
+
+  ###############################################################
 
   nav.set_section("signpost_support")
   interview_order_spousal_support
 
   nav.set_section("signpost_children")
   interview_order_children
-  
-  if there_are_marital_children:
-    nav.set_section("signpost_prior_cases")
-    prior_family_cases.gather()
+  interview_order_pregnancy
 
-    nav.set_section("signpost_income_etc")
+  nav.set_section("signpost_prior_cases")
+  prior_family_cases.gather()
+
+  nav.set_section("signpost_income_etc") 
+  if there_are_marital_children:
     users[0].insurance.gather()
     other_parties[0].insurance.gather()
     if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
       marriage.cobra_coverage
   
   elif not there_are_marital_children: 
-    nav.set_section("signpost_prior_cases")
-    interview_order_prior_cases
-    nav.set_section("signpost_income_etc")
     marriage.cobra_coverage
 
   if there_are_marital_children or (user_wants_post_divorce_support and continue_with_spousal_support_request):
     interview_order_user_employment
     interview_order_user_income
     interview_order_user_identifying_info
+    users[0].has_alias
     interview_order_other_party_employment
     interview_order_other_party_income
     interview_order_other_party_identifying_info
+    other_parties[0].has_alias
   else:
     interview_order_user_income
 
   nav.set_section("signpost_property")
 
   interview_order_personal_property
-  interview_order_debts
   interview_order_vehicles
+  interview_order_debts
   marriage.real_property.gather()
   if there_are_marital_children:
     interview_order_income_tax
@@ -150,3 +189,19 @@ code: |
   if there_are_marital_children:
     if marriage.temporary_order:
       marriage.temporary_order_changed
+
+  marriage.date
+  marriage.address.city
+  if not marriage.living_together_yn:
+    marriage.living_together_stopped_date
+
+  if marriage.other_provisions_any:
+    marriage.other_provisions
+
+  if marriage.temporary_order:
+    marriage.temporary_order_changed
+
+  #### divorce venue goes here!!! ######
+
+  if not marriage.true_statement:
+    exit_general

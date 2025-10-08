@@ -77,8 +77,8 @@ code: |
         other_custodian_kickout
       if third_party_custody_claim:
         third_party_custody_kickout
-      if need_temporary_order:
-        if temporary_order_exit:
+      if need_temporary_order_kids:
+        if temporary_order_kids_exit:
           exit_general
 
     interview_order_home_state              
@@ -645,6 +645,8 @@ code: |
     children[i].birthdate
 
   if children[i].legal_parent != "both":
+    if tool_ID != "JOD_only":
+      children[i].stepchild_demographics
     children[i].not_included_in_divorce_info
   
   elif ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived" and children[i].legal_parent == "both")) and children[i].parentage_plan_to_revoke:
@@ -1205,6 +1207,23 @@ subquestion: |
   % endif
   % endif
 ---
+id: stepchild gender and DOB (optional)
+if: children[i].legal_parent != "both"
+question: More information about ${ children[i] }
+subquestion: |
+  Leave blank if unknown.
+continue button field: children[i].stepchild_demographics
+fields:
+  - Date of birth: children[i].birthdate
+    required: False
+    datatype: BirthDate
+  - Gender: children[i].gender
+    required: False
+    datatype: radio
+    choices:
+      - Female: female
+      - Male: male
+---
 id: info about nonmarital children
 if: children[i].legal_parent != "both"
 continue button field: children[i].not_included_in_divorce_info
@@ -1387,7 +1406,7 @@ fields:
     show if:
       variable: third_party_custody_claim
       is: False
-    field: need_temporary_order
+    field: need_temporary_order_kids
     datatype: yesnoradio
 ---
 id: temporary order warning
@@ -1402,7 +1421,7 @@ subquestion: |
   
   You may want to speak to a lawyer. ${MLH_GUIDE_FULL}
 fields:
-  - Do you want to continue?: temporary_order_exit
+  - Do you want to continue?: temporary_order_kids_exit
     datatype: noyesradio
 ---
 id: specify which parent child lives with
@@ -2006,6 +2025,82 @@ content:
 ######## end custody questions ########
 ---
 # --------------------------------------------------------------------
+## pregnancy
+# --------------------------------------------------------------------
+---
+id: pregnancy logic
+code: |
+  if users[0].pregnant:
+    if there_are_marital_children:
+      users[0].pregnant_notice
+    else:
+      users[0].pregnant_exit
+  if other_parties[0].pregnant:
+    if there_are_marital_children:
+      other_parties[0].pregnant_notice
+    else:
+      other_parties[0].pregnant_exit
+
+  interview_order_pregnancy = True
+---
+id: users[0].pregnant
+question: |
+  Pregnancy
+subquestion: |
+  ${collapse_template(users[0].pregnant_explanation_template)}
+fields:
+  - label: Are you pregnant?
+    field: users[0].pregnant
+    datatype: yesnoradio
+---
+id: other_parties[0].pregnant
+question: |
+  Pregnancy
+subquestion: |
+  ${collapse_template(other_parties[0].pregnant_explanation_template)}
+fields:
+  - label: Is your spouse pregnant?
+    field: other_parties[0].pregnant
+    datatype: yesnoradio
+---
+generic object: ALIndividual
+template: x.pregnant_explanation_template
+subject: |
+  Why are you asking this?
+content: |
+  % if tool_ID == "divorce_complaint":
+  The Complaint for Divorce (one of the forms you will file to start your divorce case), must say if either spouse is pregnant.
+  % elif tool_ID == "JOD_only":
+  The divorce generally cannot be completed while either spouse is pregnant.
+  % endif
+---
+generic object: ALIndividual
+if: x.pregnant and there_are_marital_children
+question: You may have to update your forms later
+continue button field: x.pregnant_notice
+subquestion: |
+  You can use this tool to prepare your divorce forms, but you may have to wait until the birth or end of the pregnancy to schedule your final hearing and enter your Judgment of Divorce, so that provisions for custody, parenting time, and support are complete.
+
+  Children conceived during a marriage are also considered children of the marriage. If a new child is born who was conceived during the marriage, you will need to log back in to your saved answers so you can add that child and include their name and other information. This will allow you to get an updated Judgment of Divorce and other updated forms.
+---
+generic object: ALIndividual
+if: x.pregnant and not there_are_marital_children
+question: You must wait until the pregnancy has ended to use this tool
+event: x.pregnant_exit
+subquestion: |
+  Sorry, if either spouse is currently pregnant, you may not use this tool to prepare your divorce forms. Michigan law requires you to include all children born or conceived during your marriage in the custody, parenting time, and support provisions of your Judgment of Divorce. 
+  
+  You may want to consider hiring a lawyer to help you with your divorce if you want to start the divorce process while your spouse is pregnant. ${ MLH_GUIDE_FULL } 
+  
+  Or you can wait and use this tool after the birth or end of the pregnancy.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
+# --------------------------------------------------------------------
 ## prior cases
 # --------------------------------------------------------------------
 # for JOD-only, this is only shown if there are marital children. For other divorce filing types, there are questions needed here even if no marital children. 
@@ -2465,10 +2560,10 @@ code: |
       
 ---
 # --------------------------------------------------------------------
-## stepchildren additional info
+## stepchildren address info
 # --------------------------------------------------------------------
 ---
-# EKM note: logic surrounding whether stepchild address is printed on forms or kept confidential will need to be done on attachment screens or in separate variable at some point
+# EKM TODO note: logic surrounding whether stepchild address is printed on forms or kept confidential will need to be done on attachment screens or in separate variable at some point
 code: |
   for child in children:
     if child.legal_parent != "both":
@@ -3274,6 +3369,24 @@ fields:
       variable: users[0].race 
       is: other
 ---
+id: user alias
+if: there_are_marital_children or (user_wants_post_divorce_support and continue_with_spousal_support_request)
+question: Other names
+subquestion: |
+  * Your name is ${users[0]}.
+  % if tool_ID == "JOD_only" and users[0].previous_last_name_yn:
+  * Your previous last name was ${users[0].previous_last_name}.
+  % elif tool_ID == "divorce_complaint" and users[0].has_previous_name:
+  * Your previous name was ${users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name}.
+  % endif
+fields:
+  - Have you ever been known by any other name(s) or aliases not listed above?: users[0].has_alias
+    datatype: yesnoradio
+  - What are the other names you have been known by? Do not include maiden name here.: users[0].aliases
+    show if:
+      variable: users[0].has_alias
+      is: True
+---
 id: other party SSN and DL
 question: |
   % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
@@ -3391,7 +3504,24 @@ fields:
     show if: 
       variable: users[0].race 
       is: other
-
+---
+id: other party alias
+if: there_are_marital_children or (user_wants_post_divorce_support and continue_with_spousal_support_request)
+question: Other names
+subquestion: |
+  * Your spouse's name is ${other_parties[0]}.
+  % if tool_ID == "JOD_only" and other_parties[0].previous_last_name_yn:
+  * Their previous last name was ${other_parties[0].previous_last_name}.
+  % elif tool_ID == "divorce_complaint" and other_parties[0].has_previous_name:
+  * Their previous name was ${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}.
+  % endif
+fields:
+  - Has your spouse ever been known by any other name(s) or aliases not listed above?: other_parties[0].has_alias
+    datatype: yesnoradio
+  - What are the other names your spouse has been known by? Do not include maiden name here.: other_parties[0].aliases
+    show if:
+      variable: other_parties[0].has_alias
+      is: True
 # --------------------------------------------------------------------
 ## income tax info
 # --------------------------------------------------------------------
@@ -3506,8 +3636,8 @@ subquestion: You have finished the initial child questions test interview.
 #        other_custodian_kickout
 #      if third_party_custody_claim:
 #        third_party_custody_kickout
-#      if need_temporary_order:
-#        if temporary_order_exit:
+#      if need_temporary_order_kids:
+#        if temporary_order_kids_exit:
 #          exit_general
 #
 #    interview_order_home_state              

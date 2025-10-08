@@ -56,6 +56,11 @@ review:
       ##### Your previous last name
         - ${users[0].attr("previous_last_name")}
   - Edit:
+      - users[0].has_previous_name
+    button: |
+      ##### Your previous name
+        - ${users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name}
+  - Edit:
       - users[0].new_last_name_yn
     button: |
       ##### Your new last name
@@ -65,11 +70,6 @@ review:
     button: |
       ##### Your gender
         - ${users[0].gender.capitalize()}
-  - Edit:
-      - users[0].pregnant
-    button: |
-      ##### You are pregnant
-        - ${word(yesno(users[0].pregnant))}
   - Edit:
       - users[0].marriage_number
     button: |
@@ -146,6 +146,11 @@ review:
       ##### Spouse's previous last name
         - ${other_parties[0].attr("previous_last_name")}
   - Edit:
+      - other_parties[0].has_previous_name
+    button: |
+      ##### Your spouse's previous name
+        - ${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}
+  - Edit:
       - other_parties[0].new_last_name_yn
     button: |
       ##### Spouse's new last name
@@ -155,11 +160,6 @@ review:
     button: |
       ##### Spouse's gender
         - ${other_parties[0].gender.capitalize()}
-  - Edit:
-      - other_parties[0].pregnant
-    button: |
-      ##### Spouse is pregnant
-        - ${word(yesno(other_parties[0].pregnant))}
   - Edit:
       - other_parties[0].marriage_number
     button: |
@@ -282,6 +282,23 @@ review:
       ##### Date you and your spouse stopped living together
         - ${marriage.living_together_stopped_date}
       % endif
+#
+# ---------- children and pregnancy ----------
+#
+# TODO ADD ACCORDION
+  - Edit:
+      - users[0].pregnant
+      - other_parties[0].pregnant
+    #  - follow up   [ TODO currently breaking need to fix]
+    #    - users[0].pregnant_notice
+    #    - users[0].pregnant_exit
+    #    - other_parties[0].pregnant_notice
+    #    - other_parties[0].pregnant_exit
+    button: |
+      ##### You are pregnant
+        - ${word(yesno(users[0].pregnant))}
+      ##### Spouse is pregnant
+        - ${word(yesno(other_parties[0].pregnant))}  
 #
 # ---------- personal property ----------
 #
