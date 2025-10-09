@@ -108,26 +108,6 @@ subject: |
 content: |
   The DCH-0838 Record of Divorce or Annulment form needed to finalize a divorce in Michigan makes you select "male" or "female" for each party. Unfortunately it does not have a nonbinary option. Please select which option you want checked on the form.
 ---
-generic object: ALIndividual
-template: x.pregnant_explanation_template
-subject: |
-  Why are you asking this?
-content: |
-  % if tool_ID == "divorce_complaint":
-  The Complaint for Divorce (one of the forms you will file to start your divorce case), must say if either spouse is pregnant.
-  % elif tool_ID == "JOD_only":
-  The divorce generally cannot be completed while either spouse is pregnant.
-  % endif
----
-generic object: ALIndividual
-if: x.pregnant and there_are_marital_children
-question: You may have to update your forms later
-continue button field: x.pregnant_notice
-subquestion: |
-  You can use this tool to prepare your divorce forms, but you may have to wait until the birth or end of the pregnancy to schedule your final hearing and enter your Judgment of Divorce, so that provisions for custody, parenting time, and support are complete.
-
-  Children conceived during a marriage are also considered children of the marriage. If a new child is born who was conceived during the marriage, you will need to log back in to your saved answers so you can add that child and include their name and other information. This will allow you to get an updated Judgment of Divorce and other updated forms.
----
 # ====================================================================
 ## questions
 # ====================================================================
@@ -204,23 +184,6 @@ action buttons:
     color: danger
     icon: right-from-bracket
 ---
-generic object: ALIndividual
-if: x.pregnant and not there_are_marital_children
-question: You must wait until the pregnancy has ended to use this tool
-event: x.pregnant_exit
-subquestion: |
-  Sorry, if either spouse is currently pregnant, you may not use this tool to prepare your divorce forms. Michigan law requires you to include all children born or conceived during your marriage in the custody, parenting time, and support provisions of your Judgment of Divorce. 
-  
-  You may want to consider hiring a lawyer to help you with your divorce if you want to start the divorce process while your spouse is pregnant. ${ MLH_GUIDE_FULL } 
-  
-  Or you can wait and use this tool after the birth or end of the pregnancy.
-action buttons:
-  - label: Exit
-    action: https://michiganlegalhelp.org/resources/family
-    new window: True
-    color: danger
-    icon: right-from-bracket
----
 # --------------------------------------------------------------------
 ## introduction
 # --------------------------------------------------------------------
@@ -284,6 +247,74 @@ fields:
   - label: Has there been a breakdown of the marriage to the extent that the objects of matrimony have been destroyed and there remains no reasonable likelihood that the marriage can be preserved?
     field: marriage.breakdown
     datatype: yesnoradio
+---
+id: incompetent spouse
+question: |
+  Your spouse's legal competence
+fields:
+  - To the best of your knowledge, has a judge found your spouse to be legally incompetent?: spouse_is_incompetent
+    datatype: yesnoradio    
+  - note: |
+      If your spouse does not file an answer to your divorce complaint, you may be entering a default judgment of divorce against him or her. You may not enter a default judgment against a person who is not legally competent to understand the divorce proceedings.
+    show if:
+      variable: spouse_is_incompetent
+      is: True
+---
+id: military spouse
+question: |
+  Spouse in the military?
+subquestion: |
+  ${collapse_template(military_spouse_info)}
+fields:
+  - Is your spouse currently on active military duty in the United States armed forces?: spouse_is_in_military
+    datatype: yesnoradio
+  - note: |
+      If your spouse is on active military duty, you may only use this tool to prepare your divorce forms if your spouse:
+      
+      * agrees to the divorce, 
+      * agrees to all the terms of the divorce, and 
+      * will sign a Consent Judgment of Divorce. 
+      
+      If your spouse is on active military duty and doesn't agree to the divorce or all the terms of the divorce, you may want to talk to a lawyer to help you complete your divorce.
+    show if:
+      variable: spouse_is_in_military
+      is: True
+  - Will you and your spouse be filing a Consent Judgment of Divorce?: military_spouse_agrees_consent_judgment
+    datatype: radio
+    choices:
+      - Yes: yes
+      - No: no
+      - "I don't know": unknown
+    show if:
+      variable: spouse_is_in_military
+      is: True
+---
+template: military_spouse_info
+subject: What if I'm not sure?
+content: |
+  If your spouse is or may be on active military duty, you may only use this tool to prepare your divorce forms if your spouse agrees to the divorce, agrees to all of the terms of the divorce, and will sign a Consent Judgment of Divorce. 
+  
+  Please return to use this tool when you have determined whether your spouse is currently on active military duty. 
+---
+id: need temp order
+question: Do you need a temporary order?
+fields:
+  - Do you need a temporary order to keep your spouse from transferring, hiding, selling, or getting rid of marital property or assets?: need_temporary_order
+    datatype: yesnoradio
+  - note: |
+      **WARNING!** This tool may not be right for you. You cannot use this tool or the Michigan Legal Help website to get a temporary order. 
+      
+      Getting a temporary order to prevent a spouse from transferring, selling, hiding, or getting rid of property is not simple. You can still complete this tool to prepare your forms and begin the divorce process, but this tool will not create any motions for temporary orders or proposed temporary orders. 
+      
+      You may want to consider hiring a lawyer to help you ask the judge for a temporary restraining order. ${MLH_GUIDE_FULL}
+    show if:
+      variable: need_temporary_order
+      is: True
+  - Do you want to continue?: temporary_order_continue
+    datatype: yesnoradio
+    show if:
+      variable: need_temporary_order
+      is: True
 ---
 id: marriage.have_pension_retirement
 question: |
@@ -425,7 +456,7 @@ fields:
 ## users[0]
 # --------------------------------------------------------------------
 ---
-id: users[0].previous_last_name
+id: users[0].previous_last_name 
 question: |
   Previous last name
 fields:
@@ -438,6 +469,30 @@ fields:
 validation code: |
   if not users[0].previous_last_name_yn:
     users[0].invalidate_attr("previous_last_name")
+---
+id: users[0].previous_name 
+question: |
+  Previous name
+fields:
+  - label: Did you have a different name before this marriage?
+    field: users[0].has_previous_name
+    datatype: yesnoradio
+  - note: |
+      Please enter your full name from before your marriage.
+    show if: users[0].has_previous_name
+  - label: First name
+    field: users[0].previous_first_name
+    show if: users[0].has_previous_name
+  - label: Middle name
+    field: users[0].previous_middle_name
+    required: False
+    show if: users[0].has_previous_name
+  - label: Last name
+    field: users[0].previous_last_name
+    show if: users[0].has_previous_name
+validation code: |
+  if not users[0].has_previous_name:
+    users[0].invalidate_attr("previous_last_name", "previous_first_name", "previous_middle_name")
 ---
 id: users[0].new_last_name_yn
 question: |
@@ -491,16 +546,6 @@ fields:
     choices:
       - Female: female
       - Male: male
----
-id: users[0].pregnant
-question: |
-  Pregnancy
-subquestion: |
-  ${collapse_template(users[0].pregnant_explanation_template)}
-fields:
-  - label: Are you pregnant?
-    field: users[0].pregnant
-    datatype: yesnoradio
 ---
 id: users[0].marriage_number
 question: |
@@ -688,6 +733,14 @@ fields:
     field: users[0].no_phone_number
     required: False
     datatype: yesno
+  - Is this a "cell" or "home" phone number? (Just choose the closest answer.): users[0].phone_type
+    datatype: radio
+    choices:
+      - Cell: cell
+      - Home: home
+    js show if: |
+      val("users[0].no_phone_number") === false && ${ "true" if not confidential_contact_info_yn else "false" } && ${ "true" if tool_ID != "JOD_only" else "false" }
+# TODO ask AB if this is OK. It's very annoying that it only asks for 2 phone types for the FOC23 as far as I can tell. Otherwise defaults to putting "home number everywhere" (or "safe" number if that's chosen) and neither phone type is required. 
 ---
 id: users[0].email
 question: |
@@ -728,6 +781,30 @@ validation code: |
   if not other_parties[0].previous_last_name_yn:
     other_parties[0].invalidate_attr("previous_last_name")
 ---
+id: other_parties[0].previous_name 
+question: |
+  Previous name
+fields:
+  - label: Did your spouse have a different name before this marriage?
+    field: other_parties[0].has_previous_name
+    datatype: yesnoradio
+  - note: |
+      Please enter your spouse's full name from before your marriage.
+    show if: other_parties[0].has_previous_name
+  - label: First name
+    field: other_parties[0].previous_first_name
+    show if: other_parties[0].has_previous_name
+  - label: Middle name
+    field: other_parties[0].previous_middle_name
+    required: False
+    show if: other_parties[0].has_previous_name
+  - label: Last name
+    field: other_parties[0].previous_last_name
+    show if: other_parties[0].has_previous_name
+validation code: |
+  if not other_parties[0].has_previous_name:
+    other_parties[0].invalidate_attr("previous_last_name", "previous_first_name", "previous_middle_name")
+---
 id: other_parties[0].gender
 sets: other_parties[0].gender
 question: |
@@ -741,16 +818,6 @@ fields:
     choices:
       - Female: female
       - Male: male
----
-id: other_parties[0].pregnant
-question: |
-  Pregnancy
-subquestion: |
-  ${collapse_template(other_parties[0].pregnant_explanation_template)}
-fields:
-  - label: Is your spouse pregnant?
-    field: other_parties[0].pregnant
-    datatype: yesnoradio
 ---
 id: other_parties[0].marriage_number
 question: |
@@ -892,6 +959,15 @@ fields:
     field: other_parties[0].no_phone_number
     required: False
     datatype: yesno
+  - Is this a "cell" or "home" phone number? (Make your best guess, if unsure.): other_parties[0].phone_type
+    datatype: radio
+    choices:
+      - Cell: cell
+      - Home: home
+    js show if: |
+      val("other_parties[0].no_phone_number") === false && ${ "true" if tool_ID != "JOD_only" else "false" }
+# TODO ask AB if this is OK. It's very annoying that it only asks for 2 phone types for the FOC23 as far as I can tell. Otherwise defaults to putting "home number everywhere" (or "safe" number if that's chosen) and neither phone type is required. 
+
 ---
 id: other_parties[0].email
 question: |
@@ -960,9 +1036,14 @@ fields:
   - label: County
     field: marriage.address.county
     show if:
-      variable: marriage.address.country
-      is: US
+      variable: marriage.address.state
+      is: MI
     required: False
+    code: court_list._load_courts()["address_county"].unique() + " County"
+  - label: County
+    field: marriage.address.county
+    js show if: |
+      val("marriage.address.country") === "US" && val("marriage.address.state") !== "MI"
   - label: City, village, or township
     field: marriage.address.city
     required: False
@@ -980,6 +1061,11 @@ fields:
     show if:
       variable: marriage.living_together_yn
       is: False
+  - How many minor children lived in your household on the date you separated?: marriage.number_children_in_home_when_separated
+    datatype: integer
+    min: 0
+    js show if: |
+      val("marriage.living_together_yn") === false && ${ "true" if there_are_marital_children else "false"}
 ---
 id: marriage.cobra_coverage (no children)
 question: |
@@ -1761,6 +1847,7 @@ code: |
   users[0].no_phone_number
   users[0].email
   interview_order_user_contact_info = True
+#TODO LHI asks for township in divorce complaint even if not MI address. Needed? I think just goes on Record of Divorce. Checking with Brett.
 ---
 code: |
   if other_parties[0].has_attorney:

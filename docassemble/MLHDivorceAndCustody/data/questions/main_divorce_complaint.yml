@@ -7,7 +7,7 @@ metadata:
   title: Michigan Complaint for Divorce
   short title: Michigan Divorce Complaint
   description: |
-    Self-help interview to get a Judgment of Divorce and other documents needed to finish a divorce in Michigan.
+    Self-help interview to get documents needed to file for divorce in Michigan.
   tags:
     - Family
   authors:
@@ -24,7 +24,7 @@ sections:
   - signpost_prior_cases: "Past Cases"
   - signpost_income_etc: "Income, Insurance, etc."
   - signpost_personal_property: "Property and Debt"
-  - signpost_judgment_information: "Judgment Information"
+  - signpost_last_section: "Final Questions"
   - signpost_done: "Get Your Forms"
   - review_full: "✎ <u>Review / Edit</u>"
 ---
@@ -43,8 +43,8 @@ content: |
 ---
 # set intro landing screen variables
 code: |
-  MLH_time_min = 15
-  MLH_time_max = 45
+  MLH_time_min = 20
+  MLH_time_max = 60
 
   # TODO need resource url & confirm page name
   resource_page_url_only = "https://michiganlegalhelp.org/node/xxxx"
@@ -55,7 +55,7 @@ template: MLH_welcome_message
 content: |
   Welcome to the Do-It-Yourself Divorce tool.
 
-  This tool will help you prepare the forms you need to ask the court for a divorce.
+  This tool will help you prepare the forms you need to ask the court for a divorce. This tool may not be able to help you with every aspect of your divorce. In some cases, you may want to have a lawyer help you finish the divorce process. ${MLH_GUIDE_FULL}
 ---
 # ====================================================================
 ## interview_order
@@ -70,37 +70,145 @@ code: |
   nav.set_section("signpost_intro")
   MLH_standard_intro_pages
 
+  nav.set_section("signpost_qualify")
+  if marriage.pending_divorce:
+    exit_general
+
+  if not marriage.breakdown:
+    exit_no_marriage_breakdown
+  if spouse_is_incompetent:
+    exit_general
+  if spouse_is_in_military and military_spouse_agrees_consent_judgment != "yes":
+    exit_general
+
+  if marriage.have_pension_retirement:
+    marriage.pension_retirement_accounts_keep_own
+    if not marriage.pension_retirement_accounts_continue:
+      exit_general
+
+  if marriage.have_financial_instruments:
+    if marriage.financial_instruments_held_together:
+      marriage.financial_instruments_held_together_agree_about_division
+      if not marriage.financial_instruments_held_together_continue:
+        exit_general
+    else:
+      if marriage.financial_instruments_keep_or_divide == "divide":
+        exit_general
+      elif marriage.financial_instruments_keep_or_divide == "keep":
+        if not marriage.financial_instruments_keep_own_continue:
+          exit_general
+
+  if marriage.have_business:
+    exit_general
+
+  if marriage.have_experienced_domestic_violence:
+    if not marriage.have_experienced_domestic_violence_continue:
+      exit_general
+
+  if need_temporary_order:
+    if not temporary_order_continue:
+      exit_general
+
+  ########### UNDER CONSTRUCTION do qualification part 2 screening here ###########
+  nav.set_section("signpost_user")
+
+  users.gather()
+  users[0].name.first
+  users[0].has_previous_name
+  users[0].new_last_name_yn
+  users[0].gender
+  users[0].marriage_number
+  users[0].birthdate
+  users[0].birthplace
+
+  interview_order_user_contact_info
+
+  nav.set_section("signpost_spouse")
+
+  other_parties.gather()
+  other_parties[0].name.first
+  other_parties[0].has_previous_name
+  other_parties[0].gender
+  other_parties[0].marriage_number
+  other_parties[0].birthdate
+  other_parties[0].birthplace
+
+  other_parties[0].address.address
+  if other_parties[0].address.state == "MI":
+    other_parties[0].address.county
+    other_parties[0].village_or_township_yn
+  if other_parties[0].mailing_address.yesno:
+    other_parties[0].mailing_address.address
+
+  other_parties[0].no_phone_number
+  other_parties[0].email
+
+  ###############################################################
+
   nav.set_section("signpost_support")
   interview_order_spousal_support
 
   nav.set_section("signpost_children")
   interview_order_children
-  
-  if there_are_marital_children:
-    nav.set_section("signpost_prior_cases")
-    prior_family_cases.gather()
+  interview_order_pregnancy
 
-    nav.set_section("signpost_income_etc")
+  nav.set_section("signpost_prior_cases")
+  prior_family_cases.gather()
+
+  nav.set_section("signpost_income_etc") 
+  if there_are_marital_children:
     users[0].insurance.gather()
     other_parties[0].insurance.gather()
     if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
       marriage.cobra_coverage
+  
+  elif not there_are_marital_children: 
+    marriage.cobra_coverage
+
+  if there_are_marital_children or (user_wants_post_divorce_support and continue_with_spousal_support_request):
     interview_order_user_employment
     interview_order_user_income
     interview_order_user_identifying_info
+    users[0].has_alias
     interview_order_other_party_employment
     interview_order_other_party_income
     interview_order_other_party_identifying_info
-    interview_order_income_tax
-  
-  if not there_are_marital_children: 
-    nav.set_section("signpost_prior_cases")
-    interview_order_prior_cases
-    nav.set_section("signpost_income_etc")
-    marriage.cobra_coverage
+    other_parties[0].has_alias
+  else:
     interview_order_user_income
 
+  nav.set_section("signpost_property")
+
+  interview_order_personal_property
+  interview_order_vehicles
+  interview_order_debts
+  marriage.real_property.gather()
+  if there_are_marital_children:
+    interview_order_income_tax
+
+  nav.set_section("signpost_last_section")
+
+  marriage.date
+  marriage.address.city
+  if not marriage.living_together_yn:
+    marriage.living_together_stopped_date
+  
+  #### divorce venue goes here!!! ######
 
   if there_are_marital_children:
     if marriage.temporary_order:
       marriage.temporary_order_changed
+
+  if marriage.other_provisions_any:
+    marriage.other_provisions
+
+  if not marriage.true_statement:
+    exit_general
+
+  # load value of these so that they populate forms as expected
+  plaintiffs
+  defendants
+
+  nav.set_section("signpost_done")
+  MLH_standard_outro_pages  
+  MLH_download

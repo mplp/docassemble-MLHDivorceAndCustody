@@ -1,0 +1,99 @@
+---
+include:
+  - divorce_custody_setup.yml
+---
+# TODO subtitle? & confirm description
+metadata:
+  title: Michigan Divorce Answer and Counterclaim
+  short title: Michigan Divorce Answer
+  description: |
+    Self-help interview to file an Answer and Counterclaim in a divorce case.
+  tags:
+    - Family
+  authors:
+    - Michigan Legal Help
+    - Lemma Legal
+---
+sections:
+  - signpost_intro: "Introduction"
+  - signpost_qualify: "Do you qualify?"
+  - signpost_user: "Your Information"
+  - signpost_spouse: "Spouse's Information"
+  - signpost_marriage: "Marriage Information"
+  - signpost_personal_property: "Personal Property"
+  - signpost_debts: "Debts"
+  - signpost_vehicles: "Vehicles"
+  - signpost_real_property: "Real Property"
+  - signpost_judgment_information: "Judgment Information"
+  - signpost_done: "Done"
+  - review_full: "✎ <u>Review / Edit</u>"
+---
+# TODO need survey url
+code: |
+  survey_link_url_only = "https://www.surveymonkey.com/r/xxxxxx"
+---
+code: |
+  tool_ID = "divorce_answer"
+---
+# TODO need survey script
+template: survey_embed_script
+content: |
+  <script>
+  </script>
+---
+# set intro landing screen variables
+code: |
+  # TODO confirm form type
+  MLH_form_type = "forms"
+  MLH_time_min = 15
+  MLH_time_max = 45
+
+  # TODO need resource url & confirm page name
+  resource_page_url_only = "https://michiganlegalhelp.org/node/xxxx"
+  resource_page_name = "Judgment of Divorce"
+
+---
+template: MLH_welcome_message
+content: |
+  Welcome to Michigan Legal Help's Do-It-Yourself ${MLH_form_type} tool.
+
+  This tool will help you prepare forms to finish your divorce in Michigan. Use this tool if all you need is a Judgment of Divorce and the forms that go with it.
+---
+# ====================================================================
+## interview_order
+# ====================================================================
+---
+id: interview_order_michigan_divorce_answer
+mandatory: True
+scan for variables: False
+code: |
+  set_persistent_labels
+  nav.set_section("review_full")
+  nav.set_section("signpost_intro")
+  MLH_standard_intro_pages
+
+  interview_order_spousal_support
+  
+  nav.set_section("signpost_children")
+  interview_order_children
+  
+  if there_are_marital_children:
+    nav.set_section("signpost_prior_cases")
+    interview_order_prior_cases
+
+    nav.set_section("signpost_income_etc")
+    users[0].insurance.gather()
+    other_parties[0].insurance.gather()
+    if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
+      marriage.cobra_coverage
+    interview_order_user_employment
+    interview_order_user_income
+    interview_order_user_identifying_info
+    interview_order_other_party_employment
+    interview_order_other_party_income
+    interview_order_other_party_identifying_info
+    interview_order_income_tax
+
+  if not there_are_marital_children:
+    marriage.cobra_coverage
+    interview_order_prior_cases
