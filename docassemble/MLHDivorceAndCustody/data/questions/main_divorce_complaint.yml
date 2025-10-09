@@ -24,7 +24,7 @@ sections:
   - signpost_prior_cases: "Past Cases"
   - signpost_income_etc: "Income, Insurance, etc."
   - signpost_personal_property: "Property and Debt"
-  - signpost_judgment_information: "Judgment Information"
+  - signpost_last_section: "Final Questions"
   - signpost_done: "Get Your Forms"
   - review_full: "✎ <u>Review / Edit</u>"
 ---
@@ -186,22 +186,29 @@ code: |
   if there_are_marital_children:
     interview_order_income_tax
 
-  if there_are_marital_children:
-    if marriage.temporary_order:
-      marriage.temporary_order_changed
+  nav.set_section("signpost_last_section")
 
   marriage.date
   marriage.address.city
   if not marriage.living_together_yn:
     marriage.living_together_stopped_date
+  
+  #### divorce venue goes here!!! ######
+
+  if there_are_marital_children:
+    if marriage.temporary_order:
+      marriage.temporary_order_changed
 
   if marriage.other_provisions_any:
     marriage.other_provisions
 
-  if marriage.temporary_order:
-    marriage.temporary_order_changed
-
-  #### divorce venue goes here!!! ######
-
   if not marriage.true_statement:
     exit_general
+
+  # load value of these so that they populate forms as expected
+  plaintiffs
+  defendants
+
+  nav.set_section("signpost_done")
+  MLH_standard_outro_pages  
+  MLH_download

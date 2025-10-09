@@ -4,6 +4,7 @@ include:
   - docassemble.ALAnyState:any_state.yml
   - docassemble.mlhframework:mlh_interview_framework.yml
   - review.yml
+  - documents.yml
   - question_bank.yml
   - children_spousal_support.yml
 ---

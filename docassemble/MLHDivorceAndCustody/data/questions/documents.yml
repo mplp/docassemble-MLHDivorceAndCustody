@@ -1,0 +1,122 @@
+# ====================================================================
+## document bundles
+# ====================================================================
+---
+if: tool_ID == "JOD_only"
+objects:
+  - al_user_bundle: ALDocumentBundle.using(elements=[judgment_ccmlh412], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  # - al_court_bundle: [same as above, less instructions]
+---
+if: tool_ID == "divorce_complaint"
+objects:
+  - al_user_bundle: ALDocumentBundle.using(elements=[judgment_ccmlh412], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  # - al_court_bundle: [same as above, less instructions]
+---
+# ====================================================================
+## Enabling logic
+# ====================================================================
+---
+### List of enabling logic that is TBD
+
+
+---
+
+---
+# ====================================================================
+## specific form objects and attachment blocks
+# ====================================================================
+---
+---
+# --------------------------------------------------------------------
+## Example form title or category here
+# --------------------------------------------------------------------
+---
+
+
+---
+# --------------------------------------------------------------------
+## Judgment CC-MLH-412 and Attachments
+# --------------------------------------------------------------------
+---
+objects:
+  - judgment_ccmlh412: ALDocument.using(title="Judgment", filename="Judgment.pdf", enabled=True, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
+attachment:
+  - name: Judgment ccmlh412 (no kids)
+    filename: Judgment ccmlh412 (no kids)
+    variable name: judgment_ccmlh412[i]
+    pdf template file: judgment_ccmlh412_no_kids.pdf
+    fields:
+      - trial_court_circuit: |
+          % if the_court.type == "circuit":
+          ${the_court.number}
+          % endif
+      - docket_number: ${docket_number}
+      - trial_court_county: ${the_court.address.county}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${ the_court.phone }
+      - defendants_block: |
+          ${defendants}
+          ${defendants[0].address.on_one_line()}
+          ${word("Does not have phone") if defendants[0].no_phone_number else defendants[0].phone_numbers()}
+      - plaintiffs_block: |
+          ${plaintiffs}
+          ${plaintiffs[0].address.on_one_line()}
+          ${word("Does not have phone") if plaintiffs[0].no_phone_number else plaintiffs[0].phone_numbers()}
+      - plaintiffs1_name: ${plaintiffs}
+      - defendants1_name: ${defendants}
+      - spousal_support_none: Yes
+      - spousal_support_reserved: No
+      - spousal_support_awarded: No
+      - personal_property_as_is: |
+          ${not personal_property_in_addendum(marriage)}
+      - personal_property_in_addendum: |
+          ${personal_property_in_addendum(marriage)}
+      - debts_none: ${not debts_in_addendum(marriage)}
+      - debts_pay_debts_in_own_name: ${marriage.debts.any and marriage.attr("debts.pay_debts_in_own_names")}
+      - debts_in_addendum: ${debts_in_addendum(marriage)}
+      - vehicles_none: ${not marriage.vehicles.any}
+      - vehicles_keep_same: ${marriage.vehicles.any and marriage.attr("vehicles.keep_own")}
+      - vehicles_in_addendum: ${marriage.vehicles.any and not marriage.attr("vehicles.keep_own")}
+      - real_property_none: ${not bool(marriage.real_property)}
+      - real_property_in_addendum: ${bool(marriage.real_property)}
+      - pensions_none: ${not marriage.have_pension_retirement}
+      - pensions_keep_own: ${marriage.have_pension_retirement and marriage.attr("pension_retirement_accounts_keep_own")}
+      - pensions_in_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
+      - total_pages: ""
+      - wants_name_change: ${users[0].new_last_name_yn}
+      - name_change_plaintiff: ${plaintiffs[0].attr("new_last_name_yn")}
+      - name_change_defendant: ${defendants[0].attr("new_last_name_yn")}
+      - new_name: ${users[0].attr("new_last_name")}
+      - has_personal_property_debt_addendum: ${personal_property_in_addendum(marriage) or debts_in_addendum(marriage)}
+      - has_vehicle_addendum: ${has_vehicle_addendum(marriage)}
+      - has_real_property_addendum: ${bool(marriage.real_property)}
+      - has_pension_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
+      - has_other_provisions: ${marriage.other_provisions_any}
+      - other_provisions: ${marriage.attr("other_provisions")}
+---
+# The following functions are here so that the logic can be kept consistent,
+# since these logical checks are used in multiple fields of the Judgment.
+---
+code: |
+  def personal_property_in_addendum(marriage: DAObject) -> bool:
+    return marriage.personal_property_acquired and (
+      not marriage.attr("personal_property_division_agreement")
+      or not marriage.attr("personal_property_division_actual")
+    )
+---
+code: |
+  def debts_in_addendum(marriage: DAObject) -> bool:
+    return marriage.debts.any and (
+      not marriage.attr("debts.agree_responsibility_debts_own_name")
+      or marriage.attr("debts.any_in_both_names")
+    )
+---
+code: |
+  def has_vehicle_addendum(marriage: DAObject) -> bool:
+    return (
+      marriage.vehicles.any
+      and not marriage.attr("vehicles.keep_own")
+      and any(not item.agree for item in marriage.vehicles)
+    )
+---
