@@ -1757,13 +1757,40 @@ validation code: |
 ## marriage.temporary_order
 # --------------------------------------------------------------------
 ---
-id: marriage.temporary_order
+if: tool_ID == "JOD_only"
+id: marriage.temporary_order jod_only
 question: |
   Temporary order
 fields:
-  - label: Has a temporary order been entered in your case after meeting with the Friend of the Court (for example, a temporary order regarding custody, parenting time, and/or child support)?
+  - label: Has a temporary order been entered in your case for custody, parenting time, child support, or spousal support?
     field: marriage.temporary_order
     datatype: yesnoradio
+  - note: |
+      If a temporary order was entered previously, you should have already filed a [Domestic Relations Judgment Information form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/foc100.pdf). This tool will produce a second Domestic Relations Judgment Information form, which you will need to file with your Judgment of Divorce.
+
+      ${collapse_template(marriage.temporary_order_changed_template)}
+    show if: marriage.temporary_order
+  - label: Has any of the information that goes on this form changed since the last time it was filed?
+    field: marriage.temporary_order_changed
+    datatype: yesnoradio
+    show if: marriage.temporary_order
+---
+if: tool_ID == "divorce_complaint"
+id: marriage.temporary_order divorce complaint
+question: |
+  Updating your forms?
+fields:
+  - label: What stage of the divorce process are you in?
+    field: returning_to_finalize
+    datatype: radio
+    choices:
+      - I'm getting ready to file for divorce.: False
+      - The divorce was already filed. I'm coming back to update my forms.: True
+    # idea: maybe we could include this question on download page with a note specifically telling people to edit this on review screen?
+  - label: Has a temporary order been entered in your case for custody, parenting time, child support, or spousal support?
+    field: marriage.temporary_order
+    datatype: yesnoradio
+    show if: returning_to_finalize
   - note: |
       If a temporary order was entered previously, you should have already filed a [Domestic Relations Judgment Information form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/foc100.pdf). This tool will produce a second Domestic Relations Judgment Information form, which you will need to file with your Judgment of Divorce.
 

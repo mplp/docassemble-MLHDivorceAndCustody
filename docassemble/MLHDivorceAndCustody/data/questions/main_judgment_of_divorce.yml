@@ -53,9 +53,14 @@ code: |
   # for JOD_only, there are no specific instructions
   MLH_instructions_included = False
 ---
-# todo e-signature logic, maybe only needed if there was temporary order so JIF previously filed? see issue 25
-# 
-#  MLH_esign_supported = False
+# it seems like there's nothing to sign unless there was previously a temp order
+code: |
+  if marriage.temporary_order:
+    MLH_esign_supported = True
+  else:
+    MLH_esign_supported = False
+depends on:
+  - marriage.temporary_order
 ---
 template: MLH_welcome_message
 content: |

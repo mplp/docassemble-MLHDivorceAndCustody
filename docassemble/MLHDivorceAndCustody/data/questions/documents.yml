@@ -5,7 +5,7 @@
 if: tool_ID == "JOD_only"
 objects:
   - al_user_bundle: ALDocumentBundle.using(elements=[judgment_ccmlh412], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
-  # - al_court_bundle: [same as above, less instructions]
+  # - al_court_bundle: [same as above, JOD_only doesn't have instructions anyway]
 ---
 if: tool_ID == "divorce_complaint"
 objects:
@@ -51,7 +51,10 @@ attachment:
           % if the_court.type == "circuit":
           ${the_court.number}
           % endif
-      - docket_number: ${docket_number}
+      - docket_number: |
+          % if tool_ID == "JOD_only":
+          ${docket_number}
+          % endif
       - trial_court_county: ${the_court.address.county}
       - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
       - trial_court_phone_number: ${ the_court.phone }

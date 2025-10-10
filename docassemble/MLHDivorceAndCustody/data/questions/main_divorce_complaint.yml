@@ -195,7 +195,7 @@ code: |
   
   #### divorce venue goes here!!! ######
 
-  if there_are_marital_children:
+  if returning_to_finalize:
     if marriage.temporary_order:
       marriage.temporary_order_changed
 
@@ -204,10 +204,6 @@ code: |
 
   if not marriage.true_statement:
     exit_general
-
-  # load value of these so that they populate forms as expected
-  plaintiffs
-  defendants
 
   nav.set_section("signpost_done")
   MLH_standard_outro_pages  
