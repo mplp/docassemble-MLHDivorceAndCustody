@@ -2951,11 +2951,21 @@ code: |
 
   interview_order_user_employment = True
 ---
-# never asked for JOD_only; always asked for divorce_complaint even if no kids
+# never asked for JOD_only; 
+# note some of this code is in the fee waiver shared_code.yml
 code: |
-  if users[0].has_job:
-    users[0].income.value
-  pa_received
+  if there_are_marital_children or (user_wants_post_divorce_support and continue_with_spousal_support_request):
+    if users[0].has_job:
+      users[0].income.value
+  if pa_status in ["applied", "gets_assistance"]:
+    pa_food_assistance_program 
+    if pa_mdhhs or pa_other:
+      if pa_mdhhs:
+        pa_mdhhs_case_number
+      if pa_other:
+        pa_other_types
+    elif pa_supplemental_security:
+      pa_ssa_number
 
   interview_order_user_income = True
 ---
@@ -2973,12 +2983,18 @@ code: |
 code: |
   if other_parties[0].has_job:
     other_parties[0].income.value
-  other_party_pa_received
+  if other_party_pa_status in ["applied", "gets_assistance"]:
+    op_pa_food_assistance_program 
+    if op_pa_food_assistance_program or op_pa_medicaid or op_pa_family_independence_program or op_pa_women_infants_children or op_pa_state_disability or op_pa_state_emergency_relief or op_pa_refugee_assistance or op_pa_other:
+      if op_pa_food_assistance_program or op_pa_medicaid or op_pa_family_independence_program or op_pa_women_infants_children or op_pa_state_disability or op_pa_state_emergency_relief or op_pa_refugee_assistance:
+        op_pa_mdhhs_case_number
+      if op_pa_other:
+        op_pa_other_types
+    elif op_pa_supplemental_security:
+      op_pa_ssa_number
   
   interview_order_other_party_income = True
 
-# note it's possible need to ask occupation of defendant if wants spousal support as well
-# really it's possible that all of this would apply to spousal support as well for divorce complaint (reading interview script)? Except for the occupation question.
 ---
 # LHI: "Plaintiff Employer" or "Defendant Employer"
 id: user employment
@@ -3088,15 +3104,22 @@ fields:
     min: 0
     step: 0.01
 ---
+# needed for shared fee waiver code
+code: |
+  if pa_status == "gets_assistance":
+    pa_received = True
+  else:
+    pa_received = False
+depends on:
+  - pa_status
+---
 # LHI: "Plaintiff Income" or "Defendant Income"
 id: user public assistance
 question: Do you receive public assistance?
 subquestion: |
   ${ collapse_template(public_assistance_template) }
-
-  **NOTE**: THIS IS STILL UNDER CONSTRUCTION. NEED TO DECIDE HOW MUCH TO PULL FROM FEE WAIVER CODE VS JUST REBUILD HERE.
 fields:
-  - Do you get public assistance that is **based on having low income**?: pa_received
+  - Do you get public assistance that is **based on having low income**?: pa_status
     datatype: radio
     required: False
     choices:
@@ -3104,18 +3127,51 @@ fields:
       - Currently receiving assistance: gets_assistance
       - Neither: none
       - Unknown: unknown
-# not done need to know whether to standardize with fee waiver tool or not, this question probable needs to be separate because we need the neither, applied, etc. options. But maybe list can be shared?
+
 # note divorce tool currently only asks for SSI case number if there is no MDHHS case number. (And in that case prints a PII form.) Fee waiver tool only uses SSI case number if there's no MDHHS and no "Other" case number. So probably should follow same logic here. 
 # note, if they choose "applied, but not receiving", only ask for specific type of aid if there are children or possibly if they're asking for spousal support. (Note that for complaint we do ask the income questions even if there's no kids or spousal support.)
 ---
-# taken almost directly from fee waiver for now
-template: public_assistance_template
-subject: |
-  What are some examples?
-content: |
-  This may include help such as SNAP or food stamps, Medicaid, TANF, WIC, cash assistance, child care assistance, or SSI (Supplemental Security Income).
-  
-  **Note:** Social Security Disability Insurance benefits (SSDI) are **not** based on having low income, so if that is the only benefit received, select **No**.
+id: public assistance types divorce/custody user
+question: |
+  Public Assistance
+subquestion: |
+  Which type(s) of public assistance do you receive or have you applied for? *Check all that apply.*
+fields:
+  - "Food Assistance Program through the state of Michigan (also known as FAP or SNAP)": pa_food_assistance_program
+    datatype: yesno
+  - "Medicaid (including Healthy Michigan, CHIP, and ESO)": pa_medicaid
+    datatype: yesno
+  - "Family Independence Program through the state of Michigan (also known as FIP or TANF)": pa_family_independence_program
+    datatype: yesno
+  - "Women, Infants, and Children benefits (WIC)": pa_women_infants_children
+    datatype: yesno
+  - "State Disability Assistance (SDA)": pa_state_disability
+    datatype: yesno
+  - "State Emergency Relief (SER)": pa_state_emergency_relief
+    datatype: yesno
+  - "Refugee Assistance Program (RAP)": pa_refugee_assistance
+    datatype: yesno
+  - "Supplemental Security Income through the federal government (SSI)": pa_supplemental_security
+    datatype: yesno
+  - "Other means-tested public assistance": pa_other
+    datatype: yesno
+---
+id: public assistance other divorce/custody
+question: Other Public Assistance
+subquestion: |
+  Name the other type(s) of public assistance that you get, the source of the assistance, and your case numbers.
+
+  **Do not include your Social Security number.** 
+  If your case number has a Social Security number in it, **do not** enter it here. 
+
+  % if not pa_supplemental_security:
+  If you get Supplemental Security Income (SSI), click **${MLH_back_button_label}** and select that option. 
+  % endif
+fields:
+  - "Type(s) of assistance": pa_other_types
+    maxlength: 49
+  - "Case number(s) *Do not include your Social Security number*": pa_other_case_numbers
+
 ---
 # LHI: "Plaintiff Employer" or "Defendant Employer"
 id: other party employment
@@ -3226,10 +3282,8 @@ id: other party public assistance
 question: Does ${ OP_label } receive public assistance?
 subquestion: |
   ${ collapse_template(public_assistance_template) }
-
-  **NOTE:** under construction, not built out yet.
 fields:
-  - Does ${ OP_label } get public assistance that is **based on having low income**?: other_party_pa_received
+  - Does ${ OP_label } get public assistance that is **based on having low income**?: other_party_pa_status
     datatype: radio
     required: False
     choices:
@@ -3237,9 +3291,67 @@ fields:
       - Currently receiving assistance: gets_assistance
       - Neither: none
       - Unknown: unknown
-# not done need to know whether to standardize with fee waiver tool or not, this question probable needs to be separate because we need the neither, applied, etc. options. But maybe list can be shared?
-# not finished yet, see notes on user version
----  
+---
+id: public assistance types divorce/custody op
+question: |
+  Public Assistance
+subquestion: |
+  Which type(s) of public assistance has ${OP_label} applied for, or are they getting, if known? *Check all that apply.*
+fields:
+  - "Food Assistance Program through the state of Michigan (also known as FAP or SNAP)": op_pa_food_assistance_program
+    datatype: yesno
+  - "Medicaid (including Healthy Michigan, CHIP, and ESO)": op_pa_medicaid
+    datatype: yesno
+  - "Family Independence Program through the state of Michigan (also known as FIP or TANF)": op_pa_family_independence_program
+    datatype: yesno
+  - "Women, Infants, and Children benefits (WIC)": op_pa_women_infants_children
+    datatype: yesno
+  - "State Disability Assistance (SDA)": op_pa_state_disability
+    datatype: yesno
+  - "State Emergency Relief (SER)": op_pa_state_emergency_relief
+    datatype: yesno
+  - "Refugee Assistance Program (RAP)": op_pa_refugee_assistance
+    datatype: yesno
+  - "Supplemental Security Income through the federal government (SSI)": op_pa_supplemental_security
+    datatype: yesno
+  - "Other means-tested public assistance": op_pa_other
+    datatype: yesno
+--- 
+id: MDHHS case number divorce/custody op
+question: ${OP_label}'s MDHHS case number
+subquestion: |
+  Enter ${OP_label}'s MDHHS case number here, if known.
+fields:
+  - "${OP_label}'s MDHHS Case #": op_pa_mdhhs_case_number
+    required: False
+---
+id: public assistance other divorce/custody OP
+question: ${OP_label}'s Other Public Assistance
+subquestion: |
+  Name the other type(s) of public assistance that ${OP_label} gets or has applied for, the source of the assistance, and case numbers, if known.
+
+  **Do not include their Social Security number.** 
+  If a case number has a Social Security number in it, **do not** enter it here. 
+
+  % if not op_pa_supplemental_security:
+  If ${OP_label} gets Supplemental Security Income (SSI), click **${MLH_back_button_label}** and select that option.
+  % endif
+fields:
+  - "Type(s) of assistance": op_pa_other_types
+    maxlength: 49
+  - "Case number(s) *Do not include a Social Security number*": op_pa_other_case_numbers
+
+---
+id: public assistance SSA
+question: SSA Public Assistance
+subquestion: |
+  Enter ${OP_label}'s Social Security Administration (SSA) case number here, if known.
+
+  SSA case numbers usually use a Social Security number (SSN), so your forms will include a *Protected Personal Identifying Information* form that you will file along with your *Fee Waiver Request* form.
+fields:
+  - 'SSA Case #': op_pa_ssa_number
+
+---
 # --------------------------------------------------------------------
 ## Party Identifying Information
 # --------------------------------------------------------------------

@@ -5,12 +5,12 @@
 if: tool_ID == "JOD_only"
 objects:
   - al_user_bundle: ALDocumentBundle.using(elements=[judgment_ccmlh412], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
-  # - al_court_bundle: [same as above, JOD_only doesn't have instructions anyway]
+  # - al_court_bundle: [will be same as above, JOD_only doesn't have instructions anyway]
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[judgment_ccmlh412], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
-  # - al_court_bundle: [same as above, less instructions]
+  - al_user_bundle: ALDocumentBundle.using(elements=[judgment_ccmlh412, fee_waiver_attachment, protected_pii_mc_97a_attachment], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  # - al_court_bundle: [will be same as above, except without the instructions]
 ---
 # ====================================================================
 ## Enabling logic
@@ -20,7 +20,14 @@ objects:
 
 
 ---
-
+# note fee waiver logic is largely in fee waiver tool
+if: tool_ID in ["divorce_complaint", "custody_complaint"]
+code: |
+  fee_waiver_attachment.enabled = pa_received
+  if pa_received:
+    protected_pii_mc_97a_attachment.enabled = insert_pii_form
+  else:
+    protected_pii_mc_97a_attachment.enabled = False
 ---
 # ====================================================================
 ## specific form objects and attachment blocks
