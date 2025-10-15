@@ -75,5 +75,26 @@ attachment:
     - children3: ${ children[2] if len(children) > 2 else "" }
     - children4: ${ children[3] if len(children) > 3 else "" }
     - children5: ${ children[4] if len(children) > 4 else "" }
-    - more_children: ${ "See Addendum" if len(children) > 5 else "" }
+    - more_children: | 
+        % if len(children.complete_elements()) > 5:
+        See "Children's Names" in Addendum.
+        % else:
+        ${ '' }
+        % endif
+---
+#NOTE: currently the only MLH_form_type variable that exists is the "Judgment of Divorce"; the other two are educated guesses about what other form types will be set to
+code: |
+  % if len(children.complete_elements()) > 5 and (MLH_form_type = "Judgment of Divorce" or MLH_form_type = "Divorce Complaint" or MLH_form_type = "Custody Complaint"):
+    child_support_foc_10_attachment.enabled = True
+  else:
+    child_support_foc_10_attachment.enabled = False
+---
+attachments:
+  name: Uniform Child Support Order Addendum
+  filename: Uniform Child Support Order Addendum
+  docx template file: child_support_foc_10_attachment.docx
+  variable name: child_support_foc_10_attachment[i]
+  skip undefined: True
+  valid formats:
+    - pdf
 ---
