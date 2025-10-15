@@ -3104,7 +3104,7 @@ fields:
     min: 0
     step: 0.01
 ---
-# needed for shared fee waiver code
+# these blocks are needed for shared fee waiver code
 code: |
   if pa_status == "gets_assistance":
     pa_received = True
@@ -3112,6 +3112,14 @@ code: |
     pa_received = False
 depends on:
   - pa_status
+---
+code: |
+  insert_mc_97 = False
+---
+code: |
+  insert_mc_97a = insert_pii_form
+depends on:
+  - insert_pii_form
 ---
 # LHI: "Plaintiff Income" or "Defendant Income"
 id: user public assistance

@@ -24,7 +24,7 @@ sections:
   - signpost_children: "Children"
   - signpost_prior_cases: "Past Cases"
   - signpost_income_etc: "Income, Insurance, etc."
-  - signpost_personal_property: "Property and Debt"
+  - signpost_property: "Property and Debt"
   - signpost_last_section: "Final Questions"
   - signpost_done: "Get Your Forms"
   - review_full: "✎ <u>Review / Edit</u>"
