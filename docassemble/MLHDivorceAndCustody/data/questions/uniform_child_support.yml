@@ -1,4 +1,8 @@
 ---
+objects:
+  - foc_10_main: ALDocument.using(title="Uniform Child Support Order", filename="Uniform Child Support Order", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+  - foc_10_attachment: ALDocument.using(title="Uniform Child Support Order Addendum", filename="Uniform Child Support Order Addendum", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
 attachment:
   name: Uniform Child Support Order
   variable name: foc_10_main[i]
@@ -84,16 +88,16 @@ attachment:
 ---
 #NOTE: currently the only MLH_form_type variable that exists is the "Judgment of Divorce"; the other two are educated guesses about what other form types will be set to
 code: |
-  % if len(children.complete_elements()) > 5 and (MLH_form_type = "Judgment of Divorce" or MLH_form_type = "Divorce Complaint" or MLH_form_type = "Custody Complaint"):
-    child_support_foc_10_attachment.enabled = True
+  if len(children.complete_elements()) > 5 and (MLH_form_type == "Judgment of Divorce" or MLH_form_type == "Divorce Complaint" or MLH_form_type == "Custody Complaint"):
+    foc_10_attachment.enabled = True
   else:
-    child_support_foc_10_attachment.enabled = False
+    foc_10_attachment.enabled = False
 ---
 attachments:
   name: Uniform Child Support Order Addendum
   filename: Uniform Child Support Order Addendum
   docx template file: child_support_foc_10_attachment.docx
-  variable name: child_support_foc_10_attachment[i]
+  variable name: foc_10_attachment[i]
   skip undefined: True
   valid formats:
     - pdf
