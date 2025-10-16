@@ -86,12 +86,24 @@ attachment:
         ${ '' }
         % endif
 ---
+code: |
+  if len(children.complete_elements()) > 0:
+    foc_10_main.enabled = True
+  else:
+    foc_10_main.enabled = False
+---
 #NOTE: currently the only MLH_form_type variable that exists is the "Judgment of Divorce"; the other two are educated guesses about what other form types will be set to
 code: |
-  if len(children.complete_elements()) > 5 and (MLH_form_type == "Judgment of Divorce" or MLH_form_type == "Divorce Complaint" or MLH_form_type == "Custody Complaint"):
+  if len(children.complete_elements()) > 5:
     foc_10_attachment.enabled = True
   else:
     foc_10_attachment.enabled = False
+---
+# code: |
+#   if len(children.complete_elements()) > 5 and (MLH_form_type == "Judgment of Divorce" or MLH_form_type == "Divorce Complaint" or MLH_form_type == "Custody Complaint"):
+#     foc_10_attachment.enabled = True
+#   else:
+#     foc_10_attachment.enabled = False
 ---
 attachments:
   name: Uniform Child Support Order Addendum

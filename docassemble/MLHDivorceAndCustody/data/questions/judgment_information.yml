@@ -8,7 +8,7 @@ attachment:
   variable name: foc_100_main[i]
   skip undefined: True
   editable: False
-  pdf template file: judgment_information_foc_10.pdf
+  pdf template file: judgment_information_foc_100.pdf
   fields:
     # Note: Tags below may use placeholder variables. These may need to be changed once they are
     # actually defined and incorporated into the interview.
@@ -586,9 +586,15 @@ attachment:
     - defendant_insurance_provider4_other: ${ defendant_insurance_provider4_other }
     - defendant_insurance_provider5_other: ${ defendant_insurance_provider5_other }
 ---
+code: |
+  if len(children.complete_elements()) > 0:
+    foc_100_main.enabled = True
+  else:
+    foc_100_main.enabled = False
+---
 #NOTE: currently the only MLH_form_type variable that exists is the "Judgment of Divorce"; the other two are educated guesses about what other form types will be set to
 code: |
-  if (len(children.complete_elements()) > 4 or len(users[0].insurance_providers.complete_elements()) > 5 or len(other_parties[0].insurance_providers.complete_elements()) > 5) and (MLH_form_type == "Judgment of Divorce" or MLH_form_type == "Divorce Complaint" or MLH_form_type == "Custody Complaint"):
+  if len(children.complete_elements()) > 4:
     foc_100_attachment.enabled = True
   else:
     foc_100_attachment.enabled = False
