@@ -582,3 +582,19 @@ attachment:
     - defendant_insurance_provider4_other: ${ defendant_insurance_provider4_other }
     - defendant_insurance_provider5_other: ${ defendant_insurance_provider5_other }
 ---
+#NOTE: currently the only MLH_form_type variable that exists is the "Judgment of Divorce"; the other two are educated guesses about what other form types will be set to
+code: |
+  % if (len(children.complete_elements()) > 4 or len(users[0].insurance_providers.complete_elements()) > 5 or len(other_parties[0].insurance_providers.complete_elements()) > 5) and (MLH_form_type = "Judgment of Divorce" or MLH_form_type = "Divorce Complaint" or MLH_form_type = "Custody Complaint"):
+    judgment_information_foc_100_attachment.enabled = True
+  else:
+    judgment_information_foc_100_attachment.enabled = False
+---
+attachments:
+  name: Judgment Information Addendum
+  filename: Judgment Information Addendum
+  docx template file: judgment_information_foc_100_attachment.docx
+  variable name: judgment_information_foc_100_attachment[i]
+  skip undefined: True
+  valid formats:
+    - pdf
+---
