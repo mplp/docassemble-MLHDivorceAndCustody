@@ -1,0 +1,104 @@
+---
+include:
+  - docassemble.AssemblyLine:assembly_line.yml
+  - docassemble.ALAnyState:any_state.yml
+  - docassemble.mlhframework:mlh_interview_framework.yml
+  - review.yml
+  - documents.yml
+  - question_bank.yml
+  - children_spousal_support.yml
+---
+modules:
+  - docassemble.ALToolbox.al_income
+  - docassemble.ALToolbox.ThreePartsDate
+  - .jod_functions
+---
+features:
+  labels above fields: True
+  css: mlh-divorce-and-custody.css
+  # note css line copied from Jack's main judgment yml-- Ask Jack -- maybe just a placeholder?
+---
+# for framework court loader logic
+code: |
+  filing_court = "circuit_only"
+  ottawa_circuit_location = "West Olive"
+---
+code: |
+  if tool_ID in ["JOD_only", "divorce_complaint", "divorce_answer"]:
+    OP_label = "your spouse"
+    case_label = "divorce"
+    if tool_ID == "divorce_complaint":
+      filing_name = "Complaint for Divorce"
+      user_party_label = "the Plaintiff"
+      OP_party_label = "the Defendant"
+    elif tool_ID == "divorce_answer":
+      filing_name = "Counterclaim for Divorce"
+      user_party_label = "the Defendant"
+      OP_party_label = "the Plaintiff"  
+    elif tool_ID == "JOD_only":
+      filing_name = "Judgment of Divorce"
+  elif tool_ID == "custody_complaint":
+    OP_label = "the Defendant"
+    case_label = "custody"
+  elif tool_ID == "custody_answer":
+    OP_label = "the Plaintiff"
+    case_label = "custody"
+
+  set_persistent_labels = True
+---
+# needed four spousal support questions
+# set these separately because they can change if user_ask_role is edited
+if: tool_ID == "JOD_only"
+code: |
+  if user_ask_role == "plaintiff":
+    user_party_label = "the Plaintiff"
+    OP_party_label = "the Defendant"
+  elif user_ask_role == "defendant":
+    user_party_label = "the Defendant"
+    OP_party_label = "the Plaintiff"  
+  
+  set_JOD_party_labels = True
+---
+code:  |
+  github_repo_name = 'docassemble-MLHDivorceAndCustody' if get_config('debug') else 'docassemble-UserFeedback'
+---
+terms:
+  - phrases:
+      - assisted reproduction
+    definition: |
+      Assisted reproduction is a way to become pregnant that is not sexual intercourse. It includes:
+
+      * Donor insemination
+      * Sperm or egg donation
+      * Embryo donation
+      * In vitro fertilization (IVF) and embryo transfer
+      * Intracytoplasmic sperm injection
+      * Assisted reproductive technology
+  - phrases:
+      - parenting time
+    definition: |
+      Sometimes called "visitation".
+  - phrases:
+      - minor
+    definition: |
+      A child is a minor if they are 17 years old or younger.
+  - investments: |
+      Stocks, bonds, Certificates of Deposit (CDs), mutual funds, Money Market Accounts, or other investments, not including pensions or retirement accounts.
+  - vehicles_make: |
+      Make refers to the name of the company that manufactured the vehicle. Examples of vehicle "makes" are Ford, General Motors, Chrysler, and Toyota.
+  - vehicles_model: |
+      Model refers to the type of car. Examples of "models" are Focus, Cutlass, Town and Country, and Highlander.
+  - divided: |
+      Something has already been divided if:
+      
+      * you and your spouse **agree** who should have it, and
+      * it is **already in the possession** of the agreed person.
+
+      If something has already been divided, you do not need to add it here.
+---
+# note currently this is just used for the children/spousal support yml
+code: |
+  US_states_and_territories_list = ["Alabama", "Alaska", "American Samoa", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "District of Columbia", "Florida", "Georgia", "Guam", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', "New Jersey", "New Mexico", "New York", 'North Carolina', 'North Dakota', 'Northern Mariana Islands', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Puerto Rico', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'US Virgin Islands', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming']
+# currently includes all 5 inhabited US territories and DC. But note that American Samoans are not US citizens. Not sure they should be on this list. 
+---
+

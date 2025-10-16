@@ -35,6 +35,7 @@ review:
       - recompute:
         - plaintiffs
         - defendants
+        - set_JOD_party_labels
     button: |
       ##### Are you the Plaintiff or the Defendant in this case?
         - ${user_ask_role.capitalize()}
@@ -55,6 +56,11 @@ review:
       ##### Your previous last name
         - ${users[0].attr("previous_last_name")}
   - Edit:
+      - users[0].has_previous_name
+    button: |
+      ##### Your previous name
+        - ${users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name}
+  - Edit:
       - users[0].new_last_name_yn
     button: |
       ##### Your new last name
@@ -64,11 +70,6 @@ review:
     button: |
       ##### Your gender
         - ${users[0].gender.capitalize()}
-  - Edit:
-      - users[0].pregnant
-    button: |
-      ##### You are pregnant
-        - ${word(yesno(users[0].pregnant))}
   - Edit:
       - users[0].marriage_number
     button: |
@@ -96,6 +97,12 @@ review:
     button: |
       ##### Your ${"safe mailing address" if confidential_contact_info_yn else "address"}
         - ${users[0].address.on_one_line()}
+  - Edit:
+      - users[0].address.county
+    button: |
+      ##### Your County
+        - ${users[0].address.county}
+    show if: users[0].address.state == "MI"
   - Edit:
       - users[0].village_or_township_yn
     button: |
@@ -139,6 +146,11 @@ review:
       ##### Spouse's previous last name
         - ${other_parties[0].attr("previous_last_name")}
   - Edit:
+      - other_parties[0].has_previous_name
+    button: |
+      ##### Your spouse's previous name
+        - ${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}
+  - Edit:
       - other_parties[0].new_last_name_yn
     button: |
       ##### Spouse's new last name
@@ -148,11 +160,6 @@ review:
     button: |
       ##### Spouse's gender
         - ${other_parties[0].gender.capitalize()}
-  - Edit:
-      - other_parties[0].pregnant
-    button: |
-      ##### Spouse is pregnant
-        - ${word(yesno(other_parties[0].pregnant))}
   - Edit:
       - other_parties[0].marriage_number
     button: |
@@ -182,6 +189,11 @@ review:
       ##### Spouse's mailing address
         - ${other_parties[0].mailing_address.on_one_line()}
       % endif
+  - Edit:
+      - other_parties[0].address.county
+    button: |
+      ##### Spouse's County
+        - ${other_parties[0].address.county}
   - Edit:
       - other_parties[0].village_or_township_yn
     button: |
@@ -271,6 +283,23 @@ review:
         - ${marriage.living_together_stopped_date}
       % endif
 #
+# ---------- children and pregnancy ----------
+#
+# TODO ADD ACCORDION
+  - Edit:
+      - users[0].pregnant
+      - other_parties[0].pregnant
+    #  - follow up   [ TODO currently breaking need to fix]
+    #    - users[0].pregnant_notice
+    #    - users[0].pregnant_exit
+    #    - other_parties[0].pregnant_notice
+    #    - other_parties[0].pregnant_exit
+    button: |
+      ##### You are pregnant
+        - ${word(yesno(users[0].pregnant))}
+      ##### Spouse is pregnant
+        - ${word(yesno(other_parties[0].pregnant))}  
+#
 # ---------- personal property ----------
 #
   - raw html: |
@@ -355,9 +384,7 @@ review:
       - marriage.debts.any
       - invalidate:
         - marriage.debts.pay_debts_in_own_names
-        - marriage.debts.agree_responsibility_debts_own_name
         - marriage.debts.any_in_both_names
-        - marriage.debts.agree_responsibility_debts_both_names
       - recompute:
         - marriage.debts.gathered_reset
         - interview_order_debts
@@ -366,7 +393,7 @@ review:
         - ${word(yesno(marriage.debts.any))}
 
       % if marriage.debts.attribute_defined("pay_debts_in_own_names"):
-      ##### Do you and your spouse each plan to pay the debts in your own names?
+      ##### Do you and your spouse each plan to pay the debts **in your own names?**
         - ${word(yesno(marriage.debts.pay_debts_in_own_names))}
       % endif
 
