@@ -1014,6 +1014,9 @@ fields:
   - label: Please enter the date you were married
     field: marriage.date
     datatype: ThreePartsDate
+validation code: |
+      if marriage.date > today():
+        validation_error("The marriage date cannot be in the future.", field="marriage.date")
 ---
 # TODO: develop dynamic county dropdown based on state
 id: marriage.address

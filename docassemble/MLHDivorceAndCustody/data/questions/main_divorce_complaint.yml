@@ -167,7 +167,7 @@ code: |
   elif not there_are_marital_children:
     marriage.cobra_coverage
 
-  if there_are_marital_children or (user_wants_post_divorce_support and continue_with_spousal_support_request):
+  if there_are_marital_children or user_wants_post_divorce_support:
     interview_order_user_employment
     interview_order_user_income
     interview_order_user_identifying_info
