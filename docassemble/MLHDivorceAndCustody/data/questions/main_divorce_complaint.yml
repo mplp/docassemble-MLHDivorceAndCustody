@@ -1,5 +1,6 @@
 ---
 include:
+  - docassemble.FeeWaiverRequest:shared_code.yml
   - divorce_custody_setup.yml
 ---
 # TODO subtitle? & confirm description
@@ -23,7 +24,7 @@ sections:
   - signpost_children: "Children"
   - signpost_prior_cases: "Past Cases"
   - signpost_income_etc: "Income, Insurance, etc."
-  - signpost_personal_property: "Property and Debt"
+  - signpost_property: "Property and Debt"
   - signpost_last_section: "Final Questions"
   - signpost_done: "Get Your Forms"
   - review_full: "✎ <u>Review / Edit</u>"
@@ -34,6 +35,7 @@ code: |
 ---
 code: |
   tool_ID = "divorce_complaint"
+  docket_number = ""
 ---
 # TODO need survey script
 template: survey_embed_script
@@ -162,10 +164,10 @@ code: |
     if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
       marriage.cobra_coverage
   
-  elif not there_are_marital_children: 
+  elif not there_are_marital_children:
     marriage.cobra_coverage
 
-  if there_are_marital_children or (user_wants_post_divorce_support and continue_with_spousal_support_request):
+  if there_are_marital_children or user_wants_post_divorce_support:
     interview_order_user_employment
     interview_order_user_income
     interview_order_user_identifying_info
@@ -195,7 +197,7 @@ code: |
   
   #### divorce venue goes here!!! ######
 
-  if there_are_marital_children:
+  if returning_to_finalize:
     if marriage.temporary_order:
       marriage.temporary_order_changed
 
@@ -204,10 +206,6 @@ code: |
 
   if not marriage.true_statement:
     exit_general
-
-  # load value of these so that they populate forms as expected
-  plaintiffs
-  defendants
 
   nav.set_section("signpost_done")
   MLH_standard_outro_pages  
