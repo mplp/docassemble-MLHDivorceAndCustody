@@ -1718,6 +1718,10 @@ fields:
     code: |
       countries_list()
     required: False
+  - note: |
+      From when to when did the ${ children.filter(legal_parent='both').as_noun() } live at this address? *Enter the exact date, if known. Otherwise, enter the month and year, such as "October 2021".*
+  - Lived here beginning:: children_previous_address[i].start_date
+  - Lived here until:: children_previous_address[i].end_date
 ---
 id: any more previous child addresses?
 question: |
