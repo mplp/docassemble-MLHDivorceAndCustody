@@ -136,8 +136,9 @@ code: |
   other_parties[0].birthplace
 
   other_parties[0].address.address
+  other_parties[0].lives_in_Michigan
   if other_parties[0].address.state == "MI":
-    other_parties[0].address.county
+    other_parties[0].address.county        # skipped if answered on lives_in_Michigan screen
     other_parties[0].village_or_township_yn
   if other_parties[0].mailing_address.yesno:
     other_parties[0].mailing_address.address
