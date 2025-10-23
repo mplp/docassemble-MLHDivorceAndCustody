@@ -172,9 +172,13 @@ event: exit_jurisdiction
 question: Sorry, you cannot use this tool
 subquestion: |
   % if not users[0].lives_in_Michigan and not other_parties[0].lives_in_Michigan:
-  Sorry, you may not use this tool to prepare your divorce forms. At least one spouse must live in Michigan to use this tool. 
+  Sorry, you may not use this tool to prepare your divorce forms. 
+  
+  At least one spouse must live in Michigan to use this tool. 
   % elif (not users[0].lives_in_Michigan and not other_parties[0].has_lived_6_months_MI) or (not other_parties[0].lives_in_Michigan and not users[0].has_lived_6_months_MI):
-  Sorry, you cannot use this tool to prepare your divorce forms in Michigan. You or your spouse must have lived in Michigan for at least 180 days (six months) before using this tool and filing for divorce in Michigan. You may return to use this tool when one of you has lived in Michigan for at least 180 days. 
+  Sorry, you cannot use this tool to prepare your divorce forms in Michigan. 
+  
+  You or your spouse must have lived in Michigan for at least 180 days (six months) before using this tool and filing for divorce in Michigan. You may return to use this tool when one of you has lived in Michigan for at least 180 days. 
   % endif
 
   % if not other_parties[0].lives_in_Michigan:
@@ -1148,49 +1152,65 @@ fields:
 ---
 id: venue
 question: Where to file your divorce
+continue button field: venue
 subquestion: |
-  % if len(venue_choices) == 0:  #TODO delete after testing.
-  This is an **error** state. The venue_choices list is empty. Please report an issue with as much detail as you can about your address and county information. Please close out this test and start a new one.
-  % elif len(venue_choices) == 1:
+  % if len(venue_options) == 0:  #TODO delete after testing.
+  This is an **error** state. The venue_options list is empty. Please report an issue with as much detail as you can about the parties' Michigan-status, counties, time in Michigan, etc. Please close out this test and start a new one.
+  % elif len(venue_options) == 1:
   % if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
-  Your divorce forms will be prepared using ${ users[0].address.county } County as the filing county.  
+  At this time, you only meet the requirements to file your divorce in ${ users[0].address.county } County. Your divorce forms will be prepared using ${ users[0].address.county } County as the filing county.  
   % if not users[0].address.county.ten_days_met:
   
-  You must **wait** to file until you have lived in ${ users[0].address.county } for the last ten days or more.
+  You must **wait** to file until you have lived in ${ users[0].address.county } County for the last ten days or more.
   % endif
   % elif other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI:
-  Your divorce forms will be prepared using ${ other_parties[0].address.county } County as the filing county.  
+  At this time, you only meet the requirements to file your divorce in ${ other_parties[0].address.county } County. Your divorce forms will be prepared using ${ other_parties[0].address.county } County as the filing county.  
   % if not other_parties[0].address.county.ten_days_met:
   
-  You must **wait** to file until your spouse has lived in ${ other_parties[0].address.county } for the last ten days or more.
+  You must **wait** to file until your spouse has lived in ${ other_parties[0].address.county } County for the last ten days or more.
   % endif
   % endif
 
-  % elif len(venue_choices) > 1:
+  % elif len(venue_options) == 2:
+  You can choose to file in either ${ users[0].address.county } County or ${ other_parties[0].address.county } County. 
+  % if not users[0].address.county.ten_days_met:
+  
+  **Warning:** You must **wait** to file in **${ users[0].address.county } County** until you have lived there for the last ten days or more.
+  % endif
+  % if not other_parties[0].address.county.ten_days_met:
+  
+  **Warning:** You must **wait** to file in ${ other_parties[0].address.county } County until your spouse has lived there for the last ten days or more.
+  % endif
   # need logic here for greater than one
   # also need logic for language on understanding waiting period in that case
   % endif
 
 fields:
+  - Please select the county where you will file your divorce.: venue_choice
+    input type: radio
+    code: venue_options
+    show if: 
+      code: |
+        len(venue_options) == 2
   - I understand that I must wait until I have lived in ${ users[0].address.county } County for ten days or more before I can file for divorce.: understands_waiting_period
     required: True
     datatype: yesno
     show if:
       code: |
-        users[0].address.county in [venue_choices] and users[0].address.county.ten_days_met and len(venue_choices) == 1
+        users[0].address.county in [venue_options] and users[0].address.county.ten_days_met and len(venue_options) == 1
   - I understand that I must wait until my spouse has lived in ${ other_parties[0].address.county } County for ten days or more before I can file for divorce.: understands_waiting_period
     required: True
     datatype: yesno
     show if:
       code: |
-        other_parties[0].address.county in [venue_choices] and other_parties[0].address.county.ten_days_met and len(venue_choices) == 1
+        other_parties[0].address.county in [venue_options] and other_parties[0].address.county.ten_days_met and len(venue_options) == 1
 ---
 code: |
-  venue_choices = []
+  venue_options = []
   if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
-    venue_choices.append(users[0].address.county)
-  if other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI:
-    venue_choices.append(other_parties[0].address.county)
+    venue_options.append(users[0].address.county)
+  if other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and users[0].address.county != other_parties[0].address.county:
+    venue_options.append(other_parties[0].address.county)
 ---
 # --------------------------------------------------------------------
 ## marriage information
