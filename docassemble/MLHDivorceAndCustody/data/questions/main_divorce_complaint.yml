@@ -136,7 +136,9 @@ code: |
   other_parties[0].birthplace
 
   other_parties[0].address.address
-  other_parties[0].lives_in_Michigan
+  if other_parties[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
+        other_parties[0].ten_days_in_county
+  
   if not ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI) or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI)):
     exit_jurisdiction
   else:

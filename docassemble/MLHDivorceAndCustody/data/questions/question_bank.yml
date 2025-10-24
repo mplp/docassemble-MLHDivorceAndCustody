@@ -654,7 +654,7 @@ fields:
   - label: Zip or Postal Code
     field: users[0].address.zip
     required: False
-  - label: Country
+  - label: Country or Territory
     field: users[0].address.country
     default: "US"
     code: |
@@ -699,10 +699,8 @@ fields:
       ${ "true" if users[0].address.state in ["Michigan", "MI"] else "false" } && val("users[0].lives_in_Michigan") === true
   - What County do you live in?: users[0].address.county
     code: court_list._load_courts()["address_county"].unique() + " County"
-    show if: users[0].has_lived_6_months_MI
-  - Have you lived in that County for the last 10 days or more?: users[0].address.county.ten_days_met
-    datatype: yesnoradio
-    show if: users[0].has_lived_6_months_MI
+    js show if: |
+      ${ "true" if users[0].address.state in ["Michigan", "MI"] else "false" } && val("users[0].lives_in_Michigan") === true
 validation code: |
   if users[0].lives_in_Michigan and users[0].address.state not in ["Michigan", "MI"]: 
     validation_error('If you live in Michigan, tap "Undo" and update your address.', field="users[0].lives_in_Michigan")
@@ -725,10 +723,14 @@ fields:
     show if: users[0].lives_in_Michigan
   - What County do you live in?: users[0].address.county
     code: court_list._load_courts()["address_county"].unique() + " County"
-    show if: users[0].has_lived_6_months_MI
-  - Have you lived in that County for the last 10 days or more?: users[0].address.county.ten_days_met
+    show if: users[0].lives_in_Michigan
+---
+if: tool_ID == "divorce_complaint" and users[0].has_lived_6_months_MI
+id: 10-day test user
+question: Time in ${ users[0].address.county }
+fields:
+  - Have you lived in ${ users[0].address.county } for the last 10 days or more?: users[0].ten_days_in_county
     datatype: yesnoradio
-    show if: users[0].has_lived_6_months_MI
 ---
 id: users[0].address.county
 question: |
@@ -783,7 +785,7 @@ fields:
     field: users[0].mailing_address.zip
     required: False
     show if: users[0].mailing_address.yesno
-  - label: Country
+  - label: Country or Territory
     field: users[0].mailing_address.country
     default: "US"
     code: |
@@ -958,7 +960,7 @@ fields:
   - label: Zip or Postal Code
     field: other_parties[0].address.zip
     required: False
-  - label: Country
+  - label: Country or Territory
     field: other_parties[0].address.country
     default: "US"
     code: |
@@ -1008,15 +1010,20 @@ fields:
       ${ "true" if other_parties[0].address.state in ["Michigan", "MI"] else "false" } && val("other_parties[0].lives_in_Michigan") === true
   - What County does ${ other_parties[0] } live in?: other_parties[0].address.county
     code: court_list._load_courts()["address_county"].unique() + " County"
-    show if: other_parties[0].has_lived_6_months_MI
-  - Has ${ other_parties[0] } lived in that County for the last 10 days or more?: other_parties[0].address.county.ten_days_met
-    datatype: yesnoradio
-    show if: other_parties[0].has_lived_6_months_MI
+    js show if: |
+      ${ "true" if other_parties[0].address.state in ["Michigan", "MI"] else "false" } && val("other_parties[0].lives_in_Michigan") === true
 validation code: |
   if other_parties[0].lives_in_Michigan and other_parties[0].address.state not in ["Michigan", "MI"]: 
     validation_error('If your spouse lives in Michigan, tap "Undo" and update their address.', field="other_parties[0].lives_in_Michigan")
   if not other_parties[0].lives_in_Michigan and other_parties[0].address.state in ["Michigan", "MI"]:
     validation_error('If your spouse does not live in Michigan, tap "Undo" and update their address.', field="other_parties[0].lives_in_Michigan")  
+---
+if: tool_ID == "divorce_complaint" and other_parties[0].has_lived_6_months_MI
+id: 10-day test OP
+question: Time in ${ other_parties[0].address.county }
+fields:
+  - Has ${ other_parties[0] } lived in ${ other_parties[0].address.county } County for the last 10 days or more?: other_parties[0].ten_days_in_county
+    datatype: yesnoradio
 ---
 id: other_parties[0].address.county
 question: |
@@ -1071,7 +1078,7 @@ fields:
     field: other_parties[0].mailing_address.zip
     required: False
     show if: other_parties[0].mailing_address.yesno
-  - label: Country
+  - label: Country or Territory
     field: other_parties[0].mailing_address.country
     default: "US"
     code: |
@@ -1159,13 +1166,13 @@ subquestion: |
   % elif len(venue_options) == 1:
   % if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
   At this time, you only meet the requirements to file your divorce in ${ users[0].address.county } County. Your divorce forms will be prepared using ${ users[0].address.county } County as the filing county.  
-  % if not users[0].address.county.ten_days_met:
+  % if not users[0].ten_days_in_county:
   
   You must **wait** to file until you have lived in ${ users[0].address.county } County for the last ten days or more.
   % endif
   % elif other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI:
   At this time, you only meet the requirements to file your divorce in ${ other_parties[0].address.county } County. Your divorce forms will be prepared using ${ other_parties[0].address.county } County as the filing county.  
-  % if not other_parties[0].address.county.ten_days_met:
+  % if not other_parties[0].ten_days_in_county:
   
   You must **wait** to file until your spouse has lived in ${ other_parties[0].address.county } County for the last ten days or more.
   % endif
@@ -1173,11 +1180,11 @@ subquestion: |
 
   % elif len(venue_options) == 2:
   You can choose to file in either ${ users[0].address.county } County or ${ other_parties[0].address.county } County. 
-  % if not users[0].address.county.ten_days_met:
+  % if not users[0].ten_days_in_county:
   
   **Warning:** You must **wait** to file in **${ users[0].address.county } County** until you have lived there for the last ten days or more.
   % endif
-  % if not other_parties[0].address.county.ten_days_met:
+  % if not other_parties[0].ten_days_in_county:
   
   **Warning:** You must **wait** to file in ${ other_parties[0].address.county } County until your spouse has lived there for the last ten days or more.
   % endif
@@ -1197,13 +1204,13 @@ fields:
     datatype: yesno
     show if:
       code: |
-        users[0].address.county in [venue_options] and users[0].address.county.ten_days_met and len(venue_options) == 1
+        users[0].address.county in [venue_options] and users[0].ten_days_in_county and len(venue_options) == 1
   - I understand that I must wait until my spouse has lived in ${ other_parties[0].address.county } County for ten days or more before I can file for divorce.: understands_waiting_period
     required: True
     datatype: yesno
     show if:
       code: |
-        other_parties[0].address.county in [venue_options] and other_parties[0].address.county.ten_days_met and len(venue_options) == 1
+        other_parties[0].address.county in [venue_options] and other_parties[0].ten_days_in_county and len(venue_options) == 1
 ---
 code: |
   venue_options = []
@@ -1227,17 +1234,16 @@ validation code: |
       if marriage.date > today():
         validation_error("The marriage date cannot be in the future.", field="marriage.date")
 ---
-# TODO: develop dynamic county dropdown based on state
 id: marriage.address
 question: |
   Where were you married?
 fields:
-  - label: Country
+  - label: Country or Territory
     field: marriage.address.country
     code: |
       countries_list()
     default: US
-  - label: State
+  - label: State 
     field: marriage.address.state
     code: |
       states_list()
@@ -2077,11 +2083,14 @@ code: |
   if confidential_contact_info_yn:
     users[0].address.address
     if tool_ID == "divorce_complaint":
-      users[0].lives_in_Michigan
+      if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
+        users[0].ten_days_in_county
+  
   else:
     users[0].address.address
     if tool_ID == "divorce_complaint":
-      users[0].lives_in_Michigan
+      if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
+        users[0].ten_days_in_county
     if users[0].address.state == "MI":
       users[0].address.county # skipped if answered on lives_in_Michigan screen
       users[0].village_or_township_yn

@@ -1493,15 +1493,19 @@ fields:
     show if:
       variable: children[i].currently_resides_in_type
       is: tribal_lands
-  - Please name the foreign country where ${ children[i] } lives:: children[i].currently_resides_in_locality
+  - Select the country where ${ children[i] } lives:: children[i].currently_resides_in_locality
+    code: |
+      countries_list()
+    exclude: |
+      ["US", "GU", "AS", "MP", "PR", "UM", "VI"]
     show if:
       variable: children[i].currently_resides_in_type
       is: foreign_country
   - Select the state or territory where ${ children[i] } lives:: children[i].currently_resides_in_locality
     code: |
-      US_states_and_territories_list
+      states_list()
     exclude: |
-      "Michigan"
+      "MI"
     show if: 
       variable: children[i].currently_resides_in_type
       is: other_US_state
@@ -1712,7 +1716,7 @@ fields:
   - label: Zip or Postal Code
     field: children_previous_address[i].zip
     required: False
-  - label: Country
+  - label: Country or Territory
     field: children_previous_address[i].country
     default: "US"
     code: |
@@ -2342,7 +2346,7 @@ subquestion: |
 fields:
   - State:: prior_family_cases[i].state
     code: |
-      US_states_and_territories_list
+      states_list()
   - What is the status of this case?: prior_family_cases[i].status
     choices:
       - "It has ended and an order was made": ended_with_order
@@ -2383,7 +2387,7 @@ subquestion: |
 fields:
   - State:: prior_family_cases[i].state
     code: |
-      US_states_and_territories_list
+      states_list()
   - County: prior_family_cases[i].county
     code: court_list._load_courts()["address_county"].unique() + " County"
     show if:
@@ -2642,7 +2646,7 @@ fields:
     show if:
       variable: children[i].stepchild_address_confidential
       is: False
-  - label: Country
+  - label: Country or Territory
     field: children[i].address.country
     default: "US"
     code: |
@@ -2701,7 +2705,7 @@ fields:
     show if:
       variable: children[i].stepchild_address_confidential
       is: False
-  - label: Country
+  - label: Country or Territory
     field: children[i].address.country
     default: "US"
     code: |
@@ -3057,7 +3061,7 @@ fields:
   - label: Zip or Postal Code
     field: users[0].job.employer.address.zip
     required: False
-  - label: Country
+  - label: Country or Territory
     field: users[0].job.employer.address.country
     default: "US"
     code: |
@@ -3243,7 +3247,7 @@ fields:
   - label: Zip or Postal Code
     field: other_parties[0].job.employer.address.zip
     required: False
-  - label: Country
+  - label: Country or Territory
     field: other_parties[0].job.employer.address.country
     default: "US"
     code: |
