@@ -4,7 +4,7 @@
 ---
 if: tool_ID == "JOD_only"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[judgment_ccmlh412], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[judgment_ccmlh412, foc_100_main, foc_100_attachment, foc_10_main, foc_10_attachment], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [same as above, less instructions]
 ---
 if: tool_ID == "divorce_complaint"
@@ -281,420 +281,600 @@ attachment:
     - children3_birthdate: ${ children[2].birthdate }
     - children4_birthdate: ${ children[3].birthdate }
 
-    - children1_physical_custody_provisions: ${ comma_and_list(children[0].physical_custody_provisions) }
-    - children2_physical_custody_provisions: ${ comma_and_list(children[1].physical_custody_provisions) }
-    - children3_physical_custody_provisions: ${ comma_and_list(children[2].physical_custody_provisions) }
-    - children4_physical_custody_provisions: ${ comma_and_list(children[3].physical_custody_provisions) }
+    - children1_physical_custody_provisions: ${ physical_custody_who_code }
+    - children2_physical_custody_provisions: ${ physical_custody_who_code }
+    - children3_physical_custody_provisions: ${ physical_custody_who_code }
+    - children4_physical_custody_provisions: ${ physical_custody_who_code }
 
     - children1_address: ${ children[0].address.on_one_line() }
     - children2_address: ${ children[1].address.on_one_line() }
     - children3_address: ${ children[2].address.on_one_line() }
     - children4_address: ${ children[3].address.on_one_line() }
 
-    - children1_legal_custody_provisions: ${ comma_and_list(children[0].legal_custody_provisions) }
-    - children2_legal_custody_provisions: ${ comma_and_list(children[1].legal_custody_provisions) }
-    - children3_legal_custody_provisions: ${ comma_and_list(children[2].legal_custody_provisions) }
-    - children4_legal_custody_provisions: ${ comma_and_list(children[3].legal_custody_provisions) }
+    - children1_legal_custody_provisions: ${ legal_custody_who_code }
+    - children2_legal_custody_provisions: ${ legal_custody_who_code }
+    - children3_legal_custody_provisions: ${ legal_custody_who_code }
+    - children4_legal_custody_provisions: ${ legal_custody_who_code }
 
     - support_provisions_stated: ${ support_provisions_stated }
 
     - plaintiff_insurance_provider1_name_address: |
         % if user_ask_role == "plaintiff":
-        ${ users[0].insurance_providers[0].name }
-        ${ users[0].insurance_providers[0].address.line_one() }
-        ${ users[0].insurance_providers[0].address.line_two() }
+        ${ users[0].insurance[0].company_name }
+        ${ users[0].insurance[0].company_address }
         % else:
-        ${ other_parties[0].insurance_providers[0].name }
-        ${ other_parties[0].insurance_providers[0].address.line_one() }
-        ${ other_parties[0].insurance_providers[0].address.line_two() }
+        ${ other_parties[0].insurance[0].company_name }
+        ${ other_parties[0].insurance[0].company_address }
         % endif
 
     - plaintiff_insurance_provider2_name_address: |
         % if user_ask_role == "plaintiff":
-        ${ users[0].insurance_providers[1].name }
-        ${ users[0].insurance_providers[1].address.line_one() }
-        ${ users[0].insurance_providers[1].address.line_two() }
+        ${ users[0].insurance[1].company_name }
+        ${ users[0].insurance[1].company_address }
         % else:
-        ${ other_parties[0].insurance_providers[1].name }
-        ${ other_parties[0].insurance_providers[1].address.line_one() }
-        ${ other_parties[0].insurance_providers[1].address.line_two() }
+        ${ other_parties[0].insurance[1].company_name }
+        ${ other_parties[0].insurance[1].company_address }
         % endif
 
     - plaintiff_insurance_provider3_name_address: |
         % if user_ask_role == "plaintiff":
-        ${ users[0].insurance_providers[2].name }
-        ${ users[0].insurance_providers[2].address.line_one() }
-        ${ users[0].insurance_providers[2].address.line_two() }
+        ${ users[0].insurance[2].company_name }
+        ${ users[0].insurance[2].company_address }
         % else:
-        ${ other_parties[0].insurance_providers[2].name }
-        ${ other_parties[0].insurance_providers[2].address.line_one() }
-        ${ other_parties[0].insurance_providers[2].address.line_two() }
+        ${ other_parties[0].insurance[2].company_name }
+        ${ other_parties[0].insurance[2].company_address }
         % endif
 
     - plaintiff_insurance_provider4_name_address: |
         % if user_ask_role == "plaintiff":
-        ${ users[0].insurance_providers[3].name }
-        ${ users[0].insurance_providers[3].address.line_one() }
-        ${ users[0].insurance_providers[3].address.line_two() }
+        ${ users[0].insurance[3].company_name }
+        ${ users[0].insurance[3].company_address }
         % else:
-        ${ other_parties[0].insurance_providers[3].name }
-        ${ other_parties[0].insurance_providers[3].address.line_one() }
-        ${ other_parties[0].insurance_providers[3].address.line_two() }
+        ${ other_parties[0].insurance[3].company_name }
+        ${ other_parties[0].insurance[3].company_address }
         % endif
 
     - plaintiff_insurance_provider5_name_address: |
         % if user_ask_role == "plaintiff":
-        ${ users[0].insurance_providers[4].name }
-        ${ users[0].insurance_providers[4].address.line_one() }
-        ${ users[0].insurance_providers[4].address.line_two() }
+        ${ users[0].insurance[4].company_name }
+        ${ users[0].insurance[4].company_address }
         % else:
-        ${ other_parties[0].insurance_providers[4].name }
-        ${ other_parties[0].insurance_providers[4].address.line_one() }
-        ${ other_parties[0].insurance_providers[4].address.line_two() }
+        ${ other_parties[0].insurance[4].company_name }
+        ${ other_parties[0].insurance[4].company_address }
         % endif
 
     - plaintiff_insurance_provider1_policy_group_num: |
         % if user_ask_role == "plaintiff":
-        Policy: ${ users[0].insurance_providers[0].policy_num }
-        Group: ${ users[0].insurance_providers[0].group_num }
+        Policy: ${ users[0].insurance[0].policy_number }
+        Group: ${ users[0].insurance[0].group_num }
         % else:
-        Policy: ${ other_parties[0].insurance_providers[0].policy_num }
-        Group: ${ other_parties[0].insurance_providers[0].group_num }
+        Policy: ${ other_parties[0].insurance[0].policy_number }
+        Group: ${ other_parties[0].insurance[0].group_num }
         % endif
 
     - plaintiff_insurance_provider2_policy_group_num: |
         % if user_ask_role == "plaintiff":
-        Policy: ${ users[0].insurance_providers[1].policy_num }
-        Group: ${ users[0].insurance_providers[1].group_num }
+        Policy: ${ users[0].insurance[1].policy_number }
+        Group: ${ users[0].insurance[1].group_num }
         % else:
-        Policy: ${ other_parties[0].insurance_providers[1].policy_num }
-        Group: ${ other_parties[0].insurance_providers[1].group_num }
+        Policy: ${ other_parties[0].insurance[1].policy_number }
+        Group: ${ other_parties[0].insurance[1].group_num }
         % endif
 
     - plaintiff_insurance_provider3_policy_group_num: |
         % if user_ask_role == "plaintiff":
-        Policy: ${ users[0].insurance_providers[2].policy_num }
-        Group: ${ users[0].insurance_providers[2].group_num }
+        Policy: ${ users[0].insurance[2].policy_number }
+        Group: ${ users[0].insurance[2].group_num }
         % else:
-        Policy: ${ other_parties[0].insurance_providers[2].policy_num }
-        Group: ${ other_parties[0].insurance_providers[2].group_num }
+        Policy: ${ other_parties[0].insurance[2].policy_number }
+        Group: ${ other_parties[0].insurance[2].group_num }
         % endif
 
     - plaintiff_insurance_provider4_policy_group_num: |
         % if user_ask_role == "plaintiff":
-        Policy: ${ users[0].insurance_providers[3].policy_num }
-        Group: ${ users[0].insurance_providers[3].group_num }
+        Policy: ${ users[0].insurance[3].policy_number }
+        Group: ${ users[0].insurance[3].group_num }
         % else:
-        Policy: ${ other_parties[0].insurance_providers[3].policy_num }
-        Group: ${ other_parties[0].insurance_providers[3].group_num }
+        Policy: ${ other_parties[0].insurance[3].policy_number }
+        Group: ${ other_parties[0].insurance[3].group_num }
         % endif
 
     - plaintiff_insurance_provider5_policy_group_num: |
         % if user_ask_role == "plaintiff":
-        Policy: ${ users[0].insurance_providers[4].policy_num }
-        Group: ${ users[0].insurance_providers[4].group_num }
+        Policy: ${ users[0].insurance[4].policy_number }
+        Group: ${ users[0].insurance[4].group_num }
         % else:
-        Policy: ${ other_parties[0].insurance_providers[4].policy_num }
-        Group: ${ other_parties[0].insurance_providers[4].group_num }
+        Policy: ${ other_parties[0].insurance[4].policy_number }
+        Group: ${ other_parties[0].insurance[4].group_num }
         % endif
 
-    - plaintiff_insurance_provider1_cert_num: |
+    - plaintiff_insurance_provider1_certificate_number: |
         % if user_ask_role == "plaintiff":
-        ${ users[0].insurance_providers[0].cert_num }
+        ${ users[0].insurance[0].certificate_number }
         % else:
-        ${ other_parties[0].insurance_providers[0].cert_num }
+        ${ other_parties[0].insurance[0].certificate_number }
         % endif
 
-    - plaintiff_insurance_provider2_cert_num: |
+    - plaintiff_insurance_provider2_certificate_number: |
         % if user_ask_role == "plaintiff":
-        ${ users[0].insurance_providers[1].cert_num }
+        ${ users[0].insurance[1].certificate_number }
         % else:
-        ${ other_parties[0].insurance_providers[1].cert_num }
+        ${ other_parties[0].insurance[1].certificate_number }
         % endif
 
-    - plaintiff_insurance_provider3_cert_num: |
+    - plaintiff_insurance_provider3_certificate_number: |
         % if user_ask_role == "plaintiff":
-        ${ users[0].insurance_providers[2].cert_num }
+        ${ users[0].insurance[2].certificate_number }
         % else:
-        ${ other_parties[0].insurance_providers[2].cert_num }
+        ${ other_parties[0].insurance[2].certificate_number }
         % endif
 
-    - plaintiff_insurance_provider4_cert_num: |
+    - plaintiff_insurance_provider4_certificate_number: |
         % if user_ask_role == "plaintiff":
-        ${ users[0].insurance_providers[3].cert_num }
+        ${ users[0].insurance[3].certificate_number }
         % else:
-        ${ other_parties[0].insurance_providers[3].cert_num }
+        ${ other_parties[0].insurance[3].certificate_number }
         % endif
 
-    - plaintiff_insurance_provider5_cert_num: |
+    - plaintiff_insurance_provider5_certificate_number: |
         % if user_ask_role == "plaintiff":
-        ${ users[0].insurance_providers[4].cert_num }
+        ${ users[0].insurance[4].certificate_number }
         % else:
-        ${ other_parties[0].insurance_providers[4].cert_num }
+        ${ other_parties[0].insurance[4].certificate_number }
         % endif
 
     - plaintiff_insurance_provider1_children: |
         % if user_ask_role == "plaintiff":
-        ${ comma_and_list(users[0].insurance_providers[0].children_treated) }
+        ${ comma_and_list(users[0].insurance[0].covers_child) }
         % else:
-        ${ comma_and_list(other_parties[0].insurance_providers[0].children_treated) }
+        ${ comma_and_list(other_parties[0].insurance[0].covers_child) }
         % endif
 
     - plaintiff_insurance_provider2_children: |
         % if user_ask_role == "plaintiff":
-        ${ comma_and_list(users[0].insurance_providers[1].children_treated) }
+        ${ comma_and_list(users[0].insurance[1].covers_child) }
         % else:
-        ${ comma_and_list(other_parties[0].insurance_providers[1].children_treated) }
+        ${ comma_and_list(other_parties[0].insurance[1].covers_child) }
         % endif
 
     - plaintiff_insurance_provider3_children: |
         % if user_ask_role == "plaintiff":
-        ${ comma_and_list(users[0].insurance_providers[2].children_treated) }
+        ${ comma_and_list(users[0].insurance[2].covers_child) }
         % else:
-        ${ comma_and_list(other_parties[0].insurance_providers[2].children_treated) }
+        ${ comma_and_list(other_parties[0].insurance[2].covers_child) }
         % endif
 
     - plaintiff_insurance_provider4_children: |
         % if user_ask_role == "plaintiff":
-        ${ comma_and_list(users[0].insurance_providers[3].children_treated) }
+        ${ comma_and_list(users[0].insurance[3].covers_child) }
         % else:
-        ${ comma_and_list(other_parties[0].insurance_providers[3].children_treated) }
+        ${ comma_and_list(other_parties[0].insurance[3].covers_child) }
         % endif
 
     - plaintiff_insurance_provider5_children: |
         % if user_ask_role == "plaintiff":
-        ${ comma_and_list(users[0].insurance_providers[4].children_treated) }
+        ${ comma_and_list(users[0].insurance[4].covers_child) }
         % else:
-        ${ comma_and_list(other_parties[0].insurance_providers[4].children_treated) }
+        ${ comma_and_list(other_parties[0].insurance[4].covers_child) }
         % endif
     
-    - plaintiff_insurance_provider1_medical: ${ plaintiff_insurance_provider1_medical }
-    - plaintiff_insurance_provider2_medical: ${ plaintiff_insurance_provider2_medical }
-    - plaintiff_insurance_provider3_medical: ${ plaintiff_insurance_provider3_medical }
-    - plaintiff_insurance_provider4_medical: ${ plaintiff_insurance_provider4_medical }
-    - plaintiff_insurance_provider5_medical: ${ plaintiff_insurance_provider5_medical }
+    - plaintiff_insurance_provider1_medical: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[0].coverage_type['medical'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[0].coverage_type['medical'] else False }
+        % endif
+    - plaintiff_insurance_provider2_medical: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[1].coverage_type['medical'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[1].coverage_type['medical'] else False }
+        % endif
+    - plaintiff_insurance_provider3_medical: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[2].coverage_type['medical'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[2].coverage_type['medical'] else False }
+        % endif
+    - plaintiff_insurance_provider4_medical: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[3].coverage_type['medical'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[3].coverage_type['medical'] else False }
+        % endif
+    - plaintiff_insurance_provider5_medical: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[4].coverage_type['medical'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[4].coverage_type['medical'] else False }
+        % endif
 
-    - plaintiff_insurance_provider1_dental: ${ plaintiff_insurance_provider1_dental }
-    - plaintiff_insurance_provider2_dental: ${ plaintiff_insurance_provider2_dental }
-    - plaintiff_insurance_provider3_dental: ${ plaintiff_insurance_provider3_dental }
-    - plaintiff_insurance_provider4_dental: ${ plaintiff_insurance_provider4_dental }
-    - plaintiff_insurance_provider5_dental: ${ plaintiff_insurance_provider5_dental }
+    - plaintiff_insurance_provider1_dental: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[0].coverage_type['dental'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[0].coverage_type['dental'] else False }
+        % endif
+    - plaintiff_insurance_provider2_dental: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[1].coverage_type['dental'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[1].coverage_type['dental'] else False }
+        % endif
+    - plaintiff_insurance_provider3_dental: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[2].coverage_type['dental'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[2].coverage_type['dental'] else False }
+        % endif
+    - plaintiff_insurance_provider4_dental: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[3].coverage_type['dental'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[3].coverage_type['dental'] else False }
+        % endif
+    - plaintiff_insurance_provider5_dental: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[4].coverage_type['dental'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[4].coverage_type['dental'] else False }
+        % endif
 
-    - plaintiff_insurance_provider1_optical: ${ plaintiff_insurance_provider1_optical }
-    - plaintiff_insurance_provider2_optical: ${ plaintiff_insurance_provider2_optical }
-    - plaintiff_insurance_provider3_optical: ${ plaintiff_insurance_provider3_optical }
-    - plaintiff_insurance_provider4_optical: ${ plaintiff_insurance_provider4_optical }
-    - plaintiff_insurance_provider5_optical: ${ plaintiff_insurance_provider5_optical }
+    - plaintiff_insurance_provider1_optical: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[0].coverage_type['optical/vision'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[0].coverage_type['optical/vision'] else False }
+        % endif
+    - plaintiff_insurance_provider2_optical: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[1].coverage_type['optical/vision'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[1].coverage_type['optical/vision'] else False }
+        % endif
+    - plaintiff_insurance_provider3_optical: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[2].coverage_type['optical/vision'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[2].coverage_type['optical/vision'] else False }
+        % endif
+    - plaintiff_insurance_provider4_optical: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[3].coverage_type['optical/vision'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[3].coverage_type['optical/vision'] else False }
+        % endif
+    - plaintiff_insurance_provider5_optical: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[4].coverage_type['optical/vision'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[4].coverage_type['optical/vision'] else False }
+        % endif
 
-    - plaintiff_insurance_provider1_other: ${ plaintiff_insurance_provider1_other }
-    - plaintiff_insurance_provider2_other: ${ plaintiff_insurance_provider2_other }
-    - plaintiff_insurance_provider3_other: ${ plaintiff_insurance_provider3_other }
-    - plaintiff_insurance_provider4_other: ${ plaintiff_insurance_provider4_other }
-    - plaintiff_insurance_provider5_other: ${ plaintiff_insurance_provider5_other }
+    - plaintiff_insurance_provider1_other: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[0].coverage_type['other'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[0].coverage_type['other'] else False }
+        % endif
+    - plaintiff_insurance_provider2_other: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[1].coverage_type['other'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[1].coverage_type['other'] else False }
+        % endif
+    - plaintiff_insurance_provider3_other: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[2].coverage_type['other'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[2].coverage_type['other'] else False }
+        % endif
+    - plaintiff_insurance_provider4_other: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[3].coverage_type['other'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[3].coverage_type['other'] else False }
+        % endif
+    - plaintiff_insurance_provider5_other: |
+        % if user_ask_role == "plaintiff":
+            ${ True if users[0].insurance[4].coverage_type['other'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[4].coverage_type['other'] else False }
+        % endif
 
     - defendant_insurance_provider1_name_address: |
         % if user_ask_role == "defendant":
-        ${ users[0].insurance_providers[0].name }
-        ${ users[0].insurance_providers[0].address.line_one() }
-        ${ users[0].insurance_providers[0].address.line_two() }
+        ${ users[0].insurance[0].company_name }
+        ${ users[0].insurance[0].company_address }
         % else:
-        ${ other_parties[0].insurance_providers[0].name }
-        ${ other_parties[0].insurance_providers[0].address.line_one() }
-        ${ other_parties[0].insurance_providers[0].address.line_two() }
+        ${ other_parties[0].insurance[0].company_name }
+        ${ other_parties[0].insurance[0].company_address }
         % endif
 
     - defendant_insurance_provider2_name_address: |
         % if user_ask_role == "defendant":
-        ${ users[0].insurance_providers[1].name }
-        ${ users[0].insurance_providers[1].address.line_one() }
-        ${ users[0].insurance_providers[1].address.line_two() }
+        ${ users[0].insurance[1].company_name }
+        ${ users[0].insurance[1].company_address }
         % else:
-        ${ other_parties[0].insurance_providers[1].name }
-        ${ other_parties[0].insurance_providers[1].address.line_one() }
-        ${ other_parties[0].insurance_providers[1].address.line_two() }
+        ${ other_parties[0].insurance[1].company_name }
+        ${ other_parties[0].insurance[1].company_address }
         % endif
 
     - defendant_insurance_provider3_name_address: |
         % if user_ask_role == "defendant":
-        ${ users[0].insurance_providers[2].name }
-        ${ users[0].insurance_providers[2].address.line_one() }
-        ${ users[0].insurance_providers[2].address.line_two() }
+        ${ users[0].insurance[2].company_name }
+        ${ users[0].insurance[2].company_address }
         % else:
-        ${ other_parties[0].insurance_providers[2].name }
-        ${ other_parties[0].insurance_providers[2].address.line_one() }
-        ${ other_parties[0].insurance_providers[2].address.line_two() }
+        ${ other_parties[0].insurance[2].company_name }
+        ${ other_parties[0].insurance[2].company_address }
         % endif
 
     - defendant_insurance_provider4_name_address: |
         % if user_ask_role == "defendant":
-        ${ users[0].insurance_providers[3].name }
-        ${ users[0].insurance_providers[3].address.line_one() }
-        ${ users[0].insurance_providers[3].address.line_two() }
+        ${ users[0].insurance[3].company_name }
+        ${ users[0].insurance[3].company_address }
         % else:
-        ${ other_parties[0].insurance_providers[3].name }
-        ${ other_parties[0].insurance_providers[3].address.line_one() }
-        ${ other_parties[0].insurance_providers[3].address.line_two() }
+        ${ other_parties[0].insurance[3].company_name }
+        ${ other_parties[0].insurance[3].company_address }
         % endif
 
     - defendant_insurance_provider5_name_address: |
         % if user_ask_role == "defendant":
-        ${ users[0].insurance_providers[4].name }
-        ${ users[0].insurance_providers[4].address.line_one() }
-        ${ users[0].insurance_providers[4].address.line_two() }
+        ${ users[0].insurance[4].company_name }
+        ${ users[0].insurance[4].company_address }
         % else:
-        ${ other_parties[0].insurance_providers[4].name }
-        ${ other_parties[0].insurance_providers[4].address.line_one() }
-        ${ other_parties[0].insurance_providers[4].address.line_two() }
+        ${ other_parties[0].insurance[4].company_name }
+        ${ other_parties[0].insurance[4].company_address }
         % endif
 
     - defendant_insurance_provider1_policy_group_num: |
         % if user_ask_role == "defendant":
-        Policy: ${ users[0].insurance_providers[0].policy_num }
-        Group: ${ users[0].insurance_providers[0].group_num }
+        Policy: ${ users[0].insurance[0].policy_number }
+        Group: ${ users[0].insurance[0].group_num }
         % else:
-        Policy: ${ other_parties[0].insurance_providers[0].policy_num }
-        Group: ${ other_parties[0].insurance_providers[0].group_num }
+        Policy: ${ other_parties[0].insurance[0].policy_number }
+        Group: ${ other_parties[0].insurance[0].group_num }
         % endif
 
     - defendant_insurance_provider2_policy_group_num: |
         % if user_ask_role == "defendant":
-        Policy: ${ users[0].insurance_providers[1].policy_num }
-        Group: ${ users[0].insurance_providers[1].group_num }
+        Policy: ${ users[0].insurance[1].policy_number }
+        Group: ${ users[0].insurance[1].group_num }
         % else:
-        Policy: ${ other_parties[0].insurance_providers[1].policy_num }
-        Group: ${ other_parties[0].insurance_providers[1].group_num }
+        Policy: ${ other_parties[0].insurance[1].policy_number }
+        Group: ${ other_parties[0].insurance[1].group_num }
         % endif
 
     - defendant_insurance_provider3_policy_group_num: |
         % if user_ask_role == "defendant":
-        Policy: ${ users[0].insurance_providers[2].policy_num }
-        Group: ${ users[0].insurance_providers[2].group_num }
+        Policy: ${ users[0].insurance[2].policy_number }
+        Group: ${ users[0].insurance[2].group_num }
         % else:
-        Policy: ${ other_parties[0].insurance_providers[2].policy_num }
-        Group: ${ other_parties[0].insurance_providers[2].group_num }
+        Policy: ${ other_parties[0].insurance[2].policy_number }
+        Group: ${ other_parties[0].insurance[2].group_num }
         % endif
 
     - defendant_insurance_provider4_policy_group_num: |
         % if user_ask_role == "defendant":
-        Policy: ${ users[0].insurance_providers[3].policy_num }
-        Group: ${ users[0].insurance_providers[3].group_num }
+        Policy: ${ users[0].insurance[3].policy_number }
+        Group: ${ users[0].insurance[3].group_num }
         % else:
-        Policy: ${ other_parties[0].insurance_providers[3].policy_num }
-        Group: ${ other_parties[0].insurance_providers[3].group_num }
+        Policy: ${ other_parties[0].insurance[3].policy_number }
+        Group: ${ other_parties[0].insurance[3].group_num }
         % endif
 
     - defendant_insurance_provider5_policy_group_num: |
         % if user_ask_role == "defendant":
-        Policy: ${ users[0].insurance_providers[4].policy_num }
-        Group: ${ users[0].insurance_providers[4].group_num }
+        Policy: ${ users[0].insurance[4].policy_number }
+        Group: ${ users[0].insurance[4].group_num }
         % else:
-        Policy: ${ other_parties[0].insurance_providers[4].policy_num }
-        Group: ${ other_parties[0].insurance_providers[4].group_num }
+        Policy: ${ other_parties[0].insurance[4].policy_number }
+        Group: ${ other_parties[0].insurance[4].group_num }
         % endif
 
-    - defendant_insurance_provider1_cert_num: |
+    - defendant_insurance_provider1_certificate_number: |
         % if user_ask_role == "defendant":
-        ${ users[0].insurance_providers[0].cert_num }
+        ${ users[0].insurance[0].certificate_number }
         % else:
-        ${ other_parties[0].insurance_providers[0].cert_num }
+        ${ other_parties[0].insurance[0].certificate_number }
         % endif
 
-    - defendant_insurance_provider2_cert_num: |
+    - defendant_insurance_provider2_certificate_number: |
         % if user_ask_role == "defendant":
-        ${ users[0].insurance_providers[1].cert_num }
+        ${ users[0].insurance[1].certificate_number }
         % else:
-        ${ other_parties[0].insurance_providers[1].cert_num }
+        ${ other_parties[0].insurance[1].certificate_number }
         % endif
 
-    - defendant_insurance_provider3_cert_num: |
+    - defendant_insurance_provider3_certificate_number: |
         % if user_ask_role == "defendant":
-        ${ users[0].insurance_providers[2].cert_num }
+        ${ users[0].insurance[2].certificate_number }
         % else:
-        ${ other_parties[0].insurance_providers[2].cert_num }
+        ${ other_parties[0].insurance[2].certificate_number }
         % endif
 
-    - defendant_insurance_provider4_cert_num: |
+    - defendant_insurance_provider4_certificate_number: |
         % if user_ask_role == "defendant":
-        ${ users[0].insurance_providers[3].cert_num }
+        ${ users[0].insurance[3].certificate_number }
         % else:
-        ${ other_parties[0].insurance_providers[3].cert_num }
+        ${ other_parties[0].insurance[3].certificate_number }
         % endif
 
-    - defendant_insurance_provider5_cert_num: |
+    - defendant_insurance_provider5_certificate_number: |
         % if user_ask_role == "defendant":
-        ${ users[0].insurance_providers[4].cert_num }
+        ${ users[0].insurance[4].certificate_number }
         % else:
-        ${ other_parties[0].insurance_providers[4].cert_num }
+        ${ other_parties[0].insurance[4].certificate_number }
         % endif
 
     - defendant_insurance_provider1_children: |
         % if user_ask_role == "defendant":
-        ${ comma_and_list(users[0].insurance_providers[0].children_treated) }
+        ${ comma_and_list(users[0].insurance[0].children_treated) }
         % else:
-        ${ comma_and_list(other_parties[0].insurance_providers[0].children_treated) }
+        ${ comma_and_list(other_parties[0].insurance[0].children_treated) }
         % endif
 
     - defendant_insurance_provider2_children: |
         % if user_ask_role == "defendant":
-        ${ comma_and_list(users[0].insurance_providers[1].children_treated) }
+        ${ comma_and_list(users[0].insurance[1].children_treated) }
         % else:
-        ${ comma_and_list(other_parties[0].insurance_providers[1].children_treated) }
+        ${ comma_and_list(other_parties[0].insurance[1].children_treated) }
         % endif
 
     - defendant_insurance_provider3_children: |
         % if user_ask_role == "defendant":
-        ${ comma_and_list(users[0].insurance_providers[2].children_treated) }
+        ${ comma_and_list(users[0].insurance[2].children_treated) }
         % else:
-        ${ comma_and_list(other_parties[0].insurance_providers[2].children_treated) }
+        ${ comma_and_list(other_parties[0].insurance[2].children_treated) }
         % endif
 
     - defendant_insurance_provider4_children: |
         % if user_ask_role == "defendant":
-        ${ comma_and_list(users[0].insurance_providers[3].children_treated) }
+        ${ comma_and_list(users[0].insurance[3].children_treated) }
         % else:
-        ${ comma_and_list(other_parties[0].insurance_providers[3].children_treated) }
+        ${ comma_and_list(other_parties[0].insurance[3].children_treated) }
         % endif
 
     - defendant_insurance_provider5_children: |
         % if user_ask_role == "defendant":
-        ${ comma_and_list(users[0].insurance_providers[4].children_treated) }
+        ${ comma_and_list(users[0].insurance[4].children_treated) }
         % else:
-        ${ comma_and_list(other_parties[0].insurance_providers[4].children_treated) }
+        ${ comma_and_list(other_parties[0].insurance[4].children_treated) }
         % endif
     
-    - defendant_insurance_provider1_medical: ${ defendant_insurance_provider1_medical }
-    - defendant_insurance_provider2_medical: ${ defendant_insurance_provider2_medical }
-    - defendant_insurance_provider3_medical: ${ defendant_insurance_provider3_medical }
-    - defendant_insurance_provider4_medical: ${ defendant_insurance_provider4_medical }
-    - defendant_insurance_provider5_medical: ${ defendant_insurance_provider5_medical }
+    - defendant_insurance_provider1_medical: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[0].coverage_type['medical'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[0].coverage_type['medical'] else False }
+        % endif
+    - defendant_insurance_provider2_medical: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[1].coverage_type['medical'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[1].coverage_type['medical'] else False }
+        % endif
+    - defendant_insurance_provider3_medical: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[2].coverage_type['medical'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[2].coverage_type['medical'] else False }
+        % endif
+    - defendant_insurance_provider4_medical: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[3].coverage_type['medical'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[3].coverage_type['medical'] else False }
+        % endif
+    - defendant_insurance_provider5_medical: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[4].coverage_type['medical'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[4].coverage_type['medical'] else False }
+        % endif
 
-    - defendant_insurance_provider1_dental: ${ defendant_insurance_provider1_dental }
-    - defendant_insurance_provider2_dental: ${ defendant_insurance_provider2_dental }
-    - defendant_insurance_provider3_dental: ${ defendant_insurance_provider3_dental }
-    - defendant_insurance_provider4_dental: ${ defendant_insurance_provider4_dental }
-    - defendant_insurance_provider5_dental: ${ defendant_insurance_provider5_dental }
+    - defendant_insurance_provider1_dental: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[0].coverage_type['dental'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[0].coverage_type['dental'] else False }
+        % endif
+    - defendant_insurance_provider2_dental: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[1].coverage_type['dental'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[1].coverage_type['dental'] else False }
+        % endif
+    - defendant_insurance_provider3_dental: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[2].coverage_type['dental'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[2].coverage_type['dental'] else False }
+        % endif
+    - defendant_insurance_provider4_dental: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[3].coverage_type['dental'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[3].coverage_type['dental'] else False }
+        % endif
+    - defendant_insurance_provider5_dental: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[4].coverage_type['dental'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[4].coverage_type['dental'] else False }
+        % endif
 
-    - defendant_insurance_provider1_optical: ${ defendant_insurance_provider1_optical }
-    - defendant_insurance_provider2_optical: ${ defendant_insurance_provider2_optical }
-    - defendant_insurance_provider3_optical: ${ defendant_insurance_provider3_optical }
-    - defendant_insurance_provider4_optical: ${ defendant_insurance_provider4_optical }
-    - defendant_insurance_provider5_optical: ${ defendant_insurance_provider5_optical }
+    - defendant_insurance_provider1_optical: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[0].coverage_type['optical/vision'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[0].coverage_type['optical/vision'] else False }
+        % endif
+    - defendant_insurance_provider2_optical: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[1].coverage_type['optical/vision'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[1].coverage_type['optical/vision'] else False }
+        % endif
+    - defendant_insurance_provider3_optical: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[2].coverage_type['optical/vision'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[2].coverage_type['optical/vision'] else False }
+        % endif
+    - defendant_insurance_provider4_optical: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[3].coverage_type['optical/vision'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[3].coverage_type['optical/vision'] else False }
+        % endif
+    - defendant_insurance_provider5_optical: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[4].coverage_type['optical/vision'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[4].coverage_type['optical/vision'] else False }
+        % endif
 
-    - defendant_insurance_provider1_other: ${ defendant_insurance_provider1_other }
-    - defendant_insurance_provider2_other: ${ defendant_insurance_provider2_other }
-    - defendant_insurance_provider3_other: ${ defendant_insurance_provider3_other }
-    - defendant_insurance_provider4_other: ${ defendant_insurance_provider4_other }
-    - defendant_insurance_provider5_other: ${ defendant_insurance_provider5_other }
+    - defendant_insurance_provider1_other: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[0].coverage_type['other'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[0].coverage_type['other'] else False }
+        % endif
+    - defendant_insurance_provider2_other: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[1].coverage_type['other'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[1].coverage_type['other'] else False }
+        % endif  
+    - defendant_insurance_provider3_other: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[2].coverage_type['other'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[2].coverage_type['other'] else False }
+        % endif  
+    - defendant_insurance_provider4_other: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[3].coverage_type['other'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[3].coverage_type['other'] else False }
+        % endif  
+    - defendant_insurance_provider5_other: |
+        % if user_ask_role == "defendant":
+            ${ True if users[0].insurance[4].coverage_type['other'] else False }
+        % else:
+            ${ True if other_parties[0].insurance[4].coverage_type['other'] else False }
+        % endif  
 ---
 code: |
-  if len(children.complete_elements()) > 0:
+  if (len(children.complete_elements()) > 0) or (len(users[0].insurance) > 0) or (len(other_parties[0].insurance) > 0):
     foc_100_main.enabled = True
   else:
     foc_100_main.enabled = False
 ---
 #NOTE: currently the only MLH_form_type variable that exists is the "Judgment of Divorce"; the other two are educated guesses about what other form types will be set to
 code: |
-  if len(children.complete_elements()) > 4:
+  if (len(children.complete_elements()) > 4) or (len(users[0].insurance) > 5) or (len(other_parties[0].insurance) > 5):
     foc_100_attachment.enabled = True
   else:
     foc_100_attachment.enabled = False
