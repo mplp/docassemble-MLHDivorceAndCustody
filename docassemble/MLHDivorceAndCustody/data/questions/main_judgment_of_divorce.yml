@@ -236,7 +236,6 @@ code: |
 
   nav.set_section("signpost_done")
   MLH_standard_outro_pages  
-  MLH_esign_tag
   MLH_download
 ---
 # EKM note: interview_order code blocks moved from here to question_bank.yml
