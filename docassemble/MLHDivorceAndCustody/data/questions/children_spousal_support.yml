@@ -3215,6 +3215,38 @@ fields:
       code: |
         pa_status == "gets_assistance"
 ---
+code: |
+  public_assistance_list = []
+  if pa_food_assistance_program:
+    public_assistance_list.append("FAP")
+  if pa_medicaid:
+    public_assistance_list.append("MA CDC")
+  if pa_family_independence_program:
+    public_assistance_list.append("FIP")
+  if pa_women_infants_children:
+    public_assistance_list.append("WIC")
+  if pa_state_disability:
+    public_assistance_list.append("SDA")
+  if pa_state_emergency_relief:
+    public_assistance_list.append("SER")
+  if pa_refugee_assistance:
+    public_assistance_list.append("RAP")
+  if pa_supplemental_security:
+    public_assistance_list.append("SSI")
+  if pa_other:
+    public_assistance_list.append(f"other(${ pa_other_types})")
+depends on:
+  - pa_food_assistance_program
+  - pa_medicaid
+  - pa_family_independence_program
+  - pa_women_infants_children
+  - pa_state_disability
+  - pa_state_emergency_relief
+  - pa_refugee_assistance
+  - pa_supplemental_security
+  - pa_other
+  - pa_other_types
+---
 # LHI: "Plaintiff Employer" or "Defendant Employer"
 id: other party employment
 question: ${ other_parties[0] }'s employment

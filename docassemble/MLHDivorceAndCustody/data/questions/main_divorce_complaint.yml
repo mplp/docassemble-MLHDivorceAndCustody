@@ -141,8 +141,6 @@ code: |
   
   if not ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI) or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI)):
     exit_jurisdiction
-  else:
-    venue
   
   if other_parties[0].address.state == "MI":
     other_parties[0].address.county        # skipped if answered on lives_in_Michigan screen
@@ -203,7 +201,7 @@ code: |
   if not marriage.living_together_yn:
     marriage.living_together_stopped_date
   
-  #### divorce venue goes here!!! ######
+  #### divorce venue goes here!!! must wait til we know about kids & prior cases probs use "county_choice" or convert it so that court-loading works correctly? ######
 
   if returning_to_finalize:
     if marriage.temporary_order:
