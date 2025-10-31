@@ -38,9 +38,9 @@ code: |
 ---
 code: |
   if there_are_marital_children:
-    docket_number = "                  -DM"
+    docket_number = "                         -DM"
   else:
-    docket_number = "                  -DO"
+    docket_number = "                         -DO"
 depends on:
   - there_are_marital_children
 ---

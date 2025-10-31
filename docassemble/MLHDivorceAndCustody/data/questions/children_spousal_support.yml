@@ -3623,18 +3623,18 @@ fields:
   - What is your race?: users[0].race
     required: False
     choices:
-      - White, not Hispanic or Latino: white
-      - Hispanic or Latino: hispanic_latino
-      - American Indian or Alaska Native: american_indian_AK_native
-      - Asian: asian
-      - African American: african_american
-      - Native Hawaiian or Other Pacific Islander: HI_native_pacific_islander
-      - Other: other
+      - White, not Hispanic or Latino: White
+      - Hispanic or Latino: Hispanic/Latino
+      - American Indian or Alaskan Native: American Indian/AK Native
+      - Asian: Asian
+      - African American: African American
+      - Native Hawaiian or Other Pacific Islander: HI Native/Pacific Islander
+      - Other: Other
   - What is the other race?: users[0].other_race_description
     required: False
     show if: 
       variable: users[0].race 
-      is: other
+      is: Other
 ---
 id: user alias
 if: there_are_marital_children or user_wants_post_divorce_support
@@ -3759,18 +3759,18 @@ fields:
   - What is ${ OP_label }'s race?: other_parties[0].race
     required: False
     choices:
-      - White, not Hispanic or Latino: white
-      - Hispanic or Latino: hispanic_latino
-      - American Indian or Alaska Native: american_indian_AK_native
-      - Asian: asian
-      - African American: african_american
-      - Native Hawaiian or Other Pacific Islander: HI_native_pacific_islander
-      - Other: other
+      - White, not Hispanic or Latino: White
+      - Hispanic or Latino: Hispanic/Latino
+      - American Indian or Alaskan Native: American Indian/AK Native
+      - Asian: Asian
+      - African American: African American
+      - Native Hawaiian or Other Pacific Islander: HI Native/Pacific Islander
+      - Other: Other
   - What is the other race?: other_parties[0].other_race_description
     required: False
     show if: 
       variable: users[0].race 
-      is: other
+      is: Other
 ---
 id: other party alias
 if: there_are_marital_children or user_wants_post_divorce_support

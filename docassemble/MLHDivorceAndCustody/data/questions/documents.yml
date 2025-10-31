@@ -9,7 +9,7 @@ objects:
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[judgment_ccmlh412, verified_statement_foc_23, child_support_services_dhs_1201d, fee_waiver_attachment, protected_pii_mc_97a_attachment], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[judgment_ccmlh412, verified_statement_foc_23, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, fee_waiver_attachment, protected_pii_mc_97a_attachment], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, except without the instructions]
 ---
 # ====================================================================
@@ -19,7 +19,7 @@ objects:
 ### List of enabling logic that is TBD
 
 ---
-# never in JOD_only
+# not in JOD_only bundle
 code: |
   if tool_ID == "divorce_complaint":
     verified_statement_foc_23.enabled = there_are_marital_children
@@ -32,6 +32,10 @@ code: |
     verified_statement_foc_23.enabled = True
   elif tool_ID == "custody_answer":
     verified_statement_foc_23.enabled = filing_counterclaim
+---
+# not in JOD_only bundle
+code: |
+  domestic_relations_verified_financial_cc_320.enabled = True
 ---
 code: |
   if tool_ID in ["divorce_complaint", "custody_complaint"]:
@@ -94,11 +98,16 @@ attachment:
       - users1_birthdate: ${ users[0].birthdate}
       - users1_ssn: ${ users[0].ssn }
       - users1_driver_license_and_state: ${ users[0].license_number + " " + users[0].license_state }
-      - users1_address_on_one_line: ${ users[0].address_on_one_line() }
+      - users1_address_on_one_line: ${ users[0].address.on_one_line() }
       - users1_email: ${ users[0].email }
       - users1_height: ${ users[0].height }
       - users1_weight: ${ users[0].weight }
-      - users1_race: ${ users[0].race }
+      - users1_race: |
+          % if users[0].race == "Other":
+          ${users[0].other_race_description}
+          % else:
+          ${ users[0].race }
+          % endif
       - users1_gender: ${ users[0].gender }
       - users1_hair_color: ${ users[0].hair_color }
       - users1_eye_color: ${ users[0].eye_color }
@@ -109,7 +118,9 @@ attachment:
           % endif
       - users1_gross_weekly_income: |
           % if users[0].has_job:
-          $ ${ users[0].income.total() * 52 }
+          % if users[0].income.total() > 0:
+          $ ${ round(users[0].income.total() / 52, 2) }
+          % endif
           % endif
       - users1_applied_public_assistance_yes: ${True if pa_status in ["gets_assistance", "applied"] else False }
       - users1_applied_public_assistance_no: ${True if pa_status not in ["gets_assistance", "applied"] else False }
@@ -135,11 +146,16 @@ attachment:
       - other_parties1_birthdate: ${ other_parties[0].birthdate}
       - other_parties1_ssn: ${ other_parties[0].ssn }
       - other_parties1_driver_license_and_state: ${ other_parties[0].license_number + " " + other_parties[0].license_state }
-      - other_parties1_address_on_one_line: ${ other_parties[0].address_on_one_line() }
+      - other_parties1_address_on_one_line: ${ other_parties[0].address.on_one_line() }
       - other_parties1_email: ${ other_parties[0].email }
       - other_parties1_height: ${ other_parties[0].height }
       - other_parties1_weight: ${ other_parties[0].weight }
-      - other_parties1_race: ${ other_parties[0].race }
+      - other_parties1_race: |
+          % if other_parties[0].race == "Other":
+          ${other_parties[0].other_race_description}
+          % else:
+          ${ other_parties[0].race }
+          % endif
       - other_parties1_gender: ${ other_parties[0].gender }
       - other_parties1_hair_color: ${ other_parties[0].hair_color }
       - other_parties1_eye_color: ${ other_parties[0].eye_color }
@@ -150,7 +166,9 @@ attachment:
           % endif
       - other_parties1_gross_weekly_income: |
           % if other_parties[0].has_job:
-          $ ${ other_parties[0].income.total() * 52 }
+          % if other_parties[0].income.total() > 0:
+          $ ${ round(other_parties[0].income.total() / 52, 2) }
+          % endif
           % endif
       - other_parties1_applied_public_assistance_yes: ${True if other_party_pa_status in ["gets_assistance", "applied"] else False }
       - other_parties1_applied_public_assistance_no: ${True if other_party_pa_status == "none" else False }
@@ -205,6 +223,39 @@ attachment:
           % else:
           ${ '' }
           % endif
+---
+# --------------------------------------------------------------------
+## Domestic Relations Verified Financial Information Form, CC 320
+# --------------------------------------------------------------------
+---
+objects:
+  - domestic_relations_verified_financial_cc_320: ALDocument.using(title="Domestic Relations Verified Financial Information Form - CC 320", filename="Domestic Relations Verified Financial Information Form - CC 320")
+---
+attachment:
+  - name: Domestic Relations Verified Financial Information Form - CC 320
+    filename: Domestic Relations Verified Financial Information Form - CC 320
+    variable name: domestic_relations_verified_financial_cc_320[i]
+    pdf template file: domestic_relations_verified_financial_info_cc320.pdf
+    skip undefined: True
+    editable: False
+    fields:
+      - trial_court_circuit: ${the_court.number}
+      - docket_number: ${docket_number}
+      - docket_number__1: ${docket_number}
+      - docket_number__2: ${docket_number}
+      - docket_number__3: ${docket_number}
+      - docket_number__4: ${docket_number}
+      - docket_number__5: ${docket_number}
+      - docket_number__6: ${docket_number}
+      # - judge_name: not used in divorce_complaint, will need to add for answers
+      - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
+      - defendants0_name_full: ${defendants[0].name_full()}
+      - users0_name_full: ${users[0].name_full()}
+      - users0_phone_number: ${users[0].phone_number}
+      - users0_address_on_one_line: ${users[0].address.on_one_line()}
+      - users0_birthdate: ${users[0].birthdate}
+      - users0_ssn: ${users[0].ssn}
+      - users0_driver_license_and_state: ${ users[0].license_number + " " + users[0].license_state }
 ---
 # --------------------------------------------------------------------
 ## Appplication for IV-D Child Support Services, DHS-1201D
