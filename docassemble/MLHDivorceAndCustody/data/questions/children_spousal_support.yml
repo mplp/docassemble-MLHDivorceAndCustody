@@ -3215,6 +3215,7 @@ fields:
       code: |
         pa_status == "gets_assistance"
 ---
+id: FOC 23 user list of public assistance
 code: |
   public_assistance_list = []
   if pa_food_assistance_program:
@@ -3246,6 +3247,83 @@ depends on:
   - pa_supplemental_security
   - pa_other
   - pa_other_types
+---
+id: FOC 23 user list of case numbers
+code: |
+  pa_case_numbers_foc_23 = []
+
+  if pa_mdhhs or pa_other:
+    if pa_mddhhs:
+      pa_case_numbers.append(pa_mdhhs_case_number)
+    if pa_other:
+      pa_case_numbers.append(pa_other_case_numbers)
+  elif pa_supplemental_security:
+    pa_case_numbers.append(pa_ssa_number)
+depends on:
+  - pa_supplemental_security
+  - pa_other
+  - pa_other_case_numbers
+  - pa_ssa_numbers
+  - pa_mdhhs_case_numbers
+  - pa_mdhhs
+---
+id: FOC 23 OP list of public assistance
+code: |
+  op_public_assistance_list = []
+  if op_pa_food_assistance_program:
+    op_public_assistance_list.append("FAP")
+  if op_pa_medicaid:
+    op_public_assistance_list.append("MA CDC")
+  if op_pa_family_independence_program:
+    op_public_assistance_list.append("FIP")
+  if op_pa_women_infants_children:
+    op_public_assistance_list.append("WIC")
+  if op_pa_state_disability:
+    op_public_assistance_list.append("SDA")
+  if op_pa_state_emergency_relief:
+    op_public_assistance_list.append("SER")
+  if op_pa_refugee_assistance:
+    op_public_assistance_list.append("RAP")
+  if op_pa_supplemental_security:
+    op_public_assistance_list.append("SSI")
+  if op_pa_other:
+    op_public_assistance_list.append(f"other(${ op_pa_other_types})")
+depends on:
+  - op_pa_food_assistance_program
+  - op_pa_medicaid
+  - op_pa_family_independence_program
+  - op_pa_women_infants_children
+  - op_pa_state_disability
+  - op_pa_state_emergency_relief
+  - op_pa_refugee_assistance
+  - op_pa_supplemental_security
+  - op_pa_other
+  - op_pa_other_types
+---
+id: FOC 23 OP list of case numbers
+code: |
+  op_pa_case_numbers_foc_23 = []
+
+  if op_pa_food_assistance_program or op_pa_medicaid or op_pa_family_independence_program or op_pa_women_infants_children or op_pa_state_disability or op_pa_state_emergency_relief or op_pa_refugee_assistance or op_pa_other:
+    if op_pa_food_assistance_program or op_pa_medicaid or op_pa_family_independence_program or op_pa_women_infants_children or op_pa_state_disability or op_pa_state_emergency_relief or op_pa_refugee_assistance:
+      pa_case_numbers.append(op_pa_mdhhs_case_number)
+    if op_pa_other:
+      pa_case_numbers.append(op_pa_other_case_numbers)
+  elif pa_supplemental_security:
+    pa_case_numbers.append(op_pa_ssa_number)
+depends on:
+  - op_pa_food_assistance_program
+  - op_pa_medicaid
+  - op_pa_family_independence_program
+  - op_pa_women_infants_children
+  - op_pa_state_disability
+  - op_pa_state_emergency_relief
+  - op_pa_refugee_assistance
+  - op_pa_supplemental_security
+  - op_pa_other
+  - op_pa_other_case_numbers
+  - op_pa_ssa_numbers
+  - op_pa_mdhhs_case_numbers
 ---
 # LHI: "Plaintiff Employer" or "Defendant Employer"
 id: other party employment

@@ -35,7 +35,14 @@ code: |
 ---
 code: |
   tool_ID = "divorce_complaint"
-  docket_number = ""
+---
+code: |
+  if there_are_marital_children:
+    docket_number = "                  -DM"
+  else:
+    docket_number = "                  -DO"
+depends on:
+  - there_are_marital_children
 ---
 # TODO need survey script
 template: survey_embed_script

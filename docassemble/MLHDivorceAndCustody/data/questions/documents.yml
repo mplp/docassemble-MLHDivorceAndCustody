@@ -19,6 +19,20 @@ objects:
 ### List of enabling logic that is TBD
 
 ---
+# never in JOD_only
+code: |
+  if tool_ID == "divorce_complaint":
+    verified_statement_foc_23.enabled = there_are_marital_children
+  elif tool_ID == "divorce_answer":
+    if there_are_marital_children and filing_counterclaim:
+      verified_statement_foc_23.enabled = True
+    else:
+      verified_statement_foc_23.enabled = False
+  elif tool_ID == "custody_complaint":
+    verified_statement_foc_23.enabled = True
+  elif tool_ID == "custody_answer":
+    verified_statement_foc_23.enabled = filing_counterclaim
+---
 code: |
   if tool_ID in ["divorce_complaint", "custody_complaint"]:
     child_support_services_dhs_1201d.enabled = there_are_marital_children
@@ -49,7 +63,14 @@ code: |
 # --------------------------------------------------------------------
 ---
 objects:
-  - verified_statement_foc23: ALDocument.using(title="Verified Statement - FOC 23", filename="Verified Statement - FOC 23")
+  - verified_statement_foc_23: ALDocument.using(title="Verified Statement - FOC 23", filename="Verified Statement - FOC 23")
+  - verified_statement_foc_23_addendum: ALDocument.using(title="Verified Statement - FOC 23", filename="Verified Statement - FOC 23")
+---
+attachment:
+  variable name: verified_statement_foc_23.addendum
+  docx template file: verified_statement_foc23_addendum.docx
+# above is how I would set it up if doing true overflow addendum (from small claims e.g.)
+# see "FOC 23 addendum CO" for contents
 ---
 attachment:
   - name: Verified Statement - FOC 23
@@ -60,15 +81,16 @@ attachment:
     editable: False
     fields:
       - trial_court_circuit: ${the_court.number}
-      - trial_court_address_county: ${the_court.address.county}
-      - docket_number: |
-          % if tool_ID not in ["divorce_complaint", "custody_complaint"]:
-          ${docket_number}
-          % endif
+      - trial_court_address_county: ${the_court.address.county.upper()}
+      - docket_number: ${docket_number}
+      - docket_number__1: ${docket_number}
       - friend_of_court_address_on_one_line: ${the_foc.address.on_one_line()}
       - friend_of_court_phone_number: ${ the_foc.phone_number }
       - users1_name_last_first_middle: ${ users[0].name.last + " " + users[0].name.first + " " + users[0].name.middle }
-      - users1_aliases: ${ users[0].aliases }
+      - users1_aliases: |
+          % if users[0].has_alias:
+          ${ users[0].aliases }
+          % endif
       - users1_birthdate: ${ users[0].birthdate}
       - users1_ssn: ${ users[0].ssn }
       - users1_driver_license_and_state: ${ users[0].license_number + " " + users[0].license_state }
@@ -85,30 +107,89 @@ attachment:
           % if users[0].has_job:
           ${ users[0].job.employer.name.first } ${ users[0].job.employer.address.on_one_line() }
           % endif
-      - users1_gross_weekly_income: 
+      - users1_gross_weekly_income: |
           % if users[0].has_job:
           $ ${ users[0].income.total() * 52 }
           % endif
       - users1_applied_public_assistance_yes: ${True if pa_status in ["gets_assistance", "applied"] else False }
       - users1_applied_public_assistance_no: ${True if pa_status not in ["gets_assistance", "applied"] else False }
       - users1_public_assistance_type_case_number: |
-          % if pa_status in ["gets_assistance", "applied"]:
-          public_assistance_list
-          % end if
-
-          #add case number!
-      - users1_foreign_ids:
-
-      
+          % if pa_status == "gets_assistance":
+          ${ comma_and_list(public_assistance_list) } Case number: ${ comma_and_list(pa_case_numbers_foc_23) }
+          % elif pa_status == "applied":
+          Applied for ${ public_assistance_list }
+          % endif
+      - users1_other_citizenship: |
+          % if users[0].has_foreign_citizenship:
+          ${ users[0].countries_of_citizenship }
+          % endif
+      - users1_foreign_ids: |
+          % if users[0].has_foreign_citizenship:
+          ${ users[0].foreign_identity_documents }
+          % endif
+      - other_parties1_name_last_first_middle: ${ other_parties[0].name.last + " " + other_parties[0].name.first + " " + other_parties[0].name.middle }
+      - other_parties1_aliases: |
+          % if other_parties[0].has_alias:
+          ${ other_parties[0].aliases }
+          % endif
+      - other_parties1_birthdate: ${ other_parties[0].birthdate}
+      - other_parties1_ssn: ${ other_parties[0].ssn }
+      - other_parties1_driver_license_and_state: ${ other_parties[0].license_number + " " + other_parties[0].license_state }
+      - other_parties1_address_on_one_line: ${ other_parties[0].address_on_one_line() }
+      - other_parties1_email: ${ other_parties[0].email }
+      - other_parties1_height: ${ other_parties[0].height }
+      - other_parties1_weight: ${ other_parties[0].weight }
+      - other_parties1_race: ${ other_parties[0].race }
+      - other_parties1_gender: ${ other_parties[0].gender }
+      - other_parties1_hair_color: ${ other_parties[0].hair_color }
+      - other_parties1_eye_color: ${ other_parties[0].eye_color }
+      - other_parties1_scars_tattoos: ${ other_parties[0].other_identifying_info }
+      - other_parties1_employer_name_address: |
+          % if other_parties[0].has_job:
+          ${ other_parties[0].job.employer.name.first } ${ other_parties[0].job.employer.address.on_one_line() }
+          % endif
+      - other_parties1_gross_weekly_income: |
+          % if other_parties[0].has_job:
+          $ ${ other_parties[0].income.total() * 52 }
+          % endif
+      - other_parties1_applied_public_assistance_yes: ${True if other_party_pa_status in ["gets_assistance", "applied"] else False }
+      - other_parties1_applied_public_assistance_no: ${True if other_party_pa_status == "none" else False }
+      - other_parties1_applied_public_assistance_unsure: ${True if other_party_pa_status == "unknown" else False }
+      - other_parties1_public_assistance_type_case_number: |
+          % if other_party_pa_status == "gets_assistance":
+          ${ comma_and_list(op_public_assistance_list) } Case number: ${ comma_and_list(op_pa_case_numbers_foc_23) }
+          % elif other_party_pa_status == "applied":
+          Applied for ${ op_public_assistance_list }
+          % endif
+      - other_parties1_other_citizenship: |
+          % if other_parties[0].has_foreign_citizenship:
+          ${ other_parties[0].countries_of_citizenship }
+          % endif
+      - other_parties1_foreign_ids: |
+          % if other_parties[0].has_foreign_citizenship:
+          ${ other_parties[0].foreign_identity_documents }
+          % endif
+      #- children0_name:
+      #- children0_sex:
+      #- children0_birthdate:
+      #- children0_age:
+      #- children0_ssn:
+      #- children0_address_block:
+      ## repeat up to children3 on this form, addendum message in children4 slot if needed
+      #- stepchildren0_name:
+      #- stepchildren0_sex:
+      #- stepchildren0_birthdate:
+      #- stepchildren0_age:
+      #- stepchildren0_address_block:
+      ## repeat once on this form, then addendum
+      #- insurance_child_name0:
+      #- insurance_policy_holder0:
+      #- insurance_company_name0:
+      #- insurance_policy_cert_group_number0:
+      ## repeat up to insurance3, addendum message in insurance_child_name4 slot if needed
       - users1_signature: |
           % if MLH_esign:
           /s/ ${ users[0].name_full() }
-          % else:
-          ${ '' }
-          % endif
-      - users1_name: |
-          % if MLH_esign:
-          ${ users[0].name_full() }
           % else:
           ${ '' }
           % endif
@@ -140,12 +221,7 @@ attachment:
     skip undefined: True
     editable: False
     fields:
-      - docket_number: |
-          % if tool_ID == "divorce_answer":
-          ${docket_number}
-          % else:
-                                    -DM
-          % endif
+      - docket_number: ${docket_number}
       - relationship_mother: ${ True if users[0].gender == "female" and other_parties[0].gender == "male" else False }
       - relationship_father: ${ True if users[0].gender == "male" and other_parties[0].gender == "female" else False }
       - kids_live_with_mother: |
@@ -267,10 +343,7 @@ attachment:
           % if the_court.type == "circuit":
           ${the_court.number}
           % endif
-      - docket_number: |
-          % if tool_ID == "JOD_only":
-          ${docket_number}
-          % endif
+      - docket_number: ${docket_number}
       - trial_court_county: ${the_court.address.county}
       - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
       - trial_court_phone_number: ${ the_court.phone }
