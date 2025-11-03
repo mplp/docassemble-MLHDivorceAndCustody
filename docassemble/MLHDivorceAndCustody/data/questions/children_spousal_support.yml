@@ -1646,7 +1646,6 @@ content: |
   * Match-E-Be-Nash-She-Wish Band of Pottawatomi Indians (Gun Lake Tribe): *Divorce forms not found online.*
 ---
 # LHI this appears on "Children Addresses"
-# TODO: Brett has a note saying currently JOD_only does not have condfidential option, so this doesn't apply to JOD_only. Is that desired to continue?
 id: child_address_not_confidential_warning
 continue button field: child_address_not_confidential_warning
 question: |

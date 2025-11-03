@@ -89,7 +89,7 @@ attachment:
       - docket_number: ${docket_number}
       - docket_number__1: ${docket_number}
       - friend_of_court_address_on_one_line: ${the_foc.address.on_one_line()}
-      - friend_of_court_phone_number: ${ the_foc.phone_number }
+      - friend_of_court_phone_number: ${ the_foc.phone }
       - users1_name_last_first_middle: ${ users[0].name.last + " " + users[0].name.first + " " + users[0].name.middle }
       - users1_aliases: |
           % if users[0].has_alias:
@@ -98,10 +98,18 @@ attachment:
       - users1_birthdate: ${ users[0].birthdate}
       - users1_ssn: ${ users[0].ssn }
       - users1_driver_license_and_state: ${ users[0].license_number + " " + users[0].license_state }
-      - users1_address_on_one_line: ${ users[0].address.on_one_line() }
+      - users1_address_on_one_line: |
+          % if confidential_contact_info_yn:
+          Confidential- Mailing: ${ users[0].address.on_one_line() }
+          % else:
+          % if users[0].mailing_address.yesno:
+          Mailing: ${ users[0].mailing_address.on_one_line() + " "  }
+          % endif
+          Residence: ${ users[0].address.on_one_line() }
+          % endif
       - users1_email: ${ users[0].email }
       - users1_height: ${ users[0].height }
-      - users1_weight: ${ users[0].weight }
+      - users1_weight: ${ users[0].weight if users[0].weight > 0 else "" }
       - users1_race: |
           % if users[0].race == "Other":
           ${users[0].other_race_description}
@@ -114,7 +122,7 @@ attachment:
       - users1_scars_tattoos: ${ users[0].other_identifying_info }
       - users1_employer_name_address: |
           % if users[0].has_job:
-          ${ users[0].job.employer.name.first } ${ users[0].job.employer.address.on_one_line() }
+          ${ users[0].job.employer.name.first } ${ users[0].job.employer.address.on_one_line() if users[0].job.employer.address.address != "" else "" }
           % endif
       - users1_gross_weekly_income: |
           % if users[0].has_job:
@@ -146,10 +154,14 @@ attachment:
       - other_parties1_birthdate: ${ other_parties[0].birthdate}
       - other_parties1_ssn: ${ other_parties[0].ssn }
       - other_parties1_driver_license_and_state: ${ other_parties[0].license_number + " " + other_parties[0].license_state }
-      - other_parties1_address_on_one_line: ${ other_parties[0].address.on_one_line() }
+      - other_parties1_address_on_one_line: |
+          % if other_parties[0].mailing_address.yesno:
+          Mailing: ${ other_parties[0].mailing_address.on_one_line() + " " }
+          % endif
+          Residence: ${ other_parties[0].address.on_one_line() }
       - other_parties1_email: ${ other_parties[0].email }
       - other_parties1_height: ${ other_parties[0].height }
-      - other_parties1_weight: ${ other_parties[0].weight }
+      - other_parties1_weight: ${ other_parties[0].weight if other_parties[0].weight > 0 else "" }
       - other_parties1_race: |
           % if other_parties[0].race == "Other":
           ${other_parties[0].other_race_description}
@@ -162,7 +174,7 @@ attachment:
       - other_parties1_scars_tattoos: ${ other_parties[0].other_identifying_info }
       - other_parties1_employer_name_address: |
           % if other_parties[0].has_job:
-          ${ other_parties[0].job.employer.name.first } ${ other_parties[0].job.employer.address.on_one_line() }
+          ${ other_parties[0].job.employer.name.first } ${ other_parties[0].job.employer.address.on_one_line() if other_parties[0].job.employer.address.address != "" else "" }
           % endif
       - other_parties1_gross_weekly_income: |
           % if other_parties[0].has_job:
@@ -187,13 +199,31 @@ attachment:
           % if other_parties[0].has_foreign_citizenship:
           ${ other_parties[0].foreign_identity_documents }
           % endif
-      #- children0_name:
-      #- children0_sex:
-      #- children0_birthdate:
-      #- children0_age:
-      #- children0_ssn:
-      #- children0_address_block:
-      ## repeat up to children3 on this form, addendum message in children4 slot if needed
+      - children0_name: ${ children.filter(legal_parent="both")[0].name.full() }
+      - children0_sex: ${ "f" if children.filter(legal_parent="both")[0].gender == "female" else "m" }
+      - children0_birthdate: ${ format_date(children.filter(legal_parent="both")[0].birthdate, format='M/d/yyyy') }
+      - children0_age: |
+          % if children.filter(legal_parent="both")[0].age_in_years() < 1:
+          ${ children.filter(legal_parent="both")[0].age_in_months() } months
+          % else:
+          ${ children.filter(legal_parent="both")[0].age_in_years() }
+          % endif
+      - children0_ssn: ${ children.filter(legal_parent="both")[0].ssn }
+      - children0_address_block: |
+          % if children_now_live_with_which_parent == "both":
+          See addendum for children's addresses.
+          % elif children_now_live_with_which_parent == users[0] or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[0].lives_with == users[0]):
+          % if confidential_contact_info_yn:
+          Confidential
+          % else:
+          ${ users[0].address.line_one() }
+          ${ users[0].address.line_two() }
+          % endif
+          % elif children_now_live_with_which_parent == other_parties[0] or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[0].lives_with == other_parties[0]):
+          ${ other_parties[0].address.line_one() }
+          ${ other_parties[0].address.line_two() }
+          % endif
+      # repeat up to children3 on this form, addendum message in children4 slot if needed
       #- stepchildren0_name:
       #- stepchildren0_sex:
       #- stepchildren0_birthdate:
@@ -252,7 +282,7 @@ attachment:
       - defendants0_name_full: ${defendants[0].name_full()}
       - users0_name_full: ${users[0].name_full()}
       - users0_phone_number: ${users[0].phone_number}
-      - users0_address_on_one_line: ${users[0].address.on_one_line()}
+      - users0_address_on_one_line: ${users[0].address.on_one_line() if not confidential_contact_info_yn else ""}
       - users0_birthdate: ${users[0].birthdate}
       - users0_ssn: ${users[0].ssn}
       - users0_driver_license_and_state: ${ users[0].license_number + " " + users[0].license_state }
@@ -303,10 +333,16 @@ attachment:
           % endif     
       - mothers1_address_on_one_line: |
           % if users[0].gender == "male" and other_parties[0].gender == "female":
+          % if other_parties[0].mailing_address.yesno:
+          ${ other_parties[0].mailing_address.on_one_line() }
+          % else:
           ${ other_parties[0].address.on_one_line() }
+          % endif
           % else:
           % if confidential_contact_info_yn:
           Confidential- Mailing Address: ${ users[0].address.on_one_line() }
+          % elif users[0].mailing_address.yesno:
+          ${ users[0].mailing_address.on_one_line() }
           % else:
           ${ users[0].address.on_one_line() }
           % endif
@@ -333,11 +369,17 @@ attachment:
           % if users[0].gender == "male" and other_parties[0].gender == "female":
           % if confidential_contact_info_yn:
           Confidential- Mailing Address: ${ users[0].address.on_one_line() }
+          % elif users[0].mailing_address.yesno:
+          ${ users[0].mailing_address.on_one_line() }
           % else:
           ${ users[0].address.on_one_line() }
           % endif
           % else:
+          % if other_parties[0].mailing_address.yesno:
+          ${ other_parties[0].mailing_address.on_one_line() }
+          % else:
           ${ other_parties[0].address.on_one_line() }
+          % endif
           % endif   
       - fathers1_phone_number: | 
           % if users[0].gender == "male" and other_parties[0].gender == "female":

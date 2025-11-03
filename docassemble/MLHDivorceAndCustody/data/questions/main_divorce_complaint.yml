@@ -222,4 +222,5 @@ code: |
 
   nav.set_section("signpost_done")
   MLH_standard_outro_pages
+  the_foc # just loading this so it's defined
   MLH_download
