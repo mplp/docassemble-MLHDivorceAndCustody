@@ -31,6 +31,19 @@ objects:
       complete_attribute="complete",
       object_type = ALAddress
       )
+  # TODO think the below can all be deleted, commenting out 11/4/25 to make sure first
+  #  - public_assistance_list: DAList.using(
+  #      object_type = DAObject
+  #      )  
+  #  - op_public_assistance_list: DAList.using(
+  #      object_type = DAObject
+  #      )  
+  #  - pa_case_numbers_foc_23: DAList.using(
+  #      object_type = DAObject
+  #      )
+  #  - op_pa_case_numbers_foc_23: DAList.using(
+  #      object_type = DAObject
+  #      )
   - users[0].job: ALJob
   - users[0].income: ALIncome
   - other_parties[0].job: ALJob
@@ -2841,7 +2854,7 @@ fields:
       - optical/vision
       - other
     none of the above: False
-  - Does this policy cover ${ children }?: users[0].insurance[i].covers_child
+  - Does this policy cover ${ comma_and_list(children.filter(legal_parent='both')) }?: users[0].insurance[i].covers_child
     datatype: yesnoradio
     required: False
 ---
@@ -2914,7 +2927,7 @@ fields:
       - optical/vision
       - other
     none of the above: False
-  - Does this policy cover ${ children }?: other_parties[0].insurance[i].covers_child
+  - Does this policy cover ${ comma_and_list(children.filter(legal_parent='both')) }?: other_parties[0].insurance[i].covers_child
     datatype: yesnoradio
     required: False
 ---
@@ -2985,10 +2998,13 @@ code: |
         pa_other_types
     elif pa_supplemental_security:
       pa_ssa_number
+    pa_case_numbers_foc_23
+    public_assistance_list
   if pa_status == "applied" and (there_are_marital_children or user_wants_post_divorce_support):
     pa_food_assistance_program 
     if pa_other:
       pa_other_types
+    public_assistance_list
 
   interview_order_user_income = True
 ---
@@ -3017,10 +3033,14 @@ code: |
         op_pa_other_types
     elif op_pa_supplemental_security:
       op_pa_ssa_number
+    op_pa_case_numbers_foc_23
+    op_public_assistance_list
+  
   if other_party_pa_status == "applied":
     op_pa_food_assistance_program 
     if op_pa_other:
       op_pa_other_types
+    op_public_assistance_list
   
   interview_order_other_party_income = True
 
@@ -3252,12 +3272,12 @@ code: |
   pa_case_numbers_foc_23 = []
 
   if pa_mdhhs or pa_other:
-    if pa_mddhhs:
-      pa_case_numbers.append(pa_mdhhs_case_number)
+    if pa_mdhhs:
+      pa_case_numbers_foc_23.append(pa_mdhhs_case_number)
     if pa_other:
-      pa_case_numbers.append(pa_other_case_numbers)
+      pa_case_numbers_foc_23.append(pa_other_case_numbers)
   elif pa_supplemental_security:
-    pa_case_numbers.append(pa_ssa_number)
+    pa_case_numbers_foc_23.append(pa_ssa_number)
 depends on:
   - pa_supplemental_security
   - pa_other
@@ -3305,11 +3325,11 @@ code: |
 
   if op_pa_food_assistance_program or op_pa_medicaid or op_pa_family_independence_program or op_pa_women_infants_children or op_pa_state_disability or op_pa_state_emergency_relief or op_pa_refugee_assistance or op_pa_other:
     if op_pa_food_assistance_program or op_pa_medicaid or op_pa_family_independence_program or op_pa_women_infants_children or op_pa_state_disability or op_pa_state_emergency_relief or op_pa_refugee_assistance:
-      pa_case_numbers.append(op_pa_mdhhs_case_number)
+      op_pa_case_numbers_foc_23.append(op_pa_mdhhs_case_number)
     if op_pa_other:
-      pa_case_numbers.append(op_pa_other_case_numbers)
-  elif pa_supplemental_security:
-    pa_case_numbers.append(op_pa_ssa_number)
+      op_pa_case_numbers_foc_23.append(op_pa_other_case_numbers)
+  elif op_pa_supplemental_security:
+    op_pa_case_numbers_foc_23.append(op_pa_ssa_number)
 depends on:
   - op_pa_food_assistance_program
   - op_pa_medicaid
