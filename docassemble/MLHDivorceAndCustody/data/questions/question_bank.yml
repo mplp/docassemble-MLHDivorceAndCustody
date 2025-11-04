@@ -819,7 +819,7 @@ fields:
       % if confidential_contact_info_yn:
       Safe phone
       % else:
-      Phone (home or )
+      Phone (home or cell)
       % endif
     field: users[0].phone_number
     show if:
