@@ -35,10 +35,24 @@ code: |
 
   if verified_statement_foc_23_full.enabled:
     verified_statement_foc_23.enabled = True
-    if len(children.filter(legal_parent="both")) > 5 or (len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 2): # still need to add more conditions
+    if insurance_in_addendum or len(children.filter(legal_parent="both")) > 5 or (len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 2): # still need to add more conditions
       verified_statement_foc_23_addendum.enabled = True
     else:
       verified_statement_foc_23_addendum.enabled = False
+---
+# ToDo: need to handlr rerunning this in review screen if insurance edited or deleted or children changed
+code: |
+  insurance_in_addendum = False
+  
+  if (users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any) and there_are_marital_children:
+    for policy in users[0].insurance:
+      if policy.covers_child.any_true() == True:
+        insurance_in_addendum = True
+    for policy in other_parties[0].insurance:
+      if policy.covers_child.any_true() == True:
+        insurance_in_addendum = True
+  
+  check_for_insured_children = True
 ---
 # not in JOD_only bundle
 code: |
@@ -459,7 +473,10 @@ attachment:
           % endif
           % endif
           % endif
-      #- insurance_child_name0: |
+      - insurance_child_name0: |
+          % if insurance_in_addendum == True:
+          See addendum for insurance coverage information.
+          % endif     
       #- insurance_policy_holder0:
       #- insurance_company_name0:
       #- insurance_policy_cert_group_number0:

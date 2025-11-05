@@ -2823,8 +2823,7 @@ fields:
   - Does ${ OP_label } have another health care policy to add?: other_parties[0].insurance.there_is_another
     datatype: yesnoradio
 ---
-if: len(children.filter(legal_parent="both")) == 1
-id: user insurance policy info (1 marital child)
+id: user insurance policy info (only asked if there_are_marital_children)
 question: |
   Your ${ ordinal(i) } health care policy
 subquestion: |
@@ -2854,50 +2853,14 @@ fields:
       - optical/vision
       - other
     none of the above: False
-  - Does this policy cover ${ comma_and_list(children.filter(legal_parent='both')) }?: users[0].insurance[i].covers_child
-    datatype: yesnoradio
-    required: False
----
-if: len(children.filter(legal_parent="both")) > 1
-id: user insurance policy info (multiple marital children)
-question: |
-  Your ${ ordinal(i) } health care policy
-subquestion: |
-  ${users[0].insurance.question_text_table_template}
-fields:
-  - Are you the named policy holder?: users[0].insurance[i].in_own_name
-    datatype: yesnoradio
-    required: False
-  - Please enter the name of the policy holder: users[0].insurance[i].policyholder
-    required: False
-    show if:
-      variable: users[0].insurance[i].in_own_name
-      is: False
-  - What is the name of the provider?: users[0].insurance[i].company_name
-  - What is the address of the provider?: users[0].insurance[i].company_address
-    required: False
-  - What is the policy number?: users[0].insurance[i].policy_number
-    required: False
-  - What is the certificate number?: users[0].insurance[i].certificate_number
-    required: False
-  - What coverage does the policy provide?: users[0].insurance[i].coverage_type
-    required: False
-    datatype: checkboxes
-    choices:
-      - medical
-      - dental
-      - optical/vision
-      - other
-    none of the above: False
-  - Does this policy cover any of these children?: users[0].insurance[i].covers_child
+  - Which of these children (if any) are covered by **this policy?**: users[0].insurance[i].covers_child
     required: False
     datatype: checkboxes
     none of the above: False
     code: |
       children.filter(legal_parent="both")    
 ---
-if: len(children.filter(legal_parent="both")) == 1
-id: OP insurance policy info (1 marital child)
+id: OP insurance policy info (only shown if there_are_marital_children)
 question: |
   ${ capitalize(OP_label) }'s ${ ordinal(i) } health care policy
 subquestion: |
@@ -2926,42 +2889,7 @@ fields:
       - dental
       - optical/vision
       - other
-    none of the above: False
-  - Does this policy cover ${ comma_and_list(children.filter(legal_parent='both')) }?: other_parties[0].insurance[i].covers_child
-    datatype: yesnoradio
-    required: False
----
-if: len(children.filter(legal_parent="both")) > 1
-id: OP insurance policy info (multiple marital children)
-question: |
-  ${ capitalize(OP_label) }'s ${ ordinal(i) } health care policy
-subquestion: |
-  ${other_parties[0].insurance.question_text_table_template}
-fields:
-  - Is ${ OP_label } the named policy holder?: other_parties[0].insurance[i].in_own_name
-    datatype: yesnoradio
-    required: False
-  - Please enter the name of the policy holder: other_parties[0].insurance[i].policyholder
-    required: False
-    show if:
-      variable: other_parties[0].insurance[i].in_own_name
-      is: False
-  - What is the name of the provider?: other_parties[0].insurance[i].company_name
-  - What is the address of the provider?: other_parties[0].insurance[i].company_address
-    required: False
-  - What is the policy number?: other_parties[0].insurance[i].policy_number
-    required: False
-  - What is the certificate number?: other_parties[0].insurance[i].certificate_number
-    required: False
-  - What coverage does the policy provide?: other_parties[0].insurance[i].coverage_type
-    required: False
-    datatype: checkboxes
-    choices:
-      - medical
-      - dental
-      - optical/vision
-      - other
-  - Does this policy cover any of these children?: other_parties[0].insurance[i].covers_child
+  - Which of these children (if any) are covered by **this policy?**: other_parties[0].insurance[i].covers_child
     required: False
     datatype: checkboxes
     none of the above: False
@@ -3853,7 +3781,7 @@ fields:
 # TO DO: going to have to clear this out and rebuild if # of children changes
 code: |
   tax_choices = [
-                  ['default', f"Based on federal tax law, the **parent with whom the { children.filter(legal_parent='both').as_noun() } { children.does_verb('live') } for the greater number of nights during the year** will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() } for all tax years."],
+                  ['default', f"Based on federal tax law, the **parent with whom the { children.filter(legal_parent='both').as_noun() } { children.filter(legal_parent="both").does_verb('live') } for the greater number of nights during the year** will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() } for all tax years."],
                   ['user', f"**{ users[0] }** will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() } for all tax years."],
                   ['other_party', f"**{ other_parties[0] }** will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() } for all tax years."]
                 ]
