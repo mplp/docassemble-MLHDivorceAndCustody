@@ -2738,6 +2738,13 @@ fields:
       variable: children[i].stepchild_address_confidential
       is: False
 ---
+reconsider: True
+code: |
+  stepchildren_for_addendum = []
+  for child in children:
+    if child.legal_parent != "both":
+      stepchildren_for_addendum.append(child)
+---
 # --------------------------------------------------------------------
 ## health insurance collection
 # --------------------------------------------------------------------

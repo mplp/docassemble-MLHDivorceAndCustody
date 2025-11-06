@@ -35,12 +35,13 @@ code: |
 
   if verified_statement_foc_23_full.enabled:
     verified_statement_foc_23.enabled = True
-    if insurance_in_addendum or len(children.filter(legal_parent="both")) > 5 or (len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 2): # still need to add more conditions
+    if insurance_in_addendum or len(children.filter(legal_parent="both")) > 5 or len(stepchildren_for_addendum) > 2: # still need to add more conditions
       verified_statement_foc_23_addendum.enabled = True
     else:
       verified_statement_foc_23_addendum.enabled = False
 ---
-# ToDo: need to handlr rerunning this in review screen if insurance edited or deleted or children changed
+# ToDo: need to handlr rerunning this in review screen if insurance edited or deleted or children changed (or use reconsider)
+# this one gets triggered by the enabling logic because it's the first possible condition
 code: |
   insurance_in_addendum = False
   
@@ -402,80 +403,98 @@ attachment:
           ${ other_parties[0].address.line_two() }
           % endif
           % endif
-      - stepchildren0_name: ${ (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[0].name.full() }
-      - stepchildren0_sex: ${ "f" if (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[0].gender == "female" else "m" }
-      - stepchildren0_birthdate: ${ format_date((children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[0].birthdate, format='M/d/yyyy') }
+      - stepchildren0_name: ${ stepchildren_for_addendum[0].name.full() }
+      - stepchildren0_sex: |
+          % if stepchildren_for_addendum[0].gender == "female":
+          f
+          % elif stepchildren_for_addendum[0].gender == "male":
+          m
+          % endif
+      - stepchildren0_birthdate: |
+          % if stepchildren_for_addendum[0].birthdate != None:
+          ${ format_date(stepchildren_for_addendum[0].birthdate, format='M/d/yyyy') }
+          % endif
       - stepchildren0_age: |
-          % if (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[0].age_in_years() < 1:
-          ${ (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[0].age_in_months() } months
+          % if stepchildren_for_addendum[0].birthdate != None:
+          % if stepchildren_for_addendum[0].age_in_years() < 1:
+          ${ stepchildren_for_addendum[0].age_in_months() } months
           % else:
-          ${ (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[0].age_in_years() }
+          ${ stepchildren_for_addendum[0].age_in_years() }
+          % endif
           % endif
       - stepchildren0_address_block: |
-          % if (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[0].stepchild_lives_with == "user":
+          % if stepchildren_for_addendum[0].stepchild_lives_with == "user":
           % if confidential_contact_info_yn:
           Confidential
           % else:
           ${ users[0].address.line_one() }
           ${ users[0].address.line_two() }
           % endif
-          % elif (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[0].stepchild_lives_with == "other_party":
+          % elif stepchildren_for_addendum[0].stepchild_lives_with == "other_party":
           ${ other_parties[0].address.line_one() }
           ${ other_parties[0].address.line_two() }   
-          % elif (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[0].stepchild_lives_with == "other":
-          % if (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[0].stepchild_address_confidential:
+          % elif stepchildren_for_addendum[0].stepchild_lives_with == "other":
+          % if stepchildren_for_addendum[0].stepchild_address_confidential:
           Confidential
           % else:
-          ${ (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[0].address.line_one() }
-          ${ (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[0].address.line_two() }
+          ${ stepchildren_for_addendum[0].address.line_one() }
+          ${ stepchildren_for_addendum[0].address.line_two() }
           % endif
           % endif
       - stepchildren1_name: |
-          % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 2:
+          % if len(stepchildren_for_addendum) > 2:
           See addendum for additional stepchildren.
-          % elif len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) == 2:
-          ${ (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[1].name.full() }
+          % elif len(stepchildren_for_addendum) == 2:
+          ${ stepchildren_for_addendum[1].name.full() }
           % endif
       - stepchildren1_sex: |
-          % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) == 2:
-          ${ "f" if (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[1].gender == "female" else "m" }
+          % if len(stepchildren_for_addendum) == 2:
+          % if stepchildren_for_addendum[1].gender == "female":
+          f
+          % elif stepchildren_for_addendum[1].gender == "male":
+          m
+          % endif
           % endif
       - stepchildren1_birthdate: |
-          % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) == 2:
-          ${ format_date((children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[1].birthdate, format='M/d/yyyy') }
+          % if len(stepchildren_for_addendum) == 2:
+          % if stepchildren_for_addendum[1].birthdate != None:
+          ${ format_date(stepchildren_for_addendum[1].birthdate, format='M/d/yyyy') }
+          % endif
           % endif
       - stepchildren1_age: |
-          % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) == 2:
-          % if (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[1].age_in_years() < 1:
-          ${ (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[1].age_in_months() } months
+          % if len(stepchildren_for_addendum) == 2:
+          % if stepchildren_for_addendum[1].birthdate != None:
+          % if stepchildren_for_addendum[1].age_in_years() < 1:
+          ${ stepchildren_for_addendum[1].age_in_months() } months
           % else:
-          ${ (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[1].age_in_years() }
+          ${ stepchildren_for_addendum[1].age_in_years() }
+          % endif
           % endif
           % endif
       - stepchildren1_address_block: |
-          % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) == 2:
-          % if (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[1].stepchild_lives_with == "user":
+          % if len(stepchildren_for_addendum) == 2:
+          % if stepchildren_for_addendum[1].stepchild_lives_with == "user":
           % if confidential_contact_info_yn:
           Confidential
           % else:
           ${ users[0].address.line_one() }
           ${ users[0].address.line_two() }
           % endif
-          % elif (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[1].stepchild_lives_with == "other_party":
+          % elif stepchildren_for_addendum[1].stepchild_lives_with == "other_party":
           ${ other_parties[0].address.line_one() }
           ${ other_parties[0].address.line_two() }   
-          % elif (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[1].stepchild_lives_with == "other":
-          % if (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[1].stepchild_address_confidential:
+          % elif stepchildren_for_addendum[1].stepchild_lives_with == "other":
+          % if stepchildren_for_addendum[1].stepchild_address_confidential:
           Confidential
           % else:
-          ${ (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[1].address.line_one() }
-          ${ (children.filter(legal_parent='user') + children.filter(legal_parent='other_party'))[1].address.line_two() }
+          ${ stepchildren_for_addendum[1].address.line_one() }
+          ${ stepchildren_for_addendum[1].address.line_two() }
           % endif
           % endif
           % endif
       - insurance_child_name0: |
           % if insurance_in_addendum == True:
-          See addendum for insurance coverage information.
+          See (49) in addendum for Health Care Coverage information.
           % endif     
       #- insurance_policy_holder0:
       #- insurance_company_name0:
