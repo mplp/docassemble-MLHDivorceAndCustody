@@ -31,18 +31,26 @@ code: |
       filing_name = "Complaint for Divorce"
       user_party_label = "the Plaintiff"
       OP_party_label = "the Defendant"
+      plaintiffs = users
+      defendants = other_parties
     elif tool_ID == "divorce_answer":
       filing_name = "Counterclaim for Divorce"
       user_party_label = "the Defendant"
       OP_party_label = "the Plaintiff"  
+      plaintiffs = other_parties
+      defendants = users
     elif tool_ID == "JOD_only":
       filing_name = "Judgment of Divorce"
   elif tool_ID == "custody_complaint":
     OP_label = "the Defendant"
     case_label = "custody"
+    plaintiffs = users
+    defendants = other_parties
   elif tool_ID == "custody_answer":
     OP_label = "the Plaintiff"
     case_label = "custody"
+    plaintiffs = other_parties
+    defendants = users
 
   set_persistent_labels = True
 ---
@@ -95,10 +103,5 @@ terms:
       * it is **already in the possession** of the agreed person.
 
       If something has already been divided, you do not need to add it here.
----
-# note currently this is just used for the children/spousal support yml
-code: |
-  US_states_and_territories_list = ["Alabama", "Alaska", "American Samoa", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "District of Columbia", "Florida", "Georgia", "Guam", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', "New Jersey", "New Mexico", "New York", 'North Carolina', 'North Dakota', 'Northern Mariana Islands', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Puerto Rico', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'US Virgin Islands', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming']
-# currently includes all 5 inhabited US territories and DC. But note that American Samoans are not US citizens. Not sure they should be on this list. 
 ---
 

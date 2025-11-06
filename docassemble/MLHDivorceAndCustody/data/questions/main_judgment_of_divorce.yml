@@ -53,9 +53,14 @@ code: |
   # for JOD_only, there are no specific instructions
   MLH_instructions_included = False
 ---
-# todo e-signature logic, maybe only needed if there was temporary order so JIF previously filed? see issue 25
-# 
-#  MLH_esign_supported = False
+# it seems like there's nothing to sign unless there was previously a temp order
+code: |
+  if marriage.temporary_order:
+    MLH_esign_supported = True
+  else:
+    MLH_esign_supported = False
+depends on:
+  - marriage.temporary_order
 ---
 template: MLH_welcome_message
 content: |
@@ -192,7 +197,7 @@ code: |
     if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
       marriage.cobra_coverage
 
-  if there_are_marital_children or (user_wants_post_divorce_support and continue_with_spousal_support_request):
+  if there_are_marital_children or user_wants_post_divorce_support:
     interview_order_user_employment
     interview_order_user_identifying_info
     users[0].has_alias

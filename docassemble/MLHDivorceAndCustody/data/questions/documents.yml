@@ -9,28 +9,164 @@ objects:
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[judgment_ccmlh412], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
-  # - al_court_bundle: [same as above, less instructions]
+  - al_user_bundle: ALDocumentBundle.using(elements=[judgment_ccmlh412, child_support_services_dhs_1201d, fee_waiver_attachment, protected_pii_mc_97a_attachment], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  # - al_court_bundle: [will be same as above, except without the instructions]
 ---
 # ====================================================================
 ## Enabling logic
 # ====================================================================
 ---
 ### List of enabling logic that is TBD
----
 
+---
+code: |
+  if tool_ID in ["divorce_complaint", "custody_complaint"]:
+    child_support_services_dhs_1201d.enabled = there_are_marital_children
+---
+# note fee waiver logic is largely in fee waiver tool
+code: |
+  if tool_ID in ["divorce_complaint", "custody_complaint"]:
+    fee_waiver_attachment.enabled = pa_received
+    if pa_received:
+      protected_pii_mc_97a_attachment.enabled = insert_pii_form
+    else:
+      protected_pii_mc_97a_attachment.enabled = False
+  else:
+    fee_waiver_attachment.enabled = False
+    protected_pii_mc_97a_attachment.enabled = False
 ---
 # ====================================================================
 ## specific form objects and attachment blocks
 # ====================================================================
 ---
-
----
 # --------------------------------------------------------------------
 ## Example form title or category here
 # --------------------------------------------------------------------
 ---
-
+---
+# --------------------------------------------------------------------
+## Appplication for IV-D Child Support Services, DHS-1201D
+# --------------------------------------------------------------------
+---
+objects:
+  - child_support_services_dhs_1201d: ALDocument.using(title="Application for IV-D Child Support Services - DHS-1201D", filename="Application for IV-D Child Support Services - DHS-1201D")
+---
+attachment:
+  - name: Application for IV-D Child Support Services - DHS-1201D
+    filename: Application for IV-D Child Support Services - DHS-1201D
+    variable name: child_support_services_dhs_1201d[i]
+    pdf template file: child_support_services_dhs1201d.pdf
+    skip undefined: True
+    editable: False
+    fields:
+      - docket_number: |
+          % if tool_ID == "divorce_answer":
+          ${docket_number}
+          % else:
+                                    -DM
+          % endif
+      - relationship_mother: ${ True if users[0].gender == "female" and other_parties[0].gender == "male" else False }
+      - relationship_father: ${ True if users[0].gender == "male" and other_parties[0].gender == "female" else False }
+      - kids_live_with_mother: |
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
+          ${ True if children_now_live_with_which_parent == other_parties[0] else False }
+          % elif users[0].gender == "female" and other_parties[0].gender == "male":
+          ${ True if children_now_live_with_which_parent == users[0] else False }
+          % endif        
+      - kids_live_with_father: |
+          % if users[0].gender == "female" and other_parties[0].gender == "male":
+          ${ True if children_now_live_with_which_parent == other_parties[0] else False }
+          % elif users[0].gender == "male" and other_parties[0].gender == "female":
+          ${ True if children_now_live_with_which_parent == users[0] else False }
+          % endif     
+      - kids_live_with_both: |
+          ${ True if children_now_live_with_which_parent == "both" else False }
+      - mothers1_name: |
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
+          ${ other_parties[0] }
+          % else:
+          ${ users[0] }
+          % endif        
+      - mothers1_ssn: |
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
+          ${ other_parties[0].ssn }
+          % else:
+          ${ users[0].ssn }
+          % endif     
+      - mothers1_address_on_one_line: |
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
+          ${ other_parties[0].address.on_one_line() }
+          % else:
+          % if confidential_contact_info_yn:
+          Confidential- Mailing Address: ${ users[0].address.on_one_line() }
+          % else:
+          ${ users[0].address.on_one_line() }
+          % endif
+          % endif     
+      - mothers1_phone_number: |
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
+          ${ other_parties[0].phone_number }
+          % else:
+          ${ users[0].phone_number }
+          % endif     
+      - fathers1_name: |
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
+          ${ users[0] }
+          % else:
+          ${ other_parties[0] }
+          % endif     
+      - fathers1_ssn: |
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
+          ${ users[0].ssn }
+          % else:
+          ${ other_parties[0].ssn }
+          % endif   
+      - fathers1_address_on_one_line: |
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
+          % if confidential_contact_info_yn:
+          Confidential- Mailing Address: ${ users[0].address.on_one_line() }
+          % else:
+          ${ users[0].address.on_one_line() }
+          % endif
+          % else:
+          ${ other_parties[0].address.on_one_line() }
+          % endif   
+      - fathers1_phone_number: | 
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
+          ${ users[0].phone_number }
+          % else:
+          ${ other_parties[0].phone_number }
+          % endif   
+      - confidential_contact_info_yes: ${ confidential_contact_info_yn }
+      - confidential_contact_info_no: ${ True if not confidential_contact_info_yn else False }
+      - permission_to_collect_overpayment_yes: ${ allow_child_support_overpayment_correction }
+      - permission_to_collect_overpayment_no: ${ not allow_child_support_overpayment_correction }
+      - collection_percentage_10: ${ allow_child_support_overpayment_correction and child_support_overpayment_percentage == "ten" }
+      - collection_percentage_50: ${ allow_child_support_overpayment_correction and child_support_overpayment_percentage == "fifty" }
+      - users1_signature: |
+          % if MLH_esign:
+          /s/ ${ users[0].name_full() }
+          % else:
+          ${ '' }
+          % endif
+      - users1_name: |
+          % if MLH_esign:
+          ${ users[0].name_full() }
+          % else:
+          ${ '' }
+          % endif
+      - signature_date: |
+          % if MLH_esign:
+          ${ signature_date }
+          % else:
+          ${ '' }
+          % endif
+      - pursuant_to: |
+          % if MLH_esign:
+          ${ MLH_esign_tag }
+          % else:
+          ${ '' }
+          % endif
 ---
 # --------------------------------------------------------------------
 ## Judgment CC-MLH-412 and Attachments
@@ -44,12 +180,16 @@ attachment:
     filename: Judgment ccmlh412 (no kids)
     variable name: judgment_ccmlh412[i]
     pdf template file: judgment_ccmlh412_no_kids.pdf
+    editable: False
     fields:
       - trial_court_circuit: |
           % if the_court.type == "circuit":
           ${the_court.number}
           % endif
-      - docket_number: ${docket_number}
+      - docket_number: |
+          % if tool_ID == "JOD_only":
+          ${docket_number}
+          % endif
       - trial_court_county: ${the_court.address.county}
       - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
       - trial_court_phone_number: ${ the_court.phone }
