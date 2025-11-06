@@ -633,6 +633,7 @@ fields:
 ---
 code: |
   children[i].name.first
+  children[i].address.address
   children[i].timing 
   children[i].origin
 
@@ -783,11 +784,24 @@ fields:
     datatype: radio
     choices: 
       - They were born before we got married.: premarital
-      - They was born after we got married.: marital
+      - They were born after we got married.: marital
     hide if:
       variable: children[i].adopted_during_marriage
       is: True
   # TODO? need help text saying don't include children who were born to or adopted by either spouse prior to marriage
+---
+id: children address 
+sets:
+  - children[i].address.address
+  - children[i].address.unit
+  - children[i].address.city
+  - children[i].address.state
+  - children[i].address.zip
+question: |
+  ${ children[i] }'s primary residence address
+fields:
+  - code: |
+      children[i].address_fields()
 ---
 id: additional child info
 if: children[i].legal_parent == "both"
