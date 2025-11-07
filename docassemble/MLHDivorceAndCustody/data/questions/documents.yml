@@ -35,7 +35,7 @@ code: |
 
   if verified_statement_foc_23_full.enabled:
     verified_statement_foc_23.enabled = True
-    if insurance_in_addendum or len(children.filter(legal_parent="both")) > 5 or len(stepchildren_for_addendum) > 2: # still need to add more conditions
+    if insurance_in_addendum or len(children.filter(legal_parent="both")) > 5 or len(stepchildren_for_addendum) > 2 or len(users[0].other_identifying_info) > 19 or len(other_parties[0].other_identifying_info) > 19:
       verified_statement_foc_23_addendum.enabled = True
     else:
       verified_statement_foc_23_addendum.enabled = False
@@ -148,7 +148,12 @@ attachment:
       - users1_gender: ${ users[0].gender }
       - users1_hair_color: ${ users[0].hair_color }
       - users1_eye_color: ${ users[0].eye_color }
-      - users1_scars_tattoos: ${ users[0].other_identifying_info }
+      - users1_scars_tattoos: |
+          % if len(users[0].other_identifying_info) > 19:
+          See addendum.
+          % else:
+          ${ users[0].other_identifying_info }
+          % endif
       - users1_phone_number_mobile: |
           % if not users[0].no_phone_number and users[0].phone_type == "cell":
           ${ users[0].phone_number}
@@ -216,7 +221,12 @@ attachment:
       - other_parties1_gender: ${ other_parties[0].gender }
       - other_parties1_hair_color: ${ other_parties[0].hair_color }
       - other_parties1_eye_color: ${ other_parties[0].eye_color }
-      - other_parties1_scars_tattoos: ${ other_parties[0].other_identifying_info }
+      - other_parties1_scars_tattoos: |
+          % if len(other_parties[0].other_identifying_info) > 19:
+          See addendum.
+          % else:
+          ${ other_parties[0].other_identifying_info }
+          % endif
       - other_parties1_phone_number_mobile: |
           % if not other_parties[0].no_phone_number and other_parties[0].phone_type == "cell":
           ${ other_parties[0].phone_number}
