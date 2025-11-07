@@ -31,6 +31,19 @@ objects:
       complete_attribute="complete",
       object_type = ALAddress
       )
+  # TODO think the below can all be deleted, commenting out 11/4/25 to make sure first
+  #  - public_assistance_list: DAList.using(
+  #      object_type = DAObject
+  #      )  
+  #  - op_public_assistance_list: DAList.using(
+  #      object_type = DAObject
+  #      )  
+  #  - pa_case_numbers_foc_23: DAList.using(
+  #      object_type = DAObject
+  #      )
+  #  - op_pa_case_numbers_foc_23: DAList.using(
+  #      object_type = DAObject
+  #      )
   - users[0].job: ALJob
   - users[0].income: ALIncome
   - other_parties[0].job: ALJob
@@ -1646,7 +1659,6 @@ content: |
   * Match-E-Be-Nash-She-Wish Band of Pottawatomi Indians (Gun Lake Tribe): *Divorce forms not found online.*
 ---
 # LHI this appears on "Children Addresses"
-# TODO: Brett has a note saying currently JOD_only does not have condfidential option, so this doesn't apply to JOD_only. Is that desired to continue?
 id: child_address_not_confidential_warning
 continue button field: child_address_not_confidential_warning
 question: |
@@ -2726,6 +2738,13 @@ fields:
       variable: children[i].stepchild_address_confidential
       is: False
 ---
+reconsider: True
+code: |
+  stepchildren_for_addendum = []
+  for child in children:
+    if child.legal_parent != "both":
+      stepchildren_for_addendum.append(child)
+---
 # --------------------------------------------------------------------
 ## health insurance collection
 # --------------------------------------------------------------------
@@ -2811,8 +2830,7 @@ fields:
   - Does ${ OP_label } have another health care policy to add?: other_parties[0].insurance.there_is_another
     datatype: yesnoradio
 ---
-if: len(children.filter(legal_parent="both")) == 1
-id: user insurance policy info (1 marital child)
+id: user insurance policy info (only asked if there_are_marital_children)
 question: |
   Your ${ ordinal(i) } health care policy
 subquestion: |
@@ -2842,50 +2860,14 @@ fields:
       - optical/vision
       - other
     none of the above: False
-  - Does this policy cover ${ children }?: users[0].insurance[i].covers_child
-    datatype: yesnoradio
-    required: False
----
-if: len(children.filter(legal_parent="both")) > 1
-id: user insurance policy info (multiple marital children)
-question: |
-  Your ${ ordinal(i) } health care policy
-subquestion: |
-  ${users[0].insurance.question_text_table_template}
-fields:
-  - Are you the named policy holder?: users[0].insurance[i].in_own_name
-    datatype: yesnoradio
-    required: False
-  - Please enter the name of the policy holder: users[0].insurance[i].policyholder
-    required: False
-    show if:
-      variable: users[0].insurance[i].in_own_name
-      is: False
-  - What is the name of the provider?: users[0].insurance[i].company_name
-  - What is the address of the provider?: users[0].insurance[i].company_address
-    required: False
-  - What is the policy number?: users[0].insurance[i].policy_number
-    required: False
-  - What is the certificate number?: users[0].insurance[i].certificate_number
-    required: False
-  - What coverage does the policy provide?: users[0].insurance[i].coverage_type
-    required: False
-    datatype: checkboxes
-    choices:
-      - medical
-      - dental
-      - optical/vision
-      - other
-    none of the above: False
-  - Does this policy cover any of these children?: users[0].insurance[i].covers_child
+  - Which of these children (if any) are covered by **this policy?**: users[0].insurance[i].covers_child
     required: False
     datatype: checkboxes
     none of the above: False
     code: |
       children.filter(legal_parent="both")    
 ---
-if: len(children.filter(legal_parent="both")) == 1
-id: OP insurance policy info (1 marital child)
+id: OP insurance policy info (only shown if there_are_marital_children)
 question: |
   ${ capitalize(OP_label) }'s ${ ordinal(i) } health care policy
 subquestion: |
@@ -2914,42 +2896,7 @@ fields:
       - dental
       - optical/vision
       - other
-    none of the above: False
-  - Does this policy cover ${ children }?: other_parties[0].insurance[i].covers_child
-    datatype: yesnoradio
-    required: False
----
-if: len(children.filter(legal_parent="both")) > 1
-id: OP insurance policy info (multiple marital children)
-question: |
-  ${ capitalize(OP_label) }'s ${ ordinal(i) } health care policy
-subquestion: |
-  ${other_parties[0].insurance.question_text_table_template}
-fields:
-  - Is ${ OP_label } the named policy holder?: other_parties[0].insurance[i].in_own_name
-    datatype: yesnoradio
-    required: False
-  - Please enter the name of the policy holder: other_parties[0].insurance[i].policyholder
-    required: False
-    show if:
-      variable: other_parties[0].insurance[i].in_own_name
-      is: False
-  - What is the name of the provider?: other_parties[0].insurance[i].company_name
-  - What is the address of the provider?: other_parties[0].insurance[i].company_address
-    required: False
-  - What is the policy number?: other_parties[0].insurance[i].policy_number
-    required: False
-  - What is the certificate number?: other_parties[0].insurance[i].certificate_number
-    required: False
-  - What coverage does the policy provide?: other_parties[0].insurance[i].coverage_type
-    required: False
-    datatype: checkboxes
-    choices:
-      - medical
-      - dental
-      - optical/vision
-      - other
-  - Does this policy cover any of these children?: other_parties[0].insurance[i].covers_child
+  - Which of these children (if any) are covered by **this policy?**: other_parties[0].insurance[i].covers_child
     required: False
     datatype: checkboxes
     none of the above: False
@@ -2986,10 +2933,13 @@ code: |
         pa_other_types
     elif pa_supplemental_security:
       pa_ssa_number
+    pa_case_numbers_foc_23
+    public_assistance_list
   if pa_status == "applied" and (there_are_marital_children or user_wants_post_divorce_support):
     pa_food_assistance_program 
     if pa_other:
       pa_other_types
+    public_assistance_list
 
   interview_order_user_income = True
 ---
@@ -3018,10 +2968,14 @@ code: |
         op_pa_other_types
     elif op_pa_supplemental_security:
       op_pa_ssa_number
+    op_pa_case_numbers_foc_23
+    op_public_assistance_list
+  
   if other_party_pa_status == "applied":
     op_pa_food_assistance_program 
     if op_pa_other:
       op_pa_other_types
+    op_public_assistance_list
   
   interview_order_other_party_income = True
 
@@ -3214,6 +3168,116 @@ fields:
     show if: 
       code: |
         pa_status == "gets_assistance"
+---
+id: FOC 23 user list of public assistance
+code: |
+  public_assistance_list = []
+  if pa_food_assistance_program:
+    public_assistance_list.append("FAP")
+  if pa_medicaid:
+    public_assistance_list.append("MA CDC")
+  if pa_family_independence_program:
+    public_assistance_list.append("FIP")
+  if pa_women_infants_children:
+    public_assistance_list.append("WIC")
+  if pa_state_disability:
+    public_assistance_list.append("SDA")
+  if pa_state_emergency_relief:
+    public_assistance_list.append("SER")
+  if pa_refugee_assistance:
+    public_assistance_list.append("RAP")
+  if pa_supplemental_security:
+    public_assistance_list.append("SSI")
+  if pa_other:
+    public_assistance_list.append(f"other(${ pa_other_types})")
+depends on:
+  - pa_food_assistance_program
+  - pa_medicaid
+  - pa_family_independence_program
+  - pa_women_infants_children
+  - pa_state_disability
+  - pa_state_emergency_relief
+  - pa_refugee_assistance
+  - pa_supplemental_security
+  - pa_other
+  - pa_other_types
+---
+id: FOC 23 user list of case numbers
+code: |
+  pa_case_numbers_foc_23 = []
+
+  if pa_mdhhs or pa_other:
+    if pa_mdhhs:
+      pa_case_numbers_foc_23.append(pa_mdhhs_case_number)
+    if pa_other:
+      pa_case_numbers_foc_23.append(pa_other_case_numbers)
+  elif pa_supplemental_security:
+    pa_case_numbers_foc_23.append(pa_ssa_number)
+depends on:
+  - pa_supplemental_security
+  - pa_other
+  - pa_other_case_numbers
+  - pa_ssa_numbers
+  - pa_mdhhs_case_numbers
+  - pa_mdhhs
+---
+id: FOC 23 OP list of public assistance
+code: |
+  op_public_assistance_list = []
+  if op_pa_food_assistance_program:
+    op_public_assistance_list.append("FAP")
+  if op_pa_medicaid:
+    op_public_assistance_list.append("MA CDC")
+  if op_pa_family_independence_program:
+    op_public_assistance_list.append("FIP")
+  if op_pa_women_infants_children:
+    op_public_assistance_list.append("WIC")
+  if op_pa_state_disability:
+    op_public_assistance_list.append("SDA")
+  if op_pa_state_emergency_relief:
+    op_public_assistance_list.append("SER")
+  if op_pa_refugee_assistance:
+    op_public_assistance_list.append("RAP")
+  if op_pa_supplemental_security:
+    op_public_assistance_list.append("SSI")
+  if op_pa_other:
+    op_public_assistance_list.append(f"other(${ op_pa_other_types})")
+depends on:
+  - op_pa_food_assistance_program
+  - op_pa_medicaid
+  - op_pa_family_independence_program
+  - op_pa_women_infants_children
+  - op_pa_state_disability
+  - op_pa_state_emergency_relief
+  - op_pa_refugee_assistance
+  - op_pa_supplemental_security
+  - op_pa_other
+  - op_pa_other_types
+---
+id: FOC 23 OP list of case numbers
+code: |
+  op_pa_case_numbers_foc_23 = []
+
+  if op_pa_food_assistance_program or op_pa_medicaid or op_pa_family_independence_program or op_pa_women_infants_children or op_pa_state_disability or op_pa_state_emergency_relief or op_pa_refugee_assistance or op_pa_other:
+    if op_pa_food_assistance_program or op_pa_medicaid or op_pa_family_independence_program or op_pa_women_infants_children or op_pa_state_disability or op_pa_state_emergency_relief or op_pa_refugee_assistance:
+      op_pa_case_numbers_foc_23.append(op_pa_mdhhs_case_number)
+    if op_pa_other:
+      op_pa_case_numbers_foc_23.append(op_pa_other_case_numbers)
+  elif op_pa_supplemental_security:
+    op_pa_case_numbers_foc_23.append(op_pa_ssa_number)
+depends on:
+  - op_pa_food_assistance_program
+  - op_pa_medicaid
+  - op_pa_family_independence_program
+  - op_pa_women_infants_children
+  - op_pa_state_disability
+  - op_pa_state_emergency_relief
+  - op_pa_refugee_assistance
+  - op_pa_supplemental_security
+  - op_pa_other
+  - op_pa_other_case_numbers
+  - op_pa_ssa_numbers
+  - op_pa_mdhhs_case_numbers
 ---
 # LHI: "Plaintiff Employer" or "Defendant Employer"
 id: other party employment
@@ -3513,18 +3577,18 @@ fields:
   - What is your race?: users[0].race
     required: False
     choices:
-      - White, not Hispanic or Latino: white
-      - Hispanic or Latino: hispanic_latino
-      - American Indian or Alaska Native: american_indian_AK_native
-      - Asian: asian
-      - African American: african_american
-      - Native Hawaiian or Other Pacific Islander: HI_native_pacific_islander
-      - Other: other
+      - White, not Hispanic or Latino: White
+      - Hispanic or Latino: Hispanic/Latino
+      - American Indian or Alaskan Native: American Indian/AK Native
+      - Asian: Asian
+      - African American: African American
+      - Native Hawaiian or Other Pacific Islander: HI Native/Pacific Islander
+      - Other: Other
   - What is the other race?: users[0].other_race_description
     required: False
     show if: 
       variable: users[0].race 
-      is: other
+      is: Other
 ---
 id: user alias
 if: there_are_marital_children or user_wants_post_divorce_support
@@ -3649,18 +3713,18 @@ fields:
   - What is ${ OP_label }'s race?: other_parties[0].race
     required: False
     choices:
-      - White, not Hispanic or Latino: white
-      - Hispanic or Latino: hispanic_latino
-      - American Indian or Alaska Native: american_indian_AK_native
-      - Asian: asian
-      - African American: african_american
-      - Native Hawaiian or Other Pacific Islander: HI_native_pacific_islander
-      - Other: other
+      - White, not Hispanic or Latino: White
+      - Hispanic or Latino: Hispanic/Latino
+      - American Indian or Alaskan Native: American Indian/AK Native
+      - Asian: Asian
+      - African American: African American
+      - Native Hawaiian or Other Pacific Islander: HI Native/Pacific Islander
+      - Other: Other
   - What is the other race?: other_parties[0].other_race_description
     required: False
     show if: 
       variable: users[0].race 
-      is: other
+      is: Other
 ---
 id: other party alias
 if: there_are_marital_children or user_wants_post_divorce_support
@@ -3724,7 +3788,7 @@ fields:
 # TO DO: going to have to clear this out and rebuild if # of children changes
 code: |
   tax_choices = [
-                  ['default', f"Based on federal tax law, the **parent with whom the { children.filter(legal_parent='both').as_noun() } { children.does_verb('live') } for the greater number of nights during the year** will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() } for all tax years."],
+                  ['default', f"Based on federal tax law, the **parent with whom the { children.filter(legal_parent='both').as_noun() } { children.filter(legal_parent="both").does_verb('live') } for the greater number of nights during the year** will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() } for all tax years."],
                   ['user', f"**{ users[0] }** will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() } for all tax years."],
                   ['other_party', f"**{ other_parties[0] }** will be awarded all income tax deductions, credits, and exemptions for the minor { children.filter(legal_parent='both').as_noun() } for all tax years."]
                 ]

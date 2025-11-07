@@ -835,7 +835,7 @@ fields:
       - Cell: cell
       - Home: home
     js show if: |
-      val("users[0].no_phone_number") === false && ${ "true" if not confidential_contact_info_yn else "false" } && ${ "true" if tool_ID != "JOD_only" else "false" }
+      val("users[0].no_phone_number") === false && ${ "true" if tool_ID != "JOD_only" else "false" }
 # TODO ask AB if this is OK. It's very annoying that it only asks for 2 phone types for the FOC23 as far as I can tell. Otherwise defaults to putting "home number everywhere" (or "safe" number if that's chosen) and neither phone type is required. 
 ---
 id: users[0].email
