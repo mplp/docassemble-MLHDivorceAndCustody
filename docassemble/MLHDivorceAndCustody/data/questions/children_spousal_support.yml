@@ -113,7 +113,7 @@ code: |
 
     legal_custody_who
     if PT_type in ["specific", "supervised"]:
-      if county_choice == "Muskegon":
+      if county_choice == "Muskegon":  ### note in LHI it just rules this out if either party might file in Muskegon
         Muskegon_specific_PT_info
       if county_choice != "Muskegon":
         specific_PT_how
@@ -2152,7 +2152,7 @@ edit:
   - included_custody_PT_order
   - has_current_custody_PT_order
   - custody_order_in_another_state_warning 
-  - children_involved_number
+#  - children_involved_number  ## think we're deleting this
       
 delete buttons: True
 confirm: True
@@ -2171,7 +2171,7 @@ edit:
   - included_custody_PT_order
   - has_current_custody_PT_order
   - custody_order_in_another_state_warning 
-  - children_involved_number
+#  - children_involved_number ## think we're deleting this
       
 delete buttons: True
 confirm: True
@@ -2320,7 +2320,7 @@ code: |
     if there_are_marital_children:
       if prior_family_cases[i].type == "divorce":
         prior_family_cases[i].included_custody_PT_order
-      if prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"]:
+      if prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other", "separate_maintenance"]:
         if prior_family_cases[i].status == "ended_with_order":
           prior_family_cases[i].included_custody_PT_order
         elif prior_family_cases[i].status in ["stayed", "pending"]:
@@ -2329,11 +2329,11 @@ code: |
           prior_family_cases[i].included_custody_PT_order
   
       if prior_family_cases[i].state != "MI":
-        if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and (prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order) or (prior_family_cases[i].status in ["stayed", "pending"] and prior_family_cases[i].has_current_custody_PT_order)):
+        if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other", "separate_maintenance"] and (prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order) or (prior_family_cases[i].status in ["stayed", "pending"] and prior_family_cases[i].has_current_custody_PT_order)):
           if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids:
             prior_family_cases[i].custody_order_in_another_state_warning 
 
-      prior_family_cases[i].children_involved_number
+      # prior_family_cases[i].children_involved_number ### think we're deleting this
 
   prior_family_cases[i].complete = True
 ---
@@ -2385,6 +2385,7 @@ fields:
 code: |
   prior_family_case_types = [
                               ['divorce', 'Divorce'],
+                              ['separate_maintenance', 'Separate Maintenance']
                               ['protection_order', 'Protection Order'],
                               ['parental_rights', 'Parental Rights (abuse/neglect)'],
                               ['adoption', 'Adoption'],
@@ -2400,6 +2401,7 @@ code: |
     prior_family_case_types.remove("['paternity', 'Paternity']", "['custody', 'Custody']")
   if tool_ID == "custody_complaint":
     prior_family_case_types.remove("['divorce', 'Divorce']")
+#TODO: when build custody, should new separate maintenance option be removed from one or both tools?
 ---
 # LHI "Prior Family Cases DLG"
 id: prior family case or order collection screen NOT JOD_only
@@ -2476,7 +2478,7 @@ fields:
 ---
 # LHI "Prior Family Cases DLG" (start at row 132)
 id: prior family case or order additional info 
-if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and prior_family_cases[i].status == "ended_with_order"
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other", "separate_maintenance"] and prior_family_cases[i].status == "ended_with_order"
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
@@ -2499,7 +2501,7 @@ fields:
 ---
 # LHI "Prior Family Cases DLG" (start at row 174)
 id: prior family case or order additional info 
-if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "paternity", "guardianship", "other"] and prior_family_cases[i].status in ["stayed", "pending"]
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "paternity", "guardianship", "other", "separate_maintenance"] and prior_family_cases[i].status in ["stayed", "pending"]
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
@@ -2519,7 +2521,7 @@ fields:
 ---
 # LHI "Prior Family Cases DLG" (start at row 151)
 id: prior family case or order additional info 
-if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "guardianship", "other"] and prior_family_cases[i].status == "dimissed"
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "guardianship", "other", "separate_maintenance"] and prior_family_cases[i].status == "dimissed"
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
@@ -2533,21 +2535,23 @@ fields:
     js show if: |
       val("prior_family_cases[i].included_custody_PT_order") === true
 ---
-code: |
-  if tool_ID == "divorce_complaint" and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order:
-    if len(children.filter(legal_parent="both")) == 1:
-      prior_family_cases[i].children_involved_number = 1
-  else:
-    prior_family_cases[i].children_involved_number = 0
----
+## TODO: Think this and all children_involved_number references can delete -- was old venue logic
+## code: |
+##   if tool_ID == "divorce_complaint" and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other", "separate_maintenance"] and prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order:
+##     if len(children.filter(legal_parent="both")) == 1:
+##       prior_family_cases[i].children_involved_number = 1
+##   else:
+##     prior_family_cases[i].children_involved_number = 0
+## ---
 # LHI "Prior Family Cases DLG" (start at row 200)--rest is in "prior family cases gather logic"
-id: number of children involved in case
-if: tool_ID == "divorce_complaint" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order and len(children.filter(legal_parent="both")) > 1
-question: ${ capitalize(ordinal(i)) } **family division** case or order
-subquestion: |
-  This question is about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
-fields:
-  - How many children were involved in this case?: prior_family_cases[i].children_involved_number
+##id: number of children involved in case
+##if: tool_ID == "divorce_complaint" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other", "separate_maintenance"] and prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order and len(children.filter(legal_parent="both")) > 1
+##question: ${ capitalize(ordinal(i)) } **family division** case or order
+##subquestion: |
+##  This question is about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
+##fields:
+##  - How many children were involved in this case?: prior_family_cases[i].children_involved_number
+##
 ---
 # LHI "Prior Family Cases DLG" (start at row 108)
 # not sure how much of this logic makes sense to replicate, but trying to at least record it for now
