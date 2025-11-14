@@ -571,6 +571,7 @@ fields:
       is: at_certain_amount
   - Describe when payments will end:: spousal_support_end_custom
     input type: area
+    maxlength: 76
     show if: 
       variable: spousal_support_end_type
       is: other

@@ -701,6 +701,148 @@ attachment:
           % endif
 ---
 # --------------------------------------------------------------------
+## Uniform Spousal Support Order FOC10b
+# --------------------------------------------------------------------
+---
+objects:
+  - uniform_spousal_support_order_foc10b: ALDocument.using(title="Uniform Spousal Support Order - FOC 10b", filename="Uniform Spousal Support Order - FOC 10b")
+---
+attachment:
+  - name: Uniform Spousal Support Order - FOC 10b
+    filename: Uniform Spousal Support Order - FOC 10b
+    variable name: uniform_spousal_support_order_foc10b[i]
+    pdf template file: uniform_spousal_support_order_foc10b.pdf
+    editable: False
+    fields:
+      - trial_court_circuit: ${ the_court.number }
+      - trial_court_address_county: ${ county_choice.upper() }
+      - docket_number: ${ docket_number }
+      - docket_number__1: ${ docket_number }
+      - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+      - trial_court_phone_number: ${ the_court.phone }
+      - plaintiff_block: |
+          ${ plaintiffs[0].name_full() }
+          ${ plaintiffs[0].address.line_one() }
+          ${ plaintiffs[0].address.line_two() }
+          ${ word("Does not have phone") if plaintiffs[0].no_phone_number else plaintiffs[0].phone_numbers() }
+      - defendant_block: |
+          ${ defendants[0].name_full() }
+          ${ defendants[0].address.line_one() }
+          ${ defendants[0].address.line_two() }
+          ${ word("Does not have phone") if defendants[0].no_phone_number else defendants[0].phone_numbers() }
+      - plaintiffs_attorney_block: |
+          % if user_ask_role == "plaintiff" or not plaintiffs[0].has_attorney:
+          Self-represented
+          % else:
+          ${ plaintiffs[0].attorney.name_full() }
+          ${ plaintiffs[0].attorney.address.line_one() }
+          ${ plaintiffs[0].attorney.address.line_two() }
+          ${ word("Does not have phone") if plaintiffs[0].attorney.no_phone_number else plaintiffs[0].attorney.phone_numbers() }
+          % endif
+      - defendants_attorney_block: |
+          % if user_ask_role == "defendant" or not defendants[0].has_attorney:
+          Self-represented
+          % else:
+          ${ defendants[0].attorney.name_full() }
+          ${ defendants[0].attorney.address.line_one() }
+          ${ defendants[0].attorney.address.line_two() }
+          ${ word("Does not have phone") if defendants[0].attorney.no_phone_number else defendants[0].attorney.phone_numbers() }
+          % endif
+      - plaintiff_employer_block: |
+          % if plaintiffs[0].has_job:
+          ${ plaintiffs[0].job.employer.name.first }
+          ${ plaintiffs[0].job.employer.address.line_one() }
+          ${ plaintiffs[0].job.employer.address.line_two() }
+          ${ word("Phone unknown.") if plaintiffs[0].job.employer.phone == "" else users[0].job.employer.phone }
+          ${ word("FEIN unknown.") if users[0].job.FEIN == "" else users[0].job.FEIN }
+          % endif
+      - defendant_employer_block: |
+          % if defendants[0].has_job:
+          ${ defendants[0].job.employer.name.first }
+          ${ defendants[0].job.employer.address.line_one() }
+          ${ defendants[0].job.employer.address.line_two() }
+          ${ word("Phone unknown.") if defendants[0].job.employer.phone == "" else defendants[0].job.employer.phone }
+          ${ word("FEIN unknown") if defendants[0].job.FEIN == "" else defendants[0].job.FEIN }
+          % endif
+      # - order_entered_after_hearing: 
+      # - order_entered_stipulation:
+      # - standard_provisions_modified:
+      - spousal_support_payer_name: |
+          % if user_wants_post_divorce_support:
+          ${ other_parties[0] }
+          % elif spousal_support_provisions == "user_agrees_to_pay_spousal_support":
+          ${ users[0] }
+          % endif
+      - spousal_support_payee_name: |
+          % if user_wants_post_divorce_support:
+          ${ users[0] }
+          % elif spousal_support_provisions == "user_agrees_to_pay_spousal_support":
+          ${ other_parties[0] }
+          % endif
+      - spousal_support_monthly_amount: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
+          ${ spousal_support_amount }
+          % endif
+      - spousal_support_effective_date: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
+          ${ spousal_support_start_date }
+          % endif
+      - spousal_support_ends_on_date: ${ True if spousal_support_end_type == "at_certain_date" else False }
+      - ending_date: |
+          % if spousal_support_end_type == "at_certain_date":
+          ${ spousal_support_end_date }
+          % endif
+      - spousal_support_ends_on_amount: ${ True if spousal_support_end_type == "at_certain_amount" else False }
+      - ending_amount: |
+          % if spousal_support_end_type == "at_certain_amount":
+          ${ spousal_support_end_amount }
+          % endif
+      - spousal_support_ends_on_remarriage: ${ True if spousal_support_end_type == "at_recipient_marriage" else False }
+      - spousal_support_ends_on_payer_death: ${ True if spousal_support_end_type == "at_death" else False }
+      - spousal_support_ends_on_other: ${ True if spousal_support_end_type == "other" else False }
+      # - other_end_point_explanation_line_1:
+      - other_end_point_explanation_line_2: |
+          % if spousal_support_end_type == "other":
+          ${ spousal_support_end_custom }
+          % endif
+      - plaintiffs0_signature: |
+          % if user_ask_role == "plaintiff" and MLH_esign:
+          /s/ ${ users[0].name_full() }
+          % else:
+          ${ '' }
+          % endif
+      - signature_date_plaintiffs0: |
+          % if user_ask_role == "plaintiff" and MLH_esign:
+          /s/ ${ signature_date }
+          % else:
+          ${ '' }
+          % endif
+      - pursuant_to_plaintiff: |
+          % if user_ask_role == "plaintiff" and MLH_esign:
+          ${ MLH_esign_tag }
+          % else:
+          ${ '' }
+          % endif
+      - defendants0_signature: |
+          % if user_ask_role == "defendant" and MLH_esign:
+          /s/ ${ users[0].name_full() }
+          % else:
+          ${ '' }
+          % endif
+      - signature_date_defendants0: |
+          % if user_ask_role == "defendant" and MLH_esign:
+          /s/ ${ signature_date }
+          % else:
+          ${ '' }
+          % endif
+      - pursuant_to_defendant: |
+          % if user_ask_role == "plaintiff" and MLH_esign:
+          ${ MLH_esign_tag }
+          % else:
+          ${ '' }
+          % endif
+---
+# --------------------------------------------------------------------
 ## Judgment CC-MLH-412 and Attachments
 # --------------------------------------------------------------------
 ---
