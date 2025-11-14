@@ -700,7 +700,7 @@ fields:
     js show if: |
       ${ "true" if users[0].address.state in ["Michigan", "MI"] else "false" } && val("users[0].lives_in_Michigan") === true
   - What County do you live in?: users[0].address.county
-    code: court_list._load_courts()["address_county"].unique() + " County"
+    code: court_list._load_courts()["address_county"].unique()
     js show if: |
       ${ "true" if users[0].address.state in ["Michigan", "MI"] else "false" } && val("users[0].lives_in_Michigan") === true
 validation code: |
@@ -724,7 +724,7 @@ fields:
     datatype: yesnoradio
     show if: users[0].lives_in_Michigan
   - What County do you live in?: users[0].address.county
-    code: court_list._load_courts()["address_county"].unique() + " County"
+    code: court_list._load_courts()["address_county"].unique()
     show if: users[0].lives_in_Michigan
 ---
 if: tool_ID == "divorce_complaint" and users[0].has_lived_6_months_MI
@@ -1011,7 +1011,7 @@ fields:
     js show if: |
       ${ "true" if other_parties[0].address.state in ["Michigan", "MI"] else "false" } && val("other_parties[0].lives_in_Michigan") === true
   - What County does ${ other_parties[0] } live in?: other_parties[0].address.county
-    code: court_list._load_courts()["address_county"].unique() + " County"
+    code: court_list._load_courts()["address_county"].unique()
     js show if: |
       ${ "true" if other_parties[0].address.state in ["Michigan", "MI"] else "false" } && val("other_parties[0].lives_in_Michigan") === true
 validation code: |
@@ -1202,16 +1202,16 @@ fields:
   - Select the county where you will file your divorce.: county_choice
     input type: radio
     code: all_potential_venue_options
-  - I understand that I must wait until I have lived in ${ users[0].address.county } County for ten days or more before I can file for divorce.: understands_waiting_period
+  - I understand that I **must wait until I have lived in ${ users[0].address.county } County for ten days** or more before I can file for divorce.: understands_waiting_period
     required: True
     datatype: yesno
     js show if: |
-        val("county_choice") === ${ json.dumps(users[0].address.county) } && val("users[0].ten_days_in_county") === false 
-  - I understand that I must wait until my spouse has lived in ${ other_parties[0].address.county } County for ten days or more before I can file for divorce.: understands_waiting_period
+        val("county_choice") === ${ json.dumps(users[0].address.county) } && ${ json.dumps(users[0].ten_days_in_county) } === false 
+  - I understand that I **must wait until my spouse has lived in ${ other_parties[0].address.county } County for ten days** or more before I can file for divorce.: understands_waiting_period
     required: True
     datatype: yesno
     js show if: |
-        val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && val("other_parties[0].ten_days_in_county") === false 
+        val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && ${ json.dumps(other_parties[0].ten_days_in_county) } === false 
 ---
 if: len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options
 id: venue (weird separate maintenance choice)
@@ -1351,7 +1351,7 @@ fields:
       variable: marriage.address.state
       is: MI
     required: False
-    code: court_list._load_courts()["address_county"].unique() + " County"
+    code: court_list._load_courts()["address_county"].unique()
   - label: County
     field: marriage.address.county
     js show if: |

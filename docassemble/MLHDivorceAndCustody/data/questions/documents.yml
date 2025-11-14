@@ -45,7 +45,7 @@ code: |
 code: |
   insurance_in_addendum = False
   
-  if (users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any) and there_are_marital_children:
+  if there_are_marital_children and (users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any):
     for policy in users[0].insurance:
       if policy.covers_child.any_true() == True:
         insurance_in_addendum = True
@@ -102,6 +102,12 @@ attachment:
   docx template file: verified_statement_foc23_addendum.docx
   skip undefined: True
 ---
+code: |
+  verified_statement_foc_23.overflow_fields['users[0].other_identifying_info'].overflow_trigger = 19
+  verified_statement_foc_23.overflow_fields['other_parties[0].other_identifying_info'].overflow_trigger = 19
+  
+  verified_statement_foc_23.overflow_fields.gathered = True
+---
 attachment:
   - name: Verified Statement - FOC 23
     filename: Verified Statement - FOC 23
@@ -150,7 +156,7 @@ attachment:
       - users1_eye_color: ${ users[0].eye_color }
       - users1_scars_tattoos: |
           % if len(users[0].other_identifying_info) > 19:
-          See addendum.
+          ${verified_statement_foc_23.safe_value("users[0].other_identifying_info", "See addendum.")}
           % else:
           ${ users[0].other_identifying_info }
           % endif
@@ -223,7 +229,8 @@ attachment:
       - other_parties1_eye_color: ${ other_parties[0].eye_color }
       - other_parties1_scars_tattoos: |
           % if len(other_parties[0].other_identifying_info) > 19:
-          See addendum.
+          ${other_parties[0].other_identifying_info.safe_value() }
+          ${verified_statement_foc_23.safe_value("other_parties[0].other_identifying_info", "See addendum.")}
           % else:
           ${ other_parties[0].other_identifying_info }
           % endif
