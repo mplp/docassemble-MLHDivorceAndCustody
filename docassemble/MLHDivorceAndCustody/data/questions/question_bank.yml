@@ -1169,7 +1169,7 @@ subquestion: |
   % elif len(all_potential_venue_options) == 1:
   You only meet the requirements to file your divorce in ${ county_choice }. Your divorce forms will be prepared using ${ county_choice } as the filing county.  
   % elif len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case:
-  Because of your earlier separate maintenance case in ${ prior_family_cases[separate_maintenance_case_index].county }, you must file in ${ county_choice }. Your divorce forms will be prepared using ${ county_choice } as the filing county.  
+  Because of your earlier separate maintenance case, you must file in ${ prior_family_cases[separate_maintenance_case_index].county }. Your divorce forms will be prepared using ${ county_choice } as the filing county.  
   % endif
   % if len(current_venue_options) == 0:
   
@@ -1199,24 +1199,19 @@ subquestion: |
   You **must wait** to file in ${ other_parties[0].address.county } County until your spouse has lived there for the last ten days or more.
   % endif
 fields:
-  - Please select the county where you will file your divorce.: venue_choice
+  - Select the county where you will file your divorce.: county_choice
     input type: radio
-    code: venue_options
-    show if: 
-      code: |
-        len(venue_options) == 2
+    code: all_potential_venue_options
   - I understand that I must wait until I have lived in ${ users[0].address.county } County for ten days or more before I can file for divorce.: understands_waiting_period
     required: True
     datatype: yesno
-    show if:
-      code: |
-        users[0].address.county in [venue_options] and not users[0].ten_days_in_county and len(venue_options) == 1
+    js show if: |
+        val("county_choice") === ${ json.dumps(users[0].address.county) } && val("users[0].ten_days_in_county") === false 
   - I understand that I must wait until my spouse has lived in ${ other_parties[0].address.county } County for ten days or more before I can file for divorce.: understands_waiting_period
     required: True
     datatype: yesno
-    show if:
-      code: |
-        other_parties[0].address.county in [venue_options] and not other_parties[0].ten_days_in_county and len(venue_options) == 1
+    js show if: |
+        val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && val("other_parties[0].ten_days_in_county") === false 
 ---
 if: len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options
 id: venue (weird separate maintenance choice)
@@ -1224,34 +1219,50 @@ question: Where to file your divorce
 continue button field: venue
 subquestion: |
   % if prior_family_cases[separate_maintenance_case_index].county == users[0].address.county:
-  Where you will file depends on **when** you will file. Once you have lived in ${ users[0].address.county } for ten days or more, you **must file** there. (This is because of your past separate maintenance case in that county.)
-
-  However, if you want to file your divorce case **before** that, you must file in ${ other_parties[0].address.county }. (This is because you can only file in a county where one spouse has already lived for 10 days.)
+  Where you will file depends on **when** you will file:
+  
+  * After you have lived in ${ users[0].address.county } for ten days or more, you **must file** there. (Because of your past separate maintenance case in that county.)
+  * However, if you want to file your divorce case **before** that, you must file in ${ other_parties[0].address.county }. (Because you can only file in a county where one spouse has already lived for 10 days.)
   % elif prior_family_cases[separate_maintenance_case_index].county == other_parties[0].address.county:
-  Where you will file depends on **when** you will file. Once your spouse has lived in ${ other_parties[0].address.county } for ten days or more, you **must file** there. (This is because of your past separate maintenance case in that county.)
-
-  However, if you want to file your divorce case **before** that, you must file in ${ users[0].address.county }. (This is because you can only file in a county where one spouse has already lived for 10 days.)
+  Where you will file depends on **when** you will file:
+  
+  * After your spouse has lived in ${ other_parties[0].address.county } for ten days or more, you **must file** there. (This is because of your past separate maintenance case in that county.)
+  * However, if you want to file your divorce case **before** that, you must file in ${ users[0].address.county }. (This is because you can only file in a county where one spouse has already lived for 10 days.)
   % endif  
 
 fields:
-  - Please select the county where you will file your divorce.: venue_choice
+  - Select when and where you will file your divorce.: county_choice
     input type: radio
-    code: venue_options
-    show if: 
-      code: |
-        len(venue_options) == 2
-  - I understand that I must wait until I have lived in ${ users[0].address.county } County for ten days or more before I can file for divorce.: understands_waiting_period
+    choices:
+      - "I will wait until I have lived 10 days in ${ users[0].address.county } and file in ${ users[0].address.county }": users[0].address.county
+      - "I will file now in ${ other_parties[0].address.county }, before I have lived for 10 days in my current county.": other_parties[0].address.county
+    show if: prior_family_cases[separate_maintenance_case_index].county == users[0].address.county
+  - Select the county where you will file your divorce.: county_choice
+    input type: radio
+    choices:
+      - "I will wait until my spouse has lived 10 days in ${ other_parties[0].address.county } and file in ${ other_parties[0].address.county }": other_parties[0].address.county
+      - "I will file now in ${ users[0].address.county }, before my spouse has lived 10 days in their current county.": other_parties[0].address.county
+    show if: prior_family_cases[separate_maintenance_case_index].county == other_parties[0].address.county
+  - I understand that I **must wait** until I have lived in ${ users[0].address.county } County for ten days or more before I file for divorce.: understands_waiting_period
     required: True
     datatype: yesno
-    show if:
-      code: |
-        users[0].address.county in [venue_options] and not users[0].ten_days_in_county and len(venue_options) == 1
-  - I understand that I must wait until my spouse has lived in ${ other_parties[0].address.county } County for ten days or more before I can file for divorce.: understands_waiting_period
+    js show if: |
+        val("county_choice") === ${ json.dumps(users[0].address.county) } && val("users[0].ten_days_in_county") === false 
+  - I understand that I **must wait** until my spouse has lived in ${ other_parties[0].address.county } County for ten days or more before I file for divorce.: understands_waiting_period
     required: True
     datatype: yesno
-    show if:
-      code: |
-        other_parties[0].address.county in [venue_options] and not other_parties[0].ten_days_in_county and len(venue_options) == 1
+    js show if: |
+        val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && val("other_parties[0].ten_days_in_county") === false 
+  - I understand that if I want to file in ${ users[0].address.county }, I need to do so *before my spouse has lived in their current county for 10 days* or more. If I miss that deadline, I will update this tool and get new forms.: understands_waiting_period
+    required: True
+    datatype: yesno
+    js show if: |
+        val("county_choice") === ${ json.dumps(users[0].address.county) } && val("other_parties[0].ten_days_in_county") === false 
+  - I understand that if I want to file in ${ other_parties[0].address.county }, I need to do so *before I have lived in my current county for 10 days* or more. If I miss that deadline, I will update this tool and get new forms.: understands_waiting_period
+    required: True
+    datatype: yesno
+    js show if: |
+        val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && val("users[0].ten_days_in_county") === false 
 ---
 code: |
   current_venue_options = []
@@ -1264,41 +1275,42 @@ code: |
   if other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI:
     if other_parties[0].address.county not in all_potential_venue_options:
       all_potential_venue_options.append(other_parties[0].address.county)
-      if other_parties[0].ten_days_in_county and other_parties[0].address.county not in current_venue_options:
-        current_venue_options.append(other_parties[0].address.county)
-      elif not other_parties[0].ten_days_in_county and other_parties[0].address.county not in 
+    if other_parties[0].ten_days_in_county and other_parties[0].address.county not in current_venue_options:
+      current_venue_options.append(other_parties[0].address.county)
 
   set_venue_lists = True
 ---
 id: divorce complaint venue logic
 code: |
+  undefine("county_choice")
+  
   if len(all_potential_venue_options) == 1:
     county_choice = all_potential_venue_options[0]
   elif len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case:
     if len(current_venue_options) in [2, 0]:
       county_choice = prior_family_cases[separate_maintenance_case_index].county
-    elif len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options:
+    # elif len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options:
       # show the special weird choice question
     elif len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county in current_venue_options:
       county_choice = prior_family_cases[separate_maintenance_case_index].county
-  elif len(all_potential_venue_options) == 2 and not (there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case):
+  # elif len(all_potential_venue_options) == 2 and not (there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case):
     # choice with warnings for any options that aren't already at 10 days
 
   check_for_required_venue = True
 ---
-id: problematic separate maintenance case check logic
-code: |
-  there_is_venue_controlling_separate_maintenance_case = False
-  if there_are_marital_children and prior_family_cases.there_are_any:
-    for i, case in enumerate(prior_family_cases):
-      if case.type == "separate_maintenance" and 
-        judgement
-        and custody order
-        support order(?)
-        county in all_potential_venue_options
-        
-        separate_maintenance_case_index = i
-        there_is_venue_controlling_separate_maintenance_case = True
+# id: problematic separate maintenance case check logic
+# code: |
+#   there_is_venue_controlling_separate_maintenance_case = False
+#   if there_are_marital_children and prior_family_cases.there_are_any:
+#     for i, case in enumerate(prior_family_cases):
+#       if case.type == "separate_maintenance" and 
+#         judgement
+#         and custody order
+#         support order(?)
+#         county in all_potential_venue_options
+#         
+#         separate_maintenance_case_index = i
+#         there_is_venue_controlling_separate_maintenance_case = True
 ### note this assumes there's only one such case
 ---
 # --------------------------------------------------------------------
