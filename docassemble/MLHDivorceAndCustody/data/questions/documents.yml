@@ -821,37 +821,37 @@ attachment:
           ${ spousal_support_end_custom }
           % endif
       - plaintiffs0_signature: |
-          % if plaintiffs == users and MLH_esign:
+          % if user_ask_role == "plaintiff" and MLH_esign:
           /s/ ${ users[0].name_full() }
           % else:
           ${ '' }
           % endif
       - signature_date_plaintiffs0: |
-          % if plaintiffs == users and MLH_esign:
+          % if user_ask_role == "plaintiff" and MLH_esign:
           ${ format_date(signature_date, format='M/d/yyyy') }
           % else:
           ${ '' }
           % endif
       - pursuant_to_plaintiff: |
-          % if plaintiffs == users and MLH_esign:
+          % if user_ask_role == "plaintiff" and MLH_esign:
           ${ MLH_esign_tag }
           % else:
           ${ '' }
           % endif
       - defendants0_signature: |
-          % if defendants == users and MLH_esign:
+          % if user_ask_role == "defendant" and MLH_esign:
           /s/ ${ users[0].name_full() }
           % else:
           ${ '' }
           % endif
       - signature_date_defendants0: |
-          % if defendants == users and MLH_esign:
+          % if user_ask_role == "defendant" and MLH_esign:
           ${ format_date(signature_date, format='M/d/yyyy') }
           % else:
           ${ '' }
           % endif
       - pursuant_to_defendant: |
-          % if defendants == users and MLH_esign:
+          % if user_ask_role == "defendant" and MLH_esign:
           ${ MLH_esign_tag }
           % else:
           ${ '' }
