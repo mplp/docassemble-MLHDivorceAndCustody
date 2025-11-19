@@ -232,5 +232,7 @@ code: |
   # just making sure these are defined
   the_foc 
   stepchildren_for_addendum
-  
+
+  verified_statement_foc_23.safe_value("other_parties[0].other_identifying_info", overflow_message="TEST")
+  verified_statement_foc_23.overflow_value("other_parties[0].other_identifying_info") 
   MLH_download
