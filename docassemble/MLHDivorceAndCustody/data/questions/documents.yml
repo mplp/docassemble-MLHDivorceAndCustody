@@ -4,7 +4,24 @@
 ---
 if: tool_ID == "JOD_only"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[judgment_ccmlh412], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - judgment_and_addenda_bundle: ALDocumentBundle.using(elements=[
+      judgment_ccmlh412,
+      judgment_addendum_personal_property_and_debt,
+      judgment_addendum_vehicles_1_to_4,
+      judgment_addendum_vehicles_5_to_8,
+      judgment_addendum_vehicles_9_to_12,
+      judgment_addendum_real_property_1_to_2,
+      judgment_addendum_real_property_3_to_4,
+      judgment_addendum_real_property_5_to_6,
+      judgment_addendum_real_property_7_to_8,
+      judgment_addendum_real_property_9_to_10,
+      judgment_addendum_pensions,
+      judgment_overflow_addendum
+      ], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+---
+if: tool_ID == "JOD_only"
+objects:
+  - al_user_bundle: ALDocumentBundle.using(elements=[judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, JOD_only doesn't have instructions anyway]
 ---
 if: tool_ID == "divorce_complaint"
@@ -18,6 +35,35 @@ objects:
 ---
 ### List of enabling logic that is TBD
 
+---
+# enabling logic for JOD_only addenda bundle 
+code: |
+  judgment_addendum_personal_property_and_debt.enabled = debts_in_addendum(marriage) or personal_property_in_addendum(marriage)
+
+  judgment_addendum_vehicles_1_to_4.enabled = has_vehicle_addendum(marriage)
+  judgment_addendum_vehicles_5_to_8.enabled = has_vehicle_addendum(marriage) and len(marriage.vehicles) > 4
+  judgment_addendum_vehicles_9_to_12.enabled = has_vehicle_addendum(marriage) and len(marriage.vehicles) > 8
+  
+  judgment_addendum_real_property_1_to_2.enabled = bool(marriage.real_property)
+  judgment_addendum_real_property_3_to_4.enabled = bool(marriage.real_property) and len(marriage.real_property) > 2
+  judgment_addendum_real_property_5_to_6.enabled = bool(marriage.real_property) and len(marriage.real_property) > 4
+  judgment_addendum_real_property_7_to_8.enabled = bool(marriage.real_property) and len(marriage.real_property) > 6
+  judgment_addendum_real_property_9_to_10.enabled = bool(marriage.real_property) and len(marriage.real_property) > 8
+  
+  judgment_addendum_pensions.enabled = (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own)
+---
+# enabling logic for JOD_only addenda overflow fields (personal property and debts, real property legal description, and other provisions)
+code: |
+  if send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum:
+    judgment_overflow_addendum.enabled = True
+  
+  if marriage.real_property:
+    for property in marriage.real_property:
+      if len(property.desc) > 123:
+        judgment_overflow_addendum.enabled = True
+  
+  if len(marriage.other_provisions) > 440:
+    judgment_overflow_addendum.enabled = True
 ---
 # not in JOD_only bundle
 code: |
@@ -698,7 +744,18 @@ attachment:
 # --------------------------------------------------------------------
 ---
 objects:
-  - judgment_ccmlh412: ALDocument.using(title="Judgment", filename="Judgment.pdf", enabled=True, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+  - judgment_ccmlh412: ALDocument.using(title="Judgment", filename="Judgment.pdf", enabled=True)
+  - judgment_addendum_personal_property_and_debt: ALDocument.using(title="Personal property and debt addendum", filename="Personal property and debt addendum.pdf")
+  - judgment_addendum_vehicles_1_to_4: ALDocument.using(title="Vehicles addendum 1", filename="Vehicles addendum.pdf")
+  - judgment_addendum_vehicles_5_to_8: ALDocument.using(title="Vehicles addendum 2", filename="Vehicles addendum.pdf")
+  - judgment_addendum_vehicles_9_to_12: ALDocument.using(title="Vehicles addendum 3", filename="Vehicles addendum.pdf")
+  - judgment_addendum_real_property_1_to_2: ALDocument.using(title="Real property addendum 1", filename="Real property addendum.pdf")
+  - judgment_addendum_real_property_3_to_4: ALDocument.using(title="Real property addendum 2", filename="Real property addendum.pdf")
+  - judgment_addendum_real_property_5_to_6: ALDocument.using(title="Real property addendum 3", filename="Real property addendum.pdf")
+  - judgment_addendum_real_property_7_to_8: ALDocument.using(title="Real property addendum 4", filename="Real property addendum.pdf")
+  - judgment_addendum_real_property_9_to_10: ALDocument.using(title="Real property addendum 5", filename="Real property addendum.pdf")
+  - judgment_addendum_pensions: ALDocument.using(title="Pensions addendum", filename="Pensions addendum.pdf")
+  - judgment_overflow_addendum: ALDocument.using(title="Judgment overflow addendum", filename="Judgment overflow addendum.pdf")
 ---
 attachment:
   - name: Judgment ccmlh412 (no kids)
@@ -753,7 +810,1761 @@ attachment:
       - has_real_property_addendum: ${bool(marriage.real_property)}
       - has_pension_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
       - has_other_provisions: ${marriage.other_provisions_any}
-      - other_provisions: ${marriage.attr("other_provisions")}
+      - other_provisions: |
+          % if marriage.other_provisions_any:
+            % if len(marriage.other_provisions) > 440:
+          See addendum.
+            % else:
+            ${marriage.other_provisions}
+            % endif
+          % else:
+          ${""}
+          % endif
+---
+attachment:
+  - name: Judgment addendum 1 (personal property and debt)
+    filename: Judgment addendum 1 (personal property and debt)
+    variable name: judgment_addendum_personal_property_and_debt[i]
+    pdf template file: judgment_addendum_1_personal_property_and_debt.pdf
+    fields:
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_county: ${the_court.address.county}
+      - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
+      - docket_number: ${docket_number}
+      - judge: ${""}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${the_court.phone}
+      - plaintiffs1_name: ${plaintiffs}
+      - defendants1_name: ${defendants}
+      - plaintiffs1_property_award: |
+          % if marriage.personal_property_acquired:
+            % if send_plaintiff_personal_property_to_addendum:
+          See addendum.
+            % else:
+              % if marriage.accounts:
+                % for account in marriage.accounts:
+                  % if account.owner == users[0] or account.owner == joint:
+          Cash valued at $${thousands(account.balance, 2) if account.owner == other_parties[0] else thousands(account.balance / 2, 2)} in a ${account.kind} account at ${account.source}${"" if loop.last else " and "}
+                  % endif
+                % endfor
+              % endif
+              % if marriage.other_pp:
+                % for item in marriage.other_pp:
+                  % if item.owner == users[0]:
+          Property type: ${item.kind}, Description: ${item.desc}${"; and " if not loop.last else ""}
+                  % endif
+                % endfor
+              % endif
+              % if marriage.mobile_home:
+                % for home in marriage.mobile_home:
+                  % if home.owner == users[0]:
+          Mobile home located at: ${home.desc}, VIN: ${home.kind}${"" if loop.last else " and "}
+                  % endif
+                % endfor
+              % endif
+            % endif
+          % else:
+          ${""}
+          % endif
+
+      - defendants1_property_award: |
+          % if marriage.personal_property_acquired:
+            % if send_defendant_personal_property_to_addendum:
+          See addendum.
+            % else:
+              % if marriage.accounts:
+                % for account in marriage.accounts:
+                  % if account.owner == other_parties[0] or account.owner == joint:
+          Cash valued at $${thousands(account.balance, 2) if account.owner == other_parties[0] else thousands(account.balance / 2, 2)} in a ${account.kind} account at ${account.source}${"" if loop.last else " and "}
+                  % endif
+                % endfor
+              % endif
+              % if marriage.other_pp:
+                % for item in marriage.other_pp:
+                  % if item.owner == other_parties[0]:
+          Property type: ${item.kind}, Description: ${item.desc}${"; and " if not loop.last else ""}
+                  % endif
+                % endfor
+              % endif
+              % if marriage.mobile_home:
+                % for home in marriage.mobile_home:
+                  % if home.owner == other_parties[0]:
+          Mobile home located at: ${home.desc}, VIN: ${home.kind}${"" if loop.last else " and "}
+                  % endif
+                % endfor
+              % endif
+            % endif
+          % else:
+          ${""}
+          % endif
+      - plaintiffs1_debt_responsibility: |
+          % if marriage.debts.any:
+            % if send_plaintiff_debts_to_addendum:
+          See addendum.
+            % else:
+              % for debt in marriage.debts:
+                % if debt.owner == users[0] or debt.owner == joint:
+          Debt type: ${debt.kind}, Creditor: ${debt.source}, Approximate balance owed: $${thousands(debt.balance,2) if debt.owner == users[0] else thousands(debt.balance / 2, 2)}${"" if loop.last else " and "}
+                % endif
+              % endfor
+            % endif
+          % else:
+          ${""}
+          % endif
+      - defendants1_debt_responsibility: |
+          % if marriage.debts.any:
+            % if send_defendant_debts_to_addendum:
+          See addendum.
+            % else:
+              % for debt in marriage.debts:
+                % if debt.owner == other_parties[0] or debt.owner == joint:
+          Debt type: ${debt.kind}, Creditor: ${debt.source}, Approximate balance owed: $${thousands(debt.balance,2) if debt.owner == other_parties[0] else thousands(debt.balance / 2, 2)}${"" if loop.last else " and "}
+                % endif
+              % endfor
+            % endif
+          % else:
+          ${""}
+          % endif
+      - form_id_number: ${"412/413"}
+      - page_number: ${""}
+---
+attachment:
+  - name: Judgment addendum 2 (vehicles 1 to 4)
+    filename: Judgment addendum 2 (vehicles 1 to 4)
+    variable name: judgment_addendum_vehicles_1_to_4[i]
+    pdf template file: judgment_addendum_2_vehicles_1_to_4.pdf
+    fields:
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_county: ${the_court.address.county}
+      - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
+      - docket_number: ${docket_number}
+      - docket_number__1: ${docket_number}
+      - judge: ${""}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${the_court.phone}
+      - plaintiffs1_name: ${plaintiffs}
+      - defendants1_name: ${defendants}
+      - form_id_number: ${"412/413"}
+      - page_number_first: ${""}
+      # Vehicle 1
+      - vehicles1_awarded_plaintiff: |
+          % if marriage.vehicles[0].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles1_awarded_defendant: |
+          % if marriage.vehicles[0].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles1_year: ${marriage.vehicles[0].year}
+      - vehicles1_make: ${marriage.vehicles[0].make}
+      - vehicles1_model: ${marriage.vehicles[0].model}
+      - vehicles1_VIN: ${marriage.vehicles[0].vin}
+      - vehicles1_loan_yes: ${marriage.vehicles[0].debt}
+      - vehicles1_loan_no: ${not marriage.vehicles[0].debt}
+      - vehicles1_loan_responsibility_plaintiff: |
+          % if marriage.vehicles[0].debt and marriage.vehicles[0].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles1_loan_responsibility_defendant: |
+          % if marriage.vehicles[0].debt and marriage.vehicles[0].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles1_loan_responsibility_plaintiff__1: |
+          % if marriage.vehicles[0].debt and marriage.vehicles[0].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles1_loan_responsibility_defendant__1: |
+          % if marriage.vehicles[0].debt and marriage.vehicles[0].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      # Vehicle 2
+      - vehicles2_awarded_plaintiff: |
+          % if len(marriage.vehicles) > 1 and marriage.vehicles[1].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles2_awarded_defendant: |
+          % if len(marriage.vehicles) > 1 and marriage.vehicles[1].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles2_year: ${marriage.vehicles[1].year if len(marriage.vehicles) > 1 else ""}
+      - vehicles2_make: ${marriage.vehicles[1].make if len(marriage.vehicles) > 1 else ""}
+      - vehicles2_model: ${marriage.vehicles[1].model if len(marriage.vehicles) > 1 else ""}
+      - vehicles2_VIN: ${marriage.vehicles[1].vin if len(marriage.vehicles) > 1 else ""}
+      - vehicles2_loan_yes: ${len(marriage.vehicles) > 1 and marriage.vehicles[1].debt}
+      - vehicles2_loan_no: ${len(marriage.vehicles) > 1 and not marriage.vehicles[1].debt}
+      - vehicles2_loan_responsibility_plaintiff: |
+          % if len(marriage.vehicles) > 1 and marriage.vehicles[1].debt and marriage.vehicles[1].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles2_loan_responsibility_defendant: |
+          % if len(marriage.vehicles) > 1 and marriage.vehicles[1].debt and marriage.vehicles[1].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles2_loan_responsibility_plaintiff__1: |
+          % if len(marriage.vehicles) > 1 and marriage.vehicles[1].debt and marriage.vehicles[1].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles2_loan_responsibility_defendant__1: |
+          % if len(marriage.vehicles) > 1 and marriage.vehicles[1].debt and marriage.vehicles[1].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      # Vehicle 3
+      - vehicles3_awarded_plaintiff: |
+          % if len(marriage.vehicles) > 2 and marriage.vehicles[2].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles3_awarded_defendant: |
+          % if len(marriage.vehicles) > 2 and marriage.vehicles[2].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles3_year: ${marriage.vehicles[2].year if len(marriage.vehicles) > 2 else ""}
+      - vehicles3_make: ${marriage.vehicles[2].make if len(marriage.vehicles) > 2 else ""}
+      - vehicles3_model: ${marriage.vehicles[2].model if len(marriage.vehicles) > 2 else ""}
+      - vehicles3_VIN: ${marriage.vehicles[2].vin if len(marriage.vehicles) > 2 else ""}
+      - vehicles3_loan_yes: ${len(marriage.vehicles) > 2 and marriage.vehicles[2].debt}
+      - vehicles3_loan_no: ${len(marriage.vehicles) > 2 and not marriage.vehicles[2].debt}
+      - vehicles3_loan_responsibility_plaintiff: |
+          % if len(marriage.vehicles) > 2 and marriage.vehicles[2].debt and marriage.vehicles[2].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles3_loan_responsibility_defendant: |
+          % if len(marriage.vehicles) > 2 and marriage.vehicles[2].debt and marriage.vehicles[2].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles3_loan_responsibility_plaintiff__1: |
+          % if len(marriage.vehicles) > 2 and marriage.vehicles[2].debt and marriage.vehicles[2].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles3_loan_responsibility_defendant__1: |
+          % if len(marriage.vehicles) > 2 and marriage.vehicles[2].debt and marriage.vehicles[2].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicle_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, VEHICLE ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, VEHICLE ADDENDUM"}
+      - page_number_second: ${""}
+      # Vehicle 4
+      - vehicles4_awarded_plaintiff: |
+          % if len(marriage.vehicles) > 3 and marriage.vehicles[3].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles4_awarded_defendant: |
+          % if len(marriage.vehicles) > 3 and marriage.vehicles[3].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles4_year: ${marriage.vehicles[3].year if len(marriage.vehicles) > 3 else ""}
+      - vehicles4_make: ${marriage.vehicles[3].make if len(marriage.vehicles) > 3 else ""}
+      - vehicles4_model: ${marriage.vehicles[3].model if len(marriage.vehicles) > 3 else ""}
+      - vehicles4_VIN: ${marriage.vehicles[3].vin if len(marriage.vehicles) > 3 else ""}
+      - vehicles4_loan_yes: ${len(marriage.vehicles) > 3 and marriage.vehicles[3].debt}
+      - vehicles4_loan_no: ${len(marriage.vehicles) > 3 and not marriage.vehicles[3].debt}
+      - vehicles4_loan_responsibility_plaintiff: |
+          % if len(marriage.vehicles) > 3 and marriage.vehicles[3].debt and marriage.vehicles[3].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles4_loan_responsibility_defendant: |
+          % if len(marriage.vehicles) > 3 and marriage.vehicles[3].debt and marriage.vehicles[3].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles4_loan_responsibility_plaintiff__1: |
+          % if len(marriage.vehicles) > 3 and marriage.vehicles[3].debt and marriage.vehicles[3].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles4_loan_responsibility_defendant__1: |
+          % if len(marriage.vehicles) > 3 and marriage.vehicles[3].debt and marriage.vehicles[3].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+---
+attachment:
+  - name: Judgment addendum 2 (vehicles 5 to 8)
+    filename: Judgment addendum 2 (vehicles 5 to 8)
+    variable name: judgment_addendum_vehicles_5_to_8[i]
+    pdf template file: judgment_addendum_2_vehicles_5_to_8.pdf
+    fields:
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_county: ${the_court.address.county}
+      - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
+      - docket_number: ${docket_number}
+      - docket_number__1: ${docket_number}
+      - judge: ${""}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${the_court.phone}
+      - plaintiffs1_name: ${plaintiffs}
+      - defendants1_name: ${defendants}
+      - form_id_number: ${"412/413"}
+      - page_number_first: ${""}
+      # Vehicle 5
+      - vehicles5_awarded_plaintiff: |
+          % if len(marriage.vehicles) > 4 and marriage.vehicles[4].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles5_awarded_defendant: |
+          % if len(marriage.vehicles) > 4 and marriage.vehicles[4].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles5_year: ${marriage.vehicles[4].year if len(marriage.vehicles) > 4 else ""}
+      - vehicles5_make: ${marriage.vehicles[4].make if len(marriage.vehicles) > 4 else ""}
+      - vehicles5_model: ${marriage.vehicles[4].model if len(marriage.vehicles) > 4 else ""}
+      - vehicles5_VIN: ${marriage.vehicles[4].vin if len(marriage.vehicles) > 4 else ""}
+      - vehicles5_loan_yes: ${len(marriage.vehicles) > 4 and marriage.vehicles[4].debt}
+      - vehicles5_loan_no: ${len(marriage.vehicles) > 4 and not marriage.vehicles[4].debt}
+      - vehicles5_loan_responsibility_plaintiff: |
+          % if len(marriage.vehicles) > 4 and marriage.vehicles[4].debt and marriage.vehicles[4].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles5_loan_responsibility_defendant: |
+          % if len(marriage.vehicles) > 4 and marriage.vehicles[4].debt and marriage.vehicles[4].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles5_loan_responsibility_plaintiff__1: |
+          % if len(marriage.vehicles) > 4 and marriage.vehicles[4].debt and marriage.vehicles[4].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles5_loan_responsibility_defendant__1: |
+          % if len(marriage.vehicles) > 4 and marriage.vehicles[4].debt and marriage.vehicles[4].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      # Vehicle 6
+      - vehicles6_awarded_plaintiff: |
+          % if len(marriage.vehicles) > 5 and marriage.vehicles[5].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles6_awarded_defendant: |
+          % if len(marriage.vehicles) > 5 and marriage.vehicles[5].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles6_year: ${marriage.vehicles[5].year if len(marriage.vehicles) > 5 else ""}
+      - vehicles6_make: ${marriage.vehicles[5].make if len(marriage.vehicles) > 5 else ""}
+      - vehicles6_model: ${marriage.vehicles[5].model if len(marriage.vehicles) > 5 else ""}
+      - vehicles6_VIN: ${marriage.vehicles[5].vin if len(marriage.vehicles) > 5 else ""}
+      - vehicles6_loan_yes: ${len(marriage.vehicles) > 5 and marriage.vehicles[5].debt}
+      - vehicles6_loan_no: ${len(marriage.vehicles) > 5 and not marriage.vehicles[5].debt}
+      - vehicles6_loan_responsibility_plaintiff: |
+          % if len(marriage.vehicles) > 5 and marriage.vehicles[5].debt and marriage.vehicles[5].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles6_loan_responsibility_defendant: |
+          % if len(marriage.vehicles) > 5 and marriage.vehicles[5].debt and marriage.vehicles[5].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles6_loan_responsibility_plaintiff__1: |
+          % if len(marriage.vehicles) > 5 and marriage.vehicles[5].debt and marriage.vehicles[5].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles6_loan_responsibility_defendant__1: |
+          % if len(marriage.vehicles) > 5 and marriage.vehicles[5].debt and marriage.vehicles[5].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      # Vehicle 7
+      - vehicles7_awarded_plaintiff: |
+          % if len(marriage.vehicles) > 6 and marriage.vehicles[6].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles7_awarded_defendant: |
+          % if len(marriage.vehicles) > 6 and marriage.vehicles[6].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles7_year: ${marriage.vehicles[6].year if len(marriage.vehicles) > 6 else ""}
+      - vehicles7_make: ${marriage.vehicles[6].make if len(marriage.vehicles) > 6 else ""}
+      - vehicles7_model: ${marriage.vehicles[6].model if len(marriage.vehicles) > 6 else ""}
+      - vehicles7_VIN: ${marriage.vehicles[6].vin if len(marriage.vehicles) > 6 else ""}
+      - vehicles7_loan_yes: ${len(marriage.vehicles) > 6 and marriage.vehicles[6].debt}
+      - vehicles7_loan_no: ${len(marriage.vehicles) > 6 and not marriage.vehicles[6].debt}
+      - vehicles7_loan_responsibility_plaintiff: |
+          % if len(marriage.vehicles) > 6 and marriage.vehicles[6].debt and marriage.vehicles[6].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles7_loan_responsibility_defendant: |
+          % if len(marriage.vehicles) > 6 and marriage.vehicles[6].debt and marriage.vehicles[6].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles7_loan_responsibility_plaintiff__1: |
+          % if len(marriage.vehicles) > 6 and marriage.vehicles[6].debt and marriage.vehicles[6].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles7_loan_responsibility_defendant__1: |
+          % if len(marriage.vehicles) > 6 and marriage.vehicles[6].debt and marriage.vehicles[6].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicle_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, VEHICLE ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, VEHICLE ADDENDUM"}
+      - page_number_second: ${""}
+      # Vehicle 8
+      - vehicles8_awarded_plaintiff: |
+          % if len(marriage.vehicles) > 7 and marriage.vehicles[7].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles8_awarded_defendant: |
+          % if len(marriage.vehicles) > 7 and marriage.vehicles[7].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles8_year: ${marriage.vehicles[7].year if len(marriage.vehicles) > 7 else ""}
+      - vehicles8_make: ${marriage.vehicles[7].make if len(marriage.vehicles) > 7 else ""}
+      - vehicles8_model: ${marriage.vehicles[7].model if len(marriage.vehicles) > 7 else ""}
+      - vehicles8_VIN: ${marriage.vehicles[7].vin if len(marriage.vehicles) > 7 else ""}
+      - vehicles8_loan_yes: ${len(marriage.vehicles) > 7 and marriage.vehicles[7].debt}
+      - vehicles8_loan_no: ${len(marriage.vehicles) > 7 and not marriage.vehicles[7].debt}
+      - vehicles8_loan_responsibility_plaintiff: |
+          % if len(marriage.vehicles) > 7 and marriage.vehicles[7].debt and marriage.vehicles[7].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles8_loan_responsibility_defendant: |
+          % if len(marriage.vehicles) > 7 and marriage.vehicles[7].debt and marriage.vehicles[7].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles8_loan_responsibility_plaintiff__1: |
+          % if len(marriage.vehicles) > 7 and marriage.vehicles[7].debt and marriage.vehicles[7].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles8_loan_responsibility_defendant__1: |
+          % if len(marriage.vehicles) > 7 and marriage.vehicles[7].debt and marriage.vehicles[7].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+---
+attachment:
+  - name: Judgment addendum 2 (vehicles 9 to 12)
+    filename: Judgment addendum 2 (vehicles 9 to 12)
+    variable name: judgment_addendum_vehicles_9_to_12[i]
+    pdf template file: judgment_addendum_2_vehicles_9_to_12.pdf
+    fields:
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_county: ${the_court.address.county}
+      - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
+      - docket_number: ${docket_number}
+      - docket_number__1: ${docket_number}
+      - judge: ${""}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${the_court.phone}
+      - plaintiffs1_name: ${plaintiffs}
+      - defendants1_name: ${defendants}
+      - form_id_number: ${"412/413"}
+      - page_number_first: ${""}
+      # Vehicle 9
+      - vehicles9_awarded_plaintiff: |
+          % if len(marriage.vehicles) > 8 and marriage.vehicles[8].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles9_awarded_defendant: |
+          % if len(marriage.vehicles) > 8 and marriage.vehicles[8].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles9_year: ${marriage.vehicles[8].year if len(marriage.vehicles) > 8 else ""}
+      - vehicles9_make: ${marriage.vehicles[8].make if len(marriage.vehicles) > 8 else ""}
+      - vehicles9_model: ${marriage.vehicles[8].model if len(marriage.vehicles) > 8 else ""}
+      - vehicles9_VIN: ${marriage.vehicles[8].vin if len(marriage.vehicles) > 8 else ""}
+      - vehicles9_loan_yes: ${len(marriage.vehicles) > 8 and marriage.vehicles[8].debt}
+      - vehicles9_loan_no: ${len(marriage.vehicles) > 8 and not marriage.vehicles[8].debt}
+      - vehicles9_loan_responsibility_plaintiff: |
+          % if len(marriage.vehicles) > 8 and marriage.vehicles[8].debt and marriage.vehicles[8].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles9_loan_responsibility_defendant: |
+          % if len(marriage.vehicles) > 8 and marriage.vehicles[8].debt and marriage.vehicles[8].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles9_loan_responsibility_plaintiff__1: |
+          % if len(marriage.vehicles) > 8 and marriage.vehicles[8].debt and marriage.vehicles[8].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles9_loan_responsibility_defendant__1: |
+          % if len(marriage.vehicles) > 8 and marriage.vehicles[8].debt and marriage.vehicles[8].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      # Vehicle 10
+      - vehicles10_awarded_plaintiff: |
+          % if len(marriage.vehicles) > 9 and marriage.vehicles[9].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles10_awarded_defendant: |
+          % if len(marriage.vehicles) > 9 and marriage.vehicles[9].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles10_year: ${marriage.vehicles[9].year if len(marriage.vehicles) > 9 else ""}
+      - vehicles10_make: ${marriage.vehicles[9].make if len(marriage.vehicles) > 9 else ""}
+      - vehicles10_model: ${marriage.vehicles[9].model if len(marriage.vehicles) > 9 else ""}
+      - vehicles10_VIN: ${marriage.vehicles[9].vin if len(marriage.vehicles) > 9 else ""}
+      - vehicles10_loan_yes: ${len(marriage.vehicles) > 9 and marriage.vehicles[9].debt}
+      - vehicles10_loan_no: ${len(marriage.vehicles) > 9 and not marriage.vehicles[9].debt}
+      - vehicles10_loan_responsibility_plaintiff: |
+          % if len(marriage.vehicles) > 9 and marriage.vehicles[9].debt and marriage.vehicles[9].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles10_loan_responsibility_defendant: |
+          % if len(marriage.vehicles) > 9 and marriage.vehicles[9].debt and marriage.vehicles[9].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles10_loan_responsibility_plaintiff__1: |
+          % if len(marriage.vehicles) > 9 and marriage.vehicles[9].debt and marriage.vehicles[9].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles10_loan_responsibility_defendant__1: |
+          % if len(marriage.vehicles) > 9 and marriage.vehicles[9].debt and marriage.vehicles[9].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      # Vehicle 11
+      - vehicles11_awarded_plaintiff: |
+          % if len(marriage.vehicles) > 10 and marriage.vehicles[10].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles11_awarded_defendant: |
+          % if len(marriage.vehicles) > 10 and marriage.vehicles[10].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles11_year: ${marriage.vehicles[10].year if len(marriage.vehicles) > 10 else ""}
+      - vehicles11_make: ${marriage.vehicles[10].make if len(marriage.vehicles) > 10 else ""}
+      - vehicles11_model: ${marriage.vehicles[10].model if len(marriage.vehicles) > 10 else ""}
+      - vehicles11_VIN: ${marriage.vehicles[10].vin if len(marriage.vehicles) > 10 else ""}
+      - vehicles11_loan_yes: ${len(marriage.vehicles) > 10 and marriage.vehicles[10].debt}
+      - vehicles11_loan_no: ${len(marriage.vehicles) > 10 and not marriage.vehicles[10].debt}
+      - vehicles11_loan_responsibility_plaintiff: |
+          % if len(marriage.vehicles) > 10 and marriage.vehicles[10].debt and marriage.vehicles[10].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles11_loan_responsibility_defendant: |
+          % if len(marriage.vehicles) > 10 and marriage.vehicles[10].debt and marriage.vehicles[10].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles11_loan_responsibility_plaintiff__1: |
+          % if len(marriage.vehicles) > 10 and marriage.vehicles[10].debt and marriage.vehicles[10].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles11_loan_responsibility_defendant__1: |
+          % if len(marriage.vehicles) > 10 and marriage.vehicles[10].debt and marriage.vehicles[10].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicle_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, VEHICLE ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, VEHICLE ADDENDUM"}
+      - page_number_second: ${""}
+      # Vehicle 12
+      - vehicles12_awarded_plaintiff: |
+          % if len(marriage.vehicles) > 11 and marriage.vehicles[11].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles12_awarded_defendant: |
+          % if len(marriage.vehicles) > 11 and marriage.vehicles[11].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles12_year: ${marriage.vehicles[11].year if len(marriage.vehicles) > 11 else ""}
+      - vehicles12_make: ${marriage.vehicles[11].make if len(marriage.vehicles) > 11 else ""}
+      - vehicles12_model: ${marriage.vehicles[11].model if len(marriage.vehicles) > 11 else ""}
+      - vehicles12_VIN: ${marriage.vehicles[11].vin if len(marriage.vehicles) > 11 else ""}
+      - vehicles12_loan_yes: ${len(marriage.vehicles) > 11 and marriage.vehicles[11].debt}
+      - vehicles12_loan_no: ${len(marriage.vehicles) > 11 and not marriage.vehicles[11].debt}
+      - vehicles12_loan_responsibility_plaintiff: |
+          % if len(marriage.vehicles) > 11 and marriage.vehicles[11].debt and marriage.vehicles[11].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles12_loan_responsibility_defendant: |
+          % if len(marriage.vehicles) > 11 and marriage.vehicles[11].debt and marriage.vehicles[11].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles12_loan_responsibility_plaintiff__1: |
+          % if len(marriage.vehicles) > 11 and marriage.vehicles[11].debt and marriage.vehicles[11].owner == users[0]:
+          True
+          % else:
+          False
+          % endif
+      - vehicles12_loan_responsibility_defendant__1: |
+          % if len(marriage.vehicles) > 11 and marriage.vehicles[11].debt and marriage.vehicles[11].owner == other_parties[0]:
+          True
+          % else:
+          False
+          % endif
+---
+attachment:
+  - name: Judgment addendum 3 (real property 1 to 2)
+    filename: Judgment addendum 3 (real property 1 to 2)
+    variable name: judgment_addendum_real_property_1_to_2[i]
+    pdf template file: judgment_addendum_3_real_property_1_to_2.pdf
+    fields:
+      ### Form details page 1 ###
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_county: ${the_court.address.county}
+      - docket_number: ${docket_number}
+      - judge: ${""}
+      - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${the_court.phone}
+      - plaintiffs1_name: ${plaintiffs}
+      - defendants1_name: ${defendants}
+
+      ### Real property 1 ###
+      - real_properties1_address_on_one_line: ${marriage.real_property[0].address.on_one_line()}
+      - real_properties1_legal_description: |
+          % if len(marriage.real_property[0].desc) > 123:
+          See addendum.
+          % else:
+          ${marriage.real_property[0].desc}
+          % endif
+      - real_properties1_parcel_ID: ${marriage.real_property[0].parcel_number}
+
+      # Ownership and costs (property 1)
+      - real_properties1_sale_awarded_plaintiff: ${marriage.real_property[0].owner == users[0]}
+      - real_properties1_sale_awarded_defendant: ${marriage.real_property[0].owner == other_parties[0]}
+      - real_properties1_sale_awarded_both: ${marriage.real_property[0].owner == sell_and_share}
+      - real_properties1_costs_plaintiff: ${marriage.real_property[0].owner == users[0]}
+      - real_properties1_costs_defendant: ${marriage.real_property[0].owner == other_parties[0]}
+      - real_properties1_costs_both: ${marriage.real_property[0].owner == sell_and_share}
+
+      # Equal share sale (property 1)
+      - real_properties1_sale_equal_shares: ${marriage.real_property[0].owner == sell_and_share}
+
+      # Refinance logic (property 1)
+      - real_properties1_shall_refinance: |
+          % if ((marriage.real_property[0].owner != sell_and_share) and (marriage.real_property[0].titled_together == True) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == True)) or ((marriage.real_property[0].owner != sell_and_share) and (marriage.real_property[0].titled_together == True) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == False) and (marriage.real_property[0].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[0].owner != sell_and_share) and (marriage.real_property[0].titled_together == False) and (marriage.real_property[0].title_award_to_named == False) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == False) and (marriage.real_property[0].mortgage_or_loan_award_to_named == False)):
+          True
+          % else:
+          False
+          % endif
+      - real_properties1_refinance_plaintiff: |
+          % if ((marriage.real_property[0].owner == users[0]) and (marriage.real_property[0].titled_together == True) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == True)) or ((marriage.real_property[0].owner == users[0]) and (marriage.real_property[0].titled_together == True) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == False) and (marriage.real_property[0].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[0].owner == users[0]) and (marriage.real_property[0].titled_together == False) and (marriage.real_property[0].title_award_to_named == False) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == False) and (marriage.real_property[0].mortgage_or_loan_award_to_named == False)):
+          True
+          % else:
+          False
+          % endif
+      - real_properties1_refinance_defendant: |
+          % if ((marriage.real_property[0].owner == other_parties[0]) and (marriage.real_property[0].titled_together == True) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == True)) or ((marriage.real_property[0].owner == other_parties[0]) and (marriage.real_property[0].titled_together == True) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == False) and (marriage.real_property[0].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[0].owner == other_parties[0]) and (marriage.real_property[0].titled_together == False) and (marriage.real_property[0].title_award_to_named == False) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == False) and (marriage.real_property[0].mortgage_or_loan_award_to_named == False)):
+          True
+          % else:
+          False
+          % endif
+      - real_properties1_remove_plaintiff: |
+          % if ((marriage.real_property[0].owner == other_parties[0]) and (marriage.real_property[0].titled_together == True) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == True)) or ((marriage.real_property[0].owner == other_parties[0]) and (marriage.real_property[0].titled_together == True) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == False) and (marriage.real_property[0].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[0].owner == other_parties[0]) and (marriage.real_property[0].titled_together == False) and (marriage.real_property[0].title_award_to_named == False) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == False) and (marriage.real_property[0].mortgage_or_loan_award_to_named == False)):
+          True
+          % else:
+          False
+          % endif 
+      - real_properties1_remove_defendant: |
+          % if ((marriage.real_property[0].owner == users[0]) and (marriage.real_property[0].titled_together == True) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == True)) or ((marriage.real_property[0].owner == users[0]) and (marriage.real_property[0].titled_together == True) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == False) and (marriage.real_property[0].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[0].owner == users[0]) and (marriage.real_property[0].titled_together == False) and (marriage.real_property[0].title_award_to_named == False) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == False) and (marriage.real_property[0].mortgage_or_loan_award_to_named == False)):
+          True
+          % else:
+          False
+          % endif
+
+      # Quitclaim logic (property 1)
+      - real_properties1_has_quitclaim: |
+          % if ((marriage.real_property[0].owner != sell_and_share) and (marriage.real_property[0].titled_together == True)) or ((marriage.real_property[0].owner != sell_and_share) and (marriage.real_property[0].titled_together == False) and (marriage.real_property[0].title_award_to_named == False)):
+          True
+          % else:
+          False
+          % endif
+      - real_properties1_sign_quitclaim_plaintiff: |
+          % if ((marriage.real_property[0].owner == other_parties[0]) and (marriage.real_property[0].titled_together == True)) or ((marriage.real_property[0].owner == other_parties[0]) and (marriage.real_property[0].titled_together == False) and (marriage.real_property[0].title_award_to_named == False)):
+          True
+          % else:
+          False
+          % endif
+      - real_properties1_sign_quitclaim_defendant: |
+          % if ((marriage.real_property[0].owner == users[0]) and (marriage.real_property[0].titled_together == True)) or ((marriage.real_property[0].owner == users[0]) and (marriage.real_property[0].titled_together == False) and (marriage.real_property[0].title_award_to_named == False)):
+          True
+          % else:
+          False
+          % endif
+      - real_properties1_quitclaim_benefits_plaintiff: |
+          % if ((marriage.real_property[0].owner == users[0]) and (marriage.real_property[0].titled_together == True)) or ((marriage.real_property[0].owner == users[0]) and (marriage.real_property[0].titled_together == False) and (marriage.real_property[0].title_award_to_named == False)):
+          True
+          % else:
+          False
+          % endif
+      - real_properties1_quitclaim_benefits_defendant: |
+          % if ((marriage.real_property[0].owner == other_parties[0]) and (marriage.real_property[0].titled_together == True)) or ((marriage.real_property[0].owner == other_parties[0]) and (marriage.real_property[0].titled_together == False) and (marriage.real_property[0].title_award_to_named == False)):
+          True
+          % else:
+          False
+          % endif
+
+      ### Real property 2 (if any) ###
+      - real_properties2_address_on_one_line: ${marriage.real_property[1].address.on_one_line() if len(marriage.real_property) > 1 else ""}
+      - real_properties2_legal_description: |
+          % if len(marriage.real_property) > 1:
+            % if len(marriage.real_property[1].desc) > 123:
+          See addendum.
+            % else:
+            ${marriage.real_property[1].desc}
+            % endif
+          % else:
+          ${""}
+          % endif
+      - real_properties2_parcel_ID: ${marriage.real_property[1].parcel_number if len(marriage.real_property) > 1 else ""}
+
+      # Ownership and costs (property 2)
+      - real_properties2_sale_awarded_plaintiff: ${len(marriage.real_property) > 1 and marriage.real_property[1].owner == users[0]}
+      - real_properties2_sale_awarded_defendant: ${len(marriage.real_property) > 1 and marriage.real_property[1].owner == other_parties[0]}
+      - real_properties2_sale_awarded_both: ${len(marriage.real_property) > 1 and marriage.real_property[1].owner == sell_and_share}
+      - real_properties2_costs_plaintiff: ${len(marriage.real_property) > 1 and marriage.real_property[1].owner == users[0]}
+      - real_properties2_costs_defendant: ${len(marriage.real_property) > 1 and marriage.real_property[1].owner == other_parties[0]}
+      - real_properties2_costs_both: ${len(marriage.real_property) > 1 and marriage.real_property[1].owner == sell_and_share}
+
+      # Equal share sale (property 2)
+      - real_properties2_sale_equal_shares: ${len(marriage.real_property) > 1 and marriage.real_property[1].owner == sell_and_share}
+
+      # Refinance logic (property 2)
+      - real_properties2_shall_refinance: |
+          % if len(marriage.real_property) > 1 and (((marriage.real_property[1].owner != sell_and_share) and (marriage.real_property[1].titled_together == True) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == True)) or ((marriage.real_property[1].owner != sell_and_share) and (marriage.real_property[1].titled_together == True) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == False) and (marriage.real_property[1].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[1].owner != sell_and_share) and (marriage.real_property[1].titled_together == False) and (marriage.real_property[1].title_award_to_named == False) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == False) and (marriage.real_property[1].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties2_refinance_plaintiff: |
+          % if len(marriage.real_property) > 1 and (((marriage.real_property[1].owner == users[0]) and (marriage.real_property[1].titled_together == True) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == True)) or ((marriage.real_property[1].owner == users[0]) and (marriage.real_property[1].titled_together == True) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == False) and (marriage.real_property[1].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[1].owner == users[0]) and (marriage.real_property[1].titled_together == False) and (marriage.real_property[1].title_award_to_named == False) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == False) and (marriage.real_property[1].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties2_refinance_defendant: |
+          % if len(marriage.real_property) > 1 and (((marriage.real_property[1].owner == other_parties[0]) and (marriage.real_property[1].titled_together == True) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == True)) or ((marriage.real_property[1].owner == other_parties[0]) and (marriage.real_property[1].titled_together == True) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == False) and (marriage.real_property[1].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[1].owner == other_parties[0]) and (marriage.real_property[1].titled_together == False) and (marriage.real_property[1].title_award_to_named == False) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == False) and (marriage.real_property[1].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties2_remove_plaintiff: |
+          % if len(marriage.real_property) > 1 and (((marriage.real_property[1].owner == other_parties[0]) and (marriage.real_property[1].titled_together == True) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == True)) or ((marriage.real_property[1].owner == other_parties[0]) and (marriage.real_property[1].titled_together == True) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == False) and (marriage.real_property[1].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[1].owner == other_parties[0]) and (marriage.real_property[1].titled_together == False) and (marriage.real_property[1].title_award_to_named == False) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == False) and (marriage.real_property[1].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif 
+      - real_properties2_remove_defendant: |
+          % if len(marriage.real_property) > 1 and (((marriage.real_property[1].owner == users[0]) and (marriage.real_property[1].titled_together == True) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == True)) or ((marriage.real_property[1].owner == users[0]) and (marriage.real_property[1].titled_together == True) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == False) and (marriage.real_property[1].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[1].owner == users[0]) and (marriage.real_property[1].titled_together == False) and (marriage.real_property[1].title_award_to_named == False) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == False) and (marriage.real_property[1].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      # Quitclaim logic (property 2)
+      - real_properties2_has_quitclaim: |
+          % if len(marriage.real_property) > 1 and (((marriage.real_property[1].owner != sell_and_share) and (marriage.real_property[1].titled_together == True)) or ((marriage.real_property[1].owner != sell_and_share) and (marriage.real_property[1].titled_together == False) and (marriage.real_property[1].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties2_sign_quitclaim_plaintiff: |
+          % if len(marriage.real_property) > 1 and (((marriage.real_property[1].owner == other_parties[0]) and (marriage.real_property[1].titled_together == True)) or ((marriage.real_property[1].owner == other_parties[0]) and (marriage.real_property[1].titled_together == False) and (marriage.real_property[1].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties2_sign_quitclaim_defendant: |
+          % if len(marriage.real_property) > 1 and (((marriage.real_property[1].owner == users[0]) and (marriage.real_property[1].titled_together == True)) or ((marriage.real_property[1].owner == users[0]) and (marriage.real_property[1].titled_together == False) and (marriage.real_property[1].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties2_quitclaim_benefits_plaintiff: |
+          % if len(marriage.real_property) > 1 and (((marriage.real_property[1].owner == users[0]) and (marriage.real_property[1].titled_together == True)) or ((marriage.real_property[1].owner == users[0]) and (marriage.real_property[1].titled_together == False) and (marriage.real_property[1].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties2_quitclaim_benefits_defendant: |
+          % if len(marriage.real_property) > 1 and (((marriage.real_property[1].owner == other_parties[0]) and (marriage.real_property[1].titled_together == True)) or ((marriage.real_property[1].owner == other_parties[0]) and (marriage.real_property[1].titled_together == False) and (marriage.real_property[1].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      ### Form details page 2 ###
+      - form_id_number: ${"412/413"}
+      - page_number_first: ${""}
+      - page_number_second: ${""}
+      - real_property_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, REAL PROPERTY ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, REAL PROPERTY ADDENDUM"}
+      - docket_number1: ${docket_number}
+---
+attachment:
+  - name: Judgment addendum 3 (real property 3 to 4)
+    filename: Judgment addendum 3 (real property 3 to 4)
+    variable name: judgment_addendum_real_property_3_to_4[i]
+    pdf template file: judgment_addendum_3_real_property_3_to_4.pdf
+    fields:
+      ### Form details page 1 ###
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_county: ${the_court.address.county}
+      - docket_number: ${docket_number}
+      - judge: ${""}
+      - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${the_court.phone}
+      - plaintiffs1_name: ${plaintiffs}
+      - defendants1_name: ${defendants}
+
+      ### Real property 3 (if any) ###
+      - real_properties3_address_on_one_line: ${marriage.real_property[2].address.on_one_line() if len(marriage.real_property) > 2 else ""}
+      - real_properties3_legal_description: |
+          % if len(marriage.real_property) > 2:
+            % if len(marriage.real_property[2].desc) > 123:
+          See addendum.
+            % else:
+            ${marriage.real_property[2].desc}
+            % endif
+          % else:
+          ${""}
+          % endif
+
+      # Ownership and costs (property 3)
+      - real_properties3_sale_awarded_plaintiff: ${len(marriage.real_property) > 2 and marriage.real_property[2].owner == users[0]}
+      - real_properties3_sale_awarded_defendant: ${len(marriage.real_property) > 2 and marriage.real_property[2].owner == other_parties[0]}
+      - real_properties3_sale_awarded_both: ${len(marriage.real_property) > 2 and marriage.real_property[2].owner == sell_and_share}
+      - real_properties3_costs_plaintiff: ${len(marriage.real_property) > 2 and marriage.real_property[2].owner == users[0]}
+      - real_properties3_costs_defendant: ${len(marriage.real_property) > 2 and marriage.real_property[2].owner == other_parties[0]}
+      - real_properties3_costs_both: ${len(marriage.real_property) > 2 and marriage.real_property[2].owner == sell_and_share}
+
+      # Equal share sale (property 3)
+      - real_properties3_sale_equal_shares: ${len(marriage.real_property) > 2 and marriage.real_property[2].owner == sell_and_share}
+
+      # Refinance logic (property 3)
+      - real_properties3_shall_refinance: |
+          % if len(marriage.real_property) > 2 and (((marriage.real_property[2].owner != sell_and_share) and (marriage.real_property[2].titled_together == True) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == True)) or ((marriage.real_property[2].owner != sell_and_share) and (marriage.real_property[2].titled_together == True) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == False) and (marriage.real_property[2].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[2].owner != sell_and_share) and (marriage.real_property[2].titled_together == False) and (marriage.real_property[2].title_award_to_named == False) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == False) and (marriage.real_property[2].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties3_refinance_plaintiff: |
+          % if len(marriage.real_property) > 2 and (((marriage.real_property[2].owner == users[0]) and (marriage.real_property[2].titled_together == True) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == True)) or ((marriage.real_property[2].owner == users[0]) and (marriage.real_property[2].titled_together == True) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == False) and (marriage.real_property[2].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[2].owner == users[0]) and (marriage.real_property[2].titled_together == False) and (marriage.real_property[2].title_award_to_named == False) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == False) and (marriage.real_property[2].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties3_refinance_defendant: |
+          % if len(marriage.real_property) > 2 and (((marriage.real_property[2].owner == other_parties[0]) and (marriage.real_property[2].titled_together == True) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == True)) or ((marriage.real_property[2].owner == other_parties[0]) and (marriage.real_property[2].titled_together == True) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == False) and (marriage.real_property[2].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[2].owner == other_parties[0]) and (marriage.real_property[2].titled_together == False) and (marriage.real_property[2].title_award_to_named == False) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == False) and (marriage.real_property[2].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties3_remove_plaintiff: |
+          % if len(marriage.real_property) > 2 and (((marriage.real_property[2].owner == other_parties[0]) and (marriage.real_property[2].titled_together == True) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == True)) or ((marriage.real_property[2].owner == other_parties[0]) and (marriage.real_property[2].titled_together == True) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == False) and (marriage.real_property[2].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[2].owner == other_parties[0]) and (marriage.real_property[2].titled_together == False) and (marriage.real_property[2].title_award_to_named == False) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == False) and (marriage.real_property[2].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif 
+      - real_properties3_remove_defendant: |
+          % if len(marriage.real_property) > 2 and (((marriage.real_property[2].owner == users[0]) and (marriage.real_property[2].titled_together == True) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == True)) or ((marriage.real_property[2].owner == users[0]) and (marriage.real_property[2].titled_together == True) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == False) and (marriage.real_property[2].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[2].owner == users[0]) and (marriage.real_property[2].titled_together == False) and (marriage.real_property[2].title_award_to_named == False) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == False) and (marriage.real_property[2].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      # Quitclaim logic (property 3)
+      - real_properties3_has_quitclaim: |
+          % if len(marriage.real_property) > 2 and (((marriage.real_property[2].owner != sell_and_share) and (marriage.real_property[2].titled_together == True)) or ((marriage.real_property[2].owner != sell_and_share) and (marriage.real_property[2].titled_together == False) and (marriage.real_property[2].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties3_sign_quitclaim_plaintiff: |
+          % if len(marriage.real_property) > 2 and (((marriage.real_property[2].owner == other_parties[0]) and (marriage.real_property[2].titled_together == True)) or ((marriage.real_property[2].owner == other_parties[0]) and (marriage.real_property[2].titled_together == False) and (marriage.real_property[2].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties3_sign_quitclaim_defendant: |
+          % if len(marriage.real_property) > 2 and (((marriage.real_property[2].owner == users[0]) and (marriage.real_property[2].titled_together == True)) or ((marriage.real_property[2].owner == users[0]) and (marriage.real_property[2].titled_together == False) and (marriage.real_property[2].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties3_quitclaim_benefits_plaintiff: |
+          % if len(marriage.real_property) > 2 and (((marriage.real_property[2].owner == users[0]) and (marriage.real_property[2].titled_together == True)) or ((marriage.real_property[2].owner == users[0]) and (marriage.real_property[2].titled_together == False) and (marriage.real_property[2].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties3_quitclaim_benefits_defendant: |
+          % if len(marriage.real_property) > 2 and (((marriage.real_property[2].owner == other_parties[0]) and (marriage.real_property[2].titled_together == True)) or ((marriage.real_property[2].owner == other_parties[0]) and (marriage.real_property[2].titled_together == False) and (marriage.real_property[2].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      ### Real property 4 (if any) ###
+      - real_properties4_address_on_one_line: ${marriage.real_property[3].address.on_one_line() if len(marriage.real_property) > 3 else ""}
+      - real_properties4_legal_description: |
+          % if len(marriage.real_property) > 3:
+            % if len(marriage.real_property[3].desc) > 123:
+          See addendum.
+            % else:
+            ${marriage.real_property[3].desc}
+            % endif
+          % else:
+          ${""}
+          % endif
+      - real_properties4_parcel_ID: ${marriage.real_property[3].parcel_number if len(marriage.real_property) > 3 else ""}
+
+      # Ownership and costs (property 4)
+      - real_properties4_sale_awarded_plaintiff: ${len(marriage.real_property) > 3 and marriage.real_property[3].owner == users[0]}
+      - real_properties4_sale_awarded_defendant: ${len(marriage.real_property) > 3 and marriage.real_property[3].owner == other_parties[0]}
+      - real_properties4_sale_awarded_both: ${len(marriage.real_property) > 3 and marriage.real_property[3].owner == sell_and_share}
+      - real_properties4_costs_plaintiff: ${len(marriage.real_property) > 3 and marriage.real_property[3].owner == users[0]}
+      - real_properties4_costs_defendant: ${len(marriage.real_property) > 3 and marriage.real_property[3].owner == other_parties[0]}
+      - real_properties4_costs_both: ${len(marriage.real_property) > 3 and marriage.real_property[3].owner == sell_and_share}
+
+      # Equal share sale (property 4)
+      - real_properties4_sale_equal_shares: ${len(marriage.real_property) > 3 and marriage.real_property[3].owner == sell_and_share}
+
+      # Refinance logic (property 4)
+      - real_properties4_shall_refinance: |
+          % if len(marriage.real_property) > 3 and (((marriage.real_property[3].owner != sell_and_share) and (marriage.real_property[3].titled_together == True) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == True)) or ((marriage.real_property[3].owner != sell_and_share) and (marriage.real_property[3].titled_together == True) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == False) and (marriage.real_property[3].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[3].owner != sell_and_share) and (marriage.real_property[3].titled_together == False) and (marriage.real_property[3].title_award_to_named == False) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == False) and (marriage.real_property[3].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties4_refinance_plaintiff: |
+          % if len(marriage.real_property) > 3 and (((marriage.real_property[3].owner == users[0]) and (marriage.real_property[3].titled_together == True) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == True)) or ((marriage.real_property[3].owner == users[0]) and (marriage.real_property[3].titled_together == True) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == False) and (marriage.real_property[3].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[3].owner == users[0]) and (marriage.real_property[3].titled_together == False) and (marriage.real_property[3].title_award_to_named == False) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == False) and (marriage.real_property[3].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties4_refinance_defendant: |
+          % if len(marriage.real_property) > 3 and (((marriage.real_property[3].owner == other_parties[0]) and (marriage.real_property[3].titled_together == True) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == True)) or ((marriage.real_property[3].owner == other_parties[0]) and (marriage.real_property[3].titled_together == True) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == False) and (marriage.real_property[3].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[3].owner == other_parties[0]) and (marriage.real_property[3].titled_together == False) and (marriage.real_property[3].title_award_to_named == False) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == False) and (marriage.real_property[3].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties4_remove_plaintiff: |
+          % if len(marriage.real_property) > 3 and (((marriage.real_property[3].owner == other_parties[0]) and (marriage.real_property[3].titled_together == True) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == True)) or ((marriage.real_property[3].owner == other_parties[0]) and (marriage.real_property[3].titled_together == True) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == False) and (marriage.real_property[3].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[3].owner == other_parties[0]) and (marriage.real_property[3].titled_together == False) and (marriage.real_property[3].title_award_to_named == False) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == False) and (marriage.real_property[3].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif 
+      - real_properties4_remove_defendant: |
+          % if len(marriage.real_property) > 3 and (((marriage.real_property[3].owner == users[0]) and (marriage.real_property[3].titled_together == True) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == True)) or ((marriage.real_property[3].owner == users[0]) and (marriage.real_property[3].titled_together == True) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == False) and (marriage.real_property[3].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[3].owner == users[0]) and (marriage.real_property[3].titled_together == False) and (marriage.real_property[3].title_award_to_named == False) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == False) and (marriage.real_property[3].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      # Quitclaim logic (property 4)
+      - real_properties4_has_quitclaim: |
+          % if len(marriage.real_property) > 3 and (((marriage.real_property[3].owner != sell_and_share) and (marriage.real_property[3].titled_together == True)) or ((marriage.real_property[3].owner != sell_and_share) and (marriage.real_property[3].titled_together == False) and (marriage.real_property[3].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties4_sign_quitclaim_plaintiff: |
+          % if len(marriage.real_property) > 3 and (((marriage.real_property[3].owner == other_parties[0]) and (marriage.real_property[3].titled_together == True)) or ((marriage.real_property[3].owner == other_parties[0]) and (marriage.real_property[3].titled_together == False) and (marriage.real_property[3].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties4_sign_quitclaim_defendant: |
+          % if len(marriage.real_property) > 3 and (((marriage.real_property[3].owner == users[0]) and (marriage.real_property[3].titled_together == True)) or ((marriage.real_property[3].owner == users[0]) and (marriage.real_property[3].titled_together == False) and (marriage.real_property[3].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties4_quitclaim_benefits_plaintiff: |
+          % if len(marriage.real_property) > 3 and (((marriage.real_property[3].owner == users[0]) and (marriage.real_property[3].titled_together == True)) or ((marriage.real_property[3].owner == users[0]) and (marriage.real_property[3].titled_together == False) and (marriage.real_property[3].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties4_quitclaim_benefits_defendant: |
+          % if len(marriage.real_property) > 3 and (((marriage.real_property[3].owner == other_parties[0]) and (marriage.real_property[3].titled_together == True)) or ((marriage.real_property[3].owner == other_parties[0]) and (marriage.real_property[3].titled_together == False) and (marriage.real_property[3].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      #### Form details page 2 ###
+      - form_id_number: ${"412/413"}
+      - page_number_first: ${""}
+      - page_number_second: ${""}
+      - real_property_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, REAL PROPERTY ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, REAL PROPERTY ADDENDUM"}
+      - docket_number1: ${docket_number}
+---
+attachment:
+  - name: Judgment addendum 3 (real property 5 to 6)
+    filename: Judgment addendum 3 (real property 5 to 6)
+    variable name: judgment_addendum_real_property_5_to_6[i]
+    pdf template file: judgment_addendum_3_real_property_5_to_6.pdf
+    fields:
+      ### Form details page 1 ###
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_county: ${the_court.address.county}
+      - docket_number: ${docket_number}
+      - judge: ${""}
+      - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${the_court.phone}
+      - plaintiffs1_name: ${plaintiffs}
+      - defendants1_name: ${defendants}
+
+      ### Real property 5 (if any) ###
+      - real_properties5_address_on_one_line: ${marriage.real_property[4].address.on_one_line() if len(marriage.real_property) > 4 else ""}
+      - real_properties5_legal_description: |
+          % if len(marriage.real_property) > 4:
+            % if len(marriage.real_property[4].desc) > 123:
+          See addendum.
+            % else:
+            ${marriage.real_property[4].desc}
+            % endif
+          % else:
+          ${""}
+          % endif
+      - real_properties5_parcel_ID: ${marriage.real_property[4].parcel_number if len(marriage.real_property) > 4 else ""}
+
+      # Ownership and costs (property 5)
+      - real_properties5_sale_awarded_plaintiff: ${len(marriage.real_property) > 4 and marriage.real_property[4].owner == users[0]}
+      - real_properties5_sale_awarded_defendant: ${len(marriage.real_property) > 4 and marriage.real_property[4].owner == other_parties[0]}
+      - real_properties5_sale_awarded_both: ${len(marriage.real_property) > 4 and marriage.real_property[4].owner == sell_and_share}
+      - real_properties5_costs_plaintiff: ${len(marriage.real_property) > 4 and marriage.real_property[4].owner == users[0]}
+      - real_properties5_costs_defendant: ${len(marriage.real_property) > 4 and marriage.real_property[4].owner == other_parties[0]}
+      - real_properties5_costs_both: ${len(marriage.real_property) > 4 and marriage.real_property[4].owner == sell_and_share}
+
+      # Equal share sale (property 5)
+      - real_properties5_sale_equal_shares: ${len(marriage.real_property) > 4 and marriage.real_property[4].owner == sell_and_share}
+
+      # Refinance logic (property 5)
+      - real_properties5_shall_refinance: |
+          % if len(marriage.real_property) > 4 and (((marriage.real_property[4].owner != sell_and_share) and (marriage.real_property[4].titled_together == True) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == True)) or ((marriage.real_property[4].owner != sell_and_share) and (marriage.real_property[4].titled_together == True) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == False) and (marriage.real_property[4].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[4].owner != sell_and_share) and (marriage.real_property[4].titled_together == False) and (marriage.real_property[4].title_award_to_named == False) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == False) and (marriage.real_property[4].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties5_refinance_plaintiff: |
+          % if len(marriage.real_property) > 4 and (((marriage.real_property[4].owner == users[0]) and (marriage.real_property[4].titled_together == True) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == True)) or ((marriage.real_property[4].owner == users[0]) and (marriage.real_property[4].titled_together == True) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == False) and (marriage.real_property[4].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[4].owner == users[0]) and (marriage.real_property[4].titled_together == False) and (marriage.real_property[4].title_award_to_named == False) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == False) and (marriage.real_property[4].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties5_refinance_defendant: |
+          % if len(marriage.real_property) > 4 and (((marriage.real_property[4].owner == other_parties[0]) and (marriage.real_property[4].titled_together == True) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == True)) or ((marriage.real_property[4].owner == other_parties[0]) and (marriage.real_property[4].titled_together == True) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == False) and (marriage.real_property[4].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[4].owner == other_parties[0]) and (marriage.real_property[4].titled_together == False) and (marriage.real_property[4].title_award_to_named == False) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == False) and (marriage.real_property[4].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties5_remove_plaintiff: |
+          % if len(marriage.real_property) > 4 and (((marriage.real_property[4].owner == other_parties[0]) and (marriage.real_property[4].titled_together == True) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == True)) or ((marriage.real_property[4].owner == other_parties[0]) and (marriage.real_property[4].titled_together == True) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == False) and (marriage.real_property[4].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[4].owner == other_parties[0]) and (marriage.real_property[4].titled_together == False) and (marriage.real_property[4].title_award_to_named == False) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == False) and (marriage.real_property[4].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif 
+      - real_properties5_remove_defendant: |
+          % if len(marriage.real_property) > 4 and (((marriage.real_property[4].owner == users[0]) and (marriage.real_property[4].titled_together == True) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == True)) or ((marriage.real_property[4].owner == users[0]) and (marriage.real_property[4].titled_together == True) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == False) and (marriage.real_property[4].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[4].owner == users[0]) and (marriage.real_property[4].titled_together == False) and (marriage.real_property[4].title_award_to_named == False) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == False) and (marriage.real_property[4].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      # Quitclaim logic (property 5)
+      - real_properties5_has_quitclaim: |
+          % if len(marriage.real_property) > 4 and (((marriage.real_property[4].owner != sell_and_share) and (marriage.real_property[4].titled_together == True)) or ((marriage.real_property[4].owner != sell_and_share) and (marriage.real_property[4].titled_together == False) and (marriage.real_property[4].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties5_sign_quitclaim_plaintiff: |
+          % if len(marriage.real_property) > 4 and (((marriage.real_property[4].owner == other_parties[0]) and (marriage.real_property[4].titled_together == True)) or ((marriage.real_property[4].owner == other_parties[0]) and (marriage.real_property[4].titled_together == False) and (marriage.real_property[4].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties5_sign_quitclaim_defendant: |
+          % if len(marriage.real_property) > 4 and (((marriage.real_property[4].owner == users[0]) and (marriage.real_property[4].titled_together == True)) or ((marriage.real_property[4].owner == users[0]) and (marriage.real_property[4].titled_together == False) and (marriage.real_property[4].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties5_quitclaim_benefits_plaintiff: |
+          % if len(marriage.real_property) > 4 and (((marriage.real_property[4].owner == users[0]) and (marriage.real_property[4].titled_together == True)) or ((marriage.real_property[4].owner == users[0]) and (marriage.real_property[4].titled_together == False) and (marriage.real_property[4].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties5_quitclaim_benefits_defendant: |
+          % if len(marriage.real_property) > 4 and (((marriage.real_property[4].owner == other_parties[0]) and (marriage.real_property[4].titled_together == True)) or ((marriage.real_property[4].owner == other_parties[0]) and (marriage.real_property[4].titled_together == False) and (marriage.real_property[4].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      ### Real property 6 (if any) ###
+      - real_properties6_address_on_one_line: ${marriage.real_property[5].address.on_one_line() if len(marriage.real_property) > 5 else ""}
+      - real_properties6_legal_description: |
+          % if len(marriage.real_property) > 5:
+            % if len(marriage.real_property[5].desc) > 123:
+          See addendum.
+            % else:
+            ${marriage.real_property[5].desc}
+            % endif
+          % else:
+          ${""}
+          % endif
+      - real_properties6_parcel_ID: ${marriage.real_property[5].parcel_number if len(marriage.real_property) > 5 else ""}
+
+      # Ownership and costs (property 6)
+      - real_properties6_sale_awarded_plaintiff: ${len(marriage.real_property) > 5 and marriage.real_property[5].owner == users[0]}
+      - real_properties6_sale_awarded_defendant: ${len(marriage.real_property) > 5 and marriage.real_property[5].owner == other_parties[0]}
+      - real_properties6_sale_awarded_both: ${len(marriage.real_property) > 5 and marriage.real_property[5].owner == sell_and_share}
+      - real_properties6_costs_plaintiff: ${len(marriage.real_property) > 5 and marriage.real_property[5].owner == users[0]}
+      - real_properties6_costs_defendant: ${len(marriage.real_property) > 5 and marriage.real_property[5].owner == other_parties[0]}
+      - real_properties6_costs_both: ${len(marriage.real_property) > 5 and marriage.real_property[5].owner == sell_and_share}
+
+      # Equal share sale (property 6)
+      - real_properties6_sale_equal_shares: ${len(marriage.real_property) > 5 and marriage.real_property[5].owner == sell_and_share}
+
+      # Refinance logic (property 6)
+      - real_properties6_shall_refinance: |
+          % if len(marriage.real_property) > 5 and (((marriage.real_property[5].owner != sell_and_share) and (marriage.real_property[5].titled_together == True) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == True)) or ((marriage.real_property[5].owner != sell_and_share) and (marriage.real_property[5].titled_together == True) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == False) and (marriage.real_property[5].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[5].owner != sell_and_share) and (marriage.real_property[5].titled_together == False) and (marriage.real_property[5].title_award_to_named == False) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == False) and (marriage.real_property[5].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties6_refinance_plaintiff: |
+          % if len(marriage.real_property) > 5 and (((marriage.real_property[5].owner == users[0]) and (marriage.real_property[5].titled_together == True) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == True)) or ((marriage.real_property[5].owner == users[0]) and (marriage.real_property[5].titled_together == True) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == False) and (marriage.real_property[5].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[5].owner == users[0]) and (marriage.real_property[5].titled_together == False) and (marriage.real_property[5].title_award_to_named == False) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == False) and (marriage.real_property[5].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties6_refinance_defendant: |
+          % if len(marriage.real_property) > 5 and (((marriage.real_property[5].owner == other_parties[0]) and (marriage.real_property[5].titled_together == True) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == True)) or ((marriage.real_property[5].owner == other_parties[0]) and (marriage.real_property[5].titled_together == True) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == False) and (marriage.real_property[5].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[5].owner == other_parties[0]) and (marriage.real_property[5].titled_together == False) and (marriage.real_property[5].title_award_to_named == False) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == False) and (marriage.real_property[5].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties6_remove_plaintiff: |
+          % if len(marriage.real_property) > 5 and (((marriage.real_property[5].owner == other_parties[0]) and (marriage.real_property[5].titled_together == True) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == True)) or ((marriage.real_property[5].owner == other_parties[0]) and (marriage.real_property[5].titled_together == True) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == False) and (marriage.real_property[5].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[5].owner == other_parties[0]) and (marriage.real_property[5].titled_together == False) and (marriage.real_property[5].title_award_to_named == False) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == False) and (marriage.real_property[5].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif 
+      - real_properties6_remove_defendant: |
+          % if len(marriage.real_property) > 5 and (((marriage.real_property[5].owner == users[0]) and (marriage.real_property[5].titled_together == True) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == True)) or ((marriage.real_property[5].owner == users[0]) and (marriage.real_property[5].titled_together == True) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == False) and (marriage.real_property[5].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[5].owner == users[0]) and (marriage.real_property[5].titled_together == False) and (marriage.real_property[5].title_award_to_named == False) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == False) and (marriage.real_property[5].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      # Quitclaim logic (property 6)
+      - real_properties6_has_quitclaim: |
+          % if len(marriage.real_property) > 5 and (((marriage.real_property[5].owner != sell_and_share) and (marriage.real_property[5].titled_together == True)) or ((marriage.real_property[5].owner != sell_and_share) and (marriage.real_property[5].titled_together == False) and (marriage.real_property[5].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties6_sign_quitclaim_plaintiff: |
+          % if len(marriage.real_property) > 5 and (((marriage.real_property[5].owner == other_parties[0]) and (marriage.real_property[5].titled_together == True)) or ((marriage.real_property[5].owner == other_parties[0]) and (marriage.real_property[5].titled_together == False) and (marriage.real_property[5].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties6_sign_quitclaim_defendant: |
+          % if len(marriage.real_property) > 5 and (((marriage.real_property[5].owner == users[0]) and (marriage.real_property[5].titled_together == True)) or ((marriage.real_property[5].owner == users[0]) and (marriage.real_property[5].titled_together == False) and (marriage.real_property[5].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties6_quitclaim_benefits_plaintiff: |
+          % if len(marriage.real_property) > 5 and (((marriage.real_property[5].owner == users[0]) and (marriage.real_property[5].titled_together == True)) or ((marriage.real_property[5].owner == users[0]) and (marriage.real_property[5].titled_together == False) and (marriage.real_property[5].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties6_quitclaim_benefits_defendant: |
+          % if len(marriage.real_property) > 5 and (((marriage.real_property[5].owner == other_parties[0]) and (marriage.real_property[5].titled_together == True)) or ((marriage.real_property[5].owner == other_parties[0]) and (marriage.real_property[5].titled_together == False) and (marriage.real_property[5].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      ### Form details page 2 ###
+      - form_id_number: ${"412/413"}
+      - page_number_first: ${""}
+      - page_number_second: ${""}
+      - real_property_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, REAL PROPERTY ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, REAL PROPERTY ADDENDUM"}
+      - docket_number1: ${docket_number}
+---
+attachment:
+  - name: Judgment addendum 3 (real property 7 to 8)
+    filename: Judgment addendum 3 (real property 7 to 8)
+    variable name: judgment_addendum_real_property_7_to_8[i]
+    pdf template file: judgment_addendum_3_real_property_7_to_8.pdf
+    fields:
+      ### Form details page 1 ###
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_county: ${the_court.address.county}
+      - docket_number: ${docket_number}
+      - judge: ${""}
+      - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${the_court.phone}
+      - plaintiffs1_name: ${plaintiffs}
+      - defendants1_name: ${defendants}
+
+      ### Real property 7 (if any) ###
+      - real_properties7_address_on_one_line: ${marriage.real_property[6].address.on_one_line() if len(marriage.real_property) > 6 else ""}
+      - real_properties7_legal_description: |
+          % if len(marriage.real_property) > 6:
+            % if len(marriage.real_property[6].desc) > 123:
+          See addendum.
+            % else:
+            ${marriage.real_property[6].desc}
+            % endif
+          % else:
+          ${""}
+          % endif
+      - real_properties7_parcel_ID: ${marriage.real_property[6].parcel_number if len(marriage.real_property) > 6 else ""}
+
+      # Ownership and costs (property 7)
+      - real_properties7_sale_awarded_plaintiff: ${len(marriage.real_property) > 6 and marriage.real_property[6].owner == users[0]}
+      - real_properties7_sale_awarded_defendant: ${len(marriage.real_property) > 6 and marriage.real_property[6].owner == other_parties[0]}
+      - real_properties7_sale_awarded_both: ${len(marriage.real_property) > 6 and marriage.real_property[6].owner == sell_and_share}
+      - real_properties7_costs_plaintiff: ${len(marriage.real_property) > 6 and marriage.real_property[6].owner == users[0]}
+      - real_properties7_costs_defendant: ${len(marriage.real_property) > 6 and marriage.real_property[6].owner == other_parties[0]}
+      - real_properties7_costs_both: ${len(marriage.real_property) > 6 and marriage.real_property[6].owner == sell_and_share}
+
+      # Equal share sale (property 7)
+      - real_properties7_sale_equal_shares: ${len(marriage.real_property) > 6 and marriage.real_property[6].owner == sell_and_share}
+
+      # Refinance logic (property 7)
+      - real_properties7_shall_refinance: |
+          % if len(marriage.real_property) > 6 and (((marriage.real_property[6].owner != sell_and_share) and (marriage.real_property[6].titled_together == True) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == True)) or ((marriage.real_property[6].owner != sell_and_share) and (marriage.real_property[6].titled_together == True) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == False) and (marriage.real_property[6].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[6].owner != sell_and_share) and (marriage.real_property[6].titled_together == False) and (marriage.real_property[6].title_award_to_named == False) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == False) and (marriage.real_property[6].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties7_refinance_plaintiff: |
+          % if len(marriage.real_property) > 6 and (((marriage.real_property[6].owner == users[0]) and (marriage.real_property[6].titled_together == True) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == True)) or ((marriage.real_property[6].owner == users[0]) and (marriage.real_property[6].titled_together == True) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == False) and (marriage.real_property[6].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[6].owner == users[0]) and (marriage.real_property[6].titled_together == False) and (marriage.real_property[6].title_award_to_named == False) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == False) and (marriage.real_property[6].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties7_refinance_defendant: |
+          % if len(marriage.real_property) > 6 and (((marriage.real_property[6].owner == other_parties[0]) and (marriage.real_property[6].titled_together == True) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == True)) or ((marriage.real_property[6].owner == other_parties[0]) and (marriage.real_property[6].titled_together == True) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == False) and (marriage.real_property[6].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[6].owner == other_parties[0]) and (marriage.real_property[6].titled_together == False) and (marriage.real_property[6].title_award_to_named == False) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == False) and (marriage.real_property[6].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties7_remove_plaintiff: |
+          % if len(marriage.real_property) > 6 and (((marriage.real_property[6].owner == other_parties[0]) and (marriage.real_property[6].titled_together == True) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == True)) or ((marriage.real_property[6].owner == other_parties[0]) and (marriage.real_property[6].titled_together == True) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == False) and (marriage.real_property[6].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[6].owner == other_parties[0]) and (marriage.real_property[6].titled_together == False) and (marriage.real_property[6].title_award_to_named == False) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == False) and (marriage.real_property[6].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif 
+      - real_properties7_remove_defendant: |
+          % if len(marriage.real_property) > 6 and (((marriage.real_property[6].owner == users[0]) and (marriage.real_property[6].titled_together == True) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == True)) or ((marriage.real_property[6].owner == users[0]) and (marriage.real_property[6].titled_together == True) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == False) and (marriage.real_property[6].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[6].owner == users[0]) and (marriage.real_property[6].titled_together == False) and (marriage.real_property[6].title_award_to_named == False) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == False) and (marriage.real_property[6].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      # Quitclaim logic (property 7)
+      - real_properties7_has_quitclaim: |
+          % if len(marriage.real_property) > 6 and (((marriage.real_property[6].owner != sell_and_share) and (marriage.real_property[6].titled_together == True)) or ((marriage.real_property[6].owner != sell_and_share) and (marriage.real_property[6].titled_together == False) and (marriage.real_property[6].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties7_sign_quitclaim_plaintiff: |
+          % if len(marriage.real_property) > 6 and (((marriage.real_property[6].owner == other_parties[0]) and (marriage.real_property[6].titled_together == True)) or ((marriage.real_property[6].owner == other_parties[0]) and (marriage.real_property[6].titled_together == False) and (marriage.real_property[6].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties7_sign_quitclaim_defendant: |
+          % if len(marriage.real_property) > 6 and (((marriage.real_property[6].owner == users[0]) and (marriage.real_property[6].titled_together == True)) or ((marriage.real_property[6].owner == users[0]) and (marriage.real_property[6].titled_together == False) and (marriage.real_property[6].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties7_quitclaim_benefits_plaintiff: |
+          % if len(marriage.real_property) > 6 and (((marriage.real_property[6].owner == users[0]) and (marriage.real_property[6].titled_together == True)) or ((marriage.real_property[6].owner == users[0]) and (marriage.real_property[6].titled_together == False) and (marriage.real_property[6].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties7_quitclaim_benefits_defendant: |
+          % if len(marriage.real_property) > 6 and (((marriage.real_property[6].owner == other_parties[0]) and (marriage.real_property[6].titled_together == True)) or ((marriage.real_property[6].owner == other_parties[0]) and (marriage.real_property[6].titled_together == False) and (marriage.real_property[6].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      ### Real property 8 (if any) ###
+      - real_properties8_address_on_one_line: ${marriage.real_property[7].address.on_one_line() if len(marriage.real_property) > 7 else ""}
+      - real_properties8_legal_description: |
+          % if len(marriage.real_property) > 7:
+            % if len(marriage.real_property[7].desc) > 123:
+          See addendum.
+            % else:
+            ${marriage.real_property[7].desc}
+            % endif
+          % else:
+          ${""}
+          % endif
+      - real_properties8_parcel_ID: ${marriage.real_property[7].parcel_number if len(marriage.real_property) > 7 else ""}
+
+      # Ownership and costs (property 8)
+      - real_properties8_sale_awarded_plaintiff: ${len(marriage.real_property) > 7 and marriage.real_property[7].owner == users[0]}
+      - real_properties8_sale_awarded_defendant: ${len(marriage.real_property) > 7 and marriage.real_property[7].owner == other_parties[0]}
+      - real_properties8_sale_awarded_both: ${len(marriage.real_property) > 7 and marriage.real_property[7].owner == sell_and_share}
+      - real_properties8_costs_plaintiff: ${len(marriage.real_property) > 7 and marriage.real_property[7].owner == users[0]}
+      - real_properties8_costs_defendant: ${len(marriage.real_property) > 7 and marriage.real_property[7].owner == other_parties[0]}
+      - real_properties8_costs_both: ${len(marriage.real_property) > 7 and marriage.real_property[7].owner == sell_and_share}
+
+      # Equal share sale (property 8)
+      - real_properties8_sale_equal_shares: ${len(marriage.real_property) > 7 and marriage.real_property[7].owner == sell_and_share}
+
+      # Refinance logic (property 8)
+      - real_properties8_shall_refinance: |
+          % if len(marriage.real_property) > 7 and (((marriage.real_property[7].owner != sell_and_share) and (marriage.real_property[7].titled_together == True) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == True)) or ((marriage.real_property[7].owner != sell_and_share) and (marriage.real_property[7].titled_together == True) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == False) and (marriage.real_property[7].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[7].owner != sell_and_share) and (marriage.real_property[7].titled_together == False) and (marriage.real_property[7].title_award_to_named == False) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == False) and (marriage.real_property[7].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties8_refinance_plaintiff: |
+          % if len(marriage.real_property) > 7 and (((marriage.real_property[7].owner == users[0]) and (marriage.real_property[7].titled_together == True) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == True)) or ((marriage.real_property[7].owner == users[0]) and (marriage.real_property[7].titled_together == True) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == False) and (marriage.real_property[7].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[7].owner == users[0]) and (marriage.real_property[7].titled_together == False) and (marriage.real_property[7].title_award_to_named == False) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == False) and (marriage.real_property[7].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties8_refinance_defendant: |
+          % if len(marriage.real_property) > 7 and (((marriage.real_property[7].owner == other_parties[0]) and (marriage.real_property[7].titled_together == True) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == True)) or ((marriage.real_property[7].owner == other_parties[0]) and (marriage.real_property[7].titled_together == True) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == False) and (marriage.real_property[7].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[7].owner == other_parties[0]) and (marriage.real_property[7].titled_together == False) and (marriage.real_property[7].title_award_to_named == False) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == False) and (marriage.real_property[7].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties8_remove_plaintiff: |
+          % if len(marriage.real_property) > 7 and (((marriage.real_property[7].owner == other_parties[0]) and (marriage.real_property[7].titled_together == True) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == True)) or ((marriage.real_property[7].owner == other_parties[0]) and (marriage.real_property[7].titled_together == True) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == False) and (marriage.real_property[7].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[7].owner == other_parties[0]) and (marriage.real_property[7].titled_together == False) and (marriage.real_property[7].title_award_to_named == False) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == False) and (marriage.real_property[7].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif 
+      - real_properties8_remove_defendant: |
+          % if len(marriage.real_property) > 7 and (((marriage.real_property[7].owner == users[0]) and (marriage.real_property[7].titled_together == True) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == True)) or ((marriage.real_property[7].owner == users[0]) and (marriage.real_property[7].titled_together == True) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == False) and (marriage.real_property[7].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[7].owner == users[0]) and (marriage.real_property[7].titled_together == False) and (marriage.real_property[7].title_award_to_named == False) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == False) and (marriage.real_property[7].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      # Quitclaim logic (property 8)
+      - real_properties8_has_quitclaim: |
+          % if len(marriage.real_property) > 7 and (((marriage.real_property[7].owner != sell_and_share) and (marriage.real_property[7].titled_together == True)) or ((marriage.real_property[7].owner != sell_and_share) and (marriage.real_property[7].titled_together == False) and (marriage.real_property[7].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties8_sign_quitclaim_plaintiff: |
+          % if len(marriage.real_property) > 7 and (((marriage.real_property[7].owner == other_parties[0]) and (marriage.real_property[7].titled_together == True)) or ((marriage.real_property[7].owner == other_parties[0]) and (marriage.real_property[7].titled_together == False) and (marriage.real_property[7].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties8_sign_quitclaim_defendant: |
+          % if len(marriage.real_property) > 7 and (((marriage.real_property[7].owner == users[0]) and (marriage.real_property[7].titled_together == True)) or ((marriage.real_property[7].owner == users[0]) and (marriage.real_property[7].titled_together == False) and (marriage.real_property[7].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties8_quitclaim_benefits_plaintiff: |
+          % if len(marriage.real_property) > 7 and (((marriage.real_property[7].owner == users[0]) and (marriage.real_property[7].titled_together == True)) or ((marriage.real_property[7].owner == users[0]) and (marriage.real_property[7].titled_together == False) and (marriage.real_property[7].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties8_quitclaim_benefits_defendant: |
+          % if len(marriage.real_property) > 7 and (((marriage.real_property[7].owner == other_parties[0]) and (marriage.real_property[7].titled_together == True)) or ((marriage.real_property[7].owner == other_parties[0]) and (marriage.real_property[7].titled_together == False) and (marriage.real_property[7].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      ### Form details page 2 ###
+      - form_id_number: ${"412/413"}
+      - page_number_first: ${""}
+      - page_number_second: ${""}
+      - real_property_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, REAL PROPERTY ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, REAL PROPERTY ADDENDUM"}
+      - docket_number1: ${docket_number}
+---
+attachment:
+  - name: Judgment addendum 3 (real property 9 to 10)
+    filename: Judgment addendum 3 (real property 9 to 10)
+    variable name: judgment_addendum_real_property_9_to_10[i]
+    pdf template file: judgment_addendum_3_real_property_9_to_10.pdf
+    fields:
+      ### Form details page 1 ###
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_county: ${the_court.address.county}
+      - docket_number: ${docket_number}
+      - judge: ${""}
+      - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${the_court.phone}
+      - plaintiffs1_name: ${plaintiffs}
+      - defendants1_name: ${defendants}
+
+      ### Real property 9 (if any) ###
+      - real_properties9_address_on_one_line: ${marriage.real_property[8].address.on_one_line() if len(marriage.real_property) > 8 else ""}
+      - real_properties9_legal_description: |
+          % if len(marriage.real_property) > 8:
+            % if len(marriage.real_property[8].desc) > 123:
+          See addendum.
+            % else:
+            ${marriage.real_property[8].desc}
+            % endif
+          % else:
+          ${""}
+          % endif
+      - real_properties9_parcel_ID: ${marriage.real_property[8].parcel_number if len(marriage.real_property) > 8 else ""}
+
+      # Ownership and costs (property 9)
+      - real_properties9_sale_awarded_plaintiff: ${len(marriage.real_property) > 8 and marriage.real_property[8].owner == users[0]}
+      - real_properties9_sale_awarded_defendant: ${len(marriage.real_property) > 8 and marriage.real_property[8].owner == other_parties[0]}
+      - real_properties9_sale_awarded_both: ${len(marriage.real_property) > 8 and marriage.real_property[8].owner == sell_and_share}
+      - real_properties9_costs_plaintiff: ${len(marriage.real_property) > 8 and marriage.real_property[8].owner == users[0]}
+      - real_properties9_costs_defendant: ${len(marriage.real_property) > 8 and marriage.real_property[8].owner == other_parties[0]}
+      - real_properties9_costs_both: ${len(marriage.real_property) > 8 and marriage.real_property[8].owner == sell_and_share}
+
+      # Equal share sale (property 9)
+      - real_properties9_sale_equal_shares: ${len(marriage.real_property) > 8 and marriage.real_property[8].owner == sell_and_share}
+
+      # Refinance logic (property 9)
+      - real_properties9_shall_refinance: |
+          % if len(marriage.real_property) > 8 and (((marriage.real_property[8].owner != sell_and_share) and (marriage.real_property[8].titled_together == True) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == True)) or ((marriage.real_property[8].owner != sell_and_share) and (marriage.real_property[8].titled_together == True) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == False) and (marriage.real_property[8].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[8].owner != sell_and_share) and (marriage.real_property[8].titled_together == False) and (marriage.real_property[8].title_award_to_named == False) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == False) and (marriage.real_property[8].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties9_refinance_plaintiff: |
+          % if len(marriage.real_property) > 8 and (((marriage.real_property[8].owner == users[0]) and (marriage.real_property[8].titled_together == True) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == True)) or ((marriage.real_property[8].owner == users[0]) and (marriage.real_property[8].titled_together == True) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == False) and (marriage.real_property[8].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[8].owner == users[0]) and (marriage.real_property[8].titled_together == False) and (marriage.real_property[8].title_award_to_named == False) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == False) and (marriage.real_property[8].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties9_refinance_defendant: |
+          % if len(marriage.real_property) > 8 and (((marriage.real_property[8].owner == other_parties[0]) and (marriage.real_property[8].titled_together == True) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == True)) or ((marriage.real_property[8].owner == other_parties[0]) and (marriage.real_property[8].titled_together == True) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == False) and (marriage.real_property[8].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[8].owner == other_parties[0]) and (marriage.real_property[8].titled_together == False) and (marriage.real_property[8].title_award_to_named == False) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == False) and (marriage.real_property[8].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties9_remove_plaintiff: |
+          % if len(marriage.real_property) > 8 and (((marriage.real_property[8].owner == other_parties[0]) and (marriage.real_property[8].titled_together == True) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == True)) or ((marriage.real_property[8].owner == other_parties[0]) and (marriage.real_property[8].titled_together == True) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == False) and (marriage.real_property[8].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[8].owner == other_parties[0]) and (marriage.real_property[8].titled_together == False) and (marriage.real_property[8].title_award_to_named == False) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == False) and (marriage.real_property[8].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif 
+      - real_properties9_remove_defendant: |
+          % if len(marriage.real_property) > 8 and (((marriage.real_property[8].owner == users[0]) and (marriage.real_property[8].titled_together == True) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == True)) or ((marriage.real_property[8].owner == users[0]) and (marriage.real_property[8].titled_together == True) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == False) and (marriage.real_property[8].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[8].owner == users[0]) and (marriage.real_property[8].titled_together == False) and (marriage.real_property[8].title_award_to_named == False) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == False) and (marriage.real_property[8].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      # Quitclaim logic (property 9)
+      - real_properties9_has_quitclaim: |
+          % if len(marriage.real_property) > 8 and (((marriage.real_property[8].owner != sell_and_share) and (marriage.real_property[8].titled_together == True)) or ((marriage.real_property[8].owner != sell_and_share) and (marriage.real_property[8].titled_together == False) and (marriage.real_property[8].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties9_sign_quitclaim_plaintiff: |
+          % if len(marriage.real_property) > 8 and (((marriage.real_property[8].owner == other_parties[0]) and (marriage.real_property[8].titled_together == True)) or ((marriage.real_property[8].owner == other_parties[0]) and (marriage.real_property[8].titled_together == False) and (marriage.real_property[8].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties9_sign_quitclaim_defendant: |
+          % if len(marriage.real_property) > 8 and (((marriage.real_property[8].owner == users[0]) and (marriage.real_property[8].titled_together == True)) or ((marriage.real_property[8].owner == users[0]) and (marriage.real_property[8].titled_together == False) and (marriage.real_property[8].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties9_quitclaim_benefits_plaintiff: |
+          % if len(marriage.real_property) > 8 and (((marriage.real_property[8].owner == users[0]) and (marriage.real_property[8].titled_together == True)) or ((marriage.real_property[8].owner == users[0]) and (marriage.real_property[8].titled_together == False) and (marriage.real_property[8].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties9_quitclaim_benefits_defendant: |
+          % if len(marriage.real_property) > 8 and (((marriage.real_property[8].owner == other_parties[0]) and (marriage.real_property[8].titled_together == True)) or ((marriage.real_property[8].owner == other_parties[0]) and (marriage.real_property[8].titled_together == False) and (marriage.real_property[8].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      ### Real property 10 (if any) ###
+      - real_properties10_address_on_one_line: ${marriage.real_property[9].address.on_one_line() if len(marriage.real_property) > 9 else ""}
+      - real_properties10_legal_description: |
+          % if len(marriage.real_property) > 9:
+            % if len(marriage.real_property[9].desc) > 123:
+          See addendum.
+            % else:
+            ${marriage.real_property[9].desc}
+            % endif
+          % else:
+          ${""}
+          % endif
+      - real_properties10_parcel_ID: ${marriage.real_property[9].parcel_number if len(marriage.real_property) > 9 else ""}
+
+      # Ownership and costs (property 10)
+      - real_properties10_sale_awarded_plaintiff: ${len(marriage.real_property) > 9 and marriage.real_property[9].owner == users[0]}
+      - real_properties10_sale_awarded_defendant: ${len(marriage.real_property) > 9 and marriage.real_property[9].owner == other_parties[0]}
+      - real_properties10_sale_awarded_both: ${len(marriage.real_property) > 9 and marriage.real_property[9].owner == sell_and_share}
+      - real_properties10_costs_plaintiff: ${len(marriage.real_property) > 9 and marriage.real_property[9].owner == users[0]}
+      - real_properties10_costs_defendant: ${len(marriage.real_property) > 9 and marriage.real_property[9].owner == other_parties[0]}
+      - real_properties10_costs_both: ${len(marriage.real_property) > 9 and marriage.real_property[9].owner == sell_and_share}
+
+      # Equal share sale (property 10)
+      - real_properties10_sale_equal_shares: ${len(marriage.real_property) > 9 and marriage.real_property[9].owner == sell_and_share}
+
+      # Refinance logic (property 10)
+      - real_properties10_shall_refinance: |
+          % if len(marriage.real_property) > 9 and (((marriage.real_property[9].owner != sell_and_share) and (marriage.real_property[9].titled_together == True) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == True)) or ((marriage.real_property[9].owner != sell_and_share) and (marriage.real_property[9].titled_together == True) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == False) and (marriage.real_property[9].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[9].owner != sell_and_share) and (marriage.real_property[9].titled_together == False) and (marriage.real_property[9].title_award_to_named == False) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == False) and (marriage.real_property[9].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties10_refinance_plaintiff: |
+          % if len(marriage.real_property) > 9 and (((marriage.real_property[9].owner == users[0]) and (marriage.real_property[9].titled_together == True) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == True)) or ((marriage.real_property[9].owner == users[0]) and (marriage.real_property[9].titled_together == True) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == False) and (marriage.real_property[9].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[9].owner == users[0]) and (marriage.real_property[9].titled_together == False) and (marriage.real_property[9].title_award_to_named == False) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == False) and (marriage.real_property[9].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties10_refinance_defendant: |
+          % if len(marriage.real_property) > 9 and (((marriage.real_property[9].owner == other_parties[0]) and (marriage.real_property[9].titled_together == True) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == True)) or ((marriage.real_property[9].owner == other_parties[0]) and (marriage.real_property[9].titled_together == True) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == False) and (marriage.real_property[9].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[9].owner == other_parties[0]) and (marriage.real_property[9].titled_together == False) and (marriage.real_property[9].title_award_to_named == False) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == False) and (marriage.real_property[9].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties10_remove_plaintiff: |
+          % if len(marriage.real_property) > 9 and (((marriage.real_property[9].owner == other_parties[0]) and (marriage.real_property[9].titled_together == True) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == True)) or ((marriage.real_property[9].owner == other_parties[0]) and (marriage.real_property[9].titled_together == True) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == False) and (marriage.real_property[9].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[9].owner == other_parties[0]) and (marriage.real_property[9].titled_together == False) and (marriage.real_property[9].title_award_to_named == False) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == False) and (marriage.real_property[9].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif 
+      - real_properties10_remove_defendant: |
+          % if len(marriage.real_property) > 9 and (((marriage.real_property[9].owner == users[0]) and (marriage.real_property[9].titled_together == True) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == True)) or ((marriage.real_property[9].owner == users[0]) and (marriage.real_property[9].titled_together == True) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == False) and (marriage.real_property[9].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[9].owner == users[0]) and (marriage.real_property[9].titled_together == False) and (marriage.real_property[9].title_award_to_named == False) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == False) and (marriage.real_property[9].mortgage_or_loan_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      # Quitclaim logic (property 10)
+      - real_properties10_has_quitclaim: |
+          % if len(marriage.real_property) > 9 and (((marriage.real_property[9].owner != sell_and_share) and (marriage.real_property[9].titled_together == True)) or ((marriage.real_property[9].owner != sell_and_share) and (marriage.real_property[9].titled_together == False) and (marriage.real_property[9].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties10_sign_quitclaim_plaintiff: |
+          % if len(marriage.real_property) > 9 and (((marriage.real_property[9].owner == other_parties[0]) and (marriage.real_property[9].titled_together == True)) or ((marriage.real_property[9].owner == other_parties[0]) and (marriage.real_property[9].titled_together == False) and (marriage.real_property[9].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties10_sign_quitclaim_defendant: |
+          % if len(marriage.real_property) > 9 and (((marriage.real_property[9].owner == users[0]) and (marriage.real_property[9].titled_together == True)) or ((marriage.real_property[9].owner == users[0]) and (marriage.real_property[9].titled_together == False) and (marriage.real_property[9].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties10_quitclaim_benefits_plaintiff: |
+          % if len(marriage.real_property) > 9 and (((marriage.real_property[9].owner == users[0]) and (marriage.real_property[9].titled_together == True)) or ((marriage.real_property[9].owner == users[0]) and (marriage.real_property[9].titled_together == False) and (marriage.real_property[9].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+      - real_properties10_quitclaim_benefits_defendant: |
+          % if len(marriage.real_property) > 9 and (((marriage.real_property[9].owner == other_parties[0]) and (marriage.real_property[9].titled_together == True)) or ((marriage.real_property[9].owner == other_parties[0]) and (marriage.real_property[9].titled_together == False) and (marriage.real_property[9].title_award_to_named == False))):
+          True
+          % else:
+          False
+          % endif
+
+      ### Form details page 2 ###
+      - form_id_number: ${"412/413"}
+      - page_number_first: ${""}
+      - page_number_second: ${""}
+      - real_property_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, REAL PROPERTY ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, REAL PROPERTY ADDENDUM"}
+      - docket_number1: ${docket_number}
+---
+attachment:
+  - name: Judgment addendum 4 (pensions)
+    filename: Judgment addendum 4 (pensions)
+    variable name: judgment_addendum_pensions[i]
+    docx template file: judgment_addendum_4_pensions.docx
+    skip undefined: True
+---
+attachment:
+  - name: Judgment addendum (overflow)
+    filename: Judgment addendum (overflow)
+    variable name: judgment_overflow_addendum[i]
+    docx template file: judgment_overflow_addendum.docx
+    skip undefined: True
+---
+### personal property and debts addendum overflow code ###
+---
+# plaintiff personal property overflow code
+code: |
+  plaintiff_personal_property_line_count = (
+      len([acc for acc in marriage.accounts if acc.owner == users[0] or acc.owner == joint]) +
+      len([pp for pp in marriage.other_pp if pp.owner == users[0]]) +
+      len([mh for mh in marriage.mobile_home if mh.owner == users[0]])
+  )
+
+  send_plaintiff_personal_property_to_addendum = plaintiff_personal_property_line_count > 9
+---
+# defendant personal property overflow code
+code: |
+  defendant_personal_property_line_count = (
+      len([acc for acc in marriage.accounts if acc.owner == other_parties[0] or acc.owner == joint]) +
+      len([pp for pp in marriage.other_pp if pp.owner == other_parties[0]]) +
+      len([mh for mh in marriage.mobile_home if mh.owner == other_parties[0]])
+  )
+
+  send_defendant_personal_property_to_addendum = defendant_personal_property_line_count > 9
+---
+# plaintiff debts overflow code
+code: |
+  plaintiff_debt_line_count = len([
+      debt for debt in marriage.debts
+      if debt.owner == users[0] or debt.owner == joint
+  ])
+
+  send_plaintiff_debts_to_addendum = plaintiff_debt_line_count > 9
+---
+# defendant debts overflow code
+code: |
+  defendant_debt_line_count = len([
+      debt for debt in marriage.debts
+      if debt.owner == other_parties[0] or debt.owner == joint
+  ])
+
+  send_defendant_debts_to_addendum = defendant_debt_line_count > 4
 ---
 # The following functions are here so that the logic can be kept consistent,
 # since these logical checks are used in multiple fields of the Judgment.
