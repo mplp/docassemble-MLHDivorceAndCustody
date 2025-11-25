@@ -24,8 +24,6 @@ code: |
   ottawa_circuit_location = "West Olive"
 ---
 # set FOC information
-# this is just a draft, not really tested yet
-# may need to call "the_foc" to load this for final docs
 code: |
   foc_index = next(court_list.filter_courts_by_2([county_choice], ['foc'], column_1='address_county', column_2='type'))[0]
   the_foc = court_list.as_court('the_foc',foc_index)
@@ -36,12 +34,14 @@ code: |
     case_label = "divorce"
     if tool_ID == "divorce_complaint":
       filing_name = "Complaint for Divorce"
+      user_ask_role = "plaintiff"
       user_party_label = "the Plaintiff"
       OP_party_label = "the Defendant"
       plaintiffs = users
       defendants = other_parties
     elif tool_ID == "divorce_answer":
       filing_name = "Counterclaim for Divorce"
+      user_ask_role = "defendant"
       user_party_label = "the Defendant"
       OP_party_label = "the Plaintiff"  
       plaintiffs = other_parties
@@ -49,11 +49,13 @@ code: |
     elif tool_ID == "JOD_only":
       filing_name = "Judgment of Divorce"
   elif tool_ID == "custody_complaint":
+    user_ask_role = "plaintiff"
     OP_label = "the Defendant"
     case_label = "custody"
     plaintiffs = users
     defendants = other_parties
   elif tool_ID == "custody_answer":
+    user_ask_role = "defendant"
     OP_label = "the Plaintiff"
     case_label = "custody"
     plaintiffs = other_parties

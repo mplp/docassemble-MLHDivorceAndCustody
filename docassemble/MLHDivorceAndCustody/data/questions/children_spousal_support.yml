@@ -112,13 +112,14 @@ code: |
       children_previous_address.gather()
 
     legal_custody_who
-    if PT_type in ["specific", "supervised"]:
-      if county_choice == "Muskegon":
+    if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]:
+      if (tool_ID == "divorce_complaint" and (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon")) or (tool_ID == "JOD_only" and county_choice == "Muskegon"):  
         Muskegon_specific_PT_info
-      if county_choice != "Muskegon":
-        specific_PT_how
-      if county_choice == "Muskegon" or (county_choice != "Muskegon" and specific_PT_how == "custom"):
         custom_PT_details
+      else:
+        specific_PT_how
+        if specific_PT_how == "custom":
+          custom_PT_details
     hague_convention_info
     child_domicile_info
     if legal_custody_who == "both":
@@ -571,6 +572,7 @@ fields:
       is: at_certain_amount
   - Describe when payments will end:: spousal_support_end_custom
     input type: area
+    maxlength: 76
     show if: 
       variable: spousal_support_end_type
       is: other
@@ -796,7 +798,7 @@ fields:
     datatype: radio
     choices: 
       - They were born before we got married.: premarital
-      - They was born after we got married.: marital
+      - They were born after we got married.: marital
     hide if:
       variable: children[i].adopted_during_marriage
       is: True
@@ -1788,19 +1790,29 @@ fields:
     show if: 
       variable: physical_custody_who
       is: both
-  - Who should have parenting time (visitation) with the children?: PT_who
+  - note: |
+      "Parenting time" is how children spend time with one or both parents. If you have sole physical custody, you will have parenting time.
+    show if: 
+      variable: physical_custody_who
+      is: user
+  - Should **${ other_parties[0] }** also have parenting time (visitation)?: PT_who
     datatype: radio
     choices: 
-      - Only me: user
-      - Both of us: both
+      - Yes: both
+      - No: user
     show if:
       variable: physical_custody_who
       is: user
-  - Who should have parenting time (visitation) with the children?: PT_who
+  - note: |
+      "Parenting time" is how children spend time with one or both parents. If ${ other_parties[0] } has sole physical custody, they will have parenting time.
+    show if: 
+      variable: physical_custody_who
+      is: other_party
+  - Should **you** also have parenting time (visitation)?: PT_who
     datatype: radio
     choices: 
-      - Only my spouse: other_party
-      - Both of us: both
+      - Yes: both
+      - No: other_party
     show if:
       variable: physical_custody_who
       is: other_party
@@ -1810,7 +1822,7 @@ fields:
       - Reasonable: reasonable
       - Specific: specific
     js show if: |
-      val("PT_who") == "both" || val("physical_custody_who") == "both"
+      val("physical_custody_who") == "both" || val("PT_who") == "both"
   - What type of parenting time do you believe is appropriate?: PT_type
     datatype: radio
     choices:
@@ -1821,14 +1833,14 @@ fields:
       val("PT_who") == "both" && val("physical_custody_who") != "both"
   - label: "If you know the name of the person or agency you want to supervise parenting time, enter it here. If you don't know, leave this blank."
     field: PT_supervisor
-    show if: 
-      variable: PT_type
-      is: supervised
+    js show if: |
+      val("PT_who") == "both" && val("PT_type") === "supervised"
     required: False
   - note: |
-      ${ collapse_template(custody_PT_definitions) }
+      ${ collapse_template(custody_definitions) }
+      ${ collapse_template(PT_definitions) }
 ---
-if: PT_type in ["specific", "supervised"] and county_choice != "Muskegon"
+if: PT_type in ["specific", "supervised"] and not (tool_ID == "divorce_complaint" and (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon")) or (tool_ID == "JOD_only" and county_choice == "Muskegon")
 id: specific parenting time options
 question: |
   Specific Parenting Time Schedules
@@ -1853,7 +1865,7 @@ fields:
       - "Use a sample schedule from my county’s Friend of the Court office (If you choose this option, you can either find the schedule on your court website or ask the Friend of the Court how to get one).": FOC_sample
 
 ---
-if: PT_type in ["specific", "supervised"] and county_choice == "Muskegon"
+if: PT_type in ["specific", "supervised"] and (tool_ID == "divorce_complaint" and (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon")) or (tool_ID == "JOD_only" and county_choice == "Muskegon")
 id: specific parenting time info
 continue button field: Muskegon_specific_PT_info
 question: |
@@ -1891,22 +1903,22 @@ content: |
   * If you and your spouse **agree** on a question, use your agreed answer.
   * If you and your spouse **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
 
-  You may have to come back to this tool later and change the custody and parenting time terms if you and your spouse change your agreement or if the judge orders terms that are different than those you enter now.  
+  You may have to come back to this tool later and change the custody and parenting time terms if you and your spouse change your agreement or if the judge orders something different.  
   % if not user_logged_in():
   You must create an account and log in to save your answers.
   % endif
   % endif
 ---
-template: custody_PT_definitions
+template: custody_definitions
 subject: |
-  What do these questions mean?
-terms:
-  noncustodial parent: |
-    The "**noncustodial parent**" is the parent who does **not** have sole or primary physical custody of the children. 
-    
-    The "custodial parent" generally refers to the parent with whom the children live most of the time.
-  
+  More information about **custody**
 content: |
+  The court can order:
+  
+  * **one parent** to have sole legal and physical custody, 
+  * joint legal and physical custody **shared between the parents,** or 
+  * a combination of the two types of custody.
+  
   ===== **Legal Custody** =====
   
   Having legal custody of your children means having the right to make important decisions about their lives, like where they go to school, what religion they are, and major medical decisions. Either parent can have sole legal custody, or parents can have joint legal custody. 
@@ -1916,24 +1928,31 @@ content: |
   If a parent has sole legal custody, that parent can make these important decisions without the other parent’s agreement.
 
   ===== **Physical Custody** =====
-  
-  Having physical custody of your children means your children will live with you at least some of the time. Either parent can have sole physical custody, or parents can have joint physical custody. 
-  
-  When parents have joint physical custody, the children take turns living with each parent. 
-  
-  If one parent has sole physical custody, the other parent will usually have regular parenting time, or “visitation,” with the children.
 
-  ===== **Parenting Time Types** =====
+  Physical custody can mean the child's primary residence, but a child often has a residence with each parent, and each parent has physical custody during the time the child is with that parent unless a court orders otherwise. 
+---
+template: PT_definitions
+subject: |
+  More information about **parenting time**
+terms:
+  noncustodial parent: |
+    The "**noncustodial parent**" is the parent who does **not** have sole or primary physical custody of the children. 
+    
+    The "custodial parent" generally refers to the parent with whom the children live most of the time.
+content: |
+  Parenting time, different from custody, is how a child spends time with each parent. It can involve a schedule of days and also opportunities for the child to have other contact with a parent virtually or by phone. 
   
-  **Reasonable**: If a judge orders “reasonable” parenting time, specific dates, times, and other conditions are left for the parents to work out. If you believe that you and your spouse can agree on parenting time arrangements, you may ask for reasonable parenting time rather than a specific parenting time schedule. However, if the judge orders reasonable parenting time, and you and your spouse can’t agree, the judge may not be able to enforce the order or judgment. You will need to return to court and ask for a specific parenting time schedule in order for the judge to enforce the judgment.
+  A parent who has less parenting time with a child than the other parent can still be a joint legal or physical custodian. Some parents might spend exactly equal amounts of parenting time with a child, but if they cannot cooperate with each other on decision-making for the child, the court can decide that one parent is the sole legal custodian.
 
-  **Specific**: If a judge orders “specific” parenting time, all of the dates, times, and conditions for visits are included in the court order. Many counties have standard parenting time schedules that you can use in your case. You can contact the Friend of the Court in the county where your case will be filed and ask if there is a standard parenting time schedule. You can also choose one of our common parenting time schedules for families that have joint physical custody, for families with school-age children, for families with children younger than school age, or for long distance parenting time of school-age children.
-
-  **Specific and supervised**: If a judge orders “specific and supervised” parenting time, all of the dates, times, and conditions for visits are included in the court order. The judge will order parenting time to be supervised by a third party – such as a relative, friend, or supervised parenting time center. Supervised parenting time may be appropriate if the {noncustodial parent} is a risk to the children. The supervisor must be willing to supervise parenting time.
+  Types of parenting time:
+  
+  * **Reasonable** parenting time means that specific dates, times, and other conditions are left for the parents to work out. If you believe that you and your spouse can agree on parenting time arrangements, you may ask for reasonable parenting time. However, if the judge orders reasonable parenting time, and you and your spouse can’t agree, the judge may not be able to enforce the order or judgment. You will need to return to court and ask for a specific parenting time schedule in order for the judge to enforce the judgment.
+  * **Specific** parenting time means that all of the dates, times, and conditions for visits are included in the court order. Many counties have standard parenting time schedules that you can use in your case. You can contact the Friend of the Court in the county where your case will be filed and ask if there is a standard parenting time schedule. You can also find sample schedules in the [Michigan Parenting Time Guideline](https://www.courts.michigan.gov/4a537f/siteassets/court-administration/standardsguidelines/foc/pt_gdlns.pdf).
+  * **Specific and supervised** parenting time means that all of the dates, times, and conditions for visits are included in the court order. The judge will order parenting time to be supervised by a third party – such as a relative, friend, or supervised parenting time center. Supervised parenting time may be appropriate if the {noncustodial parent} is a risk to the children. The supervisor must be willing to supervise parenting time.
 
 ---
 id: custom parenting time schedule
-if: county_choice == "Muskegon" or (county_choice != "Muskegon" and specific_PT_how == "custom")
+if: (tool_ID == "divorce_complaint" and (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon")) or (tool_ID == "JOD_only" and county_choice == "Muskegon") or specific_PT_how == "custom"
 question: Parenting Time Schedule
 subquestion: |
   What parenting time schedule do you want the judge to order?
@@ -2152,7 +2171,7 @@ edit:
   - included_custody_PT_order
   - has_current_custody_PT_order
   - custody_order_in_another_state_warning 
-  - children_involved_number
+#  - children_involved_number  ## think we're deleting this
       
 delete buttons: True
 confirm: True
@@ -2171,7 +2190,7 @@ edit:
   - included_custody_PT_order
   - has_current_custody_PT_order
   - custody_order_in_another_state_warning 
-  - children_involved_number
+#  - children_involved_number ## think we're deleting this
       
 delete buttons: True
 confirm: True
@@ -2320,7 +2339,7 @@ code: |
     if there_are_marital_children:
       if prior_family_cases[i].type == "divorce":
         prior_family_cases[i].included_custody_PT_order
-      if prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"]:
+      if prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other", "separate_maintenance"]:
         if prior_family_cases[i].status == "ended_with_order":
           prior_family_cases[i].included_custody_PT_order
         elif prior_family_cases[i].status in ["stayed", "pending"]:
@@ -2329,11 +2348,11 @@ code: |
           prior_family_cases[i].included_custody_PT_order
   
       if prior_family_cases[i].state != "MI":
-        if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and (prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order) or (prior_family_cases[i].status in ["stayed", "pending"] and prior_family_cases[i].has_current_custody_PT_order)):
+        if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other", "separate_maintenance"] and (prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order) or (prior_family_cases[i].status in ["stayed", "pending"] and prior_family_cases[i].has_current_custody_PT_order)):
           if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids:
             prior_family_cases[i].custody_order_in_another_state_warning 
 
-      prior_family_cases[i].children_involved_number
+      # prior_family_cases[i].children_involved_number ### think we're deleting this
 
   prior_family_cases[i].complete = True
 ---
@@ -2385,6 +2404,7 @@ fields:
 code: |
   prior_family_case_types = [
                               ['divorce', 'Divorce'],
+                              ['separate_maintenance', 'Separate Maintenance']
                               ['protection_order', 'Protection Order'],
                               ['parental_rights', 'Parental Rights (abuse/neglect)'],
                               ['adoption', 'Adoption'],
@@ -2400,6 +2420,7 @@ code: |
     prior_family_case_types.remove("['paternity', 'Paternity']", "['custody', 'Custody']")
   if tool_ID == "custody_complaint":
     prior_family_case_types.remove("['divorce', 'Divorce']")
+#TODO: when build custody, should new separate maintenance option be removed from one or both tools?
 ---
 # LHI "Prior Family Cases DLG"
 id: prior family case or order collection screen NOT JOD_only
@@ -2476,7 +2497,7 @@ fields:
 ---
 # LHI "Prior Family Cases DLG" (start at row 132)
 id: prior family case or order additional info 
-if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and prior_family_cases[i].status == "ended_with_order"
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other", "separate_maintenance"] and prior_family_cases[i].status == "ended_with_order"
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
@@ -2499,7 +2520,7 @@ fields:
 ---
 # LHI "Prior Family Cases DLG" (start at row 174)
 id: prior family case or order additional info 
-if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "paternity", "guardianship", "other"] and prior_family_cases[i].status in ["stayed", "pending"]
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "paternity", "guardianship", "other", "separate_maintenance"] and prior_family_cases[i].status in ["stayed", "pending"]
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
@@ -2519,7 +2540,7 @@ fields:
 ---
 # LHI "Prior Family Cases DLG" (start at row 151)
 id: prior family case or order additional info 
-if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "guardianship", "other"] and prior_family_cases[i].status == "dimissed"
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "guardianship", "other", "separate_maintenance"] and prior_family_cases[i].status == "dimissed"
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
@@ -2533,21 +2554,23 @@ fields:
     js show if: |
       val("prior_family_cases[i].included_custody_PT_order") === true
 ---
-code: |
-  if tool_ID == "divorce_complaint" and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order:
-    if len(children.filter(legal_parent="both")) == 1:
-      prior_family_cases[i].children_involved_number = 1
-  else:
-    prior_family_cases[i].children_involved_number = 0
----
+## TODO: Think this and all children_involved_number references can delete -- was old venue logic
+## code: |
+##   if tool_ID == "divorce_complaint" and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other", "separate_maintenance"] and prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order:
+##     if len(children.filter(legal_parent="both")) == 1:
+##       prior_family_cases[i].children_involved_number = 1
+##   else:
+##     prior_family_cases[i].children_involved_number = 0
+## ---
 # LHI "Prior Family Cases DLG" (start at row 200)--rest is in "prior family cases gather logic"
-id: number of children involved in case
-if: tool_ID == "divorce_complaint" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other"] and prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order and len(children.filter(legal_parent="both")) > 1
-question: ${ capitalize(ordinal(i)) } **family division** case or order
-subquestion: |
-  This question is about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
-fields:
-  - How many children were involved in this case?: prior_family_cases[i].children_involved_number
+##id: number of children involved in case
+##if: tool_ID == "divorce_complaint" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other", "separate_maintenance"] and prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order and len(children.filter(legal_parent="both")) > 1
+##question: ${ capitalize(ordinal(i)) } **family division** case or order
+##subquestion: |
+##  This question is about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
+##fields:
+##  - How many children were involved in this case?: prior_family_cases[i].children_involved_number
+##
 ---
 # LHI "Prior Family Cases DLG" (start at row 108)
 # not sure how much of this logic makes sense to replicate, but trying to at least record it for now

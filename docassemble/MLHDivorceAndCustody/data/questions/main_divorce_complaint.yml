@@ -189,6 +189,12 @@ code: |
     interview_order_other_party_income
     interview_order_other_party_identifying_info
     other_parties[0].has_alias
+  elif spousal_support_provisions == "user_agrees_to_pay_spousal_support":
+    if users[0].has_job:
+      users[0].job.employer.name.first
+    interview_order_user_income
+    if other_parties[0].has_job:
+      other_parties[0].job.employer.name.first
   else:
     interview_order_user_income
 
@@ -208,7 +214,7 @@ code: |
   if not marriage.living_together_yn:
     marriage.living_together_stopped_date
   
-  #### divorce venue goes here!!! must wait til we know about kids & prior cases probs use "county_choice" or convert it so that court-loading works correctly? ######
+  venue 
 
   if returning_to_finalize:
     if marriage.temporary_order:

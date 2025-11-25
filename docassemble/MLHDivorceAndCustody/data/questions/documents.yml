@@ -21,12 +21,12 @@ objects:
 ---
 if: tool_ID == "JOD_only"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, JOD_only doesn't have instructions anyway]
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[judgment_ccmlh412, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, fee_waiver_attachment, protected_pii_mc_97a_attachment], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, judgment_ccmlh412], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, except without the instructions]
 ---
 # ====================================================================
@@ -86,12 +86,12 @@ code: |
     else:
       verified_statement_foc_23_addendum.enabled = False
 ---
-# ToDo: need to handlr rerunning this in review screen if insurance edited or deleted or children changed (or use reconsider)
+# ToDo: need to handle rerunning this in review screen if insurance edited or deleted or children changed (or use reconsider)
 # this one gets triggered by the enabling logic because it's the first possible condition
 code: |
   insurance_in_addendum = False
   
-  if (users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any) and there_are_marital_children:
+  if there_are_marital_children and (users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any):
     for policy in users[0].insurance:
       if policy.covers_child.any_true() == True:
         insurance_in_addendum = True
@@ -109,6 +109,9 @@ code: |
   if tool_ID in ["divorce_complaint", "custody_complaint"]:
     child_support_services_dhs_1201d.enabled = there_are_marital_children
 ---
+code: |
+  uniform_spousal_support_order_foc10b.enabled = user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
+---
 # note fee waiver logic is largely in fee waiver tool
 code: |
   if tool_ID in ["divorce_complaint", "custody_complaint"]:
@@ -120,6 +123,18 @@ code: |
   else:
     fee_waiver_attachment.enabled = False
     protected_pii_mc_97a_attachment.enabled = False
+---
+code: |
+  foc_100_full.enabled = there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support" or (tool_ID == "divorce_complaint" and returning_to_finalize and marriage.temporary_order and marriage.temporary_order_changed) or (tool_ID == "JOD_only" and marriage.temporary_order and marriage.temporary_order_changed)
+  if foc_100_full.enabled:
+    foc_100_main.enabled = True
+    foc_100_attachment.enabled = (len(children.filter(legal_parent="both")) > 4) or (len(users[0].insurance) > 5) or (len(other_parties[0].insurance) > 5) or children_now_live_with_which_parent == "both"
+---
+code: |
+  foc_10_full.enabled = there_are_marital_children
+  if foc_10_full.enabled:
+    foc_10_main.enabled = True
+    foc_10_attachment.enabled = len(children.filter(legal_parent="both")) > 5
 ---
 # ====================================================================
 ## specific form objects and attachment blocks
@@ -670,9 +685,9 @@ attachment:
           % endif     
       - mothers1_phone_number: |
           % if users[0].gender == "male" and other_parties[0].gender == "female":
-          ${ other_parties[0].phone_number }
+          ${ phone_number_formatted(other_parties[0].phone_number) }
           % else:
-          ${ users[0].phone_number }
+          ${ phone_number_formatted(users[0].phone_number) }
           % endif     
       - fathers1_name: |
           % if users[0].gender == "male" and other_parties[0].gender == "female":
@@ -704,9 +719,9 @@ attachment:
           % endif   
       - fathers1_phone_number: | 
           % if users[0].gender == "male" and other_parties[0].gender == "female":
-          ${ users[0].phone_number }
+          ${ phone_number_formatted(users[0].phone_number) }
           % else:
-          ${ other_parties[0].phone_number }
+          ${ phone_number_formatted(other_parties[0].phone_number) }
           % endif   
       - confidential_contact_info_yes: ${ confidential_contact_info_yn }
       - confidential_contact_info_no: ${ True if not confidential_contact_info_yn else False }
@@ -734,6 +749,161 @@ attachment:
           % endif
       - pursuant_to: |
           % if MLH_esign:
+          ${ MLH_esign_tag }
+          % else:
+          ${ '' }
+          % endif
+---
+# --------------------------------------------------------------------
+## Uniform Spousal Support Order FOC10b
+# --------------------------------------------------------------------
+---
+objects:
+  - uniform_spousal_support_order_foc10b: ALDocument.using(title="Uniform Spousal Support Order - FOC 10b", filename="Uniform Spousal Support Order - FOC 10b")
+---
+attachment:
+  - name: Uniform Spousal Support Order - FOC 10b
+    filename: Uniform Spousal Support Order - FOC 10b
+    variable name: uniform_spousal_support_order_foc10b[i]
+    pdf template file: uniform_spousal_support_order_foc10b.pdf
+    editable: False
+    fields:
+      - trial_court_circuit: ${ the_court.number }
+      - trial_court_address_county: ${ county_choice.upper() }
+      - docket_number: ${ docket_number }
+      - docket_number__1: ${ docket_number }
+      - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+      - trial_court_phone_number: ${ the_court.phone }
+      - plaintiff_block: |
+          ${ plaintiffs[0].name_full() }
+          ${ plaintiffs[0].address.line_one() }
+          ${ plaintiffs[0].address.line_two() }
+          ${ word("Does not have phone") if plaintiffs[0].no_phone_number else plaintiffs[0].phone_numbers() }
+      - defendant_block: |
+          ${ defendants[0].name_full() }
+          ${ defendants[0].address.line_one() }
+          ${ defendants[0].address.line_two() }
+          ${ word("Does not have phone") if defendants[0].no_phone_number else defendants[0].phone_numbers() }
+      - plaintiffs_attorney_block: |
+          % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not other_parties[0].has_attorney):
+          Self-represented
+          % elif other_parties[0].has_attorney:
+          ${ plaintiffs[0].attorney.name_full() }
+          ${ plaintiffs[0].attorney.address.line_one() }
+          ${ plaintiffs[0].attorney.address.line_two() }
+          ${ word("Does not have phone") if plaintiffs[0].attorney.no_phone_number else plaintiffs[0].attorney.phone_numbers() }
+          % endif
+      - defendants_attorney_block: |
+          % if user_ask_role == "defendant" or (tool_ID == "JOD_only" and user_ask_role == "plaintiff" and not other_parties[0].has_attorney):
+          Self-represented
+          % elif other_parties[0].has_attorney:
+          ${ defendants[0].attorney.name_full() }
+          ${ defendants[0].attorney.address.line_one() }
+          ${ defendants[0].attorney.address.line_two() }
+          ${ word("Does not have phone") if defendants[0].attorney.no_phone_number else defendants[0].attorney.phone_numbers() }
+          % endif
+      - plaintiff_employer_block: |
+          % if plaintiffs[0].has_job:
+          ${ plaintiffs[0].job.employer.name.first }
+          ${ plaintiffs[0].job.employer.address.line_one() }
+          ${ plaintiffs[0].job.employer.address.line_two() }
+          ${ word("Phone unknown.") if plaintiffs[0].job.employer.phone == "" else users[0].job.employer.phone }
+          % endif
+      - defendant_employer_block: |
+          % if defendants[0].has_job:
+          ${ defendants[0].job.employer.name.first }
+          ${ defendants[0].job.employer.address.line_one() }
+          ${ defendants[0].job.employer.address.line_two() }
+          ${ word("Phone unknown.") if defendants[0].job.employer.phone == "" else defendants[0].job.employer.phone }
+          % endif
+      # - order_entered_after_hearing: 
+      # - order_entered_stipulation:
+      # - standard_provisions_modified:
+      - spousal_support_payer_name: |
+          % if user_wants_post_divorce_support:
+          ${ other_parties[0] }
+          % elif spousal_support_provisions == "user_agrees_to_pay_spousal_support":
+          ${ users[0] }
+          % endif
+      - spousal_support_payee_name: |
+          % if user_wants_post_divorce_support:
+          ${ users[0] }
+          % elif spousal_support_provisions == "user_agrees_to_pay_spousal_support":
+          ${ other_parties[0] }
+          % endif
+      - spousal_support_monthly_amount: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
+          ${ currency(spousal_support_amount, symbol="") } 
+          % endif
+      - spousal_support_effective_date: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
+          ${ format_date(spousal_support_start_date, format='M/d/yyyy') }
+          % endif
+      - spousal_support_ends_on_date: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
+          ${ True if spousal_support_end_type == "at_certain_date" else False }
+          % endif 
+      - ending_date: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"] and spousal_support_end_type == "at_certain_date":
+          ${ format_date(spousal_support_end_date, format='M/d/yyyy') }
+          % endif
+      - spousal_support_ends_on_amount: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
+          ${ True if spousal_support_end_type == "at_certain_amount" else False }
+          % endif  
+      - ending_amount: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"] and spousal_support_end_type == "at_certain_amount":
+          ${ currency(spousal_support_end_amount, symbol="") }
+          % endif
+      - spousal_support_ends_on_remarriage: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
+          ${ True if spousal_support_end_type == "at_recipient_marriage" else False }
+          % endif   
+      - spousal_support_ends_on_payer_death: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
+          ${ True if spousal_support_end_type == "at_death" else False }
+          % endif
+      - spousal_support_ends_on_other: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
+          ${ True if spousal_support_end_type == "other" else False }
+          % endif 
+      # - other_end_point_explanation_line_1:
+      - other_end_point_explanation_line_2: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"] and spousal_support_end_type == "other":
+          ${ spousal_support_end_custom }
+          % endif
+      - plaintiffs0_signature: |
+          % if user_ask_role == "plaintiff" and MLH_esign:
+          /s/ ${ users[0].name_full() }
+          % else:
+          ${ '' }
+          % endif
+      - signature_date_plaintiffs0: |
+          % if user_ask_role == "plaintiff" and MLH_esign:
+          ${ format_date(signature_date, format='M/d/yyyy') }
+          % else:
+          ${ '' }
+          % endif
+      - pursuant_to_plaintiff: |
+          % if user_ask_role == "plaintiff" and MLH_esign:
+          ${ MLH_esign_tag }
+          % else:
+          ${ '' }
+          % endif
+      - defendants0_signature: |
+          % if user_ask_role == "defendant" and MLH_esign:
+          /s/ ${ users[0].name_full() }
+          % else:
+          ${ '' }
+          % endif
+      - signature_date_defendants0: |
+          % if user_ask_role == "defendant" and MLH_esign:
+          ${ format_date(signature_date, format='M/d/yyyy') }
+          % else:
+          ${ '' }
+          % endif
+      - pursuant_to_defendant: |
+          % if user_ask_role == "defendant" and MLH_esign:
           ${ MLH_esign_tag }
           % else:
           ${ '' }
@@ -775,11 +945,11 @@ attachment:
       - defendants_block: |
           ${defendants}
           ${defendants[0].address.on_one_line()}
-          ${word("Does not have phone") if defendants[0].no_phone_number else defendants[0].phone_numbers()}
+          ${word("Does not have phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
       - plaintiffs_block: |
           ${plaintiffs}
           ${plaintiffs[0].address.on_one_line()}
-          ${word("Does not have phone") if plaintiffs[0].no_phone_number else plaintiffs[0].phone_numbers()}
+          ${word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
       - plaintiffs1_name: ${plaintiffs}
       - defendants1_name: ${defendants}
       - spousal_support_none: Yes
@@ -927,6 +1097,781 @@ attachment:
           % endif
       - form_id_number: ${"412/413"}
       - page_number: ${""}
+# --------------------------------------------------------------------
+## Judgment Information FOC 100 and Attachments
+# --------------------------------------------------------------------
+---
+objects:
+  - foc_100_full: ALDocumentBundle.using(elements=[foc_100_main, foc_100_attachment], filename="Judgment Information - FOC 100", title="Judgment Information - FOC 100")
+---
+objects:
+  - foc_100_main: ALDocument.using(title="Judgment Information", filename="Judgment Information", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+  - foc_100_attachment: ALDocument.using(title="Judgment Information Addendum", filename="Judgment Information Addendum", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
+attachment:
+  name: Judgment Information
+  variable name: foc_100_main[i]
+  skip undefined: True
+  editable: False
+  pdf template file: judgment_information_foc_100.pdf
+  fields:
+    - trial_court: ${ the_court.number }
+    - trial_court_county: ${ county_choice.upper() }
+    - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+    - trial_court_phone_number: ${ the_court.phone }
+    - case_number_1: ${ docket_number }
+    - case_number_2: ${ docket_number }
+    - previous_info_changed: |
+        % if tool_ID == "JOD_only":
+        ${ True if marriage.temporary_order and marriage.temporary_order_changed else False }
+        % elif tool_ID == "divorce_complaint":
+        ${ True if returning_to_finalize and marriage.temporary_order and marriage.temporary_order_changed else False }
+        % endif
+    - previous_info_unchanged: |
+        % if tool_ID == "JOD_only":
+        ${ True if marriage.temporary_order and not marriage.temporary_order_changed else False }
+        % elif tool_ID == "divorce_complaint":
+        ${ True if returning_to_finalize and marriage.temporary_order and not marriage.temporary_order_changed else False }
+        % endif
+    - signature_date: |
+        % if (tool_ID == "JOD_only" and marriage.temporary_order and MLH_esign) or (tool_ID == "divorce_complaint" and returning_to_finalize and marriage.temporary_order and MLH_esign):
+        ${ signature_date }
+        % endif
+    - signature: |
+        % if (tool_ID == "JOD_only" and marriage.temporary_order and MLH_esign) or (tool_ID == "divorce_complaint" and returning_to_finalize and marriage.temporary_order and MLH_esign):
+        /s/ ${ users[0].name_full() }
+        % else:
+        ${ '' }
+        % endif
+    - pursuant_to: |
+        % if (tool_ID == "JOD_only" and marriage.temporary_order and MLH_esign) or (tool_ID == "divorce_complaint" and returning_to_finalize and marriage.temporary_order and MLH_esign):
+        ${ MLH_esign_tag }
+        % else:
+        ${ '' }
+        % endif
+    - plaintiff_name: ${plaintiffs[0].name_full()}
+    - plaintiff_address: |
+        ${ plaintiffs[0].address.line_one() }
+        ${ plaintiffs[0].address.line_two() }
+    - defendant_name: ${defendants[0].name_full()}
+    - defendant_address: |
+        ${ defendants[0].address.line_one() }
+        ${ defendants[0].address.line_two() }
+    - plaintiff_ssn: ${plaintiffs[0].ssn}
+    - plaintiff_phone: ${ word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
+    - defendant_ssn: ${defendants[0].ssn}
+    - defendant_phone: ${ word("Unknown phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
+    - plaintiff_email: ${ plaintiffs[0].email }
+    - defendant_email: ${ defendants[0].email }
+    - plaintiff_employer_block: |
+        % if plaintiffs[0].has_job:
+        ${ plaintiffs[0].job.employer.name.first }
+        % if plaintiffs[0].job.employer.address.address != "" or plaintiffs[0].job.employer.address.city != "":
+        ${ plaintiffs[0].job.employer.address.line_one() }
+        ${ plaintiffs[0].job.employer.address.line_two() }
+        % endif
+        ${ phone_number_formatted(plaintiffs[0].job.employer.phone) if plaintiffs[0].job.employer.phone != "" else "" } ${ "" if plaintiffs[0].job.FEIN == "" else "  FEIN: " + plaintiffs[0].job.FEIN }
+        % endif
+    - defendant_employer_block: |
+        % if defendants[0].has_job:
+        ${ defendants[0].job.employer.name.first }
+        % if defendants[0].job.employer.address.address != "" or defendants[0].job.employer.address.city != "":
+        ${ defendants[0].job.employer.address.line_one() }
+        ${ defendants[0].job.employer.address.line_two() }
+        % endif
+        ${ phone_number_formatted(defendants[0].job.employer.phone) if defendants[0].job.employer.phone != "" else "" } ${ "" if defendants[0].job.FEIN == "" else "  FEIN: " + defendants[0].job.FEIN }
+        % endif
+    - plaintiff_drivers_license_and_state: |
+        ${ plaintiffs[0].license_number + " " + plaintiffs[0].license_state }
+    - defendant_drivers_license_and_state: |
+        ${ defendants[0].license_number + " " + defendants[0].license_state }
+    - plaintiff_occupational_block: |
+        % if plaintiffs[0].has_professional_license:
+        % if plaintiffs[0].professional_license_number != "":
+        License no.: ${ plaintiffs[0].professional_license_number }
+        % else:
+        License no: Not provided
+        % endif
+        % if plaintiffs[0].professional_license_type != "":
+        Type: ${ plaintiffs[0].professional_license_type }
+        % else:
+        Type: Not provided
+        % endif
+        % if plaintiffs[0].professional_license_state != "":
+        Issuing state: ${ plaintiffs[0].professional_license_state }
+        % else:
+        Issuing state: Not provided
+        % endif
+        % if plaintiffs[0].professional_license_date is not None:
+        Date: ${ plaintiffs[0].professional_license_date }
+        % else:
+        Date: Not provided
+        % endif
+        % endif
+    - defendant_occupational_block: |
+        % if defendants[0].has_professional_license:
+        % if defendants[0].professional_license_number != "":
+        License no.: ${ defendants[0].professional_license_number }
+        % else:
+        License no: Not provided
+        % endif
+        % if defendants[0].professional_license_type != "":
+        Type: ${ defendants[0].professional_license_type }
+        % else:
+        Type: Not provided
+        % endif
+        % if defendants[0].professional_license_state != "":
+        Issuing state: ${ defendants[0].professional_license_state }
+        % else:
+        Issuing state: Not provided
+        % endif
+        % if defendants[0].professional_license_date is not None:
+        Date: ${ defendants[0].professional_license_date }
+        % else:
+        Date: Not provided
+        % endif
+        % endif
+    - children1: ${ children.filter(legal_parent="both")[0].name.full() }
+    - children2: ${ children.filter(legal_parent="both")[1].name.full() }
+    - children3: ${ children.filter(legal_parent="both")[2].name.full() }
+    - children4: ${ children.filter(legal_parent="both")[3].name.full() }
+    - children1_ssn: ${ children.filter(legal_parent="both")[0].ssn }
+    - children2_ssn: ${ children.filter(legal_parent="both")[1].ssn }
+    - children3_ssn: ${ children.filter(legal_parent="both")[2].ssn }
+    - children4_ssn: |
+        % if len(children.filter(legal_parent="both")) > 3:
+        ${ children.filter(legal_parent="both")[3].ssn }
+        % endif
+    - children1_birthdate: ${ format_date(children.filter(legal_parent="both")[0].birthdate, format='MM/dd/yyyy') }
+    - children2_birthdate: ${ format_date(children.filter(legal_parent="both")[1].birthdate, format='MM/dd/yyyy') }
+    - children3_birthdate: ${ format_date(children.filter(legal_parent="both")[2].birthdate, format='MM/dd/yyyy') }
+    - children4_birthdate: ${ format_date(children.filter(legal_parent="both")[3].birthdate, format='MM/dd/yyyy') }
+    - children1_physical_custody_provisions: |
+        % if len(children.filter(legal_parent="both")) > 0:
+        % if physical_custody_who == "both":
+        J
+        % elif physical_custody_who == "user":
+        % if user_ask_role == "plaintiff":
+        P
+        % else:
+        D 
+        % endif
+        % elif physical_custody_who == "other_party":
+        % if user_ask_role == "plaintiff":
+        D
+        % else:
+        P 
+        % endif
+        % endif
+        % endif
+    - children2_physical_custody_provisions: |
+        % if len(children.filter(legal_parent="both")) > 1:
+        % if physical_custody_who == "both":
+        J
+        % elif physical_custody_who == "user":
+        % if user_ask_role == "plaintiff":
+        P
+        % else:
+        D 
+        % endif
+        % elif physical_custody_who == "other_party":
+        % if user_ask_role == "plaintiff":
+        D
+        % else:
+        P 
+        % endif
+        % endif
+        % endif
+    - children3_physical_custody_provisions: |
+        % if len(children.filter(legal_parent="both")) > 2:
+        % if physical_custody_who == "both":
+        J
+        % elif physical_custody_who == "user":
+        % if user_ask_role == "plaintiff":
+        P
+        % else:
+        D 
+        % endif
+        % elif physical_custody_who == "other_party":
+        % if user_ask_role == "plaintiff":
+        D
+        % else:
+        P 
+        % endif
+        % endif
+        % endif
+    - children4_physical_custody_provisions: |
+        % if len(children.filter(legal_parent="both")) > 3:
+        % if physical_custody_who == "both":
+        J
+        % elif physical_custody_who == "user":
+        % if user_ask_role == "plaintiff":
+        P
+        % else:
+        D 
+        % endif
+        % elif physical_custody_who == "other_party":
+        % if user_ask_role == "plaintiff":
+        D
+        % else:
+        P 
+        % endif
+        % endif
+        % endif
+    - children1_address: |
+        % if len(children.filter(legal_parent="both")) > 0:
+        % if children_now_live_with_which_parent == "both":
+        See addendum for children's addresses.
+        % elif children_now_live_with_which_parent == "users[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[0].lives_with == "users[0]"):
+        % if confidential_contact_info_yn:
+        Confidential
+        % else:
+        ${ users[0].address.line_one() }
+        ${ users[0].address.line_two() }
+        % endif
+        % elif children_now_live_with_which_parent == "other_parties[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[0].lives_with == "other_parties[0]"):
+        ${ other_parties[0].address.line_one() }
+        ${ other_parties[0].address.line_two() }
+        % endif
+        % endif
+    - children2_address: |
+        % if len(children.filter(legal_parent="both")) > 1:
+        % if children_now_live_with_which_parent == "both":
+        See addendum for children's addresses.
+        % elif children_now_live_with_which_parent == "users[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[1].lives_with == "users[0]"):
+        % if confidential_contact_info_yn:
+        Confidential
+        % else:
+        ${ users[0].address.line_one() }
+        ${ users[0].address.line_two() }
+        % endif
+        % elif children_now_live_with_which_parent == "other_parties[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[1].lives_with == "other_parties[0]"):
+        ${ other_parties[0].address.line_one() }
+        ${ other_parties[0].address.line_two() }
+        % endif
+        % endif
+    - children3_address: |
+        % if len(children.filter(legal_parent="both")) > 2:
+        % if children_now_live_with_which_parent == "both":
+        See addendum for children's addresses.
+        % elif children_now_live_with_which_parent == "users[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[2].lives_with == "users[0]"):
+        % if confidential_contact_info_yn:
+        Confidential
+        % else:
+        ${ users[0].address.line_one() }
+        ${ users[0].address.line_two() }
+        % endif
+        % elif children_now_live_with_which_parent == "other_parties[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[2].lives_with == "other_parties[0]"):
+        ${ other_parties[0].address.line_one() }
+        ${ other_parties[0].address.line_two() }
+        % endif
+        % endif
+    - children4_address: |
+        % if len(children.filter(legal_parent="both")) > 3:
+        % if children_now_live_with_which_parent == "both":
+        See addendum for children's addresses.
+        % elif children_now_live_with_which_parent == "users[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[4].lives_with == "users[0]"):
+        % if confidential_contact_info_yn:
+        Confidential
+        % else:
+        ${ users[0].address.line_one() }
+        ${ users[0].address.line_two() }
+        % endif
+        % elif children_now_live_with_which_parent == "other_parties[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[4].lives_with == "other_parties[0]"):
+        ${ other_parties[0].address.line_one() }
+        ${ other_parties[0].address.line_two() }
+        % endif
+        % endif
+    - children1_legal_custody_provisions: |
+        % if len(children.filter(legal_parent="both")) > 0:
+        % if legal_custody_who == "both":
+        J
+        % elif legal_custody_who == "user":
+        % if user_ask_role == "plaintiff":
+        P
+        % else:
+        D 
+        % endif
+        % elif legal_custody_who == "other_party":
+        % if user_ask_role == "plaintiff":
+        D
+        % else:
+        P 
+        % endif
+        % endif
+        % endif
+    - children2_legal_custody_provisions: |
+        % if len(children.filter(legal_parent="both")) > 1:
+        % if legal_custody_who == "both":
+        J
+        % elif legal_custody_who == "user":
+        % if user_ask_role == "plaintiff":
+        P
+        % else:
+        D 
+        % endif
+        % elif legal_custody_who == "other_party":
+        % if user_ask_role == "plaintiff":
+        D
+        % else:
+        P 
+        % endif
+        % endif
+        % endif
+    - children3_legal_custody_provisions: |
+        % if len(children.filter(legal_parent="both")) > 2:
+        % if legal_custody_who == "both":
+        J
+        % elif legal_custody_who == "user":
+        % if user_ask_role == "plaintiff":
+        P
+        % else:
+        D 
+        % endif
+        % elif legal_custody_who == "other_party":
+        % if user_ask_role == "plaintiff":
+        D
+        % else:
+        P 
+        % endif
+        % endif
+        % endif
+    - children4_legal_custody_provisions: |
+        % if len(children.filter(legal_parent="both")) > 3:
+        % if legal_custody_who == "both":
+        J
+        % elif legal_custody_who == "user":
+        % if user_ask_role == "plaintiff":
+        P
+        % else:
+        D 
+        % endif
+        % elif legal_custody_who == "other_party":
+        % if user_ask_role == "plaintiff":
+        D
+        % else:
+        P 
+        % endif
+        % endif
+        % endif
+    - children_overflow_message: |
+        % if len(children.filter(legal_parent="both")) > 4:
+        See addendum for additional children.
+        % endif
+    - support_provisions_stated: ${ True }
+    - plaintiff_insurance_provider1_name_address: |
+        ${ plaintiffs[0].insurance[0].company_name }
+        ${ plaintiffs[0].insurance[0].company_address }
+    - plaintiff_insurance_provider2_name_address: |
+        ${ plaintiffs[0].insurance[1].company_name }
+        ${ plaintiffs[0].insurance[1].company_address }
+    - plaintiff_insurance_provider3_name_address: |
+        ${ plaintiffs[0].insurance[2].company_name }
+        ${ plaintiffs[0].insurance[2].company_address }
+    - plaintiff_insurance_provider4_name_address: |
+        ${ plaintiffs[0].insurance[3].company_name }
+        ${ plaintiffs[0].insurance[3].company_address }
+    - plaintiff_insurance_provider5_name_address: |
+        ${ plaintiffs[0].insurance[4].company_name }
+        ${ plaintiffs[0].insurance[4].company_address }
+    - plaintiff_insurance_provider1_policy_group_num: ${ plaintiffs[0].insurance[0].policy_number }
+    - plaintiff_insurance_provider2_policy_group_num: ${ plaintiffs[0].insurance[1].policy_number }
+    - plaintiff_insurance_provider3_policy_group_num: ${ plaintiffs[0].insurance[2].policy_number }
+    - plaintiff_insurance_provider4_policy_group_num: ${ plaintiffs[0].insurance[3].policy_number }
+    - plaintiff_insurance_provider5_policy_group_num: ${ plaintiffs[0].insurance[4].policy_number }
+    - plaintiff_insurance_provider1_cert_num: ${ plaintiffs[0].insurance[0].certificate_number }
+    - plaintiff_insurance_provider2_cert_num: ${ plaintiffs[0].insurance[1].certificate_number }
+    - plaintiff_insurance_provider3_cert_num: ${ plaintiffs[0].insurance[2].certificate_number }
+    - plaintiff_insurance_provider4_cert_num: ${ plaintiffs[0].insurance[3].certificate_number }
+    - plaintiff_insurance_provider5_cert_num: ${ plaintiffs[0].insurance[4].certificate_number }
+    - plaintiff_insurance_provider1_children: ${ comma_and_list(plaintiffs[0].insurance[0].covers_child.true_values()) }
+    - plaintiff_insurance_provider2_children: ${ comma_and_list(plaintiffs[0].insurance[1].covers_child.true_values()) }
+    - plaintiff_insurance_provider3_children: ${ comma_and_list(plaintiffs[0].insurance[2].covers_child.true_values()) }
+    - plaintiff_insurance_provider4_children: ${ comma_and_list(plaintiffs[0].insurance[3].covers_child.true_values()) }
+    - plaintiff_insurance_provider5_children: ${ comma_and_list(plaintiffs[0].insurance[4].covers_child.true_values()) }
+    - plaintiff_insurance_provider1_medical: |
+        % if plaintiffs[0].insurance[0].coverage_type['medical']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider2_medical: |
+        % if plaintiffs[0].insurance[1].coverage_type['medical']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider3_medical: |
+        % if plaintiffs[0].insurance[2].coverage_type['medical']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider4_medical: |
+        % if plaintiffs[0].insurance[3].coverage_type['medical']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider5_medical: |
+        % if plaintiffs[0].insurance[4].coverage_type['medical']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider1_dental: |
+        % if plaintiffs[0].insurance[0].coverage_type['dental']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider2_dental: |
+        % if plaintiffs[0].insurance[1].coverage_type['dental']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider3_dental: |
+        % if plaintiffs[0].insurance[2].coverage_type['dental']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider4_dental: |
+        % if plaintiffs[0].insurance[3].coverage_type['dental']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider5_dental: |
+        % if plaintiffs[0].insurance[4].coverage_type['dental']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider1_optical: |
+        % if plaintiffs[0].insurance[0].coverage_type['optical/vision']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider2_optical: |
+        % if plaintiffs[0].insurance[1].coverage_type['optical/vision']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider3_optical: |
+        % if plaintiffs[0].insurance[2].coverage_type['optical/vision']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider4_optical: |
+        % if plaintiffs[0].insurance[3].coverage_type['optical/vision']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider5_optical: |
+        % if plaintiffs[0].insurance[4].coverage_type['optical/vision']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider1_other: |
+        % if plaintiffs[0].insurance[0].coverage_type['other']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider2_other: |
+        % if plaintiffs[0].insurance[1].coverage_type['other']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider3_other: |
+        % if plaintiffs[0].insurance[2].coverage_type['other']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider4_other: |
+        % if plaintiffs[0].insurance[3].coverage_type['other']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_provider5_other: |
+        % if plaintiffs[0].insurance[4].coverage_type['other']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - plaintiff_insurance_overflow_message: |
+        % if len(plaintiffs[0].insurance) > 5:
+        See addendum for additional insurance information.
+        % endif
+    - defendant_insurance_provider1_name_address: |
+        ${ defendants[0].insurance[0].company_name }
+        ${ defendants[0].insurance[0].company_address }
+    - defendant_insurance_provider2_name_address: |
+        ${ defendants[0].insurance[1].company_name }
+        ${ defendants[0].insurance[1].company_address }
+    - defendant_insurance_provider3_name_address: |
+        ${ defendants[0].insurance[2].company_name }
+        ${ defendants[0].insurance[2].company_address }
+    - defendant_insurance_provider4_name_address: |
+        ${ defendants[0].insurance[3].company_name }
+        ${ defendants[0].insurance[3].company_address }
+    - defendant_insurance_provider5_name_address: |
+        ${ defendants[0].insurance[4].company_name }
+        ${ defendants[0].insurance[4].company_address }
+    - defendant_insurance_provider1_policy_group_num: ${ defendants[0].insurance[0].policy_number }
+    - defendant_insurance_provider2_policy_group_num: ${ defendants[0].insurance[1].policy_number }
+    - defendant_insurance_provider3_policy_group_num: ${ defendants[0].insurance[2].policy_number }
+    - defendant_insurance_provider4_policy_group_num: ${ defendants[0].insurance[3].policy_number }
+    - defendant_insurance_provider5_policy_group_num: ${ defendants[0].insurance[4].policy_number }
+    - defendant_insurance_provider1_cert_num: ${ defendants[0].insurance[0].certificate_number }
+    - defendant_insurance_provider2_cert_num: ${ defendants[0].insurance[1].certificate_number }
+    - defendant_insurance_provider3_cert_num: ${ defendants[0].insurance[2].certificate_number }
+    - defendant_insurance_provider4_cert_num: ${ defendants[0].insurance[3].certificate_number }
+    - defendant_insurance_provider5_cert_num: ${ defendants[0].insurance[4].certificate_number }
+    - defendant_insurance_provider1_children: ${ comma_and_list(defendants[0].insurance[0].covers_child.true_values()) }
+    - defendant_insurance_provider2_children: ${ comma_and_list(defendants[0].insurance[1].covers_child.true_values()) }
+    - defendant_insurance_provider3_children: ${ comma_and_list(defendants[0].insurance[2].covers_child.true_values()) }
+    - defendant_insurance_provider4_children: ${ comma_and_list(defendants[0].insurance[3].covers_child.true_values()) }
+    - defendant_insurance_provider5_children: ${ comma_and_list(defendants[0].insurance[4].covers_child.true_values()) }
+    - defendant_insurance_provider1_medical: |
+        % if defendants[0].insurance[0].coverage_type['medical']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider2_medical: |
+        % if defendants[0].insurance[1].coverage_type['medical']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider3_medical: |
+        % if defendants[0].insurance[2].coverage_type['medical']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider4_medical: |
+        % if defendants[0].insurance[3].coverage_type['medical']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider5_medical: |
+        % if defendants[0].insurance[4].coverage_type['medical']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider1_dental: |
+        % if defendants[0].insurance[0].coverage_type['dental']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider2_dental: |
+        % if defendants[0].insurance[1].coverage_type['dental']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider3_dental: |
+        % if defendants[0].insurance[2].coverage_type['dental']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider4_dental: |
+        % if defendants[0].insurance[3].coverage_type['dental']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider5_dental: |
+        % if defendants[0].insurance[4].coverage_type['dental']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider1_optical: |
+        % if defendants[0].insurance[0].coverage_type['optical/vision']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider2_optical: |
+        % if defendants[0].insurance[1].coverage_type['optical/vision']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider3_optical: |
+        % if defendants[0].insurance[2].coverage_type['optical/vision']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider4_optical: |
+        % if defendants[0].insurance[3].coverage_type['optical/vision']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider5_optical: |
+        % if defendants[0].insurance[4].coverage_type['optical/vision']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider1_other: |
+        % if defendants[0].insurance[0].coverage_type['other']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider2_other: |
+        % if defendants[0].insurance[1].coverage_type['other']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider3_other: |
+        % if defendants[0].insurance[2].coverage_type['other']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider4_other: |
+        % if defendants[0].insurance[3].coverage_type['other']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_provider5_other: |
+        % if defendants[0].insurance[4].coverage_type['other']:
+        ${ True }
+        % else:
+        ${ False }
+        % endif
+    - defendant_insurance_overflow_message: |
+        % if len(defendants[0].insurance) > 5:
+        See addendum for additional insurance information.
+        % endif
+---
+attachments:
+  name: Judgment Information Addendum
+  filename: Judgment Information Addendum
+  docx template file: judgment_information_foc_100_attachment.docx
+  variable name: foc_100_attachment[i]
+  skip undefined: True
+  valid formats:
+    - pdf
+---
+# --------------------------------------------------------------------
+## Uniform Child Support Order FOC 10 and Attachments
+# --------------------------------------------------------------------
+---
+objects:
+  - foc_10_full: ALDocumentBundle.using(elements=[foc_10_main, foc_10_attachment], filename="Uniform Child Support Order - FOC 10", title="Uniform Child Support Order - FOC 10")
+---
+objects:
+  - foc_10_main: ALDocument.using(title="Uniform Child Support Order", filename="Uniform Child Support Order", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+  - foc_10_attachment: ALDocument.using(title="Uniform Child Support Order Addendum", filename="Uniform Child Support Order Addendum", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
+attachment:
+  name: Uniform Child Support Order
+  variable name: foc_10_main[i]
+  skip undefined: True
+  editable: False
+  pdf template file: uniform_child_support_order_foc_10.pdf
+  fields:
+    - trial_court: ${ the_court.number }
+    - trial_court_county: ${ county_choice.upper() }
+    - case_number_1: ${ docket_number }
+    - case_number_2: ${ docket_number }
+    - case_number_3: ${ docket_number }
+    - case_number_4: ${ docket_number }
+    - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+    - trial_court_phone_number: ${ the_court.phone }
+    - plaintiff_block: |
+        ${ plaintiffs[0].name_full() }
+        ${ plaintiffs[0].address.line_one() }
+        ${ plaintiffs[0].address.line_two() }
+        ${ word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
+    - defendant_block: |
+        ${ defendants[0].name_full() }
+        ${ defendants[0].address.line_one() }
+        ${ defendants[0].address.line_two() }
+        ${ word("Unkonwn phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
+    - plaintiffs_attorney_block: |
+        % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not other_parties[0].has_attorney):
+        Self-represented
+        % elif other_parties[0].has_attorney:
+        ${ plaintiffs[0].attorney.name_full() }
+        ${ plaintiffs[0].attorney.address.line_one() }
+        ${ plaintiffs[0].attorney.address.line_two() }
+        ${ word("Unknown phone") if plaintiffs[0].attorney.no_phone_number else phone_number_formatted(plaintiffs[0].attorney.phone_number) }
+        % endif
+    - defendants_attorney_block: |
+        % if user_ask_role == "defendant" or (tool_ID == "JOD_only" and user_ask_role == "plaintiff" and not other_parties[0].has_attorney):
+        Self-represented
+        % elif other_parties[0].has_attorney:
+        ${ defendants[0].attorney.name_full() }
+        ${ defendants[0].attorney.address.line_one() }
+        ${ defendants[0].attorney.address.line_two() }
+        ${ word("Does not have phone") if defendants[0].attorney.no_phone_number else phone_number_formatted(defendants[0].attorney.phone_number) }
+        % endif
+    - plaintiff_employer_block: |
+        % if plaintiffs[0].has_job:
+        ${ plaintiffs[0].job.employer.name.first }
+        % if plaintiffs[0].job.employer.address.address != "" or plaintiffs[0].job.employer.address.city != "":
+        ${ plaintiffs[0].job.employer.address.line_one() }
+        ${ plaintiffs[0].job.employer.address.line_two() }
+        % endif
+        ${ phone_number_formatted(plaintiffs[0].job.employer.phone) if plaintiffs[0].job.employer.phone != "" else "" }
+        % endif
+    - defendant_employer_block: |
+        % if defendants[0].has_job:
+        ${ defendants[0].job.employer.name.first }
+        % if defendants[0].job.employer.address.address != "" or defendants[0].job.employer.address.city != "":
+        ${ defendants[0].job.employer.address.line_one() }
+        ${ defendants[0].job.employer.address.line_two() }
+        % endif
+        ${ phone_number_formatted(defendants[0].job.employer.phone) if defendants[0].job.employer.phone != "" else "" }
+        % endif
+    - children1: ${ children[0] }
+    - children2: ${ children[1] }
+    - children3: ${ children[2] }
+    - children4: ${ children[3] }
+    - children5: ${ children[4] }
+    - more_children: |
+        % if len(children.complete_elements()) > 5:
+        See "Children's Names" in Addendum.
+        % else:
+        ${ '' }
+        % endif
+---
+attachments:
+  name: Uniform Child Support Order Addendum
+  filename: Uniform Child Support Order Addendum
+  docx template file: child_support_foc_10_attachment.docx
+  variable name: foc_10_attachment[i]
+  skip undefined: True
+  valid formats:
+    - pdf
+---
+# The following functions are here so that the logic can be kept consistent,
+# since these logical checks are used in multiple fields of the Judgment.
 ---
 attachment:
   - name: Judgment addendum 2 (vehicles 1 to 4)

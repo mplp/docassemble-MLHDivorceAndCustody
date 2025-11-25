@@ -204,6 +204,11 @@ code: |
     interview_order_other_party_employment
     interview_order_other_party_identifying_info
     other_parties[0].has_alias
+  elif spousal_support_provisions == "user_agrees_to_pay_spousal_support":
+    if users[0].has_job:
+      users[0].job.employer.name.first
+    if other_parties[0].has_job:
+      other_parties[0].job.employer.name.first
 
   nav.set_section("signpost_property")
 
