@@ -798,7 +798,7 @@ fields:
     datatype: radio
     choices: 
       - They were born before we got married.: premarital
-      - They was born after we got married.: marital
+      - They were born after we got married.: marital
     hide if:
       variable: children[i].adopted_during_marriage
       is: True
@@ -1822,7 +1822,7 @@ fields:
       - Reasonable: reasonable
       - Specific: specific
     js show if: |
-      val("physical_custody_who") == "both"
+      val("physical_custody_who") == "both" || val("PT_who") == "both"
   - What type of parenting time do you believe is appropriate?: PT_type
     datatype: radio
     choices:

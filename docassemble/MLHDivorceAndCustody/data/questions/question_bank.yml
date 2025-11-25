@@ -739,6 +739,7 @@ question: |
   County
 fields:
   - What County do you live in?: users[0].address.county
+    code: court_list._load_courts()["address_county"].unique() + " County"
 ---
 id: users[0].village_or_township
 question: |
@@ -1032,6 +1033,7 @@ question: |
   County
 fields:
   - What County does your spouse live in?: other_parties[0].address.county
+    code: court_list._load_courts()["address_county"].unique() + " County"
 ---
 id: other_parties[0].village_or_township
 question: |
