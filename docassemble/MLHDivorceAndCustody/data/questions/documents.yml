@@ -291,6 +291,12 @@ attachment:
         % else:
         ${ '' }
         % endif
+    - pursuant_to: |
+        % if (tool_ID == "JOD_only" and marriage.temporary_order and MLH_esign) or (tool_ID == "divorce_complaint" and returning_to_finalize and marriage.temporary_order and MLH_esign):
+        ${ MLH_esign_tag }
+        % else:
+        ${ '' }
+        % endif
     - plaintiff_name: ${plaintiffs[0].name_full()}
     - plaintiff_address: |
         ${ plaintiffs[0].address.line_one() }
