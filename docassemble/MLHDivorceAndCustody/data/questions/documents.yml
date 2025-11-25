@@ -1,23 +1,6 @@
 # ====================================================================
-## document bundles
+## Main document bundles
 # ====================================================================
----
-if: tool_ID == "JOD_only"
-objects:
-  - judgment_and_addenda_bundle: ALDocumentBundle.using(elements=[
-      judgment_ccmlh412,
-      judgment_addendum_personal_property_and_debt,
-      judgment_addendum_vehicles_1_to_4,
-      judgment_addendum_vehicles_5_to_8,
-      judgment_addendum_vehicles_9_to_12,
-      judgment_addendum_real_property_1_to_2,
-      judgment_addendum_real_property_3_to_4,
-      judgment_addendum_real_property_5_to_6,
-      judgment_addendum_real_property_7_to_8,
-      judgment_addendum_real_property_9_to_10,
-      judgment_addendum_pensions,
-      judgment_overflow_addendum
-      ], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
 ---
 if: tool_ID == "JOD_only"
 objects:
@@ -26,7 +9,7 @@ objects:
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, judgment_ccmlh412], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, judgment_ccmlh412], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, except without the instructions]
 ---
 # ====================================================================
@@ -753,350 +736,6 @@ attachment:
           % else:
           ${ '' }
           % endif
----
-# --------------------------------------------------------------------
-## Uniform Spousal Support Order FOC10b
-# --------------------------------------------------------------------
----
-objects:
-  - uniform_spousal_support_order_foc10b: ALDocument.using(title="Uniform Spousal Support Order - FOC 10b", filename="Uniform Spousal Support Order - FOC 10b")
----
-attachment:
-  - name: Uniform Spousal Support Order - FOC 10b
-    filename: Uniform Spousal Support Order - FOC 10b
-    variable name: uniform_spousal_support_order_foc10b[i]
-    pdf template file: uniform_spousal_support_order_foc10b.pdf
-    editable: False
-    fields:
-      - trial_court_circuit: ${ the_court.number }
-      - trial_court_address_county: ${ county_choice.upper() }
-      - docket_number: ${ docket_number }
-      - docket_number__1: ${ docket_number }
-      - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
-      - trial_court_phone_number: ${ the_court.phone }
-      - plaintiff_block: |
-          ${ plaintiffs[0].name_full() }
-          ${ plaintiffs[0].address.line_one() }
-          ${ plaintiffs[0].address.line_two() }
-          ${ word("Does not have phone") if plaintiffs[0].no_phone_number else plaintiffs[0].phone_numbers() }
-      - defendant_block: |
-          ${ defendants[0].name_full() }
-          ${ defendants[0].address.line_one() }
-          ${ defendants[0].address.line_two() }
-          ${ word("Does not have phone") if defendants[0].no_phone_number else defendants[0].phone_numbers() }
-      - plaintiffs_attorney_block: |
-          % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not other_parties[0].has_attorney):
-          Self-represented
-          % elif other_parties[0].has_attorney:
-          ${ plaintiffs[0].attorney.name_full() }
-          ${ plaintiffs[0].attorney.address.line_one() }
-          ${ plaintiffs[0].attorney.address.line_two() }
-          ${ word("Does not have phone") if plaintiffs[0].attorney.no_phone_number else plaintiffs[0].attorney.phone_numbers() }
-          % endif
-      - defendants_attorney_block: |
-          % if user_ask_role == "defendant" or (tool_ID == "JOD_only" and user_ask_role == "plaintiff" and not other_parties[0].has_attorney):
-          Self-represented
-          % elif other_parties[0].has_attorney:
-          ${ defendants[0].attorney.name_full() }
-          ${ defendants[0].attorney.address.line_one() }
-          ${ defendants[0].attorney.address.line_two() }
-          ${ word("Does not have phone") if defendants[0].attorney.no_phone_number else defendants[0].attorney.phone_numbers() }
-          % endif
-      - plaintiff_employer_block: |
-          % if plaintiffs[0].has_job:
-          ${ plaintiffs[0].job.employer.name.first }
-          ${ plaintiffs[0].job.employer.address.line_one() }
-          ${ plaintiffs[0].job.employer.address.line_two() }
-          ${ word("Phone unknown.") if plaintiffs[0].job.employer.phone == "" else users[0].job.employer.phone }
-          % endif
-      - defendant_employer_block: |
-          % if defendants[0].has_job:
-          ${ defendants[0].job.employer.name.first }
-          ${ defendants[0].job.employer.address.line_one() }
-          ${ defendants[0].job.employer.address.line_two() }
-          ${ word("Phone unknown.") if defendants[0].job.employer.phone == "" else defendants[0].job.employer.phone }
-          % endif
-      # - order_entered_after_hearing: 
-      # - order_entered_stipulation:
-      # - standard_provisions_modified:
-      - spousal_support_payer_name: |
-          % if user_wants_post_divorce_support:
-          ${ other_parties[0] }
-          % elif spousal_support_provisions == "user_agrees_to_pay_spousal_support":
-          ${ users[0] }
-          % endif
-      - spousal_support_payee_name: |
-          % if user_wants_post_divorce_support:
-          ${ users[0] }
-          % elif spousal_support_provisions == "user_agrees_to_pay_spousal_support":
-          ${ other_parties[0] }
-          % endif
-      - spousal_support_monthly_amount: |
-          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
-          ${ currency(spousal_support_amount, symbol="") } 
-          % endif
-      - spousal_support_effective_date: |
-          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
-          ${ format_date(spousal_support_start_date, format='M/d/yyyy') }
-          % endif
-      - spousal_support_ends_on_date: |
-          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
-          ${ True if spousal_support_end_type == "at_certain_date" else False }
-          % endif 
-      - ending_date: |
-          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"] and spousal_support_end_type == "at_certain_date":
-          ${ format_date(spousal_support_end_date, format='M/d/yyyy') }
-          % endif
-      - spousal_support_ends_on_amount: |
-          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
-          ${ True if spousal_support_end_type == "at_certain_amount" else False }
-          % endif  
-      - ending_amount: |
-          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"] and spousal_support_end_type == "at_certain_amount":
-          ${ currency(spousal_support_end_amount, symbol="") }
-          % endif
-      - spousal_support_ends_on_remarriage: |
-          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
-          ${ True if spousal_support_end_type == "at_recipient_marriage" else False }
-          % endif   
-      - spousal_support_ends_on_payer_death: |
-          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
-          ${ True if spousal_support_end_type == "at_death" else False }
-          % endif
-      - spousal_support_ends_on_other: |
-          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
-          ${ True if spousal_support_end_type == "other" else False }
-          % endif 
-      # - other_end_point_explanation_line_1:
-      - other_end_point_explanation_line_2: |
-          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"] and spousal_support_end_type == "other":
-          ${ spousal_support_end_custom }
-          % endif
-      - plaintiffs0_signature: |
-          % if user_ask_role == "plaintiff" and MLH_esign:
-          /s/ ${ users[0].name_full() }
-          % else:
-          ${ '' }
-          % endif
-      - signature_date_plaintiffs0: |
-          % if user_ask_role == "plaintiff" and MLH_esign:
-          ${ format_date(signature_date, format='M/d/yyyy') }
-          % else:
-          ${ '' }
-          % endif
-      - pursuant_to_plaintiff: |
-          % if user_ask_role == "plaintiff" and MLH_esign:
-          ${ MLH_esign_tag }
-          % else:
-          ${ '' }
-          % endif
-      - defendants0_signature: |
-          % if user_ask_role == "defendant" and MLH_esign:
-          /s/ ${ users[0].name_full() }
-          % else:
-          ${ '' }
-          % endif
-      - signature_date_defendants0: |
-          % if user_ask_role == "defendant" and MLH_esign:
-          ${ format_date(signature_date, format='M/d/yyyy') }
-          % else:
-          ${ '' }
-          % endif
-      - pursuant_to_defendant: |
-          % if user_ask_role == "defendant" and MLH_esign:
-          ${ MLH_esign_tag }
-          % else:
-          ${ '' }
-          % endif
----
-# --------------------------------------------------------------------
-## Judgment CC-MLH-412 and Attachments
-# --------------------------------------------------------------------
----
-objects:
-  - judgment_ccmlh412: ALDocument.using(title="Judgment", filename="Judgment.pdf", enabled=True)
-  - judgment_addendum_personal_property_and_debt: ALDocument.using(title="Personal property and debt addendum", filename="Personal property and debt addendum.pdf")
-  - judgment_addendum_vehicles_1_to_4: ALDocument.using(title="Vehicles addendum 1", filename="Vehicles addendum.pdf")
-  - judgment_addendum_vehicles_5_to_8: ALDocument.using(title="Vehicles addendum 2", filename="Vehicles addendum.pdf")
-  - judgment_addendum_vehicles_9_to_12: ALDocument.using(title="Vehicles addendum 3", filename="Vehicles addendum.pdf")
-  - judgment_addendum_real_property_1_to_2: ALDocument.using(title="Real property addendum 1", filename="Real property addendum.pdf")
-  - judgment_addendum_real_property_3_to_4: ALDocument.using(title="Real property addendum 2", filename="Real property addendum.pdf")
-  - judgment_addendum_real_property_5_to_6: ALDocument.using(title="Real property addendum 3", filename="Real property addendum.pdf")
-  - judgment_addendum_real_property_7_to_8: ALDocument.using(title="Real property addendum 4", filename="Real property addendum.pdf")
-  - judgment_addendum_real_property_9_to_10: ALDocument.using(title="Real property addendum 5", filename="Real property addendum.pdf")
-  - judgment_addendum_pensions: ALDocument.using(title="Pensions addendum", filename="Pensions addendum.pdf")
-  - judgment_overflow_addendum: ALDocument.using(title="Judgment overflow addendum", filename="Judgment overflow addendum.pdf")
----
-attachment:
-  - name: Judgment ccmlh412 (no kids)
-    filename: Judgment ccmlh412 (no kids)
-    variable name: judgment_ccmlh412[i]
-    pdf template file: judgment_ccmlh412_no_kids.pdf
-    editable: False
-    fields:
-      - trial_court_circuit: |
-          % if the_court.type == "circuit":
-          ${the_court.number}
-          % endif
-      - docket_number: ${docket_number}
-      - trial_court_county: ${the_court.address.county}
-      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
-      - trial_court_phone_number: ${ the_court.phone }
-      - defendants_block: |
-          ${defendants}
-          ${defendants[0].address.on_one_line()}
-          ${word("Does not have phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
-      - plaintiffs_block: |
-          ${plaintiffs}
-          ${plaintiffs[0].address.on_one_line()}
-          ${word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
-      - plaintiffs1_name: ${plaintiffs}
-      - defendants1_name: ${defendants}
-      - spousal_support_none: Yes
-      - spousal_support_reserved: No
-      - spousal_support_awarded: No
-      - personal_property_as_is: |
-          ${not personal_property_in_addendum(marriage)}
-      - personal_property_in_addendum: |
-          ${personal_property_in_addendum(marriage)}
-      - debts_none: ${not debts_in_addendum(marriage)}
-      - debts_pay_debts_in_own_name: ${marriage.debts.any and marriage.attr("debts.pay_debts_in_own_names")}
-      - debts_in_addendum: ${debts_in_addendum(marriage)}
-      - vehicles_none: ${not marriage.vehicles.any}
-      - vehicles_keep_same: ${marriage.vehicles.any and marriage.attr("vehicles.keep_own")}
-      - vehicles_in_addendum: ${marriage.vehicles.any and not marriage.attr("vehicles.keep_own")}
-      - real_property_none: ${not bool(marriage.real_property)}
-      - real_property_in_addendum: ${bool(marriage.real_property)}
-      - pensions_none: ${not marriage.have_pension_retirement}
-      - pensions_keep_own: ${marriage.have_pension_retirement and marriage.attr("pension_retirement_accounts_keep_own")}
-      - pensions_in_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
-      - total_pages: ""
-      - wants_name_change: ${users[0].new_last_name_yn}
-      - name_change_plaintiff: ${plaintiffs[0].attr("new_last_name_yn")}
-      - name_change_defendant: ${defendants[0].attr("new_last_name_yn")}
-      - new_name: ${users[0].attr("new_last_name")}
-      - has_personal_property_debt_addendum: ${personal_property_in_addendum(marriage) or debts_in_addendum(marriage)}
-      - has_vehicle_addendum: ${has_vehicle_addendum(marriage)}
-      - has_real_property_addendum: ${bool(marriage.real_property)}
-      - has_pension_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
-      - has_other_provisions: ${marriage.other_provisions_any}
-      - other_provisions: |
-          % if marriage.other_provisions_any:
-            % if len(marriage.other_provisions) > 440:
-          See addendum.
-            % else:
-            ${marriage.other_provisions}
-            % endif
-          % else:
-          ${""}
-          % endif
----
-attachment:
-  - name: Judgment addendum 1 (personal property and debt)
-    filename: Judgment addendum 1 (personal property and debt)
-    variable name: judgment_addendum_personal_property_and_debt[i]
-    pdf template file: judgment_addendum_1_personal_property_and_debt.pdf
-    fields:
-      - trial_court_circuit: ${the_court.number}
-      - trial_court_county: ${the_court.address.county}
-      - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
-      - docket_number: ${docket_number}
-      - judge: ${""}
-      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
-      - trial_court_phone_number: ${the_court.phone}
-      - plaintiffs1_name: ${plaintiffs}
-      - defendants1_name: ${defendants}
-      - plaintiffs1_property_award: |
-          % if marriage.personal_property_acquired:
-            % if send_plaintiff_personal_property_to_addendum:
-          See addendum.
-            % else:
-              % if marriage.accounts:
-                % for account in marriage.accounts:
-                  % if account.owner == users[0] or account.owner == joint:
-          Cash valued at $${thousands(account.balance, 2) if account.owner == other_parties[0] else thousands(account.balance / 2, 2)} in a ${account.kind} account at ${account.source}${"" if loop.last else " and "}
-                  % endif
-                % endfor
-              % endif
-              % if marriage.other_pp:
-                % for item in marriage.other_pp:
-                  % if item.owner == users[0]:
-          Property type: ${item.kind}, Description: ${item.desc}${"; and " if not loop.last else ""}
-                  % endif
-                % endfor
-              % endif
-              % if marriage.mobile_home:
-                % for home in marriage.mobile_home:
-                  % if home.owner == users[0]:
-          Mobile home located at: ${home.desc}, VIN: ${home.kind}${"" if loop.last else " and "}
-                  % endif
-                % endfor
-              % endif
-            % endif
-          % else:
-          ${""}
-          % endif
-
-      - defendants1_property_award: |
-          % if marriage.personal_property_acquired:
-            % if send_defendant_personal_property_to_addendum:
-          See addendum.
-            % else:
-              % if marriage.accounts:
-                % for account in marriage.accounts:
-                  % if account.owner == other_parties[0] or account.owner == joint:
-          Cash valued at $${thousands(account.balance, 2) if account.owner == other_parties[0] else thousands(account.balance / 2, 2)} in a ${account.kind} account at ${account.source}${"" if loop.last else " and "}
-                  % endif
-                % endfor
-              % endif
-              % if marriage.other_pp:
-                % for item in marriage.other_pp:
-                  % if item.owner == other_parties[0]:
-          Property type: ${item.kind}, Description: ${item.desc}${"; and " if not loop.last else ""}
-                  % endif
-                % endfor
-              % endif
-              % if marriage.mobile_home:
-                % for home in marriage.mobile_home:
-                  % if home.owner == other_parties[0]:
-          Mobile home located at: ${home.desc}, VIN: ${home.kind}${"" if loop.last else " and "}
-                  % endif
-                % endfor
-              % endif
-            % endif
-          % else:
-          ${""}
-          % endif
-      - plaintiffs1_debt_responsibility: |
-          % if marriage.debts.any:
-            % if send_plaintiff_debts_to_addendum:
-          See addendum.
-            % else:
-              % for debt in marriage.debts:
-                % if debt.owner == users[0] or debt.owner == joint:
-          Debt type: ${debt.kind}, Creditor: ${debt.source}, Approximate balance owed: $${thousands(debt.balance,2) if debt.owner == users[0] else thousands(debt.balance / 2, 2)}${"" if loop.last else " and "}
-                % endif
-              % endfor
-            % endif
-          % else:
-          ${""}
-          % endif
-      - defendants1_debt_responsibility: |
-          % if marriage.debts.any:
-            % if send_defendant_debts_to_addendum:
-          See addendum.
-            % else:
-              % for debt in marriage.debts:
-                % if debt.owner == other_parties[0] or debt.owner == joint:
-          Debt type: ${debt.kind}, Creditor: ${debt.source}, Approximate balance owed: $${thousands(debt.balance,2) if debt.owner == other_parties[0] else thousands(debt.balance / 2, 2)}${"" if loop.last else " and "}
-                % endif
-              % endfor
-            % endif
-          % else:
-          ${""}
-          % endif
-      - form_id_number: ${"412/413"}
-      - page_number: ${""}
 # --------------------------------------------------------------------
 ## Judgment Information FOC 100 and Attachments
 # --------------------------------------------------------------------
@@ -1107,6 +746,15 @@ objects:
 objects:
   - foc_100_main: ALDocument.using(title="Judgment Information", filename="Judgment Information", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
   - foc_100_attachment: ALDocument.using(title="Judgment Information Addendum", filename="Judgment Information Addendum", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
+attachments:
+  name: Judgment Information Addendum
+  filename: Judgment Information Addendum
+  docx template file: judgment_information_foc_100_attachment.docx
+  variable name: foc_100_attachment[i]
+  skip undefined: True
+  valid formats:
+    - pdf
 ---
 attachment:
   name: Judgment Information
@@ -1768,15 +1416,6 @@ attachment:
         See addendum for additional insurance information.
         % endif
 ---
-attachments:
-  name: Judgment Information Addendum
-  filename: Judgment Information Addendum
-  docx template file: judgment_information_foc_100_attachment.docx
-  variable name: foc_100_attachment[i]
-  skip undefined: True
-  valid formats:
-    - pdf
----
 # --------------------------------------------------------------------
 ## Uniform Child Support Order FOC 10 and Attachments
 # --------------------------------------------------------------------
@@ -1787,6 +1426,15 @@ objects:
 objects:
   - foc_10_main: ALDocument.using(title="Uniform Child Support Order", filename="Uniform Child Support Order", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
   - foc_10_attachment: ALDocument.using(title="Uniform Child Support Order Addendum", filename="Uniform Child Support Order Addendum", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
+attachments:
+  name: Uniform Child Support Order Addendum
+  filename: Uniform Child Support Order Addendum
+  docx template file: child_support_foc_10_attachment.docx
+  variable name: foc_10_attachment[i]
+  skip undefined: True
+  valid formats:
+    - pdf
 ---
 attachment:
   name: Uniform Child Support Order
@@ -1861,17 +1509,365 @@ attachment:
         ${ '' }
         % endif
 ---
-attachments:
-  name: Uniform Child Support Order Addendum
-  filename: Uniform Child Support Order Addendum
-  docx template file: child_support_foc_10_attachment.docx
-  variable name: foc_10_attachment[i]
-  skip undefined: True
-  valid formats:
-    - pdf
+# --------------------------------------------------------------------
+## Uniform Spousal Support Order FOC10b
+# --------------------------------------------------------------------
 ---
-# The following functions are here so that the logic can be kept consistent,
-# since these logical checks are used in multiple fields of the Judgment.
+objects:
+  - uniform_spousal_support_order_foc10b: ALDocument.using(title="Uniform Spousal Support Order - FOC 10b", filename="Uniform Spousal Support Order - FOC 10b")
+---
+attachment:
+  - name: Uniform Spousal Support Order - FOC 10b
+    filename: Uniform Spousal Support Order - FOC 10b
+    variable name: uniform_spousal_support_order_foc10b[i]
+    pdf template file: uniform_spousal_support_order_foc10b.pdf
+    editable: False
+    fields:
+      - trial_court_circuit: ${ the_court.number }
+      - trial_court_address_county: ${ county_choice.upper() }
+      - docket_number: ${ docket_number }
+      - docket_number__1: ${ docket_number }
+      - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+      - trial_court_phone_number: ${ the_court.phone }
+      - plaintiff_block: |
+          ${ plaintiffs[0].name_full() }
+          ${ plaintiffs[0].address.line_one() }
+          ${ plaintiffs[0].address.line_two() }
+          ${ word("Does not have phone") if plaintiffs[0].no_phone_number else plaintiffs[0].phone_numbers() }
+      - defendant_block: |
+          ${ defendants[0].name_full() }
+          ${ defendants[0].address.line_one() }
+          ${ defendants[0].address.line_two() }
+          ${ word("Does not have phone") if defendants[0].no_phone_number else defendants[0].phone_numbers() }
+      - plaintiffs_attorney_block: |
+          % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not other_parties[0].has_attorney):
+          Self-represented
+          % elif other_parties[0].has_attorney:
+          ${ plaintiffs[0].attorney.name_full() }
+          ${ plaintiffs[0].attorney.address.line_one() }
+          ${ plaintiffs[0].attorney.address.line_two() }
+          ${ word("Does not have phone") if plaintiffs[0].attorney.no_phone_number else plaintiffs[0].attorney.phone_numbers() }
+          % endif
+      - defendants_attorney_block: |
+          % if user_ask_role == "defendant" or (tool_ID == "JOD_only" and user_ask_role == "plaintiff" and not other_parties[0].has_attorney):
+          Self-represented
+          % elif other_parties[0].has_attorney:
+          ${ defendants[0].attorney.name_full() }
+          ${ defendants[0].attorney.address.line_one() }
+          ${ defendants[0].attorney.address.line_two() }
+          ${ word("Does not have phone") if defendants[0].attorney.no_phone_number else defendants[0].attorney.phone_numbers() }
+          % endif
+      - plaintiff_employer_block: |
+          % if plaintiffs[0].has_job:
+          ${ plaintiffs[0].job.employer.name.first }
+          ${ plaintiffs[0].job.employer.address.line_one() }
+          ${ plaintiffs[0].job.employer.address.line_two() }
+          ${ word("Phone unknown.") if plaintiffs[0].job.employer.phone == "" else users[0].job.employer.phone }
+          % endif
+      - defendant_employer_block: |
+          % if defendants[0].has_job:
+          ${ defendants[0].job.employer.name.first }
+          ${ defendants[0].job.employer.address.line_one() }
+          ${ defendants[0].job.employer.address.line_two() }
+          ${ word("Phone unknown.") if defendants[0].job.employer.phone == "" else defendants[0].job.employer.phone }
+          % endif
+      # - order_entered_after_hearing: 
+      # - order_entered_stipulation:
+      # - standard_provisions_modified:
+      - spousal_support_payer_name: |
+          % if user_wants_post_divorce_support:
+          ${ other_parties[0] }
+          % elif spousal_support_provisions == "user_agrees_to_pay_spousal_support":
+          ${ users[0] }
+          % endif
+      - spousal_support_payee_name: |
+          % if user_wants_post_divorce_support:
+          ${ users[0] }
+          % elif spousal_support_provisions == "user_agrees_to_pay_spousal_support":
+          ${ other_parties[0] }
+          % endif
+      - spousal_support_monthly_amount: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
+          ${ currency(spousal_support_amount, symbol="") } 
+          % endif
+      - spousal_support_effective_date: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
+          ${ format_date(spousal_support_start_date, format='M/d/yyyy') }
+          % endif
+      - spousal_support_ends_on_date: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
+          ${ True if spousal_support_end_type == "at_certain_date" else False }
+          % endif 
+      - ending_date: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"] and spousal_support_end_type == "at_certain_date":
+          ${ format_date(spousal_support_end_date, format='M/d/yyyy') }
+          % endif
+      - spousal_support_ends_on_amount: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
+          ${ True if spousal_support_end_type == "at_certain_amount" else False }
+          % endif  
+      - ending_amount: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"] and spousal_support_end_type == "at_certain_amount":
+          ${ currency(spousal_support_end_amount, symbol="") }
+          % endif
+      - spousal_support_ends_on_remarriage: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
+          ${ True if spousal_support_end_type == "at_recipient_marriage" else False }
+          % endif   
+      - spousal_support_ends_on_payer_death: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
+          ${ True if spousal_support_end_type == "at_death" else False }
+          % endif
+      - spousal_support_ends_on_other: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
+          ${ True if spousal_support_end_type == "other" else False }
+          % endif 
+      # - other_end_point_explanation_line_1:
+      - other_end_point_explanation_line_2: |
+          % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"] and spousal_support_end_type == "other":
+          ${ spousal_support_end_custom }
+          % endif
+      - plaintiffs0_signature: |
+          % if user_ask_role == "plaintiff" and MLH_esign:
+          /s/ ${ users[0].name_full() }
+          % else:
+          ${ '' }
+          % endif
+      - signature_date_plaintiffs0: |
+          % if user_ask_role == "plaintiff" and MLH_esign:
+          ${ format_date(signature_date, format='M/d/yyyy') }
+          % else:
+          ${ '' }
+          % endif
+      - pursuant_to_plaintiff: |
+          % if user_ask_role == "plaintiff" and MLH_esign:
+          ${ MLH_esign_tag }
+          % else:
+          ${ '' }
+          % endif
+      - defendants0_signature: |
+          % if user_ask_role == "defendant" and MLH_esign:
+          /s/ ${ users[0].name_full() }
+          % else:
+          ${ '' }
+          % endif
+      - signature_date_defendants0: |
+          % if user_ask_role == "defendant" and MLH_esign:
+          ${ format_date(signature_date, format='M/d/yyyy') }
+          % else:
+          ${ '' }
+          % endif
+      - pursuant_to_defendant: |
+          % if user_ask_role == "defendant" and MLH_esign:
+          ${ MLH_esign_tag }
+          % else:
+          ${ '' }
+          % endif
+---
+# --------------------------------------------------------------------
+## Judgment CC-MLH-412 and Attachments
+# --------------------------------------------------------------------
+---
+objects:
+  - judgment_and_addenda_bundle: ALDocumentBundle.using(elements=[
+      judgment_ccmlh412,
+      judgment_addendum_personal_property_and_debt,
+      judgment_addendum_vehicles_1_to_4,
+      judgment_addendum_vehicles_5_to_8,
+      judgment_addendum_vehicles_9_to_12,
+      judgment_addendum_real_property_1_to_2,
+      judgment_addendum_real_property_3_to_4,
+      judgment_addendum_real_property_5_to_6,
+      judgment_addendum_real_property_7_to_8,
+      judgment_addendum_real_property_9_to_10,
+      judgment_addendum_pensions,
+      judgment_overflow_addendum
+      ], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+---
+objects:
+  - judgment_ccmlh412: ALDocument.using(title="Judgment", filename="Judgment.pdf", enabled=True)
+  - judgment_addendum_personal_property_and_debt: ALDocument.using(title="Personal property and debt addendum", filename="Personal property and debt addendum.pdf")
+  - judgment_addendum_vehicles_1_to_4: ALDocument.using(title="Vehicles addendum 1", filename="Vehicles addendum.pdf")
+  - judgment_addendum_vehicles_5_to_8: ALDocument.using(title="Vehicles addendum 2", filename="Vehicles addendum.pdf")
+  - judgment_addendum_vehicles_9_to_12: ALDocument.using(title="Vehicles addendum 3", filename="Vehicles addendum.pdf")
+  - judgment_addendum_real_property_1_to_2: ALDocument.using(title="Real property addendum 1", filename="Real property addendum.pdf")
+  - judgment_addendum_real_property_3_to_4: ALDocument.using(title="Real property addendum 2", filename="Real property addendum.pdf")
+  - judgment_addendum_real_property_5_to_6: ALDocument.using(title="Real property addendum 3", filename="Real property addendum.pdf")
+  - judgment_addendum_real_property_7_to_8: ALDocument.using(title="Real property addendum 4", filename="Real property addendum.pdf")
+  - judgment_addendum_real_property_9_to_10: ALDocument.using(title="Real property addendum 5", filename="Real property addendum.pdf")
+  - judgment_addendum_pensions: ALDocument.using(title="Pensions addendum", filename="Pensions addendum.pdf")
+  - judgment_overflow_addendum: ALDocument.using(title="Judgment overflow addendum", filename="Judgment overflow addendum.pdf")
+---
+attachment:
+  - name: Judgment ccmlh412 (no kids)
+    filename: Judgment ccmlh412 (no kids)
+    variable name: judgment_ccmlh412[i]
+    pdf template file: judgment_ccmlh412_no_kids.pdf
+    editable: False
+    fields:
+      - trial_court_circuit: |
+          % if the_court.type == "circuit":
+          ${the_court.number}
+          % endif
+      - docket_number: ${docket_number}
+      - trial_court_county: ${the_court.address.county}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${ the_court.phone }
+      - defendants_block: |
+          ${defendants}
+          ${defendants[0].address.on_one_line()}
+          ${word("Does not have phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
+      - plaintiffs_block: |
+          ${plaintiffs}
+          ${plaintiffs[0].address.on_one_line()}
+          ${word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
+      - plaintiffs1_name: ${plaintiffs}
+      - defendants1_name: ${defendants}
+      - spousal_support_none: Yes
+      - spousal_support_reserved: No
+      - spousal_support_awarded: No
+      - personal_property_as_is: |
+          ${not personal_property_in_addendum(marriage)}
+      - personal_property_in_addendum: |
+          ${personal_property_in_addendum(marriage)}
+      - debts_none: ${not debts_in_addendum(marriage)}
+      - debts_pay_debts_in_own_name: ${marriage.debts.any and marriage.attr("debts.pay_debts_in_own_names")}
+      - debts_in_addendum: ${debts_in_addendum(marriage)}
+      - vehicles_none: ${not marriage.vehicles.any}
+      - vehicles_keep_same: ${marriage.vehicles.any and marriage.attr("vehicles.keep_own")}
+      - vehicles_in_addendum: ${marriage.vehicles.any and not marriage.attr("vehicles.keep_own")}
+      - real_property_none: ${not bool(marriage.real_property)}
+      - real_property_in_addendum: ${bool(marriage.real_property)}
+      - pensions_none: ${not marriage.have_pension_retirement}
+      - pensions_keep_own: ${marriage.have_pension_retirement and marriage.attr("pension_retirement_accounts_keep_own")}
+      - pensions_in_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
+      - total_pages: ""
+      - wants_name_change: ${users[0].new_last_name_yn}
+      - name_change_plaintiff: ${plaintiffs[0].attr("new_last_name_yn")}
+      - name_change_defendant: ${defendants[0].attr("new_last_name_yn")}
+      - new_name: ${users[0].attr("new_last_name")}
+      - has_personal_property_debt_addendum: ${personal_property_in_addendum(marriage) or debts_in_addendum(marriage)}
+      - has_vehicle_addendum: ${has_vehicle_addendum(marriage)}
+      - has_real_property_addendum: ${bool(marriage.real_property)}
+      - has_pension_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
+      - has_other_provisions: ${marriage.other_provisions_any}
+      - other_provisions: |
+          % if marriage.other_provisions_any:
+            % if len(marriage.other_provisions) > 440:
+          See addendum.
+            % else:
+            ${marriage.other_provisions}
+            % endif
+          % else:
+          ${""}
+          % endif
+---
+attachment:
+  - name: Judgment addendum 1 (personal property and debt)
+    filename: Judgment addendum 1 (personal property and debt)
+    variable name: judgment_addendum_personal_property_and_debt[i]
+    pdf template file: judgment_addendum_1_personal_property_and_debt.pdf
+    fields:
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_county: ${the_court.address.county}
+      - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
+      - docket_number: ${docket_number}
+      - judge: ${""}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${the_court.phone}
+      - plaintiffs1_name: ${plaintiffs}
+      - defendants1_name: ${defendants}
+      - plaintiffs1_property_award: |
+          % if marriage.personal_property_acquired:
+            % if send_plaintiff_personal_property_to_addendum:
+          See addendum.
+            % else:
+              % if marriage.accounts:
+                % for account in marriage.accounts:
+                  % if account.owner == users[0] or account.owner == joint:
+          Cash valued at $${thousands(account.balance, 2) if account.owner == other_parties[0] else thousands(account.balance / 2, 2)} in a ${account.kind} account at ${account.source}${"" if loop.last else " and "}
+                  % endif
+                % endfor
+              % endif
+              % if marriage.other_pp:
+                % for item in marriage.other_pp:
+                  % if item.owner == users[0]:
+          Property type: ${item.kind}, Description: ${item.desc}${"; and " if not loop.last else ""}
+                  % endif
+                % endfor
+              % endif
+              % if marriage.mobile_home:
+                % for home in marriage.mobile_home:
+                  % if home.owner == users[0]:
+          Mobile home located at: ${home.desc}, VIN: ${home.kind}${"" if loop.last else " and "}
+                  % endif
+                % endfor
+              % endif
+            % endif
+          % else:
+          ${""}
+          % endif
+
+      - defendants1_property_award: |
+          % if marriage.personal_property_acquired:
+            % if send_defendant_personal_property_to_addendum:
+          See addendum.
+            % else:
+              % if marriage.accounts:
+                % for account in marriage.accounts:
+                  % if account.owner == other_parties[0] or account.owner == joint:
+          Cash valued at $${thousands(account.balance, 2) if account.owner == other_parties[0] else thousands(account.balance / 2, 2)} in a ${account.kind} account at ${account.source}${"" if loop.last else " and "}
+                  % endif
+                % endfor
+              % endif
+              % if marriage.other_pp:
+                % for item in marriage.other_pp:
+                  % if item.owner == other_parties[0]:
+          Property type: ${item.kind}, Description: ${item.desc}${"; and " if not loop.last else ""}
+                  % endif
+                % endfor
+              % endif
+              % if marriage.mobile_home:
+                % for home in marriage.mobile_home:
+                  % if home.owner == other_parties[0]:
+          Mobile home located at: ${home.desc}, VIN: ${home.kind}${"" if loop.last else " and "}
+                  % endif
+                % endfor
+              % endif
+            % endif
+          % else:
+          ${""}
+          % endif
+      - plaintiffs1_debt_responsibility: |
+          % if marriage.debts.any:
+            % if send_plaintiff_debts_to_addendum:
+          See addendum.
+            % else:
+              % for debt in marriage.debts:
+                % if debt.owner == users[0] or debt.owner == joint:
+          Debt type: ${debt.kind}, Creditor: ${debt.source}, Approximate balance owed: $${thousands(debt.balance,2) if debt.owner == users[0] else thousands(debt.balance / 2, 2)}${"" if loop.last else " and "}
+                % endif
+              % endfor
+            % endif
+          % else:
+          ${""}
+          % endif
+      - defendants1_debt_responsibility: |
+          % if marriage.debts.any:
+            % if send_defendant_debts_to_addendum:
+          See addendum.
+            % else:
+              % for debt in marriage.debts:
+                % if debt.owner == other_parties[0] or debt.owner == joint:
+          Debt type: ${debt.kind}, Creditor: ${debt.source}, Approximate balance owed: $${thousands(debt.balance,2) if debt.owner == other_parties[0] else thousands(debt.balance / 2, 2)}${"" if loop.last else " and "}
+                % endif
+              % endfor
+            % endif
+          % else:
+          ${""}
+          % endif
+      - form_id_number: ${"412/413"}
+      - page_number: ${""}
 ---
 attachment:
   - name: Judgment addendum 2 (vehicles 1 to 4)
