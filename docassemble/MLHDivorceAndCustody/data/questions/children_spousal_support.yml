@@ -99,7 +99,7 @@ code: |
       children_previous_address.gather()
 
     legal_custody_who
-    if PT_type in ["specific", "supervised"]:
+    if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]:
       if county_choice == "Muskegon":
         Muskegon_specific_PT_info
       if county_choice != "Muskegon":
@@ -1798,7 +1798,7 @@ fields:
       - Reasonable: reasonable
       - Specific: specific
     js show if: |
-      val("PT_who") == "both" || val("physical_custody_who") == "both"
+      val("physical_custody_who") == "both" || val("PT_who") == "both"
   - What type of parenting time do you believe is appropriate?: PT_type
     datatype: radio
     choices:
