@@ -40,13 +40,16 @@ code: |
   if send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum:
     judgment_overflow_addendum.enabled = True
   
-  if marriage.real_property:
+  elif marriage.real_property:
     for property in marriage.real_property:
       if len(property.desc) > 123:
         judgment_overflow_addendum.enabled = True
   
-  if len(marriage.other_provisions) > 440:
+  elif len(marriage.other_provisions) > 440:
     judgment_overflow_addendum.enabled = True
+
+  else:
+    judgment_overflow_addendum.enabled = False
 ---
 # not in JOD_only bundle
 code: |
