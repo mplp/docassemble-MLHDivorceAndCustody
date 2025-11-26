@@ -1856,7 +1856,7 @@ fields:
     choices:
       - users[0]
       - other_parties[0]
-  - label: Do you and the ${op_ask_role.capitalize()} agree on what should happen with this vehicle?
+  - label: Do you and your spouse agree on what should happen with this vehicle?
     field: marriage.vehicles[i].agree
     datatype: yesnoradio
   - label: Is there a debt related to this vehicle?
@@ -1973,7 +1973,7 @@ question: |
 subquestion: |
   Address: ${marriage.real_property[i].address.on_one_line()}
 fields:
-  - label: Do you and the ${op_ask_role.capitalize()} agree on what should happen with this property?
+  - label: Do you and your sposue agree on what should happen with this property?
     field: marriage.real_property[i].agree
     datatype: yesnoradio
 

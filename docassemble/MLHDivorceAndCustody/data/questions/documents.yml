@@ -9,7 +9,7 @@ objects:
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, judgment_ccmlh412], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, except without the instructions]
 ---
 # ====================================================================
@@ -19,7 +19,7 @@ objects:
 ### List of enabling logic that is TBD
 
 ---
-# enabling logic for JOD_only addenda bundle 
+# enabling logic for judgment addenda bundle 
 code: |
   judgment_addendum_personal_property_and_debt.enabled = debts_in_addendum(marriage) or personal_property_in_addendum(marriage)
 
@@ -1682,7 +1682,7 @@ objects:
       judgment_addendum_real_property_9_to_10,
       judgment_addendum_pensions,
       judgment_overflow_addendum
-      ], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+      ], filename="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", title="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", enabled=True)
 ---
 objects:
   - judgment_ccmlh412: ALDocument.using(title="Judgment", filename="Judgment.pdf", enabled=True)
@@ -1767,6 +1767,7 @@ attachment:
     filename: Judgment addendum 1 (personal property and debt)
     variable name: judgment_addendum_personal_property_and_debt[i]
     pdf template file: judgment_addendum_1_personal_property_and_debt.pdf
+    editable: False
     fields:
       - trial_court_circuit: ${the_court.number}
       - trial_court_county: ${the_court.address.county}
@@ -1874,6 +1875,7 @@ attachment:
     filename: Judgment addendum 2 (vehicles 1 to 4)
     variable name: judgment_addendum_vehicles_1_to_4[i]
     pdf template file: judgment_addendum_2_vehicles_1_to_4.pdf
+    editable: False
     fields:
       - trial_court_circuit: ${the_court.number}
       - trial_court_county: ${the_court.address.county}
@@ -2067,6 +2069,7 @@ attachment:
     filename: Judgment addendum 2 (vehicles 5 to 8)
     variable name: judgment_addendum_vehicles_5_to_8[i]
     pdf template file: judgment_addendum_2_vehicles_5_to_8.pdf
+    editable: False
     fields:
       - trial_court_circuit: ${the_court.number}
       - trial_court_county: ${the_court.address.county}
@@ -2260,6 +2263,7 @@ attachment:
     filename: Judgment addendum 2 (vehicles 9 to 12)
     variable name: judgment_addendum_vehicles_9_to_12[i]
     pdf template file: judgment_addendum_2_vehicles_9_to_12.pdf
+    editable: False
     fields:
       - trial_court_circuit: ${the_court.number}
       - trial_court_county: ${the_court.address.county}
@@ -2453,6 +2457,7 @@ attachment:
     filename: Judgment addendum 3 (real property 1 to 2)
     variable name: judgment_addendum_real_property_1_to_2[i]
     pdf template file: judgment_addendum_3_real_property_1_to_2.pdf
+    editable: False
     fields:
       ### Form details page 1 ###
       - trial_court_circuit: ${the_court.number}
@@ -2651,6 +2656,7 @@ attachment:
     filename: Judgment addendum 3 (real property 3 to 4)
     variable name: judgment_addendum_real_property_3_to_4[i]
     pdf template file: judgment_addendum_3_real_property_3_to_4.pdf
+    editable: False
     fields:
       ### Form details page 1 ###
       - trial_court_circuit: ${the_court.number}
@@ -2852,6 +2858,7 @@ attachment:
     filename: Judgment addendum 3 (real property 5 to 6)
     variable name: judgment_addendum_real_property_5_to_6[i]
     pdf template file: judgment_addendum_3_real_property_5_to_6.pdf
+    editable: False
     fields:
       ### Form details page 1 ###
       - trial_court_circuit: ${the_court.number}
@@ -3054,6 +3061,7 @@ attachment:
     filename: Judgment addendum 3 (real property 7 to 8)
     variable name: judgment_addendum_real_property_7_to_8[i]
     pdf template file: judgment_addendum_3_real_property_7_to_8.pdf
+    editable: False
     fields:
       ### Form details page 1 ###
       - trial_court_circuit: ${the_court.number}
@@ -3256,6 +3264,7 @@ attachment:
     filename: Judgment addendum 3 (real property 9 to 10)
     variable name: judgment_addendum_real_property_9_to_10[i]
     pdf template file: judgment_addendum_3_real_property_9_to_10.pdf
+    editable: False
     fields:
       ### Form details page 1 ###
       - trial_court_circuit: ${the_court.number}
@@ -3529,6 +3538,7 @@ code: |
     return (
       marriage.vehicles.any
       and not marriage.attr("vehicles.keep_own")
-      and any(not item.agree for item in marriage.vehicles)
+      # and any(not item.agree for item in marriage.vehicles)
     )
+#TODO: remove line above once Brett confirms.
 ---
