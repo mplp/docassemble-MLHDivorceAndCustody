@@ -578,7 +578,7 @@ attachment:
 # --------------------------------------------------------------------
 ---
 objects:
-  - domestic_relations_verified_financial_cc_320: ALDocument.using(title="Domestic Relations Verified Financial Information Form - CC 320", filename="Domestic Relations Verified Financial Information Form - CC 320")
+  - domestic_relations_verified_financial_cc_320: ALDocument.using(title="Domestic Relations Verified Financial Info Form - CC 320", filename="Domestic Relations Verified Financial Information Form - CC 320")
 ---
 attachment:
   - name: Domestic Relations Verified Financial Information Form - CC 320

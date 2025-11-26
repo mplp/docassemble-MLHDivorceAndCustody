@@ -1973,7 +1973,7 @@ question: |
 subquestion: |
   Address: ${marriage.real_property[i].address.on_one_line()}
 fields:
-  - label: Do you and your sposue agree on what should happen with this property?
+  - label: Do you and your spouse agree on what should happen with this property?
     field: marriage.real_property[i].agree
     datatype: yesnoradio
 
