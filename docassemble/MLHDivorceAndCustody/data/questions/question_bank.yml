@@ -1300,19 +1300,16 @@ code: |
 
   check_for_required_venue = True
 ---
-# id: problematic separate maintenance case check logic
-# code: |
-#   there_is_venue_controlling_separate_maintenance_case = False
-#   if there_are_marital_children and prior_family_cases.there_are_any:
-#     for i, case in enumerate(prior_family_cases):
-#       if case.type == "separate_maintenance" and 
-#         judgement
-#         and custody order
-#         support order(?)
-#         county in all_potential_venue_options
-#         
-#         separate_maintenance_case_index = i
-#         there_is_venue_controlling_separate_maintenance_case = True
+id: separate maintenance case check logic
+code: |
+  there_is_venue_controlling_separate_maintenance_case = False
+  if there_are_marital_children and prior_family_cases.there_are_any:
+    for i, case in enumerate(prior_family_cases):
+      if case.type == "separate_maintenance" and case.status == "ended_with_order" and case.involved_custody_pt_support and case.county in all_potential_venue_options:
+        separate_maintenance_case_index = i
+        there_is_venue_controlling_separate_maintenance_case = True
+  
+  check_for_separate_maintenance_cases = True
 ### note this assumes there's only one such case
 ---
 # --------------------------------------------------------------------
