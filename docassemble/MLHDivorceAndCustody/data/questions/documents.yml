@@ -39,6 +39,7 @@ code: |
 code: |
   if send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum:
     judgment_overflow_addendum.enabled = True
+    send_pp_or_debts_to_addendum = True
   
   elif marriage.real_property:
     for property in marriage.real_property:
@@ -1713,7 +1714,7 @@ attachment:
           ${the_court.number}
           % endif
       - docket_number: ${docket_number}
-      - trial_court_county: ${the_court.address.county}
+      - trial_court_county: ${the_court.address.county.upper()}
       - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
       - trial_court_phone_number: ${ the_court.phone }
       - defendants_block: |
@@ -1773,7 +1774,7 @@ attachment:
     editable: False
     fields:
       - trial_court_circuit: ${the_court.number}
-      - trial_court_county: ${the_court.address.county}
+      - trial_court_county: ${the_court.address.county.upper()}
       - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
       - docket_number: ${docket_number}
       - judge: ${""}
@@ -1789,21 +1790,21 @@ attachment:
               % if marriage.accounts:
                 % for account in marriage.accounts:
                   % if account.owner == users[0] or account.owner == joint:
-          Cash valued at $${thousands(account.balance, 2) if account.owner == other_parties[0] else thousands(account.balance / 2, 2)} in a ${account.kind} account at ${account.source}${"" if loop.last else " and "}
+          Cash valued at $${thousands(account.balance, 2) if account.owner == other_parties[0] else thousands(account.balance / 2, 2)} in a ${account.kind} account at ${account.source}
                   % endif
                 % endfor
               % endif
               % if marriage.other_pp:
                 % for item in marriage.other_pp:
                   % if item.owner == users[0]:
-          Property type: ${item.kind}, Description: ${item.desc}${"; and " if not loop.last else ""}
+          Property type: ${item.kind}, Description: ${item.desc}
                   % endif
                 % endfor
               % endif
               % if marriage.mobile_home:
                 % for home in marriage.mobile_home:
                   % if home.owner == users[0]:
-          Mobile home located at: ${home.desc}, VIN: ${home.kind}${"" if loop.last else " and "}
+          Mobile home located at: ${home.desc}, VIN: ${home.kind}
                   % endif
                 % endfor
               % endif
@@ -1820,21 +1821,21 @@ attachment:
               % if marriage.accounts:
                 % for account in marriage.accounts:
                   % if account.owner == other_parties[0] or account.owner == joint:
-          Cash valued at $${thousands(account.balance, 2) if account.owner == other_parties[0] else thousands(account.balance / 2, 2)} in a ${account.kind} account at ${account.source}${"" if loop.last else " and "}
+          Cash valued at $${thousands(account.balance, 2) if account.owner == other_parties[0] else thousands(account.balance / 2, 2)} in a ${account.kind} account at ${account.source}
                   % endif
                 % endfor
               % endif
               % if marriage.other_pp:
                 % for item in marriage.other_pp:
                   % if item.owner == other_parties[0]:
-          Property type: ${item.kind}, Description: ${item.desc}${"; and " if not loop.last else ""}
+          Property type: ${item.kind}, Description: ${item.desc}
                   % endif
                 % endfor
               % endif
               % if marriage.mobile_home:
                 % for home in marriage.mobile_home:
                   % if home.owner == other_parties[0]:
-          Mobile home located at: ${home.desc}, VIN: ${home.kind}${"" if loop.last else " and "}
+          Mobile home located at: ${home.desc}, VIN: ${home.kind}
                   % endif
                 % endfor
               % endif
@@ -1849,7 +1850,7 @@ attachment:
             % else:
               % for debt in marriage.debts:
                 % if debt.owner == users[0] or debt.owner == joint:
-          Debt type: ${debt.kind}, Creditor: ${debt.source}, Approximate balance owed: $${thousands(debt.balance,2) if debt.owner == users[0] else thousands(debt.balance / 2, 2)}${"" if loop.last else " and "}
+          Debt type: ${debt.kind}, Creditor: ${debt.source}, Approximate balance owed: $${thousands(debt.balance,2) if debt.owner == users[0] else thousands(debt.balance / 2, 2)}
                 % endif
               % endfor
             % endif
@@ -1863,14 +1864,19 @@ attachment:
             % else:
               % for debt in marriage.debts:
                 % if debt.owner == other_parties[0] or debt.owner == joint:
-          Debt type: ${debt.kind}, Creditor: ${debt.source}, Approximate balance owed: $${thousands(debt.balance,2) if debt.owner == other_parties[0] else thousands(debt.balance / 2, 2)}${"" if loop.last else " and "}
+          Debt type: ${debt.kind}, Creditor: ${debt.source}, Approximate balance owed: $${thousands(debt.balance,2) if debt.owner == other_parties[0] else thousands(debt.balance / 2, 2)}
                 % endif
               % endfor
             % endif
           % else:
           ${""}
           % endif
-      - form_id_number: ${"412/413"}
+      - form_id_number: |
+          % if there_are_marital_children:
+          ${"413"}
+          % else:
+          ${"412"}
+          % endif
       - page_number: ${""}
 ---
 attachment:
@@ -1881,7 +1887,7 @@ attachment:
     editable: False
     fields:
       - trial_court_circuit: ${the_court.number}
-      - trial_court_county: ${the_court.address.county}
+      - trial_court_county: ${the_court.address.county.upper()}
       - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
       - docket_number: ${docket_number}
       - docket_number__1: ${docket_number}
@@ -1890,7 +1896,12 @@ attachment:
       - trial_court_phone_number: ${the_court.phone}
       - plaintiffs1_name: ${plaintiffs}
       - defendants1_name: ${defendants}
-      - form_id_number: ${"412/413"}
+      - form_id_number: |
+          % if there_are_marital_children:
+          ${"413"}
+          % else:
+          ${"412"}
+          % endif
       - page_number_first: ${""}
       # Vehicle 1
       - vehicles1_awarded_plaintiff: |
@@ -2075,7 +2086,7 @@ attachment:
     editable: False
     fields:
       - trial_court_circuit: ${the_court.number}
-      - trial_court_county: ${the_court.address.county}
+      - trial_court_county: ${the_court.address.county.upper()}
       - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
       - docket_number: ${docket_number}
       - docket_number__1: ${docket_number}
@@ -2084,7 +2095,12 @@ attachment:
       - trial_court_phone_number: ${the_court.phone}
       - plaintiffs1_name: ${plaintiffs}
       - defendants1_name: ${defendants}
-      - form_id_number: ${"412/413"}
+      - form_id_number: |
+          % if there_are_marital_children:
+          ${"413"}
+          % else:
+          ${"412"}
+          % endif
       - page_number_first: ${""}
       # Vehicle 5
       - vehicles5_awarded_plaintiff: |
@@ -2269,7 +2285,7 @@ attachment:
     editable: False
     fields:
       - trial_court_circuit: ${the_court.number}
-      - trial_court_county: ${the_court.address.county}
+      - trial_court_county: ${the_court.address.county.upper()}
       - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
       - docket_number: ${docket_number}
       - docket_number__1: ${docket_number}
@@ -2278,7 +2294,12 @@ attachment:
       - trial_court_phone_number: ${the_court.phone}
       - plaintiffs1_name: ${plaintiffs}
       - defendants1_name: ${defendants}
-      - form_id_number: ${"412/413"}
+      - form_id_number: |
+          % if there_are_marital_children:
+          ${"413"}
+          % else:
+          ${"412"}
+          % endif
       - page_number_first: ${""}
       # Vehicle 9
       - vehicles9_awarded_plaintiff: |
@@ -2464,7 +2485,7 @@ attachment:
     fields:
       ### Form details page 1 ###
       - trial_court_circuit: ${the_court.number}
-      - trial_court_county: ${the_court.address.county}
+      - trial_court_county: ${the_court.address.county.upper()}
       - docket_number: ${docket_number}
       - judge: ${""}
       - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
@@ -2477,6 +2498,7 @@ attachment:
       - real_properties1_address_on_one_line: ${marriage.real_property[0].address.on_one_line()}
       - real_properties1_legal_description: |
           % if len(marriage.real_property[0].desc) > 123:
+          
           See addendum.
           % else:
           ${marriage.real_property[0].desc}
@@ -2563,6 +2585,7 @@ attachment:
       - real_properties2_legal_description: |
           % if len(marriage.real_property) > 1:
             % if len(marriage.real_property[1].desc) > 123:
+          
           See addendum.
             % else:
             ${marriage.real_property[1].desc}
@@ -2648,7 +2671,12 @@ attachment:
           % endif
 
       ### Form details page 2 ###
-      - form_id_number: ${"412/413"}
+      - form_id_number: |
+          % if there_are_marital_children:
+          ${"413"}
+          % else:
+          ${"412"}
+          % endif
       - page_number_first: ${""}
       - page_number_second: ${""}
       - real_property_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, REAL PROPERTY ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, REAL PROPERTY ADDENDUM"}
@@ -2663,7 +2691,7 @@ attachment:
     fields:
       ### Form details page 1 ###
       - trial_court_circuit: ${the_court.number}
-      - trial_court_county: ${the_court.address.county}
+      - trial_court_county: ${the_court.address.county.upper()}
       - docket_number: ${docket_number}
       - judge: ${""}
       - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
@@ -2677,6 +2705,7 @@ attachment:
       - real_properties3_legal_description: |
           % if len(marriage.real_property) > 2:
             % if len(marriage.real_property[2].desc) > 123:
+          
           See addendum.
             % else:
             ${marriage.real_property[2].desc}
@@ -2684,6 +2713,7 @@ attachment:
           % else:
           ${""}
           % endif
+      - real_properties3_parcel_ID: ${marriage.real_property[2].parcel_number if len(marriage.real_property) > 2 else ""}
 
       # Ownership and costs (property 3)
       - real_properties3_sale_awarded_plaintiff: ${len(marriage.real_property) > 2 and marriage.real_property[2].owner == users[0]}
@@ -2765,6 +2795,7 @@ attachment:
       - real_properties4_legal_description: |
           % if len(marriage.real_property) > 3:
             % if len(marriage.real_property[3].desc) > 123:
+          
           See addendum.
             % else:
             ${marriage.real_property[3].desc}
@@ -2850,7 +2881,12 @@ attachment:
           % endif
 
       #### Form details page 2 ###
-      - form_id_number: ${"412/413"}
+      - form_id_number: |
+          % if there_are_marital_children:
+          ${"413"}
+          % else:
+          ${"412"}
+          % endif
       - page_number_first: ${""}
       - page_number_second: ${""}
       - real_property_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, REAL PROPERTY ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, REAL PROPERTY ADDENDUM"}
@@ -2865,7 +2901,7 @@ attachment:
     fields:
       ### Form details page 1 ###
       - trial_court_circuit: ${the_court.number}
-      - trial_court_county: ${the_court.address.county}
+      - trial_court_county: ${the_court.address.county.upper()}
       - docket_number: ${docket_number}
       - judge: ${""}
       - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
@@ -2879,6 +2915,7 @@ attachment:
       - real_properties5_legal_description: |
           % if len(marriage.real_property) > 4:
             % if len(marriage.real_property[4].desc) > 123:
+          
           See addendum.
             % else:
             ${marriage.real_property[4].desc}
@@ -2968,6 +3005,7 @@ attachment:
       - real_properties6_legal_description: |
           % if len(marriage.real_property) > 5:
             % if len(marriage.real_property[5].desc) > 123:
+          
           See addendum.
             % else:
             ${marriage.real_property[5].desc}
@@ -3053,7 +3091,12 @@ attachment:
           % endif
 
       ### Form details page 2 ###
-      - form_id_number: ${"412/413"}
+      - form_id_number: |
+          % if there_are_marital_children:
+          ${"413"}
+          % else:
+          ${"412"}
+          % endif
       - page_number_first: ${""}
       - page_number_second: ${""}
       - real_property_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, REAL PROPERTY ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, REAL PROPERTY ADDENDUM"}
@@ -3068,7 +3111,7 @@ attachment:
     fields:
       ### Form details page 1 ###
       - trial_court_circuit: ${the_court.number}
-      - trial_court_county: ${the_court.address.county}
+      - trial_court_county: ${the_court.address.county.upper()}
       - docket_number: ${docket_number}
       - judge: ${""}
       - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
@@ -3082,6 +3125,7 @@ attachment:
       - real_properties7_legal_description: |
           % if len(marriage.real_property) > 6:
             % if len(marriage.real_property[6].desc) > 123:
+          
           See addendum.
             % else:
             ${marriage.real_property[6].desc}
@@ -3171,6 +3215,7 @@ attachment:
       - real_properties8_legal_description: |
           % if len(marriage.real_property) > 7:
             % if len(marriage.real_property[7].desc) > 123:
+          
           See addendum.
             % else:
             ${marriage.real_property[7].desc}
@@ -3256,7 +3301,12 @@ attachment:
           % endif
 
       ### Form details page 2 ###
-      - form_id_number: ${"412/413"}
+      - form_id_number: |
+          % if there_are_marital_children:
+          ${"413"}
+          % else:
+          ${"412"}
+          % endif
       - page_number_first: ${""}
       - page_number_second: ${""}
       - real_property_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, REAL PROPERTY ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, REAL PROPERTY ADDENDUM"}
@@ -3271,7 +3321,7 @@ attachment:
     fields:
       ### Form details page 1 ###
       - trial_court_circuit: ${the_court.number}
-      - trial_court_county: ${the_court.address.county}
+      - trial_court_county: ${the_court.address.county.upper()}
       - docket_number: ${docket_number}
       - judge: ${""}
       - with_children_caption: ${"WITH CHILDREN," if there_are_marital_children else "NO CHILDREN,"}
@@ -3285,6 +3335,7 @@ attachment:
       - real_properties9_legal_description: |
           % if len(marriage.real_property) > 8:
             % if len(marriage.real_property[8].desc) > 123:
+          
           See addendum.
             % else:
             ${marriage.real_property[8].desc}
@@ -3374,6 +3425,7 @@ attachment:
       - real_properties10_legal_description: |
           % if len(marriage.real_property) > 9:
             % if len(marriage.real_property[9].desc) > 123:
+          
           See addendum.
             % else:
             ${marriage.real_property[9].desc}
@@ -3459,7 +3511,12 @@ attachment:
           % endif
 
       ### Form details page 2 ###
-      - form_id_number: ${"412/413"}
+      - form_id_number: |
+          % if there_are_marital_children:
+          ${"413"}
+          % else:
+          ${"412"}
+          % endif
       - page_number_first: ${""}
       - page_number_second: ${""}
       - real_property_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, REAL PROPERTY ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, REAL PROPERTY ADDENDUM"}
