@@ -2399,10 +2399,12 @@ fields:
     code: |
       states_list()
   - What is the status of this case?: prior_family_cases[i].resolved
+    datatype: radio
     choices:
       - "The case is still ongoing. (There is **no** order or judgment resolving all the issues.)": False
       - "The case is over. (There is an order resolving all the issues, or the case was dismissed.)": True
-  - Has the case been {**stayed?**}: prior_family_cases[i].status
+  - Has the case been **{stayed}?**: prior_family_cases[i].status
+    datatype: radio
     choices:
       - "Yes, the case is stayed.": stayed
       - "No.": pending
@@ -2410,6 +2412,7 @@ fields:
       variable: prior_family_cases[i].resolved
       is: False
   - How did the case end?: prior_family_cases[i].status
+    datatype: radio
     choices:
       - "The judge made a **final order** resolving all the issues and ending the case.": ended_with_order
       - "The judge **dismissed** the case.": dismissed
@@ -2425,7 +2428,7 @@ fields:
 code: |
   prior_family_case_types = [
                               ['divorce', 'Divorce'],
-                              ['separate_maintenance', 'Separate Maintenance']
+                              ['separate_maintenance', 'Separate Maintenance'],
                               ['protection_order', 'Protection Order'],
                               ['parental_rights', 'Parental Rights (abuse/neglect)'],
                               ['adoption', 'Adoption'],
@@ -2480,24 +2483,28 @@ fields:
       variable: prior_family_cases[i].type
       is: other
   - What is the status of this case?: prior_family_cases[i].resolved
+    datatype: radio
     choices:
       - "The case is still ongoing. (There is **no** order or judgment resolving all the issues.)": False
       - "The case is over. (There is an order resolving all the issues, or the case was dismissed.)": True
     js show if: |
       val("prior_family_cases[i].type") !== "divorce"
-  - Has the case been {**stayed?**}: prior_family_cases[i].status
+  - 'Has the case been **{stayed}?**': prior_family_cases[i].status
+    datatype: radio
     choices:
       - "Yes, the case is stayed.": stayed
       - "No.": pending
     js show if: |
-      val("prior_family_cases[i].type") !== "divorce" and val("prior_family_cases[i].resolved") === false
+      val("prior_family_cases[i].type") !== "divorce" && val("prior_family_cases[i].resolved") === false
   - How did the case end?: prior_family_cases[i].status
+    datatype: radio
     choices:
       - "The judge made a **final order** resolving all the issues and ending the case.": ended_with_order
       - "The judge **dismissed** the case.": dismissed
     js show if: |
-      val("prior_family_cases[i].type") !== "divorce" and val("prior_family_cases[i].resolved") === true
+      val("prior_family_cases[i].type") !== "divorce" && val("prior_family_cases[i].resolved") === true
   - What is the status of this case?: prior_family_cases[i].status
+    datatype: radio
     choices:
       - "It has ended and a judgment of divorce or a final decree was made": ended_with_order
       - "It has ended but was dismissed by the court": dismissed
