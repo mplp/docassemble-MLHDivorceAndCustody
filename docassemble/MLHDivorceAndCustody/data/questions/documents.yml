@@ -768,8 +768,8 @@ attachment:
   fields:
     - trial_court: ${ the_court.number }
     - trial_court_county: ${ county_choice.upper() }
-    - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
-    - trial_court_phone_number: ${ the_court.phone }
+    - trial_court_address_on_one_line: ${the_foc.address.on_one_line()}
+    - trial_court_phone_number: ${ the_foc.phone }
     - case_number_1: ${ docket_number }
     - case_number_2: ${ docket_number }
     - previous_info_changed: |
