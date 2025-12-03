@@ -39,7 +39,6 @@ code: |
 code: |
   if send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum:
     judgment_overflow_addendum.enabled = True
-    send_pp_or_debts_to_addendum = True
   
   elif marriage.real_property:
     for property in marriage.real_property:
