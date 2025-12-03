@@ -45,7 +45,7 @@ code: |
       if len(property.desc) > 123:
         judgment_overflow_addendum.enabled = True
   
-  elif len(marriage.other_provisions) > 440:
+  elif marriage.other_provisions_any and len(marriage.other_provisions) > 440:
     judgment_overflow_addendum.enabled = True
 
   else:
@@ -3482,42 +3482,55 @@ attachment:
 ### personal property and debts addendum overflow code ###
 ---
 # plaintiff personal property overflow code
+# TODO, will need to reset "line_count" when property variables edited
 code: |
-  plaintiff_personal_property_line_count = (
-      len([acc for acc in marriage.accounts if acc.owner == users[0] or acc.owner == joint]) +
-      len([pp for pp in marriage.other_pp if pp.owner == users[0]]) +
-      len([mh for mh in marriage.mobile_home if mh.owner == users[0]])
-  )
-
-  send_plaintiff_personal_property_to_addendum = plaintiff_personal_property_line_count > 9
+  if marriage.personal_property_acquired and (not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual):
+    plaintiff_personal_property_line_count = (
+        len([acc for acc in marriage.accounts if acc.owner == users[0] or acc.owner == joint]) +
+        len([pp for pp in marriage.other_pp if pp.owner == users[0]]) +
+        len([mh for mh in marriage.mobile_home if mh.owner == users[0]])
+    )
+  
+    send_plaintiff_personal_property_to_addendum = plaintiff_personal_property_line_count > 9
+  else: 
+    send_plaintiff_personal_property_to_addendum = False
 ---
 # defendant personal property overflow code
 code: |
-  defendant_personal_property_line_count = (
-      len([acc for acc in marriage.accounts if acc.owner == other_parties[0] or acc.owner == joint]) +
-      len([pp for pp in marriage.other_pp if pp.owner == other_parties[0]]) +
-      len([mh for mh in marriage.mobile_home if mh.owner == other_parties[0]])
-  )
-
-  send_defendant_personal_property_to_addendum = defendant_personal_property_line_count > 9
+  if marriage.personal_property_acquired and (not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual):
+    defendant_personal_property_line_count = (
+        len([acc for acc in marriage.accounts if acc.owner == other_parties[0] or acc.owner == joint]) +
+        len([pp for pp in marriage.other_pp if pp.owner == other_parties[0]]) +
+        len([mh for mh in marriage.mobile_home if mh.owner == other_parties[0]])
+    )
+  
+    send_defendant_personal_property_to_addendum = defendant_personal_property_line_count > 9
+  else: 
+    send_defendant_personal_property_to_addendum = False
 ---
 # plaintiff debts overflow code
 code: |
-  plaintiff_debt_line_count = len([
-      debt for debt in marriage.debts
-      if debt.owner == users[0] or debt.owner == joint
-  ])
-
-  send_plaintiff_debts_to_addendum = plaintiff_debt_line_count > 9
+  if marriage.debts.any and (not marriage.debts.pay_debts_in_own_names or marriage.debts.any_in_both_names):
+    plaintiff_debt_line_count = len([
+        debt for debt in marriage.debts
+        if debt.owner == users[0] or debt.owner == joint
+    ])
+  
+    send_plaintiff_debts_to_addendum = plaintiff_debt_line_count > 9
+  else:
+    send_plaintiff_debts_to_addendum = False
 ---
 # defendant debts overflow code
 code: |
-  defendant_debt_line_count = len([
-      debt for debt in marriage.debts
-      if debt.owner == other_parties[0] or debt.owner == joint
-  ])
-
-  send_defendant_debts_to_addendum = defendant_debt_line_count > 4
+  if marriage.debts.any and (not marriage.debts.pay_debts_in_own_names or marriage.debts.any_in_both_names):
+    defendant_debt_line_count = len([
+        debt for debt in marriage.debts
+        if debt.owner == other_parties[0] or debt.owner == joint
+    ])
+  
+    send_defendant_debts_to_addendum = defendant_debt_line_count > 4
+  else:
+    send_defendant_debts_to_addendum = False
 ---
 # The following functions are here so that the logic can be kept consistent,
 # since these logical checks are used in multiple fields of the Judgment.
