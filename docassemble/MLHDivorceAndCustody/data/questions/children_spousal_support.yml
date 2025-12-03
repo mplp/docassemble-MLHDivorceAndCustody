@@ -2455,7 +2455,7 @@ fields:
     code: |
       states_list()
   - County: prior_family_cases[i].county
-    code: court_list._load_courts()["address_county"].unique() + " County"
+    code: court_list._load_courts()["address_county"].unique()
     show if:
       variable: prior_family_cases[i].state
       is: MI

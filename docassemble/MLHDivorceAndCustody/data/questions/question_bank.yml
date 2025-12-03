@@ -1223,12 +1223,12 @@ subquestion: |
   % if prior_family_cases[separate_maintenance_case_index].county == users[0].address.county:
   Where you will file depends on **when** you will file:
   
-  * After you have lived in ${ users[0].address.county } for ten days or more, you **must file** there. (Because of your past separate maintenance case in that county.)
+  * After you have lived in ${ users[0].address.county } for *ten days or more,* you **must file** there. (Because of your past separate maintenance case in that county.)
   * However, if you want to file your divorce case **before** that, you must file in ${ other_parties[0].address.county }. (Because you can only file in a county where one spouse has already lived for 10 days.)
   % elif prior_family_cases[separate_maintenance_case_index].county == other_parties[0].address.county:
   Where you will file depends on **when** you will file:
   
-  * After your spouse has lived in ${ other_parties[0].address.county } for ten days or more, you **must file** there. (This is because of your past separate maintenance case in that county.)
+  * After your spouse has lived in ${ other_parties[0].address.county } for *ten days or more,* you **must file** there. (This is because of your past separate maintenance case in that county.)
   * However, if you want to file your divorce case **before** that, you must file in ${ users[0].address.county }. (This is because you can only file in a county where one spouse has already lived for 10 days.)
   % endif  
 
@@ -1236,35 +1236,43 @@ fields:
   - Select when and where you will file your divorce.: county_choice
     input type: radio
     choices:
-      - "I will wait until I have lived 10 days in ${ users[0].address.county } and file in ${ users[0].address.county }": users[0].address.county
-      - "I will file now in ${ other_parties[0].address.county }, before I have lived for 10 days in my current county.": other_parties[0].address.county
-    show if: prior_family_cases[separate_maintenance_case_index].county == users[0].address.county
+      - "I will **wait** until I have lived 10 days in ${ users[0].address.county } and file in ${ users[0].address.county }": ${ users[0].address.county }
+      - "I will **file now** in ${ other_parties[0].address.county }, before I have lived for 10 days in my current county.": ${ other_parties[0].address.county }
+    show if:
+      code: |
+        prior_family_cases[separate_maintenance_case_index].county == users[0].address.county
   - Select the county where you will file your divorce.: county_choice
     input type: radio
     choices:
-      - "I will wait until my spouse has lived 10 days in ${ other_parties[0].address.county } and file in ${ other_parties[0].address.county }": other_parties[0].address.county
-      - "I will file now in ${ users[0].address.county }, before my spouse has lived 10 days in their current county.": other_parties[0].address.county
-    show if: prior_family_cases[separate_maintenance_case_index].county == other_parties[0].address.county
+      - "I will **wait** until my spouse has lived 10 days in ${ other_parties[0].address.county } and file in ${ other_parties[0].address.county }": ${ other_parties[0].address.county }
+      - "I will **file now** in ${ users[0].address.county }, before my spouse has lived 10 days in their current county.": ${ users[0].address.county }
+    show if:
+      code: |
+        prior_family_cases[separate_maintenance_case_index].county == other_parties[0].address.county
+  - note: |
+      **Important!** Please read carefully and confirm:
+    js show if: |
+      val("county_choice") === ${ json.dumps(users[0].address.county) } || val("county_choice") === ${ json.dumps(other_parties[0].address.county) }
   - I understand that I **must wait** until I have lived in ${ users[0].address.county } County for ten days or more before I file for divorce.: understands_waiting_period
     required: True
     datatype: yesno
     js show if: |
-        val("county_choice") === ${ json.dumps(users[0].address.county) } && val("users[0].ten_days_in_county") === false 
+        val("county_choice") === ${ json.dumps(users[0].address.county) } && ${ json.dumps(users[0].ten_days_in_county) } === false 
   - I understand that I **must wait** until my spouse has lived in ${ other_parties[0].address.county } County for ten days or more before I file for divorce.: understands_waiting_period
     required: True
     datatype: yesno
     js show if: |
-        val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && val("other_parties[0].ten_days_in_county") === false 
+        val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && ${ json.dumps(other_parties[0].ten_days_in_county) } === false 
   - I understand that if I want to file in ${ users[0].address.county }, I need to do so *before my spouse has lived in their current county for 10 days* or more. If I miss that deadline, I will update this tool and get new forms.: understands_waiting_period
     required: True
     datatype: yesno
     js show if: |
-        val("county_choice") === ${ json.dumps(users[0].address.county) } && val("other_parties[0].ten_days_in_county") === false 
+        val("county_choice") === ${ json.dumps(users[0].address.county) } && ${ json.dumps(other_parties[0].ten_days_in_county) } === false 
   - I understand that if I want to file in ${ other_parties[0].address.county }, I need to do so *before I have lived in my current county for 10 days* or more. If I miss that deadline, I will update this tool and get new forms.: understands_waiting_period
     required: True
     datatype: yesno
     js show if: |
-        val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && val("users[0].ten_days_in_county") === false 
+        val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && ${ json.dumps(users[0].ten_days_in_county) } === false 
 ---
 code: |
   current_venue_options = []
