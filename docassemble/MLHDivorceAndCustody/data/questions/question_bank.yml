@@ -344,6 +344,7 @@ fields:
     field: marriage.have_pension_retirement
     datatype: yesnoradio
 ---
+if: marriage.have_pension_retirement
 id: marriage.pension_retirement_accounts_keep_own
 question: |
   Pension and/or retirement accounts
@@ -357,7 +358,7 @@ fields:
       - label: I want the judge to divide our account(s)
         value: False
 ---
-if: marriage.pension_retirement_accounts_keep_own
+if: marriage.have_pension_retirement and marriage.pension_retirement_accounts_keep_own
 id: pension_retirement_accounts_keep
 question: |
   Pension and/or retirement accounts
@@ -368,7 +369,7 @@ fields:
     field: marriage.pension_retirement_accounts_continue
     datatype: yesnoradio
 ---
-if: not marriage.pension_retirement_accounts_keep_own
+if: marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own
 id: pension_retirement_accounts_divide
 question: |
   Pension and/or retirement accounts
@@ -1154,7 +1155,7 @@ fields:
 ## venue
 # --------------------------------------------------------------------
 ---
-if: len(all_potential_venue_options) == 1 or (len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and (len(current_venue_options) in [2, 0] or (len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county in current_venue_options)))
+if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 1 or (len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and (len(current_venue_options) in [2, 0] or (len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county in current_venue_options)))
 id: venue (single option)
 question: Where to file your divorce
 continue button field: venue
@@ -1179,7 +1180,7 @@ fields:
       code: |
         len(current_venue_options) == 0
 ---
-if: len(all_potential_venue_options) == 2 and not (there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case)
+if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 2 and not (there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case)
 id: venue (normal choice)
 question: Where to file your divorce
 continue button field: venue
@@ -1208,7 +1209,7 @@ fields:
     js show if: |
         val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && ${ json.dumps(other_parties[0].ten_days_in_county) } === false 
 ---
-if: len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options
+if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options
 id: venue (weird separate maintenance choice)
 question: Where to file your divorce
 continue button field: venue
@@ -1267,6 +1268,7 @@ fields:
     js show if: |
         val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && ${ json.dumps(users[0].ten_days_in_county) } === false 
 ---
+if: tool_ID == "divorce_complaint"
 code: |
   current_venue_options = []
   all_potential_venue_options = []
@@ -1283,6 +1285,7 @@ code: |
 
   set_venue_lists = True
 ---
+if: tool_ID == "divorce_complaint"
 id: divorce complaint venue logic
 code: |
   undefine("county_choice")
@@ -1301,6 +1304,7 @@ code: |
 
   check_for_required_venue = True
 ---
+if: tool_ID == "divorce_complaint"
 id: separate maintenance case check logic
 code: |
   there_is_venue_controlling_separate_maintenance_case = False
