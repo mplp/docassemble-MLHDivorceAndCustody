@@ -196,7 +196,7 @@ attachment:
       - users1_hair_color: ${ users[0].hair_color }
       - users1_eye_color: ${ users[0].eye_color }
       - users1_scars_tattoos: |
-          % if len(users[0].other_identifying_info) > 19
+          % if len(users[0].other_identifying_info) > 19:
           See addendum.
           % else:
           ${ users[0].other_identifying_info }
