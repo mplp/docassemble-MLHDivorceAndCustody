@@ -230,7 +230,9 @@ code: |
   MLH_standard_outro_pages
 
   # just making sure these are defined
+  the_court
   the_foc 
+  docket_number
   stepchildren_for_addendum
   
   MLH_download

@@ -1822,7 +1822,7 @@ fields:
       - Reasonable: reasonable
       - Specific: specific
     js show if: |
-      val("physical_custody_who") == "both" || val("PT_who") == "both"
+      val("physical_custody_who") === "both"
   - What type of parenting time do you believe is appropriate?: PT_type
     datatype: radio
     choices:
@@ -1830,11 +1830,11 @@ fields:
       - Specific: specific
       - Specific and supervised: supervised
     js show if: |
-      val("PT_who") == "both" && val("physical_custody_who") != "both"
+      val("physical_custody_who") != "both" && val("PT_who") == "both"
   - label: "If you know the name of the person or agency you want to supervise parenting time, enter it here. If you don't know, leave this blank."
     field: PT_supervisor
     js show if: |
-      val("PT_who") == "both" && val("PT_type") === "supervised"
+      val("physical_custody_who") != "both" && val("PT_who") === "both" && val("PT_type") === "supervised"
     required: False
   - note: |
       ${ collapse_template(custody_definitions) }
@@ -2339,16 +2339,23 @@ code: |
     if there_are_marital_children:
       if prior_family_cases[i].type == "divorce":
         prior_family_cases[i].included_custody_PT_order
-      if prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other", "separate_maintenance"]:
+  
+      elif prior_family_cases[i].type == "separate_maintenance":
+        if prior_family_cases[i].status in ["ended_with_order", "dismissed"]:
+          prior_family_cases[i].involved_custody_pt_support
+        elif prior_family_cases[i].status in ["pending", "stayed"]:
+          separate_maintenance_pending_kickout
+  
+      elif prior_family_cases[i].type not in ["divorce", "separate_maintenance"]:
         if prior_family_cases[i].status == "ended_with_order":
           prior_family_cases[i].included_custody_PT_order
         elif prior_family_cases[i].status in ["stayed", "pending"]:
           prior_family_cases[i].has_current_custody_PT_order
-        elif prior_family_cases[i].status == "dismissed" and prior_family_cases[i].type != "paternity":
+        elif prior_family_cases[i].status == "dismissed":
           prior_family_cases[i].included_custody_PT_order
   
       if prior_family_cases[i].state != "MI":
-        if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other", "separate_maintenance"] and (prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order) or (prior_family_cases[i].status in ["stayed", "pending"] and prior_family_cases[i].has_current_custody_PT_order)):
+        if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and (prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order) or (prior_family_cases[i].status in ["stayed", "pending"] and prior_family_cases[i].has_current_custody_PT_order)):
           if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids:
             prior_family_cases[i].custody_order_in_another_state_warning 
 
@@ -2389,12 +2396,27 @@ fields:
   - State:: prior_family_cases[i].state
     code: |
       states_list()
-  - What is the status of this case?: prior_family_cases[i].status
+  - What is the status of this case?: prior_family_cases[i].resolved
+    datatype: radio
     choices:
-      - "It has ended and an order was made": ended_with_order
-      - "It has ended but was dismissed by the court": dismissed
-      - "It is active/pending but has been stayed by the court": stayed
-      - "It is active_pending": pending
+      - "The case is still ongoing. (There is **no** order or judgment resolving all the issues.)": False
+      - "The case is over. (There is an order resolving all the issues, or the case was dismissed.)": True
+  - Has the case been **{stayed}?**: prior_family_cases[i].status
+    datatype: radio
+    choices:
+      - "Yes, the case is stayed.": stayed
+      - "No.": pending
+    show if:
+      variable: prior_family_cases[i].resolved
+      is: False
+  - How did the case end?: prior_family_cases[i].status
+    datatype: radio
+    choices:
+      - "The judge made a **final order** resolving all the issues and ending the case.": ended_with_order
+      - "The judge **dismissed** the case.": dismissed
+    show if:
+      variable: prior_family_cases[i].resolved
+      is: True
   - Case number:: prior_family_cases[i].docket_number
   - Is there a custody or parenting time order in this case that is currently in effect?: prior_family_cases[i].has_current_custody_PT_order
     datatype: yesnoradio
@@ -2404,7 +2426,7 @@ fields:
 code: |
   prior_family_case_types = [
                               ['divorce', 'Divorce'],
-                              ['separate_maintenance', 'Separate Maintenance']
+                              ['separate_maintenance', 'Separate Maintenance'],
                               ['protection_order', 'Protection Order'],
                               ['parental_rights', 'Parental Rights (abuse/neglect)'],
                               ['adoption', 'Adoption'],
@@ -2433,7 +2455,7 @@ fields:
     code: |
       states_list()
   - County: prior_family_cases[i].county
-    code: court_list._load_courts()["address_county"].unique() + " County"
+    code: court_list._load_courts()["address_county"].unique()
     show if:
       variable: prior_family_cases[i].state
       is: MI
@@ -2458,15 +2480,29 @@ fields:
     show if:
       variable: prior_family_cases[i].type
       is: other
-  - What is the status of this case?: prior_family_cases[i].status
+  - What is the status of this case?: prior_family_cases[i].resolved
+    datatype: radio
     choices:
-      - "It has ended and an order was made": ended_with_order
-      - "It has ended but was dismissed by the court": dismissed
-      - "It is active/pending but has been stayed by the court": stayed
-      - "It is active/pending": pending
+      - "The case is still ongoing. (There is **no** order or judgment resolving all the issues.)": False
+      - "The case is over. (There is an order resolving all the issues, or the case was dismissed.)": True
     js show if: |
       val("prior_family_cases[i].type") !== "divorce"
+  - 'Has the case been **{stayed}?**': prior_family_cases[i].status
+    datatype: radio
+    choices:
+      - "Yes, the case is stayed.": stayed
+      - "No.": pending
+    js show if: |
+      val("prior_family_cases[i].type") !== "divorce" && val("prior_family_cases[i].resolved") === false
+  - How did the case end?: prior_family_cases[i].status
+    datatype: radio
+    choices:
+      - "The judge made a **final order** resolving all the issues and ending the case.": ended_with_order
+      - "The judge **dismissed** the case.": dismissed
+    js show if: |
+      val("prior_family_cases[i].type") !== "divorce" && val("prior_family_cases[i].resolved") === true
   - What is the status of this case?: prior_family_cases[i].status
+    datatype: radio
     choices:
       - "It has ended and a judgment of divorce or a final decree was made": ended_with_order
       - "It has ended but was dismissed by the court": dismissed
@@ -2478,7 +2514,7 @@ id: prior family divorce case or order additional info
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type == "divorce"
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
+  These questions are about "${ prior_family_cases[i].title }", the divorce case in ${ prior_family_cases[i].county }, ${ state_name(prior_family_cases[i].state) }.
 fields:
   - label: |
       % if prior_family_cases[i].status == "dismissed":
@@ -2495,12 +2531,51 @@ fields:
     js show if: |
       val("prior_family_cases[i].included_custody_PT_order") === true
 ---
-# LHI "Prior Family Cases DLG" (start at row 132)
-id: prior family case or order additional info 
-if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "paternity", "custody", "guardianship", "other", "separate_maintenance"] and prior_family_cases[i].status == "ended_with_order"
+id: prior family separate maintenance case additional info
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].status in ["ended_with_order", "dismissed"]
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
+  These questions are about "${ prior_family_cases[i].title }", the separate maintenance case in ${ prior_family_cases[i].county }, ${ state_name(prior_family_cases[i].state) }.
+fields:
+  - Did the separate maintenance case involve custody, parenting time, or child support?: prior_family_cases[i].involved_custody_pt_support
+    datatype: yesnoradio
+  - Was a **custody or parenting time** *order* entered?: prior_family_cases[i].included_custody_PT_order
+    datatype: yesnoradio
+    js show if: |
+      ${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true
+  - Was a temporary custody or parenting time order entered in that case when the case was pending?: prior_family_cases[i].included_custody_PT_order
+    datatype: yesnoradio
+    js show if: |
+      ${ "true" if prior_family_cases[i].status == "dismissed" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true
+  - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
+    datatype: ThreePartsDate
+    max: |
+     ${ today() }
+    js show if: |
+      (${ "true" if prior_family_cases[i].status == "dismissed" else "false" } || (${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true)) && val("prior_family_cases[i].included_custody_PT_order") === true
+---
+id: separate maintenance pending kickout
+event: separate_maintenance_pending_kickout
+question: Sorry, this tool cannot help you.
+subquestion: |
+  If you have a separate maintenance case that is currently pending or stayed, you cannot file a new divorce case. Instead:
+
+  * If you are the "plaintiff" (the person who originally filed) in the separate maintenance case, you need to first dismiss the separate maintenance case and then file for divorce.
+  * If you are the "defendant" (if your spouse originally filed) in the separate maintenance case, you need to file a counterclaim for divorce in your separate maintenance case. 
+  
+  You may want to contact a lawyer for help. ${ MLH_GUIDE_FULL }
+---
+id: separate maintenance pending kickout
+question: Sorry, this tool cannot help you.
+subquestion: |
+  If you have a separate maintenance case that is currently pending or stayed, you cannot file a new divorce case.
+---
+# LHI "Prior Family Cases DLG" (start at row 132)
+id: prior family case or order additional info 
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status == "ended_with_order"
+question: ${ capitalize(ordinal(i)) } **family division** case or order
+subquestion: |
+  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ state_name(prior_family_cases[i].state) }.
 fields:
   - What is the date of that order?: prior_family_cases[i].final_order_date
     datatype: ThreePartsDate
@@ -2520,10 +2595,10 @@ fields:
 ---
 # LHI "Prior Family Cases DLG" (start at row 174)
 id: prior family case or order additional info 
-if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "paternity", "guardianship", "other", "separate_maintenance"] and prior_family_cases[i].status in ["stayed", "pending"]
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status in ["stayed", "pending"]
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
+  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ state_name(prior_family_cases[i].state) }.
 fields:
   - Is there a custody or parenting time order in this case?: prior_family_cases[i].has_current_custody_PT_order
     datatype: yesnoradio
@@ -2540,10 +2615,10 @@ fields:
 ---
 # LHI "Prior Family Cases DLG" (start at row 151)
 id: prior family case or order additional info 
-if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type in ["protection_order", "parental_rights", "custody", "guardianship", "other", "separate_maintenance"] and prior_family_cases[i].status == "dimissed"
+if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status == "dismissed"
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }" the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ prior_family_cases[i].state }.
+  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ state_name(prior_family_cases[i].state) }.
 fields:
   - "Was a temporary custody or parenting time order entered in that case when the case was pending?": prior_family_cases[i].included_custody_PT_order
     datatype: yesnoradio
