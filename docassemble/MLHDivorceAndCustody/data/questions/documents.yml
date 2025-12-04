@@ -3610,7 +3610,5 @@ code: |
     return (
       marriage.vehicles.any
       and not marriage.attr("vehicles.keep_own")
-      # and any(not item.agree for item in marriage.vehicles)
     )
-#TODO: remove line above once Brett confirms.
 ---
