@@ -7,29 +7,32 @@ review:
 #
 # ---------- case information ----------
 #
-  - note: |
-      % if defined("county_choice"):
-      ${ review_accordion_explainer }
-      % else:
-      ${ review_empty_explainer }
-      % endif
-  - raw html: |
-      ${ start_accordion("""<h2 class="h5">Case Information</h2>""") }
-    show if: defined("county_choice")
+#  - note: |
+#      % if defined("county_choice"):
+#      ${ review_accordion_explainer }
+#      % else:
+#      ${ review_empty_explainer }
+#      % endif
+#  - raw html: |
+#      ${ start_accordion("""<h2 class="h5">Case Information</h2>""") }
+#    show if: defined("county_choice")
   - Edit:
       - county_choice
       - court_index
       - recompute:
         - the_court
+        - the_foc
     button: |
       ##### County of the court where your case is
         - ${county_choice}
       ##### Court
         - ${the_court}
+    show if: tool_ID == "JOD_only"
   - Edit: docket_number
     button: |
       ##### What is your case number
         - ${docket_number}
+    show if: tool_ID == "JOD_only"
   - Edit:
       - user_ask_role
       - recompute:
@@ -39,12 +42,13 @@ review:
     button: |
       ##### Are you the Plaintiff or the Defendant in this case?
         - ${user_ask_role.capitalize()}
+    show if: tool_ID == "JOD_only"
 #
 # ---------- users[0] ----------
 #
-  - raw html: |
-      ${ next_accordion("""<h2 class="h5">Your Information</h2>""") }
-    show if: users[0].name.attribute_defined("first")
+#  - raw html: |
+#      ${ next_accordion("""<h2 class="h5">Your Information</h2>""") }
+#    show if: users[0].name.attribute_defined("first")
   - Edit:
       - users[0].name.first
     button: |
@@ -132,9 +136,9 @@ review:
 #
 # ---------- other_parties[0] ----------
 #
-  - raw html: |
-      ${ next_accordion("""<h2 class="h5">Spouse's Information</h2>""") }
-    show if: other_parties[0].name.attribute_defined("first")
+#  - raw html: |
+#      ${ next_accordion("""<h2 class="h5">Spouse's Information</h2>""") }
+#    show if: other_parties[0].name.attribute_defined("first")
   - Edit:
       - other_parties[0].name.first
     button: |
@@ -248,9 +252,9 @@ review:
 #
 # ---------- marriage ----------
 #
-  - raw html: |
-      ${ next_accordion("""<h2 class="h5">Marriage Information</h2>""") }
-    show if: marriage.attribute_defined("date")
+#  - raw html: |
+#      ${ next_accordion("""<h2 class="h5">Marriage Information</h2>""") }
+#    show if: marriage.attribute_defined("date")
   - Edit:
       - marriage.date
     button: |
@@ -302,9 +306,22 @@ review:
 #
 # ---------- personal property ----------
 #
-  - raw html: |
-      ${ next_accordion("""<h2 class="h5">Personal Property</h2>""") }
-    show if: marriage.attribute_defined("personal_property_acquired")
+#  - raw html: |
+#      ${ next_accordion("""<h2 class="h5">Personal Property</h2>""") }
+#    show if: marriage.attribute_defined("personal_property_acquired")
+  - Edit:
+      - marriage.have_pension_retirement
+      - follow up:
+        - marriage.pension_retirement_accounts_keep_own
+        - pension_retirement_accounts_keep
+        - marriage.pension_retirement_accounts_continue
+    button: |
+      ##### Do you or your spouse have a pension or retirement account?
+        - ${word(yesno(marriage.have_pension_retirement))}
+      % if marriage.have_pension_retirement:
+      ##### Do you each plan to keep your own accounts?
+        - ${word(yesno(marriage.pension_retirement_accounts_keep_own))}
+      % endif
   - Edit:
       - marriage.personal_property_acquired
       - invalidate:
@@ -377,9 +394,9 @@ review:
 #
 # ---------- debts ----------
 #
-  - raw html: |
-      ${ next_accordion("""<h2 class="h5">Debts</h2>""") }
-    show if: marriage.debts.attribute_defined("any")
+#  - raw html: |
+#      ${ next_accordion("""<h2 class="h5">Debts</h2>""") }
+#    show if: marriage.debts.attribute_defined("any")
   - Edit:
       - marriage.debts.any
       - invalidate:
@@ -430,9 +447,9 @@ review:
 #
 # ---------- vehicles ----------
 #
-  - raw html: |
-      ${ next_accordion("""<h2 class="h5">Vehicles</h2>""") }
-    show if: marriage.vehicles.attribute_defined("any")
+#  - raw html: |
+#      ${ next_accordion("""<h2 class="h5">Vehicles</h2>""") }
+#    show if: marriage.vehicles.attribute_defined("any")
   - Edit:
       - marriage.vehicles.any
       - invalidate:
@@ -474,9 +491,9 @@ review:
 #
 # ---------- real property ----------
 #
-  - raw html: |
-      ${ next_accordion("""<h2 class="h5">Real Property</h2>""") }
-    show if: marriage.real_property.attribute_defined("revisit")
+#  - raw html: |
+#      ${ next_accordion("""<h2 class="h5">Real Property</h2>""") }
+#    show if: marriage.real_property.attribute_defined("revisit")
   - Edit:
       - marriage.real_property.revisit
     button: |
@@ -512,9 +529,9 @@ review:
 #
 # ---------- judgment information ----------
 #
-  - raw html: |
-      ${ next_accordion("""<h2 class="h5">Judgment Information</h2>""") }
-    show if: marriage.attribute_defined("other_provisions_any")
+#  - raw html: |
+#      ${ next_accordion("""<h2 class="h5">Judgment Information</h2>""") }
+#    show if: marriage.attribute_defined("other_provisions_any")
   - Edit:
       - marriage.other_provisions_any
     button: |
@@ -534,7 +551,7 @@ review:
     button: |
       ##### Would you like to add your electronic signature to your form?
         - ${word(yesno(MLH_esign))}
-  - raw html: |
-      ${ end_accordion() }
-    show if: county_choice
+#  - raw html: |
+#      ${ end_accordion() }
+#    show if: county_choice
 ---

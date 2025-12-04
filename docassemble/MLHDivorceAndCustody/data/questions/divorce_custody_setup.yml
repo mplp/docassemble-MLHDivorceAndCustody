@@ -63,7 +63,7 @@ code: |
 
   set_persistent_labels = True
 ---
-# needed four spousal support questions
+# needed for spousal support questions
 # set these separately because they can change if user_ask_role is edited
 if: tool_ID == "JOD_only"
 code: |
