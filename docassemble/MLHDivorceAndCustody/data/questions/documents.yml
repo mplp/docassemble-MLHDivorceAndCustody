@@ -67,7 +67,7 @@ code: |
 
   if verified_statement_foc_23_full.enabled:
     verified_statement_foc_23.enabled = True
-    if insurance_in_addendum or len(children.filter(legal_parent="both")) > 5 or len(stepchildren_for_addendum) > 2 or len(plaintiffs[0].other_identifying_info) > 19 or len(defendants[0].other_identifying_info) > 19:
+    if insurance_in_addendum or len(children.filter(legal_parent="both")) > 5 or len(stepchildren_for_addendum) > 2 or len(users[0].other_identifying_info) > 19 or len(other_parties[0].other_identifying_info) > 19:
       verified_statement_foc_23_addendum.enabled = True
     else:
       verified_statement_foc_23_addendum.enabled = False
@@ -77,11 +77,11 @@ code: |
 code: |
   insurance_in_addendum = False
   
-  if there_are_marital_children and (plaintiffs[0].insurance.there_are_any or defendants[0].insurance.there_are_any):
-    for policy in plaintiffs[0].insurance:
+  if there_are_marital_children and (users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any):
+    for policy in users[0].insurance:
       if policy.covers_child.any_true() == True:
         insurance_in_addendum = True
-    for policy in defendants[0].insurance:
+    for policy in other_parties[0].insurance:
       if policy.covers_child.any_true() == True:
         insurance_in_addendum = True
   
@@ -114,7 +114,7 @@ code: |
   foc_100_full.enabled = there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support" or (tool_ID == "divorce_complaint" and returning_to_finalize and marriage.temporary_order and marriage.temporary_order_changed) or (tool_ID == "JOD_only" and marriage.temporary_order and marriage.temporary_order_changed)
   if foc_100_full.enabled:
     foc_100_main.enabled = True
-    foc_100_attachment.enabled = (len(children.filter(legal_parent="both")) > 4) or (len(plaintiffs[0].insurance) > 5) or (len(defendants[0].insurance) > 5) or children_now_live_with_which_parent == "both"
+    foc_100_attachment.enabled = (len(children.filter(legal_parent="both")) > 4) or (len(users[0].insurance) > 5) or (len(other_parties[0].insurance) > 5) or children_now_live_with_which_parent == "both"
 ---
 code: |
   foc_10_full.enabled = there_are_marital_children
@@ -163,156 +163,156 @@ attachment:
       - docket_number__1: ${docket_number}
       - friend_of_court_address_on_one_line: ${the_foc.address.on_one_line()}
       - friend_of_court_phone_number: ${ the_foc.phone }
-      - plaintiffs1_name_last_first_middle: ${ plaintiffs[0].name.last + " " + plaintiffs[0].name.first + " " + plaintiffs[0].name.middle }
-      - plaintiffs1_aliases: |
-          % if plaintiffs[0].has_alias:
-          ${ plaintiffs[0].aliases }
+      - users1_name_last_first_middle: ${ users[0].name.last + " " + users[0].name.first + " " + users[0].name.middle }
+      - users1_aliases: |
+          % if users[0].has_alias:
+          ${ users[0].aliases }
           % endif
-      - plaintiffs1_birthdate: ${ plaintiffs[0].birthdate}
-      - plaintiffs1_ssn: ${ plaintiffs[0].ssn }
-      - plaintiffs1_driver_license_and_state: ${ plaintiffs[0].license_number + " " + plaintiffs[0].license_state }
-      - plaintiffs1_address_on_one_line: |
+      - users1_birthdate: ${ users[0].birthdate}
+      - users1_ssn: ${ users[0].ssn }
+      - users1_driver_license_and_state: ${ users[0].license_number + " " + users[0].license_state }
+      - users1_address_on_one_line: |
           % if confidential_contact_info_yn:
-          Confidential- Mailing: ${ plaintiffs[0].address.on_one_line() }
+          Confidential- Mailing: ${ users[0].address.on_one_line() }
           % else:
-          % if plaintiffs[0].mailing_address.yesno:
-          Mailing: ${ plaintiffs[0].mailing_address.on_one_line() + " "  }
+          % if users[0].mailing_address.yesno:
+          Mailing: ${ users[0].mailing_address.on_one_line() + " "  }
           % endif
-          Residence: ${ plaintiffs[0].address.on_one_line() }
+          Residence: ${ users[0].address.on_one_line() }
           % endif
-      - plaintiffs1_email: ${ plaintiffs[0].email }
-      - plaintiffs1_height: |
-          % if plaintiffs[0].height_feet > 0:
-          ${plaintiffs[0].height_feet} ft, ${ plaintiffs[0].height_inches } in 
+      - users1_email: ${ users[0].email }
+      - users1_height: |
+          % if users[0].height_feet > 0:
+          ${users[0].height_feet} ft, ${ users[0].height_inches } in 
           % endif
-      - plaintiffs1_weight: ${ plaintiffs[0].weight if plaintiffs[0].weight > 0 else "" }
-      - plaintiffs1_race: |
-          % if plaintiffs[0].race == "Other":
-          ${plaintiffs[0].other_race_description}
+      - users1_weight: ${ users[0].weight if users[0].weight > 0 else "" }
+      - users1_race: |
+          % if users[0].race == "Other":
+          ${users[0].other_race_description}
           % else:
-          ${ plaintiffs[0].race }
+          ${ users[0].race }
           % endif
-      - plaintiffs1_gender: ${ plaintiffs[0].gender }
-      - plaintiffs1_hair_color: ${ plaintiffs[0].hair_color }
-      - plaintiffs1_eye_color: ${ plaintiffs[0].eye_color }
-      - plaintiffs1_scars_tattoos: |
-          % if len(plaintiffs[0].other_identifying_info) > 19:
+      - users1_gender: ${ users[0].gender }
+      - users1_hair_color: ${ users[0].hair_color }
+      - users1_eye_color: ${ users[0].eye_color }
+      - users1_scars_tattoos: |
+          % if len(users[0].other_identifying_info) > 19:
           See addendum.
           % else:
-          ${ plaintiffs[0].other_identifying_info }
+          ${ users[0].other_identifying_info }
           % endif
-      - plaintiffs1_phone_number_mobile: |
-          % if not plaintiffs[0].no_phone_number and plaintiffs[0].phone_type == "cell":
-          ${ plaintiffs[0].phone_number}
+      - users1_phone_number_mobile: |
+          % if not users[0].no_phone_number and users[0].phone_type == "cell":
+          ${ users[0].phone_number}
           % endif
-      - plaintiffs1_phone_number_home: |
-          % if not plaintiffs[0].no_phone_number and plaintiffs[0].phone_type == "home":
-          ${ plaintiffs[0].phone_number}
+      - users1_phone_number_home: |
+          % if not users[0].no_phone_number and users[0].phone_type == "home":
+          ${ users[0].phone_number}
           % endif
-      - plaintiffs1_phone_number_work: |
-          % if plaintiffs[0].has_job:
-          ${ plaintiffs[0].job.employer.phone }
-          % endif 
-      - plaintiffs1_occupation: ${ plaintiffs[0].occupation }
-      - plaintiffs1_employer_name_address: |
-          % if plaintiffs[0].has_job:
-          ${ plaintiffs[0].job.employer.name.first } ${ plaintiffs[0].job.employer.address.on_one_line() if plaintiffs[0].job.employer.address.address != "" else "" }
+      - users1_phone_number_work: |
+          % if users[0].has_job:
+          ${ users[0].job.employer.phone }
           % endif
-      - plaintiffs1_gross_weekly_income: |
-          % if plaintiffs[0].has_job:
-          % if plaintiffs[0].income.total() > 0:
+      - users1_occupation: ${ users[0].occupation }
+      - users1_employer_name_address: |
+          % if users[0].has_job:
+          ${ users[0].job.employer.name.first } ${ users[0].job.employer.address.on_one_line() if users[0].job.employer.address.address != "" else "" }
+          % endif
+      - users1_gross_weekly_income: |
+          % if users[0].has_job:
+          % if users[0].income.total() > 0:
           $ ${ round(plaintiffs[0].income.total() / 52, 2) }
           % endif
           % endif
-      - plaintiffs1_applied_public_assistance_yes: ${True if pa_status in ["gets_assistance", "applied"] else False }
-      - plaintiffs1_applied_public_assistance_no: ${True if pa_status not in ["gets_assistance", "applied"] else False }
-      - plaintiffs1_public_assistance_type_case_number: |
+      - users1_applied_public_assistance_yes: ${True if pa_status in ["gets_assistance", "applied"] else False }
+      - users1_applied_public_assistance_no: ${True if pa_status not in ["gets_assistance", "applied"] else False }
+      - users1_public_assistance_type_case_number: |
           % if pa_status == "gets_assistance":
           ${ comma_and_list(public_assistance_list) } Case number: ${ comma_and_list(pa_case_numbers_foc_23) }
           % elif pa_status == "applied":
           Applied for ${ public_assistance_list }
           % endif
-      - plaintiffs1_other_citizenship: |
-          % if plaintiffs[0].has_foreign_citizenship:
-          ${ plaintiffs[0].countries_of_citizenship }
+      - users1_other_citizenship: |
+          % if users[0].has_foreign_citizenship:
+          ${ users[0].countries_of_citizenship }
           % endif
-      - plaintiffs1_foreign_ids: |
-          % if plaintiffs[0].has_foreign_citizenship:
-          ${ plaintiffs[0].foreign_identity_documents }
+      - users1_foreign_ids: |
+          % if users[0].has_foreign_citizenship:
+          ${ users[0].foreign_identity_documents }
           % endif
-      - defendants1_name_last_first_middle: ${ defendants[0].name.last + " " + defendants[0].name.first + " " + defendants[0].name.middle }
-      - defendants1_aliases: |
-          % if defendants[0].has_alias:
-          ${ defendants[0].aliases }
+      - other_parties1_name_last_first_middle: ${ other_parties[0].name.last + " " + other_parties[0].name.first + " " + other_parties[0].name.middle }
+      - other_parties1_aliases: |
+          % if other_parties[0].has_alias:
+          ${ other_parties[0].aliases }
           % endif
-      - defendants1_birthdate: ${ defendants[0].birthdate}
-      - defendants1_ssn: ${ defendants[0].ssn }
-      - defendants1_driver_license_and_state: ${ defendants[0].license_number + " " + defendants[0].license_state }
-      - defendants1_address_on_one_line: |
-          % if defendants[0].mailing_address.yesno:
-          Mailing: ${ defendants[0].mailing_address.on_one_line() + " " }
+      - other_parties1_birthdate: ${ other_parties[0].birthdate}
+      - other_parties1_ssn: ${ other_parties[0].ssn }
+      - other_parties1_driver_license_and_state: ${ other_parties[0].license_number + " " + other_parties[0].license_state }
+      - other_parties1_address_on_one_line: |
+          % if other_parties[0].mailing_address.yesno:
+          Mailing: ${ other_parties[0].mailing_address.on_one_line() + " " }
           % endif
-          Residence: ${ defendants[0].address.on_one_line() }
-      - defendants1_email: ${ defendants[0].email }
-      - defendants1_height: |
-          % if defendants[0].height_feet > 0:
-          ${defendants[0].height_feet} ft, ${ defendants[0].height_inches } in 
+          Residence: ${ other_parties[0].address.on_one_line() }
+      - other_parties1_email: ${ other_parties[0].email }
+      - other_parties1_height: |
+          % if other_parties[0].height_feet > 0:
+          ${other_parties[0].height_feet} ft, ${ other_parties[0].height_inches } in 
           % endif
-      - defendants1_weight: ${ defendants[0].weight if defendants[0].weight > 0 else "" }
-      - defendants1_race: |
-          % if defendants[0].race == "Other":
-          ${defendants[0].other_race_description}
+      - other_parties1_weight: ${ other_parties[0].weight if other_parties[0].weight > 0 else "" }
+      - other_parties1_race: |
+          % if other_parties[0].race == "Other":
+          ${other_parties[0].other_race_description}
           % else:
-          ${ defendants[0].race }
+          ${ other_parties[0].race }
           % endif
-      - defendants1_gender: ${ defendants[0].gender }
-      - defendants1_hair_color: ${ defendants[0].hair_color }
-      - defendants1_eye_color: ${ defendants[0].eye_color }
-      - defendants1_scars_tattoos: |
-          % if len(defendants[0].other_identifying_info) > 19:
+      - other_parties1_gender: ${ other_parties[0].gender }
+      - other_parties1_hair_color: ${ other_parties[0].hair_color }
+      - other_parties1_eye_color: ${ other_parties[0].eye_color }
+      - other_parties1_scars_tattoos: |
+          % if len(other_parties[0].other_identifying_info) > 19:
           See addendum.
           % else:
-          ${ defendants[0].other_identifying_info }
+          ${ other_parties[0].other_identifying_info }
           % endif
-      - defendants1_phone_number_mobile: |
-          % if not defendants[0].no_phone_number and defendants[0].phone_type == "cell":
-          ${ defendants[0].phone_number}
+      - other_parties1_phone_number_mobile: |
+          % if not other_parties[0].no_phone_number and other_parties[0].phone_type == "cell":
+          ${ other_parties[0].phone_number}
           % endif
-      - defendants1_phone_number_home: |
-          % if not defendants[0].no_phone_number and defendants[0].phone_type == "home":
-          ${ defendants[0].phone_number}
+      - other_parties1_phone_number_home: |
+          % if not other_parties[0].no_phone_number and other_parties[0].phone_type == "home":
+          ${ other_parties[0].phone_number}
           % endif
-      - defendants1_phone_number_work: |
-          % if defendants[0].has_job:
-          ${ defendants[0].job.employer.phone }
-          % endif 
-      - defendants1_occupation: ${ defendants[0].occupation }
-      - defendants1_employer_name_address: |
-          % if defendants[0].has_job:
-          ${ defendants[0].job.employer.name.first } ${ defendants[0].job.employer.address.on_one_line() if defendants[0].job.employer.address.address != "" else "" }
+      - other_parties1_phone_number_work: |
+          % if other_parties[0].has_job:
+          ${ other_parties[0].job.employer.phone }
           % endif
-      - defendants1_gross_weekly_income: |
-          % if defendants[0].has_job:
-          % if defendants[0].income.total() > 0:
-          $ ${ round(defendants[0].income.total() / 52, 2) }
+      - other_parties1_occupation: ${ other_parties[0].occupation }
+      - other_parties1_employer_name_address: |
+          % if other_parties[0].has_job:
+          ${ other_parties[0].job.employer.name.first } ${ other_parties[0].job.employer.address.on_one_line() if other_parties[0].job.employer.address.address != "" else "" }
+          % endif
+      - other_parties1_gross_weekly_income: |
+          % if other_parties[0].has_job:
+          % if other_parties[0].income.total() > 0:
+          $ ${ round(other_parties[0].income.total() / 52, 2) }
           % endif
           % endif
-      - defendants1_applied_public_assistance_yes: ${True if other_party_pa_status in ["gets_assistance", "applied"] else False }
-      - defendants1_applied_public_assistance_no: ${True if other_party_pa_status == "none" else False }
-      - defendants1_applied_public_assistance_unsure: ${True if other_party_pa_status == "unknown" else False }
-      - defendants1_public_assistance_type_case_number: |
+      - other_parties1_applied_public_assistance_yes: ${True if other_party_pa_status in ["gets_assistance", "applied"] else False }
+      - other_parties1_applied_public_assistance_no: ${True if other_party_pa_status == "none" else False }
+      - other_parties1_applied_public_assistance_unsure: ${True if other_party_pa_status == "unknown" else False }
+      - other_parties1_public_assistance_type_case_number: |
           % if other_party_pa_status == "gets_assistance":
           ${ comma_and_list(op_public_assistance_list) } Case number: ${ comma_and_list(op_pa_case_numbers_foc_23) }
           % elif other_party_pa_status == "applied":
           Applied for ${ op_public_assistance_list }
           % endif
-      - defendants1_other_citizenship: |
-          % if defendants[0].has_foreign_citizenship:
-          ${ defendants[0].countries_of_citizenship }
+      - other_parties1_other_citizenship: |
+          % if other_parties[0].has_foreign_citizenship:
+          ${ other_parties[0].countries_of_citizenship }
           % endif
-      - defendants1_foreign_ids: |
-          % if defendants[0].has_foreign_citizenship:
-          ${ defendants[0].foreign_identity_documents }
+      - other_parties1_foreign_ids: |
+          % if other_parties[0].has_foreign_citizenship:
+          ${ other_parties[0].foreign_identity_documents }
           % endif
       - children0_name: ${ children.filter(legal_parent="both")[0].name.full() }
       - children0_sex: ${ "f" if children.filter(legal_parent="both")[0].gender == "female" else "m" }
@@ -328,16 +328,16 @@ attachment:
           % if len(children.filter(legal_parent="both")) > 0:
           % if children_now_live_with_which_parent == "both":
           See addendum for children's addresses.
-          % elif children_now_live_with_which_parent == "plaintiffs[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[0].lives_with == "plaintiffs[0]"):
+          % elif children_now_live_with_which_parent == "users[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[0].lives_with == "users[0]"):
           % if confidential_contact_info_yn:
           Confidential
           % else:
-          ${ plaintiffs[0].address.line_one() }
-          ${ plaintiffs[0].address.line_two() }
+          ${ users[0].address.line_one() }
+          ${ users[0].address.line_two() }
           % endif
-          % elif children_now_live_with_which_parent == "defendants[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[0].lives_with == "defendants[0]"):
-          ${ defendants[0].address.line_one() }
-          ${ defendants[0].address.line_two() }
+          % elif children_now_live_with_which_parent == "other_parties[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[0].lives_with == "other_parties[0]"):
+          ${ other_parties[0].address.line_one() }
+          ${ other_parties[0].address.line_two() }
           % endif
           % endif
       - children1_name: ${ children.filter(legal_parent="both")[1].name.full() }
@@ -354,16 +354,16 @@ attachment:
           % if len(children.filter(legal_parent="both")) > 1:
           % if children_now_live_with_which_parent == "both":
           See addendum for children's addresses.
-          % elif children_now_live_with_which_parent == "plaintiffs[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[1].lives_with == "plaintiffs[0]"):
+          % elif children_now_live_with_which_parent == "users[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[1].lives_with == "users[0]"):
           % if confidential_contact_info_yn:
           Confidential
           % else:
-          ${ plaintiffs[0].address.line_one() }
-          ${ plaintiffs[0].address.line_two() }
+          ${ users[0].address.line_one() }
+          ${ users[0].address.line_two() }
           % endif
-          % elif children_now_live_with_which_parent == "defendants[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[1].lives_with == "defendants[0]"):
-          ${ defendants[0].address.line_one() }
-          ${ defendants[0].address.line_two() }
+          % elif children_now_live_with_which_parent == "other_parties[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[1].lives_with == "other_parties[0]"):
+          ${ other_parties[0].address.line_one() }
+          ${ other_parties[0].address.line_two() }
           % endif
           % endif
       - children2_name: ${ children.filter(legal_parent="both")[2].name.full() }
@@ -380,16 +380,16 @@ attachment:
           % if len(children.filter(legal_parent="both")) > 2:
           % if children_now_live_with_which_parent == "both":
           See addendum for children's addresses.
-          % elif children_now_live_with_which_parent == "plaintiffs[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[2].lives_with == "plaintiffs[0]"):
+          % elif children_now_live_with_which_parent == "users[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[2].lives_with == "users[0]"):
           % if confidential_contact_info_yn:
           Confidential
           % else:
-          ${ plaintiffs[0].address.line_one() }
-          ${ plaintiffs[0].address.line_two() }
+          ${ users[0].address.line_one() }
+          ${ users[0].address.line_two() }
           % endif
-          % elif children_now_live_with_which_parent == "defendants[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[2].lives_with == "defendants[0]"):
-          ${ defendants[0].address.line_one() }
-          ${ defendants[0].address.line_two() }
+          % elif children_now_live_with_which_parent == "other_parties[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[2].lives_with == "other_parties[0]"):
+          ${ other_parties[0].address.line_one() }
+          ${ other_parties[0].address.line_two() }
           % endif
           % endif
       - children3_name: ${ children.filter(legal_parent="both")[3].name.full() }
@@ -406,16 +406,16 @@ attachment:
           % if len(children.filter(legal_parent="both")) > 3:
           % if children_now_live_with_which_parent == "both":
           See addendum for children's addresses.
-          % elif children_now_live_with_which_parent == "plaintiffs[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[3].lives_with == "plaintiffs[0]"):
+          % elif children_now_live_with_which_parent == "users[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[3].lives_with == "users[0]"):
           % if confidential_contact_info_yn:
           Confidential
           % else:
-          ${ plaintiffs[0].address.line_one() }
-          ${ plaintiffs[0].address.line_two() }
+          ${ users[0].address.line_one() }
+          ${ users[0].address.line_two() }
           % endif
-          % elif children_now_live_with_which_parent == "defendants[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[3].lives_with == "defendants[0]"):
-          ${ defendants[0].address.line_one() }
-          ${ defendants[0].address.line_two() }
+          % elif children_now_live_with_which_parent == "other_parties[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[3].lives_with == "other_parties[0]"):
+          ${ other_parties[0].address.line_one() }
+          ${ other_parties[0].address.line_two() }
           % endif
           % endif
       - children4_name: |
@@ -448,16 +448,16 @@ attachment:
           % if len(children.filter(legal_parent="both")) == 5:
           % if children_now_live_with_which_parent == "both":
           See addendum for children's addresses.
-          % elif children_now_live_with_which_parent == "plaintiffs[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[4].lives_with == "plaintiffs[0]"):
+          % elif children_now_live_with_which_parent == "users[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[4].lives_with == "users[0]"):
           % if confidential_contact_info_yn:
           Confidential
           % else:
-          ${ plaintiffs[0].address.line_one() }
-          ${ plaintiffs[0].address.line_two() }
+          ${ users[0].address.line_one() }
+          ${ users[0].address.line_two() }
           % endif
-          % elif children_now_live_with_which_parent == "defendants[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[4].lives_with == "defendants[0]"):
-          ${ defendants[0].address.line_one() }
-          ${ defendants[0].address.line_two() }
+          % elif children_now_live_with_which_parent == "other_parties[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[4].lives_with == "other_parties[0]"):
+          ${ other_parties[0].address.line_one() }
+          ${ other_parties[0].address.line_two() }
           % endif
           % endif
       - stepchildren0_name: ${ stepchildren_for_addendum[0].name.full() }
@@ -484,12 +484,12 @@ attachment:
           % if confidential_contact_info_yn:
           Confidential
           % else:
-          ${ plaintiffs[0].address.line_one() }
-          ${ plaintiffs[0].address.line_two() }
+          ${ users[0].address.line_one() }
+          ${ users[0].address.line_two() }
           % endif
           % elif stepchildren_for_addendum[0].stepchild_lives_with == "other_party":
-          ${ defendants[0].address.line_one() }
-          ${ defendants[0].address.line_two() }   
+          ${ other_parties[0].address.line_one() }
+          ${ other_parties[0].address.line_two() }
           % elif stepchildren_for_addendum[0].stepchild_lives_with == "other":
           % if stepchildren_for_addendum[0].stepchild_address_confidential:
           Confidential
@@ -534,12 +534,12 @@ attachment:
           % if confidential_contact_info_yn:
           Confidential
           % else:
-          ${ plaintiffs[0].address.line_one() }
-          ${ plaintiffs[0].address.line_two() }
+          ${ users[0].address.line_one() }
+          ${ users[0].address.line_two() }
           % endif
           % elif stepchildren_for_addendum[1].stepchild_lives_with == "other_party":
-          ${ defendants[0].address.line_one() }
-          ${ defendants[0].address.line_two() }   
+          ${ other_parties[0].address.line_one() }
+          ${ other_parties[0].address.line_two() }
           % elif stepchildren_for_addendum[1].stepchild_lives_with == "other":
           % if stepchildren_for_addendum[1].stepchild_address_confidential:
           Confidential
@@ -557,9 +557,9 @@ attachment:
       #- insurance_company_name0:
       #- insurance_policy_cert_group_number0:
       ## we have form fields up to insurance4, but currently just sending to addendum
-      - plaintiffs1_signature: |
+      - users1_signature: |
           % if MLH_esign:
-          /s/ ${ plaintiffs[0].name_full() }
+          /s/ ${ users[0].name_full() }
           % else:
           ${ '' }
           % endif
@@ -602,12 +602,12 @@ attachment:
       # - judge_name: not used in divorce_complaint, will need to add for answers
       - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
       - defendants0_name_full: ${defendants[0].name_full()}
-      - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
-      - plaintiffs0_phone_number: ${plaintiffs[0].phone_number}
-      - plaintiffs0_address_on_one_line: ${plaintiffs[0].address.on_one_line() if not confidential_contact_info_yn else ""}
-      - plaintiffs0_birthdate: ${plaintiffs[0].birthdate}
-      - plaintiffs0_ssn: ${plaintiffs[0].ssn}
-      - plaintiffs0_driver_license_and_state: ${ plaintiffs[0].license_number + " " + plaintiffs[0].license_state }
+      - users0_name_full: ${users[0].name_full()}
+      - users0_phone_number: ${users[0].phone_number}
+      - users0_address_on_one_line: ${users[0].address.on_one_line() if not confidential_contact_info_yn else ""}
+      - users0_birthdate: ${users[0].birthdate}
+      - users0_ssn: ${users[0].ssn}
+      - users0_driver_license_and_state: ${ users[0].license_number + " " + users[0].license_state }
 ---
 # --------------------------------------------------------------------
 ## Appplication for IV-D Child Support Services, DHS-1201D
@@ -625,89 +625,89 @@ attachment:
     editable: False
     fields:
       - docket_number: ${docket_number}
-      - relationship_mother: ${ True if plaintiffs[0].gender == "female" and defendants[0].gender == "male" else False }
-      - relationship_father: ${ True if plaintiffs[0].gender == "male" and defendants[0].gender == "female" else False }
+      - relationship_mother: ${ True if users[0].gender == "female" and other_parties[0].gender == "male" else False }
+      - relationship_father: ${ True if users[0].gender == "male" and other_parties[0].gender == "female" else False }
       - kids_live_with_mother: |
-          % if plaintiffs[0].gender == "male" and defendants[0].gender == "female":
-          ${ True if children_now_live_with_which_parent == defendants[0] else False }
-          % elif plaintiffs[0].gender == "female" and defendants[0].gender == "male":
-          ${ True if children_now_live_with_which_parent == plaintiffs[0] else False }
-          % endif        
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
+          ${ True if children_now_live_with_which_parent == other_parties[0] else False }
+          % elif users[0].gender == "female" and other_parties[0].gender == "male":
+          ${ True if children_now_live_with_which_parent == users[0] else False }
+          % endif
       - kids_live_with_father: |
-          % if plaintiffs[0].gender == "female" and defendants[0].gender == "male":
-          ${ True if children_now_live_with_which_parent == defendants[0] else False }
-          % elif plaintiffs[0].gender == "male" and defendants[0].gender == "female":
-          ${ True if children_now_live_with_which_parent == plaintiffs[0] else False }
+          % if users[0].gender == "female" and other_parties[0].gender == "male":
+          ${ True if children_now_live_with_which_parent == other_parties[0] else False }
+          % elif users[0].gender == "male" and other_parties[0].gender == "female":
+          ${ True if children_now_live_with_which_parent == users[0] else False }
           % endif     
       - kids_live_with_both: |
           ${ True if children_now_live_with_which_parent == "both" else False }
       - mothers1_name: |
-          % if plaintiffs[0].gender == "male" and defendants[0].gender == "female":
-          ${ defendants[0] }
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
+          ${ other_parties[0] }
           % else:
-          ${ plaintiffs[0] }
-          % endif        
+          ${ users[0] }
+          % endif
       - mothers1_ssn: |
-          % if plaintiffs[0].gender == "male" and defendants[0].gender == "female":
-          ${ defendants[0].ssn }
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
+          ${ other_parties[0].ssn }
           % else:
-          ${ plaintiffs[0].ssn }
-          % endif     
+          ${ users[0].ssn }
+          % endif
       - mothers1_address_on_one_line: |
-          % if plaintiffs[0].gender == "male" and defendants[0].gender == "female":
-          % if defendants[0].mailing_address.yesno:
-          ${ defendants[0].mailing_address.on_one_line() }
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
+          % if other_parties[0].mailing_address.yesno:
+          ${ other_parties[0].mailing_address.on_one_line() }
           % else:
-          ${ defendants[0].address.on_one_line() }
+          ${ other_parties[0].address.on_one_line() }
           % endif
           % else:
           % if confidential_contact_info_yn:
-          Confidential- Mailing Address: ${ plaintiffs[0].address.on_one_line() }
-          % elif plaintiffs[0].mailing_address.yesno:
-          ${ plaintiffs[0].mailing_address.on_one_line() }
+          Confidential- Mailing Address: ${ users[0].address.on_one_line() }
+          % elif users[0].mailing_address.yesno:
+          ${ users[0].mailing_address.on_one_line() }
           % else:
-          ${ plaintiffs[0].address.on_one_line() }
+          ${ users[0].address.on_one_line() }
           % endif
           % endif     
       - mothers1_phone_number: |
-          % if plaintiffs[0].gender == "male" and defendants[0].gender == "female":
-          ${ phone_number_formatted(defendants[0].phone_number) }
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
+          ${ phone_number_formatted(other_parties[0].phone_number) }
           % else:
-          ${ phone_number_formatted(plaintiffs[0].phone_number) }
-          % endif     
+          ${ phone_number_formatted(users[0].phone_number) }
+          % endif
       - fathers1_name: |
-          % if plaintiffs[0].gender == "male" and defendants[0].gender == "female":
-          ${ plaintiffs[0] }
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
+          ${ users[0] }
           % else:
-          ${ defendants[0] }
-          % endif     
+          ${ other_parties[0] }
+          % endif
       - fathers1_ssn: |
-          % if plaintiffs[0].gender == "male" and defendants[0].gender == "female":
-          ${ plaintiffs[0].ssn }
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
+          ${ users[0].ssn }
           % else:
-          ${ defendants[0].ssn }
-          % endif   
+          ${ other_parties[0].ssn }
+          % endif
       - fathers1_address_on_one_line: |
-          % if plaintiffs[0].gender == "male" and defendants[0].gender == "female":
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
           % if confidential_contact_info_yn:
-          Confidential- Mailing Address: ${ plaintiffs[0].address.on_one_line() }
-          % elif plaintiffs[0].mailing_address.yesno:
-          ${ plaintiffs[0].mailing_address.on_one_line() }
+          Confidential- Mailing Address: ${ users[0].address.on_one_line() }
+          % elif users[0].mailing_address.yesno:
+          ${ users[0].mailing_address.on_one_line() }
           % else:
-          ${ plaintiffs[0].address.on_one_line() }
+          ${ users[0].address.on_one_line() }
           % endif
           % else:
-          % if defendants[0].mailing_address.yesno:
-          ${ defendants[0].mailing_address.on_one_line() }
+          % if other_parties[0].mailing_address.yesno:
+          ${ other_parties[0].mailing_address.on_one_line() }
           % else:
-          ${ defendants[0].address.on_one_line() }
+          ${ other_parties[0].address.on_one_line() }
           % endif
-          % endif   
-      - fathers1_phone_number: | 
-          % if plaintiffs[0].gender == "male" and defendants[0].gender == "female":
-          ${ phone_number_formatted(plaintiffs[0].phone_number) }
+          % endif
+      - fathers1_phone_number: |
+          % if users[0].gender == "male" and other_parties[0].gender == "female":
+          ${ phone_number_formatted(users[0].phone_number) }
           % else:
-          ${ phone_number_formatted(defendants[0].phone_number) }
+          ${ phone_number_formatted(other_parties[0].phone_number) }
           % endif   
       - confidential_contact_info_yes: ${ confidential_contact_info_yn }
       - confidential_contact_info_no: ${ True if not confidential_contact_info_yn else False }
@@ -715,15 +715,15 @@ attachment:
       - permission_to_collect_overpayment_no: ${ not allow_child_support_overpayment_correction }
       - collection_percentage_10: ${ allow_child_support_overpayment_correction and child_support_overpayment_percentage == "ten" }
       - collection_percentage_50: ${ allow_child_support_overpayment_correction and child_support_overpayment_percentage == "fifty" }
-      - plaintiffs1_signature: |
+      - users1_signature: |
           % if MLH_esign:
-          /s/ ${ plaintiffs[0].name_full() }
+          /s/ ${ users[0].name_full() }
           % else:
           ${ '' }
           % endif
-      - plaintiffs1_name: |
+      - users1_name: |
           % if MLH_esign:
-          ${ plaintiffs[0].name_full() }
+          ${ users[0].name_full() }
           % else:
           ${ '' }
           % endif
@@ -790,7 +790,7 @@ attachment:
         % endif
     - signature: |
         % if (tool_ID == "JOD_only" and marriage.temporary_order and MLH_esign) or (tool_ID == "divorce_complaint" and returning_to_finalize and marriage.temporary_order and MLH_esign):
-        /s/ ${ plaintiffs[0].name_full() }
+        /s/ ${ users[0].name_full() }
         % else:
         ${ '' }
         % endif
@@ -973,64 +973,64 @@ attachment:
         % if len(children.filter(legal_parent="both")) > 0:
         % if children_now_live_with_which_parent == "both":
         See addendum for children's addresses.
-        % elif children_now_live_with_which_parent == "plaintiffs[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[0].lives_with == "plaintiffs[0]"):
+        % elif children_now_live_with_which_parent == "users[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[0].lives_with == "users[0]"):
         % if confidential_contact_info_yn:
         Confidential
         % else:
-        ${ plaintiffs[0].address.line_one() }
-        ${ plaintiffs[0].address.line_two() }
+        ${ users[0].address.line_one() }
+        ${ users[0].address.line_two() }
         % endif
-        % elif children_now_live_with_which_parent == "defendants[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[0].lives_with == "defendants[0]"):
-        ${ defendants[0].address.line_one() }
-        ${ defendants[0].address.line_two() }
+        % elif children_now_live_with_which_parent == "other_parties[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[0].lives_with == "other_parties[0]"):
+        ${ other_parties[0].address.line_one() }
+        ${ other_parties[0].address.line_two() }
         % endif
         % endif
     - children2_address: |
         % if len(children.filter(legal_parent="both")) > 1:
         % if children_now_live_with_which_parent == "both":
         See addendum for children's addresses.
-        % elif children_now_live_with_which_parent == "plaintiffs[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[1].lives_with == "plaintiffs[0]"):
+        % elif children_now_live_with_which_parent == "users[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[1].lives_with == "users[0]"):
         % if confidential_contact_info_yn:
         Confidential
         % else:
-        ${ plaintiffs[0].address.line_one() }
-        ${ plaintiffs[0].address.line_two() }
+        ${ users[0].address.line_one() }
+        ${ users[0].address.line_two() }
         % endif
-        % elif children_now_live_with_which_parent == "defendants[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[1].lives_with == "defendants[0]"):
-        ${ defendants[0].address.line_one() }
-        ${ defendants[0].address.line_two() }
+        % elif children_now_live_with_which_parent == "other_parties[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[1].lives_with == "other_parties[0]"):
+        ${ other_parties[0].address.line_one() }
+        ${ other_parties[0].address.line_two() }
         % endif
         % endif
     - children3_address: |
         % if len(children.filter(legal_parent="both")) > 2:
         % if children_now_live_with_which_parent == "both":
         See addendum for children's addresses.
-        % elif children_now_live_with_which_parent == "plaintiffs[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[2].lives_with == "plaintiffs[0]"):
+        % elif children_now_live_with_which_parent == "users[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[2].lives_with == "users[0]"):
         % if confidential_contact_info_yn:
         Confidential
         % else:
-        ${ plaintiffs[0].address.line_one() }
-        ${ plaintiffs[0].address.line_two() }
+        ${ users[0].address.line_one() }
+        ${ users[0].address.line_two() }
         % endif
-        % elif children_now_live_with_which_parent == "defendants[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[2].lives_with == "defendants[0]"):
-        ${ defendants[0].address.line_one() }
-        ${ defendants[0].address.line_two() }
+        % elif children_now_live_with_which_parent == "other_parties[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[2].lives_with == "other_parties[0]"):
+        ${ other_parties[0].address.line_one() }
+        ${ other_parties[0].address.line_two() }
         % endif
         % endif
     - children4_address: |
         % if len(children.filter(legal_parent="both")) > 3:
         % if children_now_live_with_which_parent == "both":
         See addendum for children's addresses.
-        % elif children_now_live_with_which_parent == "plaintiffs[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[4].lives_with == "plaintiffs[0]"):
+        % elif children_now_live_with_which_parent == "users[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[4].lives_with == "users[0]"):
         % if confidential_contact_info_yn:
         Confidential
         % else:
-        ${ plaintiffs[0].address.line_one() }
-        ${ plaintiffs[0].address.line_two() }
+        ${ users[0].address.line_one() }
+        ${ users[0].address.line_two() }
         % endif
-        % elif children_now_live_with_which_parent == "defendants[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[4].lives_with == "defendants[0]"):
-        ${ defendants[0].address.line_one() }
-        ${ defendants[0].address.line_two() }
+        % elif children_now_live_with_which_parent == "other_parties[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[4].lives_with == "other_parties[0]"):
+        ${ other_parties[0].address.line_one() }
+        ${ other_parties[0].address.line_two() }
         % endif
         % endif
     - children1_legal_custody_provisions: |
@@ -1465,18 +1465,18 @@ attachment:
         ${ defendants[0].address.line_two() }
         ${ word("Unkonwn phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
     - plaintiffs_attorney_block: |
-        % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not defendants[0].has_attorney):
+        % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not other_parties[0].has_attorney):
         Self-represented
-        % elif defendants[0].has_attorney:
+        % elif other_parties[0].has_attorney:
         ${ plaintiffs[0].attorney.name_full() }
         ${ plaintiffs[0].attorney.address.line_one() }
         ${ plaintiffs[0].attorney.address.line_two() }
         ${ word("Unknown phone") if plaintiffs[0].attorney.no_phone_number else phone_number_formatted(plaintiffs[0].attorney.phone_number) }
         % endif
     - defendants_attorney_block: |
-        % if user_ask_role == "defendant" or (tool_ID == "JOD_only" and user_ask_role == "plaintiff" and not defendants[0].has_attorney):
+        % if user_ask_role == "defendant" or (tool_ID == "JOD_only" and user_ask_role == "plaintiff" and not other_parties[0].has_attorney):
         Self-represented
-        % elif defendants[0].has_attorney:
+        % elif other_parties[0].has_attorney:
         ${ defendants[0].attorney.name_full() }
         ${ defendants[0].attorney.address.line_one() }
         ${ defendants[0].attorney.address.line_two() }
@@ -1543,18 +1543,18 @@ attachment:
           ${ defendants[0].address.line_two() }
           ${ word("Does not have phone") if defendants[0].no_phone_number else defendants[0].phone_numbers() }
       - plaintiffs_attorney_block: |
-          % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not defendants[0].has_attorney):
+          % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not other_parties[0].has_attorney):
           Self-represented
-          % elif defendants[0].has_attorney:
+          % elif other_parties[0].has_attorney:
           ${ plaintiffs[0].attorney.name_full() }
           ${ plaintiffs[0].attorney.address.line_one() }
           ${ plaintiffs[0].attorney.address.line_two() }
           ${ word("Does not have phone") if plaintiffs[0].attorney.no_phone_number else plaintiffs[0].attorney.phone_numbers() }
           % endif
       - defendants_attorney_block: |
-          % if user_ask_role == "defendant" or (tool_ID == "JOD_only" and user_ask_role == "plaintiff" and not defendants[0].has_attorney):
+          % if user_ask_role == "defendant" or (tool_ID == "JOD_only" and user_ask_role == "plaintiff" and not other_parties[0].has_attorney):
           Self-represented
-          % elif defendants[0].has_attorney:
+          % elif other_parties[0].has_attorney:
           ${ defendants[0].attorney.name_full() }
           ${ defendants[0].attorney.address.line_one() }
           ${ defendants[0].attorney.address.line_two() }
@@ -1579,15 +1579,15 @@ attachment:
       # - standard_provisions_modified:
       - spousal_support_payer_name: |
           % if user_wants_post_divorce_support:
-          ${ defendants[0] }
+          ${ other_parties[0] }
           % elif spousal_support_provisions == "user_agrees_to_pay_spousal_support":
-          ${ plaintiffs[0] }
+          ${ users[0] }
           % endif
       - spousal_support_payee_name: |
           % if user_wants_post_divorce_support:
-          ${ plaintiffs[0] }
+          ${ users[0] }
           % elif spousal_support_provisions == "user_agrees_to_pay_spousal_support":
-          ${ defendants[0] }
+          ${ other_parties[0] }
           % endif
       - spousal_support_monthly_amount: |
           % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
@@ -1632,7 +1632,7 @@ attachment:
           % endif
       - plaintiffs0_signature: |
           % if user_ask_role == "plaintiff" and MLH_esign:
-          /s/ ${ plaintiffs[0].name_full() }
+          /s/ ${ users[0].name_full() }
           % else:
           ${ '' }
           % endif
@@ -1650,7 +1650,7 @@ attachment:
           % endif
       - defendants0_signature: |
           % if user_ask_role == "defendant" and MLH_esign:
-          /s/ ${ plaintiffs[0].name_full() }
+          /s/ ${ users[0].name_full() }
           % else:
           ${ '' }
           % endif
