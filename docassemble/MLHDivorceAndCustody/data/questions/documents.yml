@@ -1565,7 +1565,7 @@ attachment:
           ${ plaintiffs[0].job.employer.name.first }
           ${ plaintiffs[0].job.employer.address.line_one() }
           ${ plaintiffs[0].job.employer.address.line_two() }
-          ${ word("Phone unknown.") if plaintiffs[0].job.employer.phone == "" else users[0].job.employer.phone }
+          ${ word("Phone unknown.") if plaintiffs[0].job.employer.phone == "" else plaintiffs[0].job.employer.phone }
           % endif
       - defendant_employer_block: |
           % if defendants[0].has_job:
