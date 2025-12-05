@@ -392,6 +392,7 @@ fields:
     field: marriage.have_financial_instruments
     datatype: yesnoradio
 ---
+if: marriage.have_financial_instruments
 id: marriage.financial_instruments_held_together
 question: |
   Financial investments
@@ -400,6 +401,7 @@ fields:
     field: marriage.financial_instruments_held_together
     datatype: yesnoradio
 ---
+if: marriage.have_financial_instruments and marriage.financial_instruments_held_together
 id: marriage.financial_instruments_held_together_agree_about_division
 question: |
   Financial investments
@@ -408,6 +410,7 @@ fields:
     field: marriage.financial_instruments_held_together_agree_about_division
     datatype: yesnoradio
 ---
+if: marriage.have_financial_instruments and marriage.financial_instruments_held_together
 id: marriage.financial_instruments_held_together_continue
 question: |
   Financial investments
@@ -422,6 +425,7 @@ fields:
     field: marriage.financial_instruments_held_together_continue
     datatype: yesnoradio
 ---
+if: marriage.have_financial_instruments and not marriage.financial_instruments_held_together
 id: marriage.financial_instruments_keep_or_divide
 question: |
   Financial investments
@@ -435,6 +439,7 @@ fields:
       - label: I want the judge to divide our account(s)
         value: divide
 ---
+if: marriage.have_financial_instruments and not marriage.financial_instruments_held_together and marriage.financial_instruments_keep_or_divide == "keep"
 id: marriage.financial_instruments_keep_own_continue
 question: |
   Financial investments
@@ -461,6 +466,7 @@ fields:
     field: marriage.have_experienced_domestic_violence
     datatype: yesnoradio
 ---
+if: marriage.have_experienced_domestic_violence
 id: marriage.have_experienced_domestic_violence_continue
 question: |
   Domestic violence
@@ -477,20 +483,22 @@ fields:
 ## users[0]
 # --------------------------------------------------------------------
 ---
+if: tool_ID == "JOD_only"
 id: users[0].previous_last_name 
 question: |
   Previous last name
 fields:
   - label: Was your last name something _other than_ ${users[0].name.last} before your marriage?
-    field: users[0].previous_last_name_yn
+    field: users[0].has_previous_name
     datatype: yesnoradio
   - label: Please enter your last name before your marriage
     field: users[0].previous_last_name
-    show if: users[0].previous_last_name_yn
+    show if: users[0].has_previous_name
 validation code: |
-  if not users[0].previous_last_name_yn:
+  if not users[0].has_previous_name:
     users[0].invalidate_attr("previous_last_name")
 ---
+if: tool_ID in ["divorce_complaint", "divorce_answer"]
 id: users[0].previous_name 
 question: |
   Previous name
@@ -611,9 +619,9 @@ fields:
     field: confidential_contact_info_yn
     datatype: yesnoradio
 validation code: |
-  users[0].address.invalidate_attr("address", "unit", "city", "state", "zip", "country")
+  users[0].address.invalidate_attr("address", "unit", "city", "state", "zip", "country", "county")
   users[0].mailing_address.invalidate_attr("yesno", "address", "unit", "city", "state", "zip", "country")
-  users[0].invalidate_attr("village_or_township_yn", "village_or_township", "phone_number")
+  users[0].invalidate_attr("village_or_township_yn", "village_or_township", "no_phone_number", "phone_number", "lives_in_Michigan", "has_lived_6_months_MI", "ten_days_in_county")
 ---
 id: confidential_contact_info_yn_more_template
 template: confidential_contact_info_yn_more_template
@@ -689,7 +697,7 @@ fields:
       Please tap **${MLH_back_button_label}** and update your address so that it does **not** list Michigan as your state.
     js show if: |
       ${ "true" if users[0].address.state in ["Michigan", "MI"] else "false" } && val("users[0].lives_in_Michigan") === false
-  - Have you lived in Michigan for the last 180 days or more ${ today().minus(days=180) }?: users[0].has_lived_6_months_MI
+  - Have you lived in Michigan for the last 180 days or more, since ${ today().minus(days=180) }?: users[0].has_lived_6_months_MI
     datatype: yesnoradio
     js show if: |
       ${ "true" if users[0].address.state in ["Michigan", "MI"] else "false" } && val("users[0].lives_in_Michigan") === true
@@ -714,26 +722,34 @@ fields:
     choices:
       - "Yes, I live in Michigan.": True
       - "No, I **don't** live in Michigan.": False
-  - Have you lived in Michigan for the last 180 days or more ${ today().minus(days=180) }?: users[0].has_lived_6_months_MI
+  - Have you lived in Michigan for the last 180 days or more, since ${ today().minus(days=180) }?: users[0].has_lived_6_months_MI
     datatype: yesnoradio
     show if: users[0].lives_in_Michigan
   - What County do you live in?: users[0].address.county
     code: court_list._load_courts()["address_county"].unique()
     show if: users[0].lives_in_Michigan
 ---
-if: tool_ID == "divorce_complaint" and users[0].has_lived_6_months_MI
+if: tool_ID == "divorce_complaint" and users[0].lives_in_Michigan and users[0].has_lived_6_months_MI
 id: 10-day test user
 question: Time in ${ users[0].address.county }
 fields:
   - Have you lived in ${ users[0].address.county } for the last 10 days or more?: users[0].ten_days_in_county
     datatype: yesnoradio
 ---
+if: tool_ID == "JOD_only" and users[0].address.state == "MI"
 id: users[0].address.county
 question: |
   County
 fields:
   - What County do you live in?: users[0].address.county
     code: court_list._load_courts()["address_county"].unique() + " County"
+---
+if: (tool_ID == "JOD_only" and not users[0].address.state == "MI") or (tool_ID == "divorce_complaint" and not users[0].lives_in_Michigan)
+id: users[0].address.county
+question: |
+  County
+fields:
+  - What County do you live in?: users[0].address.county
 ---
 id: users[0].village_or_township
 question: |
@@ -858,20 +874,22 @@ fields:
   - code: |
       other_parties[0].name_fields(person_or_business="person")
 ---
+if: tool_ID == "JOD_only"
 id: other_parties[0].previous_last_name
 question: |
   Previous last name
 fields:
   - label: Was your spouse's last name something _other than_ ${other_parties[0].name.last} before your marriage?
-    field: other_parties[0].previous_last_name_yn
+    field: other_parties[0].has_previous_name
     datatype: yesnoradio
   - label: Please enter your spouse's last name before your marriage
     field: other_parties[0].previous_last_name
-    show if: other_parties[0].previous_last_name_yn
+    show if: other_parties[0].has_previous_name
 validation code: |
-  if not other_parties[0].previous_last_name_yn:
+  if not other_parties[0].has_previous_name:
     other_parties[0].invalidate_attr("previous_last_name")
 ---
+if: tool_ID in ["divorce_complaint", "divorce_answer"]
 id: other_parties[0].previous_name 
 question: |
   Previous name
@@ -1001,7 +1019,7 @@ fields:
       Please tap **${MLH_back_button_label}** and update your spouse's address so that it does **not** list Michigan as the state.
     js show if: |
       ${ "true" if other_parties[0].address.state in ["Michigan", "MI"] else "false" } && val("other_parties[0].lives_in_Michigan") === false
-  - Has ${ other_parties[0] } lived in Michigan for the last 180 days or more ${ today().minus(days=180) }?: other_parties[0].has_lived_6_months_MI
+  - Has ${ other_parties[0] } lived in Michigan for the last 180 days or more, since ${ today().minus(days=180) }?: other_parties[0].has_lived_6_months_MI
     datatype: yesnoradio
     js show if: |
       ${ "true" if other_parties[0].address.state in ["Michigan", "MI"] else "false" } && val("other_parties[0].lives_in_Michigan") === true
@@ -2190,8 +2208,8 @@ code: |
       if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
         users[0].ten_days_in_county
     if users[0].address.state == "MI":
-      users[0].address.county # skipped if answered on lives_in_Michigan screen
       users[0].village_or_township_yn
+    users[0].address.county # skipped if answered on lives_in_Michigan screen
     if users[0].mailing_address.yesno:
       users[0].mailing_address.address
   users[0].no_phone_number
