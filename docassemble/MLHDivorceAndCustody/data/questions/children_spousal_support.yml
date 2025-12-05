@@ -3693,7 +3693,7 @@ if: there_are_marital_children or user_wants_post_divorce_support
 question: Other names
 subquestion: |
   * Your name is ${users[0]}.
-  % if tool_ID == "JOD_only" and users[0].previous_last_name_yn:
+  % if tool_ID == "JOD_only" and users[0].has_previous_name:
   * Your previous last name was ${users[0].previous_last_name}.
   % elif tool_ID == "divorce_complaint" and users[0].has_previous_name:
   * Your previous name was ${users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name}.
@@ -3829,7 +3829,7 @@ if: there_are_marital_children or user_wants_post_divorce_support
 question: Other names
 subquestion: |
   * Your spouse's name is ${other_parties[0]}.
-  % if tool_ID == "JOD_only" and other_parties[0].previous_last_name_yn:
+  % if tool_ID == "JOD_only" and other_parties[0].has_previous_name:
   * Their previous last name was ${other_parties[0].previous_last_name}.
   % elif tool_ID == "divorce_complaint" and other_parties[0].has_previous_name:
   * Their previous name was ${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}.

@@ -23,14 +23,14 @@ review:
         - the_court
         - the_foc
     button: |
-      ##### County of the court where your case is
+      ##### County where your case is filed
         - ${county_choice}
       ##### Court
         - ${the_court}
     show if: tool_ID == "JOD_only"
   - Edit: docket_number
     button: |
-      ##### What is your case number
+      ##### Case number
         - ${docket_number}
     show if: tool_ID == "JOD_only"
   - Edit:
@@ -43,6 +43,18 @@ review:
       ##### Are you the Plaintiff or the Defendant in this case?
         - ${user_ask_role.capitalize()}
     show if: tool_ID == "JOD_only"
+  - Edit:
+      - spouse_is_in_military
+    button: |
+      ##### Spouse on active US military duty?
+        - ${word(yesno(spouse_is_in_military))}
+  - Edit:
+      - marriage.have_experienced_domestic_violence
+      - follow up:
+        - marriage.have_experienced_domestic_violence_continue
+    button: |
+      ##### Has there been domestic violence or threats by your spouse?
+        - ${word(yesno(marriage.have_experienced_domestic_violence))}
 #
 # ---------- users[0] ----------
 #
@@ -55,15 +67,19 @@ review:
       ##### Your name
         - ${users[0]}
   - Edit:
-      - users[0].previous_last_name_yn
-    button: |
-      ##### Your previous last name
-        - ${users[0].attr("previous_last_name")}
-  - Edit:
       - users[0].has_previous_name
     button: |
+      % if tool_ID == "JOD_only":
+      ##### Your previous last name
+        - ${users[0].attr("previous_last_name")}
+      % elif tool_ID in ["divorce_complaint", "divorce_answer"]:
       ##### Your previous name
+      % if users[0].has_previous_name:
         - ${users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name}
+      % else:
+        - None
+      % endif
+      % endif
   - Edit:
       - users[0].new_last_name_yn
     button: |
@@ -92,21 +108,55 @@ review:
   - Edit:
       - confidential_contact_info_yn
       - recompute:
-        - user_contact_info_block
+        - interview_order_user_contact_info
     button: |
-      ##### Contact information confidentiality
+      ##### Keep your contact info confidential?
         - ${word(yesno(confidential_contact_info_yn))}
   - Edit:
       - users[0].address.address
     button: |
       ##### Your ${"safe mailing address" if confidential_contact_info_yn else "address"}
         - ${users[0].address.on_one_line()}
+    show if: tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and confidential_contact_info_yn)
+  - Edit:
+      - users[0].address.address
+      - users[0].lives_in_Michigan
+      - follow up:
+        - users[0].ten_days_in_county
+    button: |
+      ##### Your address:
+        - ${users[0].address.on_one_line()}
+      % if users[0].lives_in_Michigan:
+      ##### Have you lived in Michigan for 180+ days?
+        - ${word(yesno(users[0].has_lived_6_months_MI))}
+      % if users[0].has_lived_6_months_MI:
+      ##### Have you lived in ${users[0].address.county} County for the last 10 days?
+        - ${word(yesno(users[0].ten_days_in_county))}
+      % endif
+      % endif
+    show if: not confidential_contact_info_yn
+  - Edit:
+      - users[0].lives_in_Michigan 
+      - follow up:
+        - users[0].ten_days_in_county
+    button: |
+      ##### Do you live in Michigan?
+        - ${word(yesno(users[0].lives_in_Michigan))}   
+      % if users[0].lives_in_Michigan:
+      ##### Have you lived in Michigan for 180+ days?
+        - ${word(yesno(users[0].has_lived_6_months_MI))}
+      % if users[0].has_lived_6_months_MI:
+      ##### Have you lived in ${users[0].address.county} County for the last 10 days?
+        - ${word(yesno(users[0].ten_days_in_county))}
+      % endif
+      % endif
+    show if: confidential_contact_info_yn
   - Edit:
       - users[0].address.county
     button: |
       ##### Your County
         - ${users[0].address.county}
-    show if: users[0].address.state == "MI"
+    show if: (tool_ID == "divorce_complaint" and not users[0].lives_in_Michigan) or tool_ID == "JOD_only"
   - Edit:
       - users[0].village_or_township_yn
     button: |
@@ -132,7 +182,12 @@ review:
       - users[0].email
     button: |
       ##### Your email address
+      % if users[0].email == "":
+        - None
+      % else:
         - ${users[0].email}
+      % endif
+      
 #
 # ---------- other_parties[0] ----------
 #
@@ -145,15 +200,19 @@ review:
       ##### Spouse's name
         - ${other_parties[0]}
   - Edit:
-      - other_parties[0].previous_last_name_yn
-    button: |
-      ##### Spouse's previous last name
-        - ${other_parties[0].attr("previous_last_name")}
-  - Edit:
       - other_parties[0].has_previous_name
     button: |
+      % if tool_ID == "JOD_only":
+      ##### Spouse's previous last name
+        - ${other_parties[0].attr("previous_last_name")}
+      % elif tool_ID in ["divorce_complaint", "divorce_answer"]:
       ##### Your spouse's previous name
+      % if other_parties[0].has_previous_name:
         - ${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}
+      % else:
+        - None
+      % endif
+      % endif 
   - Edit:
       - other_parties[0].new_last_name_yn
     button: |
@@ -321,6 +380,28 @@ review:
       % if marriage.have_pension_retirement:
       ##### Do you each plan to keep your own accounts?
         - ${word(yesno(marriage.pension_retirement_accounts_keep_own))}
+      % endif
+  - Edit:
+      - marriage.have_financial_instruments
+      - follow up:
+        - marriage.financial_instruments_held_together
+        - marriage.financial_instruments_held_together_agree_about_division
+        - marriage.financial_instruments_held_together_continue
+        - marriage.financial_instruments_keep_or_divide
+        - marriage.financial_instruments_keep_own_continue
+    button: |
+      ##### Any stocks, bonds, Certificates of Deposit (CDs), mutual funds, Money Market Accounts, or other investments?
+        - ${word(yesno(marriage.have_financial_instruments))}
+      % if marriage.have_financial_instruments:
+      ##### Are any of these investments held in both of your names?
+        - ${word(yesno(marriage.financial_instruments_held_together))}
+      % if marriage.financial_instruments_held_together:
+      ##### Do you and your spouse agree on how these investments will be divided?
+        - ${word(yesno(marriage.financial_instruments_held_together_agree_about_division))}
+      % elif not marriage.financial_instruments_held_together:
+      ##### Do you each plan to keep your own accounts or do you want to ask the judge to divide your accounts?
+        - ${word(yesno(marriage.financial_instruments_keep_or_divide))}
+      % endif
       % endif
   - Edit:
       - marriage.personal_property_acquired
