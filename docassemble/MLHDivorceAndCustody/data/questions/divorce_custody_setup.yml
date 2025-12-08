@@ -61,7 +61,9 @@ code: |
     plaintiffs = other_parties
     defendants = users
 
-  set_persistent_labels = True
+  set_prior_family_case_types
+
+  set_persistent_interview_specific_logic = True
 ---
 # needed for spousal support questions
 # set these separately because they can change if user_ask_role is edited

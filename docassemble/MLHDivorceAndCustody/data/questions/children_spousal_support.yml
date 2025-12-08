@@ -222,6 +222,8 @@ fields:
     show if:
       variable: user_wants_post_divorce_support
       is: True
+validation code: | ## for review screen functionality ##
+  invalidate("spousal_support_provisions", "spousal_support_is_immutable", "spousal_support_factors_intro", "ss_factor_one_division_labor", "ss_factor_two_length", "ss_factor_three_work_user", "ss_factor_four_property", "ss_factor_five_ages", "ss_factor_six_ability_to_pay", "ss_factor_seven_situation", "ss_factor_eight_need", "ss_factor_nine_health", "ss_factor_ten_standards", "ss_factor_eleven_contributions", "ss_factor_twelve_fault_redux", "ss_factor_thirteen_cohabitation", "ss_factor_fourteen_equity")
 ---
 id: spousal support factors intro
 question: Asking for spousal support for after your divorce
@@ -442,7 +444,7 @@ fields:
       If you are responsible for supporting someone, explain below.
       
       ${ collapse_template(ss_factor_ten_responsibilities_help) }
-  - Explain your relationship to the person you are supporting and other facts that will help the court understand what this responsibility involves.: ss_factor_ten_responsibilities
+  - Explain your relationship to the person you are supporting (if anyone) and other facts that will help the court understand what this responsibility involves.: ss_factor_ten_responsibilities
     input type: area
     required: False
 ---
@@ -577,6 +579,7 @@ fields:
       variable: spousal_support_end_type
       is: other
 ---
+if: spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]
 id: spousal support agreement immutable?
 question: Do you both want to give up the right to change the spousal support agreement?
 subquestion: |
@@ -2160,8 +2163,8 @@ id: prior family cases table
 table: prior_family_cases.table
 rows: prior_family_cases
 columns:
-  - Case name: row_item.title
-  - Type: row_item.type
+  - Case No.: row_item.docket_number
+  - Type: prior_family_case_types[row_item.type]
   - State: row_item.state
   - County: row_item.county
 #  - Entered family before or during marriage: |
@@ -2423,26 +2426,34 @@ fields:
   - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
 ---
+objects:
+  # next 3 blocks create ordered list of case types sources for a multiple choice dropdown
+  - prior_family_case_types_ordered: DAOrderedDict.using(elements={**prior_family_case_types}, auto_gather=False, gathered=True)
+---
 code: |
-  prior_family_case_types = [
-                              ['divorce', 'Divorce'],
-                              ['separate_maintenance', 'Separate Maintenance'],
-                              ['protection_order', 'Protection Order'],
-                              ['parental_rights', 'Parental Rights (abuse/neglect)'],
-                              ['adoption', 'Adoption'],
-                              ['paternity', 'Paternity'],
-                              ['custody', 'Custody'],
-                              ['guardianship', 'Guardianship'],
-                              ['juvenile_delinquency', 'Juvenile Delinquency'],
-                              ['name_change', 'Name Change'],
-                              ['emancipation', 'Emancipation'],
-                              ['other', 'Other']
-                            ]
   if tool_ID in ["custody_answer", "custody_complaint"]:
-    prior_family_case_types.remove("['paternity', 'Paternity']", "['custody', 'Custody']")
+    prior_family_case_types_ordered.pop("paternity")
+    prior_family_case_types_ordered.pop("custody")
   if tool_ID == "custody_complaint":
-    prior_family_case_types.remove("['divorce', 'Divorce']")
+    prior_family_case_types_ordered.pop("divorce")
+
+  set_prior_family_case_types = True
 #TODO: when build custody, should new separate maintenance option be removed from one or both tools?
+---
+variable name: prior_family_case_types
+data: !!omap
+  - adoption: 'Adoption'
+  - custody: 'Custody'
+  - divorce: 'Divorce'
+  - emancipation: 'Emancipation'
+  - guardianship: 'Guardianship'
+  - juvenile_delinquency: 'Juvenile Delinquency'
+  - name_change: 'Name Change'
+  - parental_rights: 'Parental Rights (abuse/neglect)'
+  - paternity: 'Paternity'
+  - protection_order: 'Protection Order'
+  - separate_maintenance: 'Separate Maintenance'
+  - other: 'Other'
 ---
 # LHI "Prior Family Cases DLG"
 id: prior family case or order collection screen NOT JOD_only

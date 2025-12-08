@@ -109,21 +109,20 @@ review:
       - confidential_contact_info_yn
       - recompute:
         - interview_order_user_contact_info
+      # Note validation logic on confidential_contact_info_yn question
     button: |
       ##### Keep your contact info confidential?
         - ${word(yesno(confidential_contact_info_yn))}
   - Edit:
       - users[0].address.address
+      - recompute: 
+        - interview_order_user_contact_info
+      # Note validation logic on users[0].address.address question
     button: |
+      % if tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and confidential_contact_info_yn):
       ##### Your ${"safe mailing address" if confidential_contact_info_yn else "address"}
         - ${users[0].address.on_one_line()}
-    show if: tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and confidential_contact_info_yn)
-  - Edit:
-      - users[0].address.address
-      - users[0].lives_in_Michigan
-      - follow up:
-        - users[0].ten_days_in_county
-    button: |
+      % elif not confidential_contact_info_yn:
       ##### Your address:
         - ${users[0].address.on_one_line()}
       % if users[0].lives_in_Michigan:
@@ -134,7 +133,7 @@ review:
         - ${word(yesno(users[0].ten_days_in_county))}
       % endif
       % endif
-    show if: not confidential_contact_info_yn
+      % endif
   - Edit:
       - users[0].lives_in_Michigan 
       - follow up:
@@ -240,9 +239,25 @@ review:
         - ${other_parties[0].birthplace}
   - Edit:
       - other_parties[0].address.address
+      - recompute: 
+        - interview_order_other_parties_address_info
+      # Note validation logic on users[0].address.address question
     button: |
+      % if tool_ID == "JOD_only":
       ##### Spouse's address
         - ${other_parties[0].address.on_one_line()}
+      % elif tool_ID == "divorce_complaint":
+      ##### Spouse's address
+        - ${other_parties[0].address.on_one_line()}
+      % if other_parties[0].lives_in_Michigan:
+      ##### Has your spouse lived in Michigan for 180+ days?
+        - ${word(yesno(other_parties[0].has_lived_6_months_MI))}
+      % if other_parties[0].has_lived_6_months_MI:
+      ##### Has your spouse lived in ${other_parties[0].address.county} County for the last 10 days?
+        - ${word(yesno(other_parties[0].ten_days_in_county))}
+      % endif
+      % endif
+      % endif
   - Edit:
       - other_parties[0].mailing_address_yn
     button: |
@@ -272,7 +287,11 @@ review:
       - other_parties[0].email
     button: |
       ##### Spouse's email address
+      % if other_parties[0].email == "":
+        - None
+      % else:
         - ${other_parties[0].email}
+      % endif
   - Edit:
       - other_parties[0].has_attorney
       - invalidate:
@@ -290,11 +309,11 @@ review:
       - recompute:
         - interview_order_other_parties_attorney
     button: |
-      ##### Your spouse has an attorney
+      ##### Your spouse has a lawyer
         - ${word(yesno(other_parties[0].has_attorney))}
 
       % if other_parties[0].has_attorney:
-      ##### Attorney
+      ##### Lawyer
         % if other_parties[0].attorney.name.attribute_defined("first"):
         - **Name:** ${other_parties[0].attorney}
         % endif
@@ -346,21 +365,151 @@ review:
         - ${marriage.living_together_stopped_date}
       % endif
 #
+# ---------- spousal support ----------
+#
+# TODO ADD ACCORDION
+  - Edit:
+      - user_wants_temporary_spousal_support
+      - follow up:
+        - temp_spousal_support_info
+    button: |
+      ##### Need spousal support **before** divorce is final?
+        - ${word(yesno(user_wants_temporary_spousal_support))}
+  - Edit:
+      - user_wants_post_divorce_support
+      - recompute: 
+        - interview_order_spousal_support
+      # Note validation logic on user_wants_post_divorce_support question
+    button: |
+      ##### Need spousal support **after** divorce is final?
+        - ${word(yesno(user_wants_post_divorce_support))}  
+  - Edit:
+      - spousal_support_provisions
+      - follow up:
+        - spousal_support_is_immutable
+    button: |
+      ##### Spousal support agreement?
+        % if user_wants_post_divorce_support:
+        % if spousal_support_provisions == "someone_wants_spousal_support_no_agreement":
+        - ${ other_parties[0] } **does not agree to pay** spousal support.
+        % elif spousal_support_provisions == "OP_position_unknown":
+        - **I'm not sure** if ${ other_parties[0] } will agree to pay spousal support.
+        % elif spousal_support_provisions == "OP_agrees_to_pay_spousal_support":
+        - ${ other_parties[0] } **has agreed to pay** spousal support **to me**.
+        % endif
+        % elif not user_wants_post_divorce_support:
+        % if spousal_support_provisions == "someone_wants_spousal_support_no_agreement":      
+        - ${ other_parties[0] } wants spousal support, but I do not agree to pay it.
+        % elif spousal_support_provisions == "OP_position_unknown":
+        - I'm not sure if ${ other_parties[0] } is going to ask for spousal support.
+        % elif spousal_support_provisions == "agree_no_current_spousal_support_but_may_change":
+        - ${ other_parties[0] } and I both agree that neither one of us will pay spousal support when the divorce is done, but either of us can ask for spousal support in the future.
+        % elif spousal_support_provisions == "agree_never_spousal_support": 
+        - ${ other_parties[0] } and I both agree that neither one of us will ever pay spousal support to the other. We are both willing to give up our right to ever ask for spousal support, even if circumstances change.
+        % elif spousal_support_provisions == "user_agrees_to_pay_spousal_support":
+        - We agree that **I will pay spousal support** to ${ other_parties[0] }.
+        % endif
+        % endif
+      % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
+      ##### Amount
+        - ${ currency(spousal_support_amount) } monthly
+      ##### Start date
+        - ${ format_date(spousal_support_start_date, format='M/d/yyyy') }
+      ##### Spousal support payments will stop:
+        % if spousal_support_end_type == "at_certain_date":
+        - On ${ format_date(spousal_support_end_date, format='M/d/yyyy') }
+        % elif spousal_support_end_type == "at_certain_amount":
+        - Once ${ currency(spousal_support_end_amount) } has been paid
+        % elif spousal_support_end_type == "at_recipient_marriage":
+        - When person receiving support remarries
+        % elif spousal_support_end_type == "at_death":
+        - When either of us dies
+        % elif spousal_support_end_type == "other":
+        - Other: ${ spousal_support_end_custom }
+        % endif
+      ##### Do you both agree to give up the right to ask for any future changes to spousal support?
+        - ${word(yesno(spousal_support_is_immutable))}  
+      % endif
+  - Edit:
+      - ss_factor_one_division_labor
+    button: |
+      ##### Spousal Support Factor One
+        - Division of labor: ${ "*no response*" if ss_factor_one_division_labor == "" else ss_factor_one_division_labor}
+        - Fault: ${ "*no response*" if ss_factor_one_fault == "" else ss_factor_one_fault}
+  - Edit:
+      - ss_factor_two_length
+    button: |
+      ##### Spousal Support Factor Two
+        - Marriage length: ${ "*no response*" if ss_factor_two_length == "" else ss_factor_two_length}
+  - Edit:
+      - ss_factor_three_work_user
+    button: |
+      ##### Spousal Support Factor Three
+        - Your ability to work: ${ "*no response*" if ss_factor_three_work_user == "" else ss_factor_three_work_user}
+        - Spouse's ability to work: ${ "*no response*" if ss_factor_three_work_OP == "" else ss_factor_three_work_OP}
+  - note: |
+      No input needed for Spousal Support Factor Four
+    show if: ss_factor_four_property
+  - note: |
+      No input needed for Spousal Support Factor Five
+    show if: ss_factor_five_ages
+  - Edit:
+      - ss_factor_six_ability_to_pay
+    button: |
+      ##### Spousal Support Factor Six
+        - Spouse's ability to pay support: ${ "*no response*" if ss_factor_six_ability_to_pay == "" else ss_factor_six_ability_to_pay}
+  - Edit:
+      - ss_factor_seven_situation
+    button: |
+      ##### Spousal Support Factor Seven
+        - Anything else judge should know about the situation: ${ "*no response*" if ss_factor_seven_situation == "" else ss_factor_seven_situation}
+  - Edit:
+      - ss_factor_eight_need
+    button: |
+      ##### Spousal Support Factor Eight
+        - Your need for support: ${ "*no response*" if ss_factor_eight_need == "" else ss_factor_eight_need}
+  - Edit:
+      - ss_factor_nine_health
+    button: |
+      ##### Spousal Support Factor Nine
+        - Your health or disabilities: ${ "*no response*" if ss_factor_nine_health == "" else ss_factor_nine_health}
+  - Edit:
+      - ss_factor_ten_standards
+    button: |
+      ##### Spousal Support Factor Ten
+        - Standard of living: ${ "*no response*" if ss_factor_ten_standards == "" else ss_factor_ten_standards}
+        - People you support: ${ "*no response*" if ss_factor_ten_responsibilities == "" else ss_factor_ten_responsibilities}
+  - Edit:
+      - ss_factor_ten_standards
+    button: |
+      ##### Spousal Support Factor Eleven
+        - Contributions during marriage: ${ "*no response*" if ss_factor_eleven_contributions == "" else ss_factor_eleven_contributions}
+  - Edit:
+      - ss_factor_twelve_fault_redux
+    button: |
+      ##### Spousal Support Factor Twelve
+        - Anything else about fault: ${ "*no response*" if ss_factor_twelve_fault_redux == "" else ss_factor_twelve_fault_redux}
+  - Edit:
+      - ss_factor_thirteen_cohabitation
+    button: |
+      ##### Spousal Support Factor Thirteen
+        - Are you living/sharing expenses with an unrelated adult?: ${ "*no response*" if ss_factor_thirteen_cohabitation == "" else ss_factor_thirteen_cohabitation}
+  - Edit:
+      - ss_factor_thirteen_cohabitation
+    button: |
+      ##### Spousal Support Factor Fourteen
+        - Any other reasons it is fair for you to get spousal support: ${ "*no response*" if ss_factor_fourteen_equity == "" else ss_factor_fourteen_equity}
+#
 # ---------- children and pregnancy ----------
 #
 # TODO ADD ACCORDION
   - Edit:
       - users[0].pregnant
       - other_parties[0].pregnant
-    #  - follow up   [ TODO currently breaking need to fix]
-    #    - users[0].pregnant_notice
-    #    - users[0].pregnant_exit
-    #    - other_parties[0].pregnant_notice
-    #    - other_parties[0].pregnant_exit
     button: |
-      ##### You are pregnant
+      ##### Are you pregnant?
         - ${word(yesno(users[0].pregnant))}
-      ##### Spouse is pregnant
+      ##### Is spouse pregnant?
         - ${word(yesno(other_parties[0].pregnant))}  
 #
 # ---------- personal property ----------
