@@ -107,6 +107,8 @@ terms:
       Make refers to the name of the company that manufactured the vehicle. Examples of vehicle "makes" are Ford, General Motors, Chrysler, and Toyota.
   - vehicles_model: |
       Model refers to the type of car. Examples of "models" are Focus, Cutlass, Town and Country, and Highlander.
+  - spouse: |
+      Spouse is another word for "wife", "husband", or "person you're married to".
   - divided: |
       Something has already been divided if:
       
@@ -115,8 +117,9 @@ terms:
 
       If something has already been divided, you do not need to add it here.
   - stayed: |
-      Most cases are not stayed. A stay is a court ruling to stop or pause a court case. A court can lift the stay later and continue the case.
+      Most cases are not stayed. A stay is a court ruling to stop or pause a court case. A court can lift the stay later and continue the case. Examples: 
       
-      Examples: Sometimes when a party files an appeal, a judge may grant a motion for a stay. When this happens, it stops the effect of the lower court order while the appeal is going on. Sometimes a stay happens without an appeal. For example, a bankruptcy case usually stays the division of marital property in a divorce case.
+      * Sometimes when a party files an appeal, a judge may grant a motion for a stay. When this happens, it stops the effect of the lower court order while the appeal is going on. 
+      * Sometimes a stay happens without an appeal. For example, a bankruptcy case usually stays the division of marital property in a divorce case.
 ---
 

@@ -714,7 +714,9 @@ subject: |
 content: |
   If you and your spouse have any **minor children together**, your divorce must address custody, parenting time, and child support. 
 
+  % if tool_ID in ["divorce_complaint", "divorce_answer"]:
   **Minor children of just one spouse** must also be listed in the divorce paperwork. However, the divorce will not cover their custody, parenting time, or child support.
+  % endif
 ---
 template: adult_children_info
 subject: |
@@ -733,9 +735,12 @@ content: |
 if: tool_ID == "divorce_complaint"
 id: any children divorce complaint
 question: |
-  Minor children
+  Any minor children?
 subquestion: |
-  This includes stepchildren and children of just one of you.
+  This includes:
+
+  * children either {spouse} had or adopted separately or with another partner
+  * children you and your spouse had or adopted together
 fields:
   - Do you or your spouse have any living {minor} children? This includes children you had together and children you had separately.: children.there_are_any
     datatype: yesnoradio
@@ -747,8 +752,8 @@ question: |
 subquestion: |
   Answer yes if there are:
   
-  * any minor children who have you and your spouse as legal parents, or
-  * any minor children of either spouse, and you're not sure who their legal parents are.
+  * any minor children who have you **and** your {spouse} as legal parents, or
+  * any minor children of either spouse, and you're **not sure** who their legal parents are.
 fields:
   - Do you and your spouse have any living {minor} children?: children.there_are_any
     datatype: yesnoradio
@@ -2164,7 +2169,7 @@ table: prior_family_cases.table
 rows: prior_family_cases
 columns:
   - Case No.: row_item.docket_number
-  - Type: prior_family_case_types[row_item.type]
+  - Type: prior_family_case_types_ordered[row_item.type]
   - State: row_item.state
   - County: row_item.county
 #  - Entered family before or during marriage: |
@@ -2486,7 +2491,7 @@ fields:
       code: tool_ID in ["divorce_complaint", "custody_complaint"]
   - What is the nature of this case?: prior_family_cases[i].type
     code: |
-      prior_family_case_types
+      prior_family_case_types_ordered
   - Describe the nature of this case:: prior_family_cases[i].type_description
     show if:
       variable: prior_family_cases[i].type

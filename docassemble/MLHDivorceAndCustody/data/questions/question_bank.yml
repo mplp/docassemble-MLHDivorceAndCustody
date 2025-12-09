@@ -1671,6 +1671,7 @@ objects:
       question_text="Debts",
       noun_sl="debt",
       noun_pl="debts",
+      minimum_number=1,
       complete_attribute="complete",
       )
 ---
@@ -1799,6 +1800,7 @@ objects:
       question_text="Vehicles",
       noun_sl="vehicle",
       noun_pl="vehicles",
+      minimum_number=1,
       complete_attribute="complete",
       )
 ---
@@ -1838,7 +1840,7 @@ id: marriage.vehicles.info
 question: |
   ${marriage.vehicles.question_text}
 subquestion: |
-  Next you will be asked about vehicles. Vehicles include cars, boats, trailers, motorcycles, snowmobiles, and other motorized equipment titled to the owner. Please do not include mobile homes here &mdash; to add a mobile home, use the ${MLH_back_button_label} or use the **Review / Edit** feature.
+  Next you will be asked about vehicles. Vehicles include cars, boats, trailers, motorcycles, snowmobiles, and other motorized equipment titled to the owner. Please do not include mobile homes here &mdash; to add a mobile home tap the **Review / Edit** link or use the ${MLH_back_button_label} button.
 
   You will be asked for the Make and Model of each vehicle you own. Make refers to the name of the company that manufactured the vehicle. Examples of vehicle "makes" are Ford, General Motors, Chrysler, and Toyota. Model refers to the type of vehicle. Examples of "models" are Focus, Cutlass, Town and Country, and Highlander. 
   
@@ -2259,7 +2261,7 @@ code: |
   interview_order_other_parties_attorney = True
 ---
 code: |
-  marriage.accounts
+  marriage.accounts   ## just defining these first 3 lines I think?
   marriage.other_pp
   marriage.mobile_home
   marriage.personal_property_info

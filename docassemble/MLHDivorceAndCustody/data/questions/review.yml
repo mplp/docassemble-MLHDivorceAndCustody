@@ -173,10 +173,13 @@ review:
         - No
       % endif
   - Edit:
-      - users[0].phone_number
+      - users[0].no_phone_number
     button: |
       ##### Your ${"safe phone number" if confidential_contact_info_yn else "phone number"}
-        - ${users[0].phone_number}
+        - ${ word("None") if users[0].no_phone_number else phone_number_formatted(users[0].phone_number) }
+        % if tool_ID != "JOD_only" and not users[0].no_phone_number:
+        - Type: ${ users[0].phone_type }
+        % endif
   - Edit:
       - users[0].email
     button: |
@@ -279,10 +282,13 @@ review:
         - ${other_parties[0].attr("village_or_township")}
     show if: other_parties[0].address.state == "MI"
   - Edit:
-      - other_parties[0].phone_number
+      - other_parties[0].no_phone_number
     button: |
       ##### Spouse's phone number
-        - ${other_parties[0].phone_number}
+        - ${word("Unknown") if other_parties[0].no_phone_number else phone_number_formatted(other_parties[0].phone_number)}
+        % if tool_ID != "JOD_only" and not other_parties[0].no_phone_number:
+        - Type: ${ other_parties[0].phone_type }
+        % endif
   - Edit:
       - other_parties[0].email
     button: |
@@ -503,6 +509,34 @@ review:
 # ---------- children and pregnancy ----------
 #
 # TODO ADD ACCORDION
+#  - Edit:
+#      - children.there_are_any
+#      - invalidate:
+#        - set_marital_children_or_not
+#        -
+#      - recompute:
+#        - interview_order_children ???
+#    button: |
+#      ##### Any minor children?
+#        - ${word(yesno(children.there_are_any))}
+#  - Edit:
+#      - children.revisit
+#    button: |
+#      ##### ${marriage.mobile_home.question_text}
+#
+#      % if marriage.mobile_home:
+#      % for idx, item in enumerate(marriage.mobile_home):
+#        - **${ordinal(idx, capitalize=True)} mobile home**
+#          - **VIN:** ${item.kind}
+#          - **Location:** ${item.desc}
+#          - **Award:** ${item.owner}
+#      % endfor
+#      % else:
+#        - None
+#      % endif
+#
+#
+#      
   - Edit:
       - users[0].pregnant
       - other_parties[0].pregnant
@@ -566,14 +600,14 @@ review:
       ##### Did you and your spouse acquire personal property during the marriage?
         - ${word(yesno(marriage.personal_property_acquired))}
 
-      % if marriage.attribute_defined("personal_property_division_agreement"):
+      % if marriage.personal_property_acquired:
       ##### Have you and your spouse reached an agreement about how all personal property will be divided?
         - ${word(yesno(marriage.personal_property_division_agreement))}
-      % endif
 
-      % if marriage.attribute_defined("personal_property_division_actual"):
+      % if marriage.personal_property_division_agreement:
       ##### Have you and your spouse **actually divided** all the personal property based on your agreement?
         - ${word(yesno(marriage.personal_property_division_actual))}
+      % endif
       % endif
   - Edit:
       - marriage.accounts.revisit
@@ -639,24 +673,22 @@ review:
       ##### Do you or your spouse have any debts, either in your own names or together?
         - ${word(yesno(marriage.debts.any))}
 
-      % if marriage.debts.attribute_defined("pay_debts_in_own_names"):
+      % if marriage.debts.any:
       ##### Do you and your spouse each plan to pay the debts **in your own names?**
         - ${word(yesno(marriage.debts.pay_debts_in_own_names))}
-      % endif
 
-      % if marriage.debts.attribute_defined("agree_responsibility_debts_own_name"):
+      % if not marriage.debts.pay_debts_in_own_names:
       ##### Do you and your spouse agree on who will be responsible for these debts?
         - ${word(yesno(marriage.debts.agree_responsibility_debts_own_name))}
       % endif
 
-      % if marriage.debts.attribute_defined("any_in_both_names"):
       ##### Do you and your spouse have any debts that are in **both** of your names?
         - ${word(yesno(marriage.debts.any_in_both_names))}
-      % endif
 
-      % if marriage.debts.attribute_defined("agree_responsibility_debts_both_names"):
+      % if marriage.debts.any_in_both_names:
       ##### Do you and your spouse agree on who will be responsible for these debts?
         - ${word(yesno(marriage.debts.agree_responsibility_debts_both_names))}
+      % endif
       % endif
   - Edit:
       - marriage.debts.revisit
