@@ -49,6 +49,10 @@ objects:
   - other_parties[0].job: ALJob
   - other_parties[0].income: ALIncome
 ---
+code: |
+  prior_family_cases.reset_gathered(mark_incomplete=True)
+  prior_family_cases.gathered_deep_reset = True
+---
 table: children.table
 rows: children
 columns:
@@ -2345,6 +2349,8 @@ code: |
   elif tool_ID != "JOD_only":
     prior_family_cases[i].status
     if there_are_marital_children:
+      if prior_family_cases[i].state != "MI":
+        prior_family_cases[i].address # trying to trigger this question if user changes answer on marital children from none to some, after case was already gathered
       if prior_family_cases[i].type == "divorce":
         prior_family_cases[i].included_custody_PT_order
   
@@ -2363,7 +2369,7 @@ code: |
           prior_family_cases[i].included_custody_PT_order
   
       if prior_family_cases[i].state != "MI":
-        if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and (prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order) or (prior_family_cases[i].status in ["stayed", "pending"] and prior_family_cases[i].has_current_custody_PT_order)):
+        if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and ((prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order) or (prior_family_cases[i].status in ["stayed", "pending"] and prior_family_cases[i].has_current_custody_PT_order))):
           if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids:
             prior_family_cases[i].custody_order_in_another_state_warning 
 
@@ -2593,7 +2599,7 @@ question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ state_name(prior_family_cases[i].state) }.
 fields:
-  - What is the date of that order?: prior_family_cases[i].final_order_date
+  - What is the date of the final judgment or order?: prior_family_cases[i].final_order_date
     datatype: ThreePartsDate
     max: |
      ${ today() }

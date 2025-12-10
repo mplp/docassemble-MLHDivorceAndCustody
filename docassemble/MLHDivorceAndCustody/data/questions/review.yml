@@ -509,34 +509,56 @@ review:
 # ---------- children and pregnancy ----------
 #
 # TODO ADD ACCORDION
-#  - Edit:
-#      - children.there_are_any
-#      - invalidate:
-#        - set_marital_children_or_not
-#        -
-#      - recompute:
-#        - interview_order_children ???
-#    button: |
-#      ##### Any minor children?
-#        - ${word(yesno(children.there_are_any))}
-#  - Edit:
-#      - children.revisit
-#    button: |
-#      ##### ${marriage.mobile_home.question_text}
-#
-#      % if marriage.mobile_home:
-#      % for idx, item in enumerate(marriage.mobile_home):
-#        - **${ordinal(idx, capitalize=True)} mobile home**
-#          - **VIN:** ${item.kind}
-#          - **Location:** ${item.desc}
-#          - **Award:** ${item.owner}
-#      % endfor
-#      % else:
-#        - None
-#      % endif
-#
-#
-#      
+  - Edit:
+      - children.there_are_any
+      - invalidate:
+        #- children.gathered
+        - set_marital_children_or_not
+        - guidepost_marital_children
+        - kids_had_other_custodian
+        - third_party_custody_claim
+        - need_temporary_order_kids
+        - temporary_order_kids_exit
+        - interview_order_home_state
+        - set_children_home_state_info
+        - children_live_with_parent
+        - children_now_live_with_which_parent
+        - children_lived_with_which_parent_past
+        - children_previous_address.gathered
+        # EKM note: currently leaving out some all-children questions that I'm OK with just having asked once and not re-asking unless user specifically wants to edit them. 
+        - guidepost_stepchildren
+        - interview_order_stepchild_address
+        - income_tax_method
+        - users[0].insurance.gathered
+        - other_parties[0].insurance.gathered
+        - interview_order_pregnancy
+        - interview_order_user_income
+        - interview_order_income_tax
+      - recompute:
+        #- children.gathered_reset
+        - interview_order_children
+        - prior_family_cases.gathered_deep_reset
+    button: |
+      ##### Any minor children?
+        - ${word(yesno(children.there_are_any))}
+  - Edit:
+      - children.revisit
+    button: |
+      ##### ${marriage.mobile_home.question_text}
+
+      % if marriage.mobile_home:
+      % for idx, item in enumerate(marriage.mobile_home):
+        - **${ordinal(idx, capitalize=True)} mobile home**
+          - **VIN:** ${item.kind}
+          - **Location:** ${item.desc}
+          - **Award:** ${item.owner}
+      % endfor
+      % else:
+        - None
+      % endif
+
+
+      
   - Edit:
       - users[0].pregnant
       - other_parties[0].pregnant
