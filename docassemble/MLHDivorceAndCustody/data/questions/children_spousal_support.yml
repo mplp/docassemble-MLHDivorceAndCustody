@@ -822,6 +822,9 @@ question: More information about ${ children[i] }
 fields:
   - Date of birth: children[i].birthdate
     datatype: BirthDate
+    alMin: ${ format_date( today() - date_interval(years=18) + date_interval(days=1), format='MM/dd/yyyy') }
+    alMinMessage: |
+      Only include children younger than 18.
   - Gender: children[i].gender
     datatype: radio
     choices:
@@ -1242,6 +1245,9 @@ subquestion: |
 continue button field: children[i].stepchild_demographics
 fields:
   - Date of birth: children[i].birthdate
+    alMin: ${ format_date( today() - date_interval(years=18) + date_interval(days=1), format='MM/dd/yyyy') }
+    alMinMessage: |
+      Only include children younger than 18.
     required: False
     datatype: BirthDate
   - Gender: children[i].gender

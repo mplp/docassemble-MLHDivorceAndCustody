@@ -1054,14 +1054,16 @@ fields:
 ---
 if: tool_ID == "JOD_only" and other_parties[0].address.state == "MI"
 id: other_parties[0].address.county
+continue button field: just_check_op_county
 question: |
   County
 fields:
   - What county does your spouse live in?: other_parties[0].address.county
     code: court_list._load_courts()["address_county"].unique()
 ---
-if: (tool_ID == "JOD_only" and not other_parties[0].address.state == "MI") or (tool_ID == "divorce_complaint" and not other_parties[0].lives_in_Michigan)
+if: (tool_ID == "JOD_only" and other_parties[0].address.state != "MI") or (tool_ID == "divorce_complaint" and not other_parties[0].lives_in_Michigan)
 id: other_parties[0].address.county
+continue button field: just_check_op_county
 question: |
   County
 fields:
@@ -2245,11 +2247,6 @@ code: |
   if tool_ID == "divorce_complaint":
     if other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI:
       other_parties[0].ten_days_in_county
-  
-  other_parties[0].village_or_township_yn  
-  other_parties[0].address.county # skipped if already asked on lives_in_Michigan screen
-  if other_parties[0].mailing_address.yesno:
-    other_parties[0].mailing_address.address
 
   interview_order_other_parties_address_info = True
 ---

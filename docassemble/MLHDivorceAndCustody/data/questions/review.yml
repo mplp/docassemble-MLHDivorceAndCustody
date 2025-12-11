@@ -244,7 +244,10 @@ review:
       - other_parties[0].address.address
       - recompute: 
         - interview_order_other_parties_address_info
-      # Note validation logic on users[0].address.address question
+      - follow up:
+        - other_parties[0].village_or_township_yn
+        - just_check_op_county
+      # Note validation logic on other_parties[0].address.address question
     button: |
       % if tool_ID == "JOD_only":
       ##### Spouse's address
@@ -535,7 +538,7 @@ review:
         - interview_order_user_income
         - interview_order_income_tax
       - recompute:
-        #- children.gathered_reset
+        - children.gathered_reset
         - interview_order_children
         - prior_family_cases.gathered_deep_reset
     button: |
