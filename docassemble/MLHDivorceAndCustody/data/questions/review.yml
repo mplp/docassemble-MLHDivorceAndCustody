@@ -515,8 +515,8 @@ review:
   - Edit:
       - children.there_are_any
       - invalidate:
-        #- children.gathered
         - set_marital_children_or_not
+        - set_child_home_choices
         - guidepost_marital_children
         - kids_had_other_custodian
         - third_party_custody_claim
@@ -527,7 +527,6 @@ review:
         - children_live_with_parent
         - children_now_live_with_which_parent
         - children_lived_with_which_parent_past
-        - children_previous_address.gathered
         # EKM note: currently leaving out some all-children questions that I'm OK with just having asked once and not re-asking unless user specifically wants to edit them. 
         - guidepost_stepchildren
         - interview_order_stepchild_address
@@ -539,6 +538,7 @@ review:
         - interview_order_income_tax
       - recompute:
         - children.gathered_reset
+        - children_previous_address.gathered_reset
         - interview_order_children
         - prior_family_cases.gathered_deep_reset
     button: |
@@ -559,9 +559,66 @@ review:
       % else:
         - None
       % endif
-
-
+  - Edit:
+      - home_state_review_screen
+      - invalidate:
+        - set_children_home_state_info
+      - recompute: 
+        - interview_order_home_state
+    button: |-
+      ##### Children's legal "home state"
+      % for child in children.filter(legal_parent="both"):
+        - ${ child.familiar() } currently lives in ${ child.currently_resides_in_locality_display_name }. This is ${ "" if child.current_residence_is_home_state else word("not") } their legal "home state". 
+        % if not (child.currently_resides_in_type == "Michigan" and child.current_residence_is_home_state) and (child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months"):
+        Their legal home state is Michigan becaues they recently lived in Michigan for 6 months.
+        % endif
+      % endfor
+  - Edit:
+      - children_live_with_parent
+      - invalidate:
+        - child_address_not_confidential_warning
+      - recompute:
+        - interview_order_children
+    button: |
+      ##### Home of marital children
+      The ${ children.filter(legal_parent='both').as_noun() } ${ children.filter(legal_parent="both").does_verb('live') } with: 
+        % if children_now_live_with_which_parent == "users[0]":
+        you.
+        % elif children_now_live_with_which_parent == "other_parties[0]":
+        your spouse.
+        % elif children_now_live_with_which_parent == "both":
+        you and your spouse.
+        % elif children_now_live_with_which_parent == "depends_on_child": 
       
+        % for child in children.filter(legal_parent='both'):  
+        - ${ child.familiar() } lives with ${ word("you") if child.lives_with == "users[0]" else word("your spouse") }.
+        % endfor
+        % endif
+  - Edit:
+      - recompute:
+        - children_previous_address.gathered_reset
+      - children_previous_address.there_are_any
+      - children_lived_with_which_parent_past
+      - recompute:
+        - interview_order_children
+    button: |
+      ##### Past homes of marital children
+        - Over the last 5 years, the ${ children.filter(legal_parent='both').as_noun() } lived with 
+        % if children_lived_with_which_parent_past == "users[0]":
+        you.
+        % elif children_lived_with_which_parent_past == "other_parties[0]":
+        your spouse.
+        % elif children_lived_with_which_parent_past == "both":
+        you and your spouse.
+        % endif
+        - In the last five years, the ${ children.filter(legal_parent='both').as_noun() } ${ word("moved") if children_previous_address.there_are_any else word("did not move") } to a new address.
+        % if children_previous_address.there_are_any:
+        - Past addresses:
+      
+        % for address in children_previous_address:
+          - ${ address.on_one_line() }---Dates: ${ address.start_date } to ${ address. end_date }
+        % endfor
+        % endif
   - Edit:
       - users[0].pregnant
       - other_parties[0].pregnant
@@ -634,6 +691,10 @@ review:
         - ${word(yesno(marriage.personal_property_division_actual))}
       % endif
       % endif
+    show if:
+      - marriage.accounts.revisit
+      - marriage.other_pp.revisit
+      - marriage.mobile_home.revisit
   - Edit:
       - marriage.accounts.revisit
     button: |
@@ -841,4 +902,25 @@ review:
 #  - raw html: |
 #      ${ end_accordion() }
 #    show if: county_choice
+---
+table: children.edit_home_state
+rows: children.filter(legal_parent="both")
+columns:
+  - Name: |
+      row_item.familiar()
+  - Lives in: |
+      row_item.currently_resides_in_locality_display_name
+  - Is that their legal "home state"?: |
+      word(yesno(row_item.current_residence_is_home_state))
+edit:
+  - currently_resides_in_type
+  - current_residence_is_home_state
+delete buttons: False
+---
+id: children home state screen
+question: |
+  Edit home state information for marital children
+subquestion: |
+  ${ children.edit_home_state }
+continue button field: home_state_review_screen
 ---

@@ -83,8 +83,10 @@ code: |
   # interview_order_spousal_support  
   
   children_intro
-  children.gather()
+  if children.there_are_any:
+    children.gather()
   set_marital_children_or_not
+  set_child_home_choices
   
   if there_are_marital_children:
 
@@ -113,7 +115,8 @@ code: |
       if not confidential_contact_info_yn and (children_now_live_with_which_parent in ["depends_on_child", "users[0]"]):
         child_address_not_confidential_warning
       children_lived_with_which_parent_past
-      children_previous_address.gather()
+      if children_previous_address.there_are_any:
+        children_previous_address.gather()
 
     legal_custody_who
     if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]:
@@ -782,14 +785,6 @@ fields:
   - Are there any more minor children to add?: children.there_is_another
     datatype: yesnoradio
 ---
-# Emily note: not sure if this is needed as it does not mirror Jack's patterns. It's possible it can be done in a different way. Cannot remember my thinking when I added it.
-# alternatively, may need to add this for the other lists I create in this yml.
-on change:
-  children.there_are_any: |
-    if not children.there_are_any:
-      children.target_number = 0
-      children.clear()
----
 id: children info
 sets:
   - children[i].name.first
@@ -1368,8 +1363,10 @@ fields:
     show if:
       variable: children_live_with_parent
       is: True
+validation code: |
+  for child in children.filter(legal_parent="both"):
+    invalidate("child.lives_with")
 ---
-# TODO: going to have to clear this out and rebuild if # of children changes
 code: |
   child_lives_with_choices = [
                   ['users[0]', 'Me'],
@@ -1379,7 +1376,10 @@ code: |
   
   if len(children.filter(legal_parent="both")) > 1:
     child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with my spouse.'])
+
+  set_child_home_choices = True
 ---
+if: not children_live_with_parent
 id: kickout if children don't live with parents
 event: children_live_with_third_party_kickout
 question: This tool is not right for you
@@ -1483,6 +1483,8 @@ code: |
             exit_general
   set_children_home_state_info
 
+  enable_home_state_review_screen
+
   interview_order_home_state = True
 ---
 only sets: set_children_home_state_info
@@ -1572,6 +1574,8 @@ fields:
       - No, ${ children[i].familiar() } ${ f"moved to { children[i].currently_resides_in_locality_display_name } within the last 6 months." if children[i].age_in_months() >= 6 else "used to live in a different state, country, or tribal reservation." }: False
   - note: |
       ${ collapse_template(home_state_trip_info) }
+validation code: |
+  invalidate("children[i].spent_six_months_in_michigan", "children[i].MI_stat_ended_when")
 ---
 template: home_state_info
 subject: What is a "home state" and why does it matter?
@@ -1609,6 +1613,7 @@ content: |
   In this case, the week in Ohio counts as part of the time the child lived in Michigan. The child in the example has lived in Michigan from birth.
   % endif
 ---
+if: child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.currently_resides_in_locality != "MI"
 id: Michigan was previous home state prong
 question: ${ children[i] }'s legal "home state", part 3
 subquestion: |
@@ -1693,7 +1698,7 @@ subquestion: |
 id: children's previous addresses
 question: Children's previous addresses
 subquestion: |
-  You already told us who ${ comma_and_list(children.filter(legal_parent='both')) } **currently** ${ children.does_verb("live") } with.
+  You already told us who ${ comma_and_list(children.filter(legal_parent='both')) } **currently** ${ children.filter(legal_parent="both").does_verb('live') } with.
 fields:
   - label: |
       % if len(children.filter(legal_parent="both")) > 1:

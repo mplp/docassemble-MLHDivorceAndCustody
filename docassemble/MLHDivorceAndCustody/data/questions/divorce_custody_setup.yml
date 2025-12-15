@@ -65,6 +65,12 @@ code: |
 
   set_persistent_interview_specific_logic = True
 ---
+only sets: enable_home_state_review_screen
+code: |
+  home_state_review_screen = True
+  
+  enable_home_state_review_screen = True
+---
 # needed for spousal support questions
 # set these separately because they can change if user_ask_role is edited
 if: tool_ID == "JOD_only"
