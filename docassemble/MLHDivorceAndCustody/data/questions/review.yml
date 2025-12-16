@@ -109,6 +109,8 @@ review:
       - confidential_contact_info_yn
       - recompute:
         - interview_order_user_contact_info
+      - invalidate:
+        - interview_order_children # for Muskegon PT logic
       # Note validation logic on confidential_contact_info_yn question
     button: |
       ##### Keep your contact info confidential?
@@ -117,6 +119,8 @@ review:
       - users[0].address.address
       - recompute: 
         - interview_order_user_contact_info
+      - invalidate:
+        - interview_order_children # for Muskegon PT logic
       # Note validation logic on users[0].address.address question
     button: |
       % if tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and confidential_contact_info_yn):
@@ -138,6 +142,8 @@ review:
       - users[0].lives_in_Michigan 
       - follow up:
         - users[0].ten_days_in_county
+      - invalidate:
+        - interview_order_children # because of Muskegon PT logic
     button: |
       ##### Do you live in Michigan?
         - ${word(yesno(users[0].lives_in_Michigan))}   
@@ -247,6 +253,8 @@ review:
       - follow up:
         - other_parties[0].village_or_township_yn
         - just_check_op_county
+      - invalidate:
+        - interview_order_children # because of Muskegon PT logic
       # Note validation logic on other_parties[0].address.address question
     button: |
       % if tool_ID == "JOD_only":
@@ -278,6 +286,7 @@ review:
     button: |
       ##### Spouse's County
         - ${other_parties[0].address.county}
+    show if: (tool_ID == "divorce_complaint" and not other_parties[0].lives_in_Michigan) or tool_ID == "JOD_only"
   - Edit:
       - other_parties[0].village_or_township_yn
     button: |
@@ -527,7 +536,6 @@ review:
         - children_live_with_parent
         - children_now_live_with_which_parent
         - children_lived_with_which_parent_past
-        # EKM note: currently leaving out some all-children questions that I'm OK with just having asked once and not re-asking unless user specifically wants to edit them. 
         - guidepost_stepchildren
         - interview_order_stepchild_address
         - income_tax_method
@@ -541,6 +549,7 @@ review:
         - children_previous_address.gathered_reset
         - interview_order_children
         - prior_family_cases.gathered_deep_reset
+      # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
       ##### Any minor children?
         - ${word(yesno(children.there_are_any))}
@@ -579,6 +588,7 @@ review:
         - child_address_not_confidential_warning
       - recompute:
         - interview_order_children
+      # Note validation logic on children_live_with_parent
     button: |
       ##### Home of marital children
       The ${ children.filter(legal_parent='both').as_noun() } ${ children.filter(legal_parent="both").does_verb('live') } with: 
@@ -619,6 +629,98 @@ review:
           - ${ address.on_one_line() }---Dates: ${ address.start_date } to ${ address. end_date }
         % endfor
         % endif
+  - Edit:
+      - legal_custody_who
+      - invalidate:
+        - Muskegon_specific_PT_info
+        - specific_PT_how
+        - hague_convention_info
+      - recompute:
+        - interview_order_children
+    button: |
+      ##### Child custody and parenting time
+      
+        % if legal_custody_who == "user":
+        - **You**
+        % elif legal_custody_who == "other_party":
+        - **Your spouse**
+        % elif legal_custody_who == "both":
+        - **Both you and your spouse**
+        % endif
+        should have legal custody.
+        % if physical_custody_who == "user":
+        - **You**
+        % elif physical_custody_who == "other_party":
+        - **Your spouse**
+        % elif physical_custody_who == "both":
+        - **Both you and your spouse**
+        % endif
+        should have physical custody.
+        % if physical_custody_who != "both":
+        - ${ word("Your spouse") if physical_custody_who == "user" else word("You") } **${ word("should") if PT_who == "both" else word("should not") }** have parenting time.
+        % endif
+        % if physical_custody_who == "both" or PT_who == "both":
+        - Type of parenting time: **${ PT_type }**
+        % endif
+        % if physical_custody_who != "both" and PT_who == "both" and PT_type == "supervised":
+        - Preferred supervisor: ${ PT_supervisor }
+        % endif
+        % if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and not ((tool_ID == "divorce_complaint" and (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon")) or (tool_ID == "JOD_only" and county_choice == "Muskegon")):  
+        - Schedule type: 
+        % if specific_PT_how == "custom":
+        **you write the schedule.**
+        % elif specific_PT_how == "FOC_sample":
+        **use sample from Friend of the Court.**
+        % endif
+        % endif        
+  - Edit:
+      - custom_PT_details
+    button: |
+      ##### Custom parenting time plan:
+      ${ custom_PT_details }
+    show if: ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]) and (((tool_ID == "divorce_complaint" and (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon")) or (tool_ID == "JOD_only" and county_choice == "Muskegon")) or specific_PT_how == "custom")
+  - Edit:
+      - child_domicile_info
+      - hundred_mile_rule
+    button: |
+      ##### 100-mile rule
+      - You and your spouse currently live ${ word("more than 100 miles away from each other.") if already_over_100_miles else word("within 100 miles of each other.") }
+      % if not already_over_100_miles:
+      - You and your spouse **${ word("agree") if allow_over_100_miles else word("don't agree") }** either of you may move more than 100 miles from where you currently live, as long as you stay in Michigan.
+      % endif
+    show if: legal_custody_who == "both"
+  - Edit:
+      - allow_child_support_overpayment_correction
+    button: |
+      ##### Child support overpayments
+      % if allow_child_support_overpayment_correction:
+      - If you end up receiving too much child support due to an error by the State of Michigan, you **authorize** the State to take **${ word("10%") if child_support_overpayment_percentage == "ten" else word("25%") if child_support_overpayment_percentage == "twentyfive" else word("50%") }** from future child support payments until the mistake is corrected. 
+      % else:
+      - If you end up receiving too much child support due to an error by the State of Michigan, you **do not authorize** the State to take a percentage from future child support payments until the mistake is corrected. 
+      % endif
+  - Edit:
+      - stepchild_address_review_screen
+    button: |-
+      ##### Stepchildren's addresses
+      % for child in children:
+      % if child.legal_parent != "both":
+      % if child.stepchild_lives_with == "user":
+      - ${ child.familiar() } lives with you.
+      % if confidential_contact_info_yn:
+      (address confidential)
+      % endif
+      % elif child.stepchild_lives_with == "other_party":
+      - ${ child.familiar() } lives with your spouse.
+      % elif child.stepchild_lives_with == "other":
+      % if child.stepchild_address_confidential:
+      - ${ child.familiar() } does not live with you or your spouse. (Address confidential.)
+      % else:
+      - ${ child.familiar() } lives at ${child.address.on_one_line()}.
+      % endif
+      % endif    
+      % endif
+      % endfor
+    show if: len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0
   - Edit:
       - users[0].pregnant
       - other_parties[0].pregnant
@@ -917,10 +1019,50 @@ edit:
   - current_residence_is_home_state
 delete buttons: False
 ---
-id: children home state screen
+id: review children home state screen
 question: |
   Edit home state information for marital children
 subquestion: |
   ${ children.edit_home_state }
 continue button field: home_state_review_screen
+---
+table: children.edit_user_kid_addresses
+rows: children.filter(legal_parent='user')
+columns:
+  - Name: |
+      row_item.familiar()
+  - Address:: |
+      "Lives with you" if row_item.stepchild_lives_with == "user" else "Lives elsewhere" if row_item.stepchild_lives_with == "other" and row_item.stepchild_address_confidential else row_item.address.on_one_line()
+  - Address confidential?: |
+      "Yes" if row_item.stepchild_lives_with == "user" and confidential_contact_info_yn or row_item.stepchild_lives_with == "other" and row_item.stepchild_address_confidential else "No"
+edit:
+  - stepchild_lives_with
+delete buttons: False
+---
+table: children.edit_OP_kid_addresses
+rows: children.filter(legal_parent='other_party')
+columns:
+  - Name: |
+      row_item.familiar()
+  - Address:: |
+      "Lives with your spouse" if row_item.stepchild_lives_with == "other_party" else "Lives elsewhere" if row_item.stepchild_lives_with == "other" and row_item.stepchild_address_confidential else row_item.address.on_one_line()
+  - Address confidential?: |
+      "N/A" if row_item.stepchild_lives_with == "other_party" else "Yes" if row_item.stepchild_lives_with == "other" and row_item.stepchild_address_confidential else "No"
+edit:
+  - stepchild_lives_with
+delete buttons: False
+---
+id: review stepchildren address screen
+question: |
+  Edit address information for stepchildren
+subquestion: |
+  % if len(children.filter(legal_parent='user')) > 0:
+  <h2 class="h4">Your legal children</h2>
+  ${ children.edit_user_kid_addresses }
+  % endif
+  % if len(children.filter(legal_parent='other_party')) > 0:
+  <h2 class="h4">Your spouse's legal children</h2>
+  ${ children.edit_OP_kid_addresses }
+  % endif
+continue button field: stepchild_address_review_screen
 ---

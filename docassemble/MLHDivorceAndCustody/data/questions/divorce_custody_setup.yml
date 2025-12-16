@@ -71,6 +71,12 @@ code: |
   
   enable_home_state_review_screen = True
 ---
+only sets: enable_stepchild_address_review_screen
+code: |
+  stepchild_address_review_screen = True
+  
+  enable_stepchild_address_review_screen = True
+---
 # needed for spousal support questions
 # set these separately because they can change if user_ask_role is edited
 if: tool_ID == "JOD_only"

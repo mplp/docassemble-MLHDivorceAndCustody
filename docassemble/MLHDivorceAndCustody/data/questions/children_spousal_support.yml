@@ -57,9 +57,9 @@ table: children.table
 rows: children
 columns:
   - Name: row_item.name
-  - Date of birth (not collected for stepchildren): |
+  - Date of birth (if provided): |
       row_item.birthdate if row_item.legal_parent == "both" else "---"
-  - Entered family before or during marriage: |
+  - Entered family when?: |
       "before marriage" if row_item.timing == "premarital" else "during marriage"
 edit:
   - name.first
@@ -1363,7 +1363,7 @@ fields:
     show if:
       variable: children_live_with_parent
       is: True
-validation code: |
+validation code: | ## for review screen functionality ##
   for child in children.filter(legal_parent="both"):
     invalidate("child.lives_with")
 ---
@@ -1374,7 +1374,7 @@ code: |
                   ['both', 'Both']
                              ]
   
-  if len(children.filter(legal_parent="both")) > 1:
+  if children.there_are_any and len(children.filter(legal_parent="both")) > 1:
     child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with my spouse.'])
 
   set_child_home_choices = True
@@ -1894,7 +1894,7 @@ continue button field: Muskegon_specific_PT_info
 question: |
   Specific Parenting Time Schedules
 subquestion: | 
-  You will need a specific parenting time schedule. If you are able to work with the other parent, you may want to come up with the schedule together.
+  In Muskegon County, if you want a specific parenting time schedule, you need to create your own. If you are able to work with the other parent, you may want to come up with the schedule together.
 
   The [Michigan Parenting Time Guideline](https://www.courts.michigan.gov/4a537f/siteassets/court-administration/standardsguidelines/foc/pt_gdlns.pdf), created by the Friend of the Court Bureau, is a helpful resource for putting together a parenting time schedule. We recommend that you **review the Guideline before** creating a custom parenting time schedule for your family. 
 
@@ -2725,12 +2725,13 @@ code: |
 ## stepchildren address info
 # --------------------------------------------------------------------
 ---
-# EKM TODO note: logic surrounding whether stepchild address is printed on forms or kept confidential will need to be done on attachment screens or in separate variable at some point
 code: |
   for child in children:
     if child.legal_parent != "both":
       child.stepchild_lives_with
 
+  enable_stepchild_address_review_screen
+  
   interview_order_stepchild_address = True
 ---
 id: guidepost_stepchildren
