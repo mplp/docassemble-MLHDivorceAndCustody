@@ -49,7 +49,7 @@ code: |
 ---
 generic object: ALAssetList
 id: x.revisit
-if: (x.instanceName in ("marriage.accounts", "marriage.other_pp", "marriage.mobile_home") and marriage.personal_property_lists)
+if: (x.instanceName in ("marriage.accounts", "marriage.other_pp", "marriage.mobile_home") and marriage.personal_property_need_items) or (x.instanceName == "marriage.debts" and marriage.debts.need_items)
 question: |
   ${x.question_text}
 subquestion: |
@@ -63,6 +63,10 @@ subquestion: |
 
   ${x.add_action(color="success", size="md")}
 continue button field: x.revisit
+validation code: |
+  if x.instanceName == "marriage.debts":
+    if x.number_gathered() == 0:
+      validation_error("You must add at least one debt based on your previous answers.")
 ---
 generic object: DAList
 id: x.there_are_any
@@ -1467,9 +1471,9 @@ fields:
     show if: marriage.personal_property_division_agreement
 validation code: |
   if marriage.personal_property_acquired and (not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual):
-    marriage.personal_property_lists = True
+    marriage.personal_property_need_items = True
   else:
-    marriage.personal_property_lists = False
+    marriage.personal_property_need_items = False
     marriage.accounts.clear()
     marriage.other_pp.clear()
     marriage.mobile_home.clear()
@@ -1726,34 +1730,38 @@ fields:
   - label: Do you or your spouse have any debts, either in your own names or together?
     field: marriage.debts.any
     datatype: yesnoradio
----
-id: marriage.debts.pay_debts_in_own_names
-question: |
-  ${marriage.debts.question_text}
-fields:
+  - note: |
+      <hr>
+    show if: marriage.debts.any
   - label: Do you and your spouse each plan to pay the debts in **your own names?**
     field: marriage.debts.pay_debts_in_own_names
     datatype: yesnoradio
+    show if: marriage.debts.any
   - label: Do you and your spouse agree on who will be responsible for these debts?
     field: marriage.debts.agree_responsibility_debts_own_name
     datatype: yesnoradio
     show if:
       variable: marriage.debts.pay_debts_in_own_names
       is: False
----
-id: marriage.debts.any_in_both_names
-question: |
-  ${marriage.debts.question_text}
-fields:
+  - note: |
+      <hr>
+    show if: marriage.debts.any
   - label: Do you and your spouse have any debts that are in **both** of your names?
     field: marriage.debts.any_in_both_names
     datatype: yesnoradio
+    show if: marriage.debts.any
   - label: Do you and your spouse agree on who will be responsible for these debts?
     field: marriage.debts.agree_responsibility_debts_both_names
     datatype: yesnoradio
     show if:
       variable: marriage.debts.any_in_both_names
       is: True
+validation code: |
+  if marriage.debts.any and (not marriage.debts.pay_debts_in_own_names or marriage.debts.any_in_both_names):
+    marriage.debts.need_items = True
+  else:
+    marriage.debts.need_items = False
+    marriage.debts.clear()
 ---
 id: marriage.debts[i]
 question: |
@@ -2263,11 +2271,11 @@ code: |
   interview_order_other_parties_attorney = True
 ---
 code: |
-  marriage.accounts   ## just defining these first 3 lines I think?
+  marriage.accounts
   marriage.other_pp
   marriage.mobile_home
   marriage.personal_property_info
-  if marriage.personal_property_lists:
+  if marriage.personal_property_need_items:
     marriage.accounts.gather()
     marriage.other_pp.gather()
     marriage.mobile_home.gather()
@@ -2288,11 +2296,12 @@ code: |
 ---
 code: |
   marriage.debts.info
-  if marriage.debts.any:
-    marriage.debts.pay_debts_in_own_names
-    marriage.debts.any_in_both_names
-    if not marriage.debts.pay_debts_in_own_names or marriage.debts.any_in_both_names:
-      marriage.debts.gather()
+  if marriage.debts.need_items:
+    marriage.debts.gather()
+  else:
+    marriage.debts.there_are_any = False
+    marriage.debts.gathered = True
+    marriage.debts.revisit = True
   interview_order_debts = True
 ---
 code: |

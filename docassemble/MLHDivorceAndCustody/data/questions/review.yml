@@ -812,7 +812,7 @@ review:
       % else:
         - None
       % endif
-    show if: marriage.personal_property_lists
+    show if: marriage.personal_property_need_items
   - Edit:
       - marriage.other_pp.revisit
     button: |
@@ -828,7 +828,7 @@ review:
       % else:
         - None
       % endif
-    show if: marriage.personal_property_lists
+    show if: marriage.personal_property_need_items
   - Edit:
       - marriage.mobile_home.revisit
     button: |
@@ -844,58 +844,7 @@ review:
       % else:
         - None
       % endif
-    show if: marriage.personal_property_lists
-#
-# ---------- debts ----------
-#
-#  - raw html: |
-#      ${ next_accordion("""<h2 class="h5">Debts</h2>""") }
-#    show if: marriage.debts.attribute_defined("any")
-  - Edit:
-      - marriage.debts.any
-      - invalidate:
-        - marriage.debts.pay_debts_in_own_names
-        - marriage.debts.any_in_both_names
-      - recompute:
-        - marriage.debts.gathered_reset
-        - interview_order_debts
-    button: |
-      ##### Do you or your spouse have any debts, either in your own names or together?
-        - ${word(yesno(marriage.debts.any))}
-
-      % if marriage.debts.any:
-      ##### Do you and your spouse each plan to pay the debts **in your own names?**
-        - ${word(yesno(marriage.debts.pay_debts_in_own_names))}
-
-      % if not marriage.debts.pay_debts_in_own_names:
-      ##### Do you and your spouse agree on who will be responsible for these debts?
-        - ${word(yesno(marriage.debts.agree_responsibility_debts_own_name))}
-      % endif
-
-      ##### Do you and your spouse have any debts that are in **both** of your names?
-        - ${word(yesno(marriage.debts.any_in_both_names))}
-
-      % if marriage.debts.any_in_both_names:
-      ##### Do you and your spouse agree on who will be responsible for these debts?
-        - ${word(yesno(marriage.debts.agree_responsibility_debts_both_names))}
-      % endif
-      % endif
-  - Edit:
-      - marriage.debts.revisit
-    button: |
-      ##### ${marriage.debts.question_text}
-
-      % if marriage.debts:
-      % for idx, item in enumerate(marriage.debts):
-        - **${ordinal(idx, capitalize=True)} debt**
-          - **Type:** ${item.kind}
-          - **Owed:** ${item.source}
-          - **Balance:** ${currency(item.balance)}
-          - **Responsible:** ${item.owner}
-      % endfor
-      % else:
-        - None
-      % endif
+    show if: marriage.personal_property_need_items
 #
 # ---------- vehicles ----------
 #
@@ -940,6 +889,59 @@ review:
       % else:
         - None
       % endif
+#
+# ---------- debts ----------
+#
+#  - raw html: |
+#      ${ next_accordion("""<h2 class="h5">Debts</h2>""") }
+#    show if: marriage.debts.attribute_defined("any")
+  - Edit:
+      - invalidate:
+        - marriage.debts.pay_debts_in_own_names
+        - marriage.debts.agree_responsibility_debts_own_name
+        - marriage.debts.any_in_both_names
+        - marriage.debts.agree_responsibility_debts_both_names
+      - marriage.debts.any
+      - follow up:
+        - marriage.debts.revisit
+    button: |
+      ##### Do you or your spouse have any debts, either in your own names or together?
+        - ${word(yesno(marriage.debts.any))}
+
+      % if marriage.debts.any:
+      ##### Do you and your spouse each plan to pay the debts **in your own names?**
+        - ${word(yesno(marriage.debts.pay_debts_in_own_names))}
+
+      % if not marriage.debts.pay_debts_in_own_names:
+      ##### Do you and your spouse agree on who will be responsible for these debts?
+        - ${word(yesno(marriage.debts.agree_responsibility_debts_own_name))}
+      % endif
+
+      ##### Do you and your spouse have any debts that are in **both** of your names?
+        - ${word(yesno(marriage.debts.any_in_both_names))}
+
+      % if marriage.debts.any_in_both_names:
+      ##### Do you and your spouse agree on who will be responsible for these debts?
+        - ${word(yesno(marriage.debts.agree_responsibility_debts_both_names))}
+      % endif
+      % endif
+  - Edit:
+      - marriage.debts.revisit
+    button: |
+      ##### ${marriage.debts.question_text}
+
+      % if marriage.debts:
+      % for idx, item in enumerate(marriage.debts):
+        - **${ordinal(idx, capitalize=True)} debt**
+          - **Type:** ${item.kind}
+          - **Owed:** ${item.source}
+          - **Balance:** ${currency(item.balance)}
+          - **Responsible:** ${item.owner}
+      % endfor
+      % else:
+        - None
+      % endif
+    show if: marriage.debts.need_items
 #
 # ---------- real property ----------
 #
