@@ -771,15 +771,14 @@ review:
       % endif
       % endif
   - Edit:
-      - marriage.personal_property_acquired
       - invalidate:
         - marriage.personal_property_division_agreement
         - marriage.personal_property_division_actual
-      - recompute:
-        - marriage.accounts.gathered_reset
-        - marriage.other_pp.gathered_reset
-        - marriage.mobile_home.gathered_reset
-        - interview_order_personal_property
+      - marriage.personal_property_acquired
+      - follow up:
+        - marriage.accounts.revisit
+        - marriage.other_pp.revisit
+        - marriage.mobile_home.revisit
     button: |
       ##### Did you and your spouse acquire personal property during the marriage?
         - ${word(yesno(marriage.personal_property_acquired))}
@@ -813,6 +812,7 @@ review:
       % else:
         - None
       % endif
+    show if: marriage.personal_property_lists
   - Edit:
       - marriage.other_pp.revisit
     button: |
@@ -828,6 +828,7 @@ review:
       % else:
         - None
       % endif
+    show if: marriage.personal_property_lists
   - Edit:
       - marriage.mobile_home.revisit
     button: |
@@ -843,6 +844,7 @@ review:
       % else:
         - None
       % endif
+    show if: marriage.personal_property_lists
 #
 # ---------- debts ----------
 #

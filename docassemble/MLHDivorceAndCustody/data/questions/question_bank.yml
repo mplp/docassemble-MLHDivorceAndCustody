@@ -49,6 +49,7 @@ code: |
 ---
 generic object: ALAssetList
 id: x.revisit
+if: (x.instanceName in ("marriage.accounts", "marriage.other_pp", "marriage.mobile_home") and marriage.personal_property_lists)
 question: |
   ${x.question_text}
 subquestion: |
@@ -1453,14 +1454,10 @@ fields:
   - label: Did you and your spouse acquire personal property during the marriage?
     field: marriage.personal_property_acquired
     datatype: yesnoradio
----
-id: marriage.personal_property
-question: |
-  Personal property
-fields:
   - label: Have you and your spouse reached an agreement about how all personal property will be divided?
     field: marriage.personal_property_division_agreement
     datatype: yesnoradio
+    show if: marriage.personal_property_acquired
   - label: Have you and your spouse **actually divided** all the personal property based on your agreement?
     field: marriage.personal_property_division_actual
     datatype: yesnoradio
@@ -1468,6 +1465,14 @@ fields:
   - note: |
       _Only answer **Yes** if each of you has in your possession all of the items that you have agreed you will have._
     show if: marriage.personal_property_division_agreement
+validation code: |
+  if marriage.personal_property_acquired and (not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual):
+    marriage.personal_property_lists = True
+  else:
+    marriage.personal_property_lists = False
+    marriage.accounts.clear()
+    marriage.other_pp.clear()
+    marriage.mobile_home.clear()
 ---
 # --------------------------------------------------------------------
 ## marriage.accounts
@@ -2262,11 +2267,23 @@ code: |
   marriage.other_pp
   marriage.mobile_home
   marriage.personal_property_info
-  if marriage.personal_property_acquired:
-    if not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual:
-      marriage.accounts.gather()
-      marriage.other_pp.gather()
-      marriage.mobile_home.gather()
+  if marriage.personal_property_lists:
+    marriage.accounts.gather()
+    marriage.other_pp.gather()
+    marriage.mobile_home.gather()
+  else:
+    marriage.accounts.there_are_any = False
+    marriage.accounts.gathered = True
+    marriage.accounts.revisit = True
+
+    marriage.other_pp.there_are_any = False
+    marriage.other_pp.gathered = True
+    marriage.other_pp.revisit = True
+
+    marriage.mobile_home.there_are_any = False
+    marriage.mobile_home.gathered = True
+    marriage.mobile_home.revisit = True
+
   interview_order_personal_property = True
 ---
 code: |
