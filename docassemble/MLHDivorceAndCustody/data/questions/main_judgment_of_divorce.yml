@@ -92,7 +92,7 @@ id: interview_order_michigan_judgment_of_divorce
 mandatory: True
 scan for variables: False
 code: |
-  set_persistent_labels
+  set_persistent_interview_specific_logic
   nav.set_section("review_full")
   nav.set_section("signpost_intro")
   MLH_intro_landing
@@ -145,7 +145,7 @@ code: |
 
   users.gather()
   users[0].name.first
-  users[0].previous_last_name_yn
+  users[0].has_previous_name
   users[0].new_last_name_yn
   users[0].gender
   users[0].marriage_number
@@ -158,19 +158,17 @@ code: |
 
   other_parties.gather()
   other_parties[0].name.first
-  other_parties[0].previous_last_name_yn
+  other_parties[0].has_previous_name
   other_parties[0].gender
   other_parties[0].marriage_number
   other_parties[0].birthdate
   other_parties[0].birthplace
 
-  other_parties[0].address.address
-  if other_parties[0].address.state == "MI":
-    other_parties[0].address.county
-    other_parties[0].village_or_township_yn
+  interview_order_other_parties_address_info
+  other_parties[0].village_or_township_yn  
+  other_parties[0].address.county # skipped if already asked on lives_in_Michigan screen
   if other_parties[0].mailing_address.yesno:
     other_parties[0].mailing_address.address
-
   other_parties[0].no_phone_number
   other_parties[0].email
 

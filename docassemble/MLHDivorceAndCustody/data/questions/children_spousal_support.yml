@@ -49,13 +49,17 @@ objects:
   - other_parties[0].job: ALJob
   - other_parties[0].income: ALIncome
 ---
+code: |
+  prior_family_cases.reset_gathered(mark_incomplete=True)
+  prior_family_cases.gathered_deep_reset = True
+---
 table: children.table
 rows: children
 columns:
   - Name: row_item.name
-  - Date of birth (not collected for stepchildren): |
+  - Date of birth (if provided): |
       row_item.birthdate if row_item.legal_parent == "both" else "---"
-  - Entered family before or during marriage: |
+  - Entered family when?: |
       "before marriage" if row_item.timing == "premarital" else "during marriage"
 edit:
   - name.first
@@ -79,8 +83,10 @@ code: |
   # interview_order_spousal_support  
   
   children_intro
-  children.gather()
+  if children.there_are_any:
+    children.gather()
   set_marital_children_or_not
+  set_child_home_choices
   
   if there_are_marital_children:
 
@@ -109,7 +115,8 @@ code: |
       if not confidential_contact_info_yn and (children_now_live_with_which_parent in ["depends_on_child", "users[0]"]):
         child_address_not_confidential_warning
       children_lived_with_which_parent_past
-      children_previous_address.gather()
+      if children_previous_address.there_are_any:
+        children_previous_address.gather()
 
     legal_custody_who
     if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]:
@@ -222,6 +229,8 @@ fields:
     show if:
       variable: user_wants_post_divorce_support
       is: True
+validation code: | ## for review screen functionality ##
+  invalidate("spousal_support_provisions", "spousal_support_is_immutable", "spousal_support_factors_intro", "ss_factor_one_division_labor", "ss_factor_two_length", "ss_factor_three_work_user", "ss_factor_four_property", "ss_factor_five_ages", "ss_factor_six_ability_to_pay", "ss_factor_seven_situation", "ss_factor_eight_need", "ss_factor_nine_health", "ss_factor_ten_standards", "ss_factor_eleven_contributions", "ss_factor_twelve_fault_redux", "ss_factor_thirteen_cohabitation", "ss_factor_fourteen_equity")
 ---
 id: spousal support factors intro
 question: Asking for spousal support for after your divorce
@@ -442,7 +451,7 @@ fields:
       If you are responsible for supporting someone, explain below.
       
       ${ collapse_template(ss_factor_ten_responsibilities_help) }
-  - Explain your relationship to the person you are supporting and other facts that will help the court understand what this responsibility involves.: ss_factor_ten_responsibilities
+  - Explain your relationship to the person you are supporting (if anyone) and other facts that will help the court understand what this responsibility involves.: ss_factor_ten_responsibilities
     input type: area
     required: False
 ---
@@ -577,6 +586,7 @@ fields:
       variable: spousal_support_end_type
       is: other
 ---
+if: spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]
 id: spousal support agreement immutable?
 question: Do you both want to give up the right to change the spousal support agreement?
 subquestion: |
@@ -711,7 +721,9 @@ subject: |
 content: |
   If you and your spouse have any **minor children together**, your divorce must address custody, parenting time, and child support. 
 
+  % if tool_ID in ["divorce_complaint", "divorce_answer"]:
   **Minor children of just one spouse** must also be listed in the divorce paperwork. However, the divorce will not cover their custody, parenting time, or child support.
+  % endif
 ---
 template: adult_children_info
 subject: |
@@ -730,9 +742,12 @@ content: |
 if: tool_ID == "divorce_complaint"
 id: any children divorce complaint
 question: |
-  Minor children
+  Any minor children?
 subquestion: |
-  This includes stepchildren and children of just one of you.
+  This includes:
+
+  * children either {spouse} had or adopted separately or with another partner
+  * children you and your spouse had or adopted together
 fields:
   - Do you or your spouse have any living {minor} children? This includes children you had together and children you had separately.: children.there_are_any
     datatype: yesnoradio
@@ -744,8 +759,8 @@ question: |
 subquestion: |
   Answer yes if there are:
   
-  * any minor children who have you and your spouse as legal parents, or
-  * any minor children of either spouse, and you're not sure who their legal parents are.
+  * any minor children who have you **and** your {spouse} as legal parents, or
+  * any minor children of either spouse, and you're **not sure** who their legal parents are.
 fields:
   - Do you and your spouse have any living {minor} children?: children.there_are_any
     datatype: yesnoradio
@@ -769,14 +784,6 @@ subquestion: |
 fields:
   - Are there any more minor children to add?: children.there_is_another
     datatype: yesnoradio
----
-# Emily note: not sure if this is needed as it does not mirror Jack's patterns. It's possible it can be done in a different way. Cannot remember my thinking when I added it.
-# alternatively, may need to add this for the other lists I create in this yml.
-on change:
-  children.there_are_any: |
-    if not children.there_are_any:
-      children.target_number = 0
-      children.clear()
 ---
 id: children info
 sets:
@@ -810,6 +817,9 @@ question: More information about ${ children[i] }
 fields:
   - Date of birth: children[i].birthdate
     datatype: BirthDate
+    alMin: ${ format_date( today() - date_interval(years=18) + date_interval(days=1), format='MM/dd/yyyy') }
+    alMinMessage: |
+      Only include children younger than 18.
   - Gender: children[i].gender
     datatype: radio
     choices:
@@ -1230,6 +1240,9 @@ subquestion: |
 continue button field: children[i].stepchild_demographics
 fields:
   - Date of birth: children[i].birthdate
+    alMin: ${ format_date( today() - date_interval(years=18) + date_interval(days=1), format='MM/dd/yyyy') }
+    alMinMessage: |
+      Only include children younger than 18.
     required: False
     datatype: BirthDate
   - Gender: children[i].gender
@@ -1350,8 +1363,10 @@ fields:
     show if:
       variable: children_live_with_parent
       is: True
+validation code: | ## for review screen functionality ##
+  for child in children.filter(legal_parent="both"):
+    invalidate("child.lives_with")
 ---
-# TODO: going to have to clear this out and rebuild if # of children changes
 code: |
   child_lives_with_choices = [
                   ['users[0]', 'Me'],
@@ -1359,9 +1374,12 @@ code: |
                   ['both', 'Both']
                              ]
   
-  if len(children.filter(legal_parent="both")) > 1:
+  if children.there_are_any and len(children.filter(legal_parent="both")) > 1:
     child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with my spouse.'])
+
+  set_child_home_choices = True
 ---
+if: not children_live_with_parent
 id: kickout if children don't live with parents
 event: children_live_with_third_party_kickout
 question: This tool is not right for you
@@ -1465,6 +1483,8 @@ code: |
             exit_general
   set_children_home_state_info
 
+  enable_home_state_review_screen
+
   interview_order_home_state = True
 ---
 only sets: set_children_home_state_info
@@ -1554,6 +1574,8 @@ fields:
       - No, ${ children[i].familiar() } ${ f"moved to { children[i].currently_resides_in_locality_display_name } within the last 6 months." if children[i].age_in_months() >= 6 else "used to live in a different state, country, or tribal reservation." }: False
   - note: |
       ${ collapse_template(home_state_trip_info) }
+validation code: |
+  invalidate("children[i].spent_six_months_in_michigan", "children[i].MI_stat_ended_when")
 ---
 template: home_state_info
 subject: What is a "home state" and why does it matter?
@@ -1591,6 +1613,7 @@ content: |
   In this case, the week in Ohio counts as part of the time the child lived in Michigan. The child in the example has lived in Michigan from birth.
   % endif
 ---
+if: child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.currently_resides_in_locality != "MI"
 id: Michigan was previous home state prong
 question: ${ children[i] }'s legal "home state", part 3
 subquestion: |
@@ -1675,7 +1698,7 @@ subquestion: |
 id: children's previous addresses
 question: Children's previous addresses
 subquestion: |
-  You already told us who ${ comma_and_list(children.filter(legal_parent='both')) } **currently** ${ children.does_verb("live") } with.
+  You already told us who ${ comma_and_list(children.filter(legal_parent='both')) } **currently** ${ children.filter(legal_parent="both").does_verb('live') } with.
 fields:
   - label: |
       % if len(children.filter(legal_parent="both")) > 1:
@@ -1871,7 +1894,7 @@ continue button field: Muskegon_specific_PT_info
 question: |
   Specific Parenting Time Schedules
 subquestion: | 
-  You will need a specific parenting time schedule. If you are able to work with the other parent, you may want to come up with the schedule together.
+  In Muskegon County, if you want a specific parenting time schedule, you need to create your own. If you are able to work with the other parent, you may want to come up with the schedule together.
 
   The [Michigan Parenting Time Guideline](https://www.courts.michigan.gov/4a537f/siteassets/court-administration/standardsguidelines/foc/pt_gdlns.pdf), created by the Friend of the Court Bureau, is a helpful resource for putting together a parenting time schedule. We recommend that you **review the Guideline before** creating a custom parenting time schedule for your family. 
 
@@ -2160,8 +2183,8 @@ id: prior family cases table
 table: prior_family_cases.table
 rows: prior_family_cases
 columns:
-  - Case name: row_item.title
-  - Type: row_item.type
+  - Case No.: row_item.docket_number
+  - Type: prior_family_case_types_ordered[row_item.type]
   - State: row_item.state
   - County: row_item.county
 #  - Entered family before or during marriage: |
@@ -2337,6 +2360,8 @@ code: |
   elif tool_ID != "JOD_only":
     prior_family_cases[i].status
     if there_are_marital_children:
+      if prior_family_cases[i].state != "MI":
+        prior_family_cases[i].address # trying to trigger this question if user changes answer on marital children from none to some, after case was already gathered
       if prior_family_cases[i].type == "divorce":
         prior_family_cases[i].included_custody_PT_order
   
@@ -2355,7 +2380,7 @@ code: |
           prior_family_cases[i].included_custody_PT_order
   
       if prior_family_cases[i].state != "MI":
-        if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and (prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order) or (prior_family_cases[i].status in ["stayed", "pending"] and prior_family_cases[i].has_current_custody_PT_order)):
+        if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and ((prior_family_cases[i].status == "ended_with_order" and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order) or (prior_family_cases[i].status in ["stayed", "pending"] and prior_family_cases[i].has_current_custody_PT_order))):
           if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids:
             prior_family_cases[i].custody_order_in_another_state_warning 
 
@@ -2423,26 +2448,34 @@ fields:
   - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
 ---
+objects:
+  # next 3 blocks create ordered list of case types sources for a multiple choice dropdown
+  - prior_family_case_types_ordered: DAOrderedDict.using(elements={**prior_family_case_types}, auto_gather=False, gathered=True)
+---
 code: |
-  prior_family_case_types = [
-                              ['divorce', 'Divorce'],
-                              ['separate_maintenance', 'Separate Maintenance'],
-                              ['protection_order', 'Protection Order'],
-                              ['parental_rights', 'Parental Rights (abuse/neglect)'],
-                              ['adoption', 'Adoption'],
-                              ['paternity', 'Paternity'],
-                              ['custody', 'Custody'],
-                              ['guardianship', 'Guardianship'],
-                              ['juvenile_delinquency', 'Juvenile Delinquency'],
-                              ['name_change', 'Name Change'],
-                              ['emancipation', 'Emancipation'],
-                              ['other', 'Other']
-                            ]
   if tool_ID in ["custody_answer", "custody_complaint"]:
-    prior_family_case_types.remove("['paternity', 'Paternity']", "['custody', 'Custody']")
+    prior_family_case_types_ordered.pop("paternity")
+    prior_family_case_types_ordered.pop("custody")
   if tool_ID == "custody_complaint":
-    prior_family_case_types.remove("['divorce', 'Divorce']")
+    prior_family_case_types_ordered.pop("divorce")
+
+  set_prior_family_case_types = True
 #TODO: when build custody, should new separate maintenance option be removed from one or both tools?
+---
+variable name: prior_family_case_types
+data: !!omap
+  - adoption: 'Adoption'
+  - custody: 'Custody'
+  - divorce: 'Divorce'
+  - emancipation: 'Emancipation'
+  - guardianship: 'Guardianship'
+  - juvenile_delinquency: 'Juvenile Delinquency'
+  - name_change: 'Name Change'
+  - parental_rights: 'Parental Rights (abuse/neglect)'
+  - paternity: 'Paternity'
+  - protection_order: 'Protection Order'
+  - separate_maintenance: 'Separate Maintenance'
+  - other: 'Other'
 ---
 # LHI "Prior Family Cases DLG"
 id: prior family case or order collection screen NOT JOD_only
@@ -2475,7 +2508,7 @@ fields:
       code: tool_ID in ["divorce_complaint", "custody_complaint"]
   - What is the nature of this case?: prior_family_cases[i].type
     code: |
-      prior_family_case_types
+      prior_family_case_types_ordered
   - Describe the nature of this case:: prior_family_cases[i].type_description
     show if:
       variable: prior_family_cases[i].type
@@ -2577,7 +2610,7 @@ question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ state_name(prior_family_cases[i].state) }.
 fields:
-  - What is the date of that order?: prior_family_cases[i].final_order_date
+  - What is the date of the final judgment or order?: prior_family_cases[i].final_order_date
     datatype: ThreePartsDate
     max: |
      ${ today() }
@@ -2692,12 +2725,13 @@ code: |
 ## stepchildren address info
 # --------------------------------------------------------------------
 ---
-# EKM TODO note: logic surrounding whether stepchild address is printed on forms or kept confidential will need to be done on attachment screens or in separate variable at some point
 code: |
   for child in children:
     if child.legal_parent != "both":
       child.stepchild_lives_with
 
+  enable_stepchild_address_review_screen
+  
   interview_order_stepchild_address = True
 ---
 id: guidepost_stepchildren
@@ -3693,7 +3727,7 @@ if: there_are_marital_children or user_wants_post_divorce_support
 question: Other names
 subquestion: |
   * Your name is ${users[0]}.
-  % if tool_ID == "JOD_only" and users[0].previous_last_name_yn:
+  % if tool_ID == "JOD_only" and users[0].has_previous_name:
   * Your previous last name was ${users[0].previous_last_name}.
   % elif tool_ID == "divorce_complaint" and users[0].has_previous_name:
   * Your previous name was ${users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name}.
@@ -3829,7 +3863,7 @@ if: there_are_marital_children or user_wants_post_divorce_support
 question: Other names
 subquestion: |
   * Your spouse's name is ${other_parties[0]}.
-  % if tool_ID == "JOD_only" and other_parties[0].previous_last_name_yn:
+  % if tool_ID == "JOD_only" and other_parties[0].has_previous_name:
   * Their previous last name was ${other_parties[0].previous_last_name}.
   % elif tool_ID == "divorce_complaint" and other_parties[0].has_previous_name:
   * Their previous name was ${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}.
