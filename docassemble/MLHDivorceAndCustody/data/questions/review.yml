@@ -774,6 +774,7 @@ review:
       - invalidate:
         - marriage.personal_property_division_agreement
         - marriage.personal_property_division_actual
+      - marriage.personal_property_info
       - marriage.personal_property_acquired
       - follow up:
         - marriage.accounts.revisit
@@ -852,12 +853,12 @@ review:
 #      ${ next_accordion("""<h2 class="h5">Vehicles</h2>""") }
 #    show if: marriage.vehicles.attribute_defined("any")
   - Edit:
-      - marriage.vehicles.any
       - invalidate:
         - marriage.vehicles.keep_own
-      - recompute:
-        - marriage.vehicles.gathered_reset
-        - interview_order_vehicles
+      - marriage.vehicles.info
+      - marriage.vehicles.any
+      - follow up:
+        - marriage.vehicles.revisit
     button: |
       ##### Do you and your spouse own any vehicles (car, boat, trailer, motorcycle, snowmobile, etc.)?
         - ${word(yesno(marriage.vehicles.any))}
@@ -889,6 +890,7 @@ review:
       % else:
         - None
       % endif
+    show if: marriage.vehicles.need_items
 #
 # ---------- debts ----------
 #
@@ -901,6 +903,7 @@ review:
         - marriage.debts.agree_responsibility_debts_own_name
         - marriage.debts.any_in_both_names
         - marriage.debts.agree_responsibility_debts_both_names
+      - marriage.debts.info
       - marriage.debts.any
       - follow up:
         - marriage.debts.revisit

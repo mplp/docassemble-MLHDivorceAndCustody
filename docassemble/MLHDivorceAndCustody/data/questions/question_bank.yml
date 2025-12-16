@@ -49,7 +49,7 @@ code: |
 ---
 generic object: ALAssetList
 id: x.revisit
-if: (x.instanceName in ("marriage.accounts", "marriage.other_pp", "marriage.mobile_home") and marriage.personal_property_need_items) or (x.instanceName == "marriage.debts" and marriage.debts.need_items)
+if: (x.instanceName in ("marriage.accounts", "marriage.other_pp", "marriage.mobile_home") and marriage.personal_property_need_items) or (x.instanceName == "marriage.debts" and marriage.debts.need_items) or (x.instanceName == "marriage.vehicles" and marriage.vehicles.need_items)
 question: |
   ${x.question_text}
 subquestion: |
@@ -1869,11 +1869,6 @@ fields:
   - label: Do you and your spouse own any vehicles (car, boat, trailer, motorcycle, snowmobile, etc.)?
     field: marriage.vehicles.any
     datatype: yesnoradio
----
-id: marriage.vehicles.keep_own
-question: |
-  ${marriage.vehicles.question_text}
-fields:
   - label: How do you want to divide your vehicles?
     field: marriage.vehicles.keep_own
     input type: radio
@@ -1882,6 +1877,13 @@ fields:
         value: True
       - label: We need to transfer title to one or more vehicles.
         value: False
+    show if: marriage.vehicles.any
+validation code: |
+  if marriage.vehicles.any and not marriage.vehicles.keep_own:
+    marriage.vehicles.need_items = True
+  else:
+    marriage.vehicles.need_items = False
+    marriage.vehicles.clear()
 ---
 id: marriage.vehicles[i]
 question: |
@@ -2305,10 +2307,12 @@ code: |
   interview_order_debts = True
 ---
 code: |
-  marriage.vehicles
   marriage.vehicles.info
-  if marriage.vehicles.any:
-    if not marriage.vehicles.keep_own:
-      marriage.vehicles.gather()
+  if marriage.vehicles.need_items:
+    marriage.vehicles.gather()
+  else:
+    marriage.vehicles.there_are_any = False
+    marriage.vehicles.gathered = True
+    marriage.vehicles.revisit = True
   interview_order_vehicles = True
 ---
