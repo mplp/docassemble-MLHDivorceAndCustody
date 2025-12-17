@@ -522,7 +522,10 @@ review:
 #
 # TODO ADD ACCORDION
   - Edit:
-      - children.there_are_any
+      - recompute:
+        - children.there_are_any
+      - follow up:
+        - children.revisit
       - invalidate:
         - set_marital_children_or_not
         - set_child_home_choices
@@ -545,7 +548,6 @@ review:
         - interview_order_user_income
         - interview_order_income_tax
       - recompute:
-        - children.gathered_reset
         - children_previous_address.gathered_reset
         - interview_order_children
         - prior_family_cases.gathered_deep_reset

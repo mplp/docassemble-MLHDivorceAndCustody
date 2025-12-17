@@ -85,6 +85,10 @@ code: |
   children_intro
   if children.there_are_any:
     children.gather()
+  else:
+    children.gathered = True
+    children.revisit = True
+  
   set_marital_children_or_not
   set_child_home_choices
   
@@ -2097,6 +2101,29 @@ content:
 ---
 ######## end custody questions ########
 ---
+id: children.revisit
+if: children.there_are_any
+question: |
+  Any more children?
+subquestion: |
+  % if tool_ID == "divorce_complaint":
+  Please list **all minor children** that you or your spouse have, either separately or together.
+  % elif tool_ID == "JOD_only":
+  Please include:
+
+  * all minor children who have you and your spouse as legal parents, and
+  * all minor children of either spouse, if you're not sure who their legal parents are.
+  % endif
+  
+  You have already told us about:
+
+  ${children.table}
+  ${x.add_action(color="success", size="md")}
+continue button field: children.revisit
+validation code: |
+  if children.number_gathered() == 0:
+    validation_error("You must add at least one child based on your previous answers. Please go back and change your answers if there are no children.")
+---
 # --------------------------------------------------------------------
 ## pregnancy
 # --------------------------------------------------------------------
@@ -2370,7 +2397,7 @@ code: |
         prior_family_cases[i].included_custody_PT_order
   
       if prior_family_cases[i].state != "MI":
-        if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and ((prior_family_cases[i].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order))):
+        if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and (prior_family_cases[i].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order)):
           if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids:
             prior_family_cases[i].custody_order_in_another_state_warning 
 
