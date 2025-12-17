@@ -1732,7 +1732,6 @@ fields:
     datatype: yesnoradio
 ---
 id: marriage.debts.pay_debts_in_own_names
-if: marriage.debts.any
 question: |
   ${marriage.debts.question_text}
 fields:
@@ -1747,7 +1746,6 @@ fields:
       is: False
 ---
 id: marriage.debts.any_in_both_names
-if: marriage.debts.any
 question: |
   ${marriage.debts.question_text}
 fields:
