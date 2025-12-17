@@ -903,6 +903,7 @@ review:
         - marriage.debts.agree_responsibility_debts_own_name
         - marriage.debts.any_in_both_names
         - marriage.debts.agree_responsibility_debts_both_names
+        - marriage.debts.need_items
       - marriage.debts.info
       - marriage.debts.any
       - follow up:

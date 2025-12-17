@@ -1730,38 +1730,36 @@ fields:
   - label: Do you or your spouse have any debts, either in your own names or together?
     field: marriage.debts.any
     datatype: yesnoradio
-  - note: |
-      <hr>
-    show if: marriage.debts.any
+---
+id: marriage.debts.pay_debts_in_own_names
+if: marriage.debts.any
+question: |
+  ${marriage.debts.question_text}
+fields:
   - label: Do you and your spouse each plan to pay the debts in **your own names?**
     field: marriage.debts.pay_debts_in_own_names
     datatype: yesnoradio
-    show if: marriage.debts.any
   - label: Do you and your spouse agree on who will be responsible for these debts?
     field: marriage.debts.agree_responsibility_debts_own_name
     datatype: yesnoradio
     show if:
       variable: marriage.debts.pay_debts_in_own_names
       is: False
-  - note: |
-      <hr>
-    show if: marriage.debts.any
+---
+id: marriage.debts.any_in_both_names
+if: marriage.debts.any
+question: |
+  ${marriage.debts.question_text}
+fields:
   - label: Do you and your spouse have any debts that are in **both** of your names?
     field: marriage.debts.any_in_both_names
     datatype: yesnoradio
-    show if: marriage.debts.any
   - label: Do you and your spouse agree on who will be responsible for these debts?
     field: marriage.debts.agree_responsibility_debts_both_names
     datatype: yesnoradio
     show if:
       variable: marriage.debts.any_in_both_names
       is: True
-validation code: |
-  if marriage.debts.any and (not marriage.debts.pay_debts_in_own_names or marriage.debts.any_in_both_names):
-    marriage.debts.need_items = True
-  else:
-    marriage.debts.need_items = False
-    marriage.debts.clear()
 ---
 id: marriage.debts[i]
 question: |
@@ -1798,12 +1796,14 @@ fields:
 ---
 template: marriage.debts.there_is_another_template
 content: |
-  % if not marriage.debts.pay_debts_in_own_names:
-  List each debt that is currently in one spouse's name, but that the other spouse **${"will" if marriage.debts.agree_responsibility_debts_own_name else "should"}** be responsible for.
-  % endif
+  % if marriage.debts.any:
+    % if not marriage.debts.pay_debts_in_own_names:
+    List each debt that is currently in one spouse's name, but that the other spouse **${"will" if marriage.debts.agree_responsibility_debts_own_name else "should"}** be responsible for.
+    % endif
 
-  % if marriage.debts.any_in_both_names:
-  ${"Also, list" if not marriage.debts.pay_debts_in_own_names else "List"} each jointly held debt (debts in both of your names) that will be divided and indicate whether you or your spouse **${"will" if marriage.debts.agree_responsibility_debts_both_names else "should"}** be responsible for it.
+    % if marriage.debts.any_in_both_names:
+    ${"Also, list" if not marriage.debts.pay_debts_in_own_names else "List"} each jointly held debt (debts in both of your names) that will be divided and indicate whether you or your spouse **${"will" if marriage.debts.agree_responsibility_debts_both_names else "should"}** be responsible for it.
+    % endif
   % endif
 ---
 # --------------------------------------------------------------------
@@ -2305,6 +2305,13 @@ code: |
     marriage.debts.gathered = True
     marriage.debts.revisit = True
   interview_order_debts = True
+---
+code: |
+  if marriage.debts.any and (not marriage.debts.pay_debts_in_own_names or marriage.debts.any_in_both_names):
+    marriage.debts.need_items = True
+  else:
+    marriage.debts.need_items = False
+    marriage.debts.clear()
 ---
 code: |
   marriage.vehicles.info
