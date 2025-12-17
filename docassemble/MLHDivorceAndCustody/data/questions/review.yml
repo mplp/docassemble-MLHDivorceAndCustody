@@ -771,15 +771,15 @@ review:
       % endif
       % endif
   - Edit:
-      - marriage.personal_property_acquired
       - invalidate:
         - marriage.personal_property_division_agreement
         - marriage.personal_property_division_actual
-      - recompute:
-        - marriage.accounts.gathered_reset
-        - marriage.other_pp.gathered_reset
-        - marriage.mobile_home.gathered_reset
-        - interview_order_personal_property
+      - marriage.personal_property_info
+      - marriage.personal_property_acquired
+      - follow up:
+        - marriage.accounts.revisit
+        - marriage.other_pp.revisit
+        - marriage.mobile_home.revisit
     button: |
       ##### Did you and your spouse acquire personal property during the marriage?
         - ${word(yesno(marriage.personal_property_acquired))}
@@ -813,6 +813,7 @@ review:
       % else:
         - None
       % endif
+    show if: marriage.personal_property_need_items
   - Edit:
       - marriage.other_pp.revisit
     button: |
@@ -828,6 +829,7 @@ review:
       % else:
         - None
       % endif
+    show if: marriage.personal_property_need_items
   - Edit:
       - marriage.mobile_home.revisit
     button: |
@@ -843,6 +845,52 @@ review:
       % else:
         - None
       % endif
+    show if: marriage.personal_property_need_items
+#
+# ---------- vehicles ----------
+#
+#  - raw html: |
+#      ${ next_accordion("""<h2 class="h5">Vehicles</h2>""") }
+#    show if: marriage.vehicles.attribute_defined("any")
+  - Edit:
+      - invalidate:
+        - marriage.vehicles.keep_own
+      - marriage.vehicles.info
+      - marriage.vehicles.any
+      - follow up:
+        - marriage.vehicles.revisit
+    button: |
+      ##### Do you and your spouse own any vehicles (car, boat, trailer, motorcycle, snowmobile, etc.)?
+        - ${word(yesno(marriage.vehicles.any))}
+
+      % if marriage.vehicles.attribute_defined("keep_own"):
+      ##### How do you want to divide your vehicles?
+      % if marriage.vehicles.keep_own:
+        - Each party will keep the vehicle(s) now in his or her possession and titled in <u>only</u> his or her name. The party keeping the vehicle(s) is fully responsible to pay any debt related to the vehicle(s). The other party will have no claim to any vehicle(s) in the other's name and possession.
+      % else:
+        - We need to transfer title to one or more vehicles.
+      % endif
+      % endif
+  - Edit:
+      - marriage.vehicles.revisit
+    button: |
+      ##### ${marriage.vehicles.question_text}
+
+      % if marriage.vehicles:
+      % for idx, item in enumerate(marriage.vehicles):
+        - **${ordinal(idx, capitalize=True)} vehicle**
+          - **Year:** ${item.year}
+          - **Make:** ${item.make}
+          - **Model:** ${item.model}
+          - **VIN:** ${item.vin}
+          - **Award this vehicle to:** ${item.owner}
+          - **Do you and the ${op_ask_role.capitalize()} agree on what should happen with this vehicle?** ${word(yesno(item.agree))}
+          - **Is there a debt related to this vehicle?:** ${word(yesno(item.debt))}
+      % endfor
+      % else:
+        - None
+      % endif
+    show if: marriage.vehicles.need_items
 #
 # ---------- debts ----------
 #
@@ -850,13 +898,17 @@ review:
 #      ${ next_accordion("""<h2 class="h5">Debts</h2>""") }
 #    show if: marriage.debts.attribute_defined("any")
   - Edit:
-      - marriage.debts.any
       - invalidate:
+        - marriage.debts.any
         - marriage.debts.pay_debts_in_own_names
+        - marriage.debts.agree_responsibility_debts_own_name
         - marriage.debts.any_in_both_names
+        - marriage.debts.agree_responsibility_debts_both_names
+      - marriage.debts.info
       - recompute:
-        - marriage.debts.gathered_reset
-        - interview_order_debts
+        - marriage.debts.need_items
+      - follow up:
+        - marriage.debts.revisit
     button: |
       ##### Do you or your spouse have any debts, either in your own names or together?
         - ${word(yesno(marriage.debts.any))}
@@ -894,50 +946,7 @@ review:
       % else:
         - None
       % endif
-#
-# ---------- vehicles ----------
-#
-#  - raw html: |
-#      ${ next_accordion("""<h2 class="h5">Vehicles</h2>""") }
-#    show if: marriage.vehicles.attribute_defined("any")
-  - Edit:
-      - marriage.vehicles.any
-      - invalidate:
-        - marriage.vehicles.keep_own
-      - recompute:
-        - marriage.vehicles.gathered_reset
-        - interview_order_vehicles
-    button: |
-      ##### Do you and your spouse own any vehicles (car, boat, trailer, motorcycle, snowmobile, etc.)?
-        - ${word(yesno(marriage.vehicles.any))}
-
-      % if marriage.vehicles.attribute_defined("keep_own"):
-      ##### How do you want to divide your vehicles?
-      % if marriage.vehicles.keep_own:
-        - Each party will keep the vehicle(s) now in his or her possession and titled in <u>only</u> his or her name. The party keeping the vehicle(s) is fully responsible to pay any debt related to the vehicle(s). The other party will have no claim to any vehicle(s) in the other's name and possession.
-      % else:
-        - We need to transfer title to one or more vehicles.
-      % endif
-      % endif
-  - Edit:
-      - marriage.vehicles.revisit
-    button: |
-      ##### ${marriage.vehicles.question_text}
-
-      % if marriage.vehicles:
-      % for idx, item in enumerate(marriage.vehicles):
-        - **${ordinal(idx, capitalize=True)} vehicle**
-          - **Year:** ${item.year}
-          - **Make:** ${item.make}
-          - **Model:** ${item.model}
-          - **VIN:** ${item.vin}
-          - **Award this vehicle to:** ${item.owner}
-          - **Do you and the ${op_ask_role.capitalize()} agree on what should happen with this vehicle?** ${word(yesno(item.agree))}
-          - **Is there a debt related to this vehicle?:** ${word(yesno(item.debt))}
-      % endfor
-      % else:
-        - None
-      % endif
+    show if: marriage.debts.need_items
 #
 # ---------- real property ----------
 #

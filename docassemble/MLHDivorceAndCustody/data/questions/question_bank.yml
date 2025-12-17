@@ -49,6 +49,7 @@ code: |
 ---
 generic object: ALAssetList
 id: x.revisit
+if: (x.instanceName in ("marriage.accounts", "marriage.other_pp", "marriage.mobile_home") and marriage.personal_property_need_items) or (x.instanceName == "marriage.debts" and marriage.debts.need_items) or (x.instanceName == "marriage.vehicles" and marriage.vehicles.need_items)
 question: |
   ${x.question_text}
 subquestion: |
@@ -62,6 +63,10 @@ subquestion: |
 
   ${x.add_action(color="success", size="md")}
 continue button field: x.revisit
+validation code: |
+  if x.instanceName == "marriage.debts":
+    if x.number_gathered() == 0:
+      validation_error("You must add at least one debt based on your previous answers.")
 ---
 generic object: DAList
 id: x.there_are_any
@@ -1453,14 +1458,10 @@ fields:
   - label: Did you and your spouse acquire personal property during the marriage?
     field: marriage.personal_property_acquired
     datatype: yesnoradio
----
-id: marriage.personal_property
-question: |
-  Personal property
-fields:
   - label: Have you and your spouse reached an agreement about how all personal property will be divided?
     field: marriage.personal_property_division_agreement
     datatype: yesnoradio
+    show if: marriage.personal_property_acquired
   - label: Have you and your spouse **actually divided** all the personal property based on your agreement?
     field: marriage.personal_property_division_actual
     datatype: yesnoradio
@@ -1468,6 +1469,14 @@ fields:
   - note: |
       _Only answer **Yes** if each of you has in your possession all of the items that you have agreed you will have._
     show if: marriage.personal_property_division_agreement
+validation code: |
+  if marriage.personal_property_acquired and (not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual):
+    marriage.personal_property_need_items = True
+  else:
+    marriage.personal_property_need_items = False
+    marriage.accounts.clear()
+    marriage.other_pp.clear()
+    marriage.mobile_home.clear()
 ---
 # --------------------------------------------------------------------
 ## marriage.accounts
@@ -1785,12 +1794,14 @@ fields:
 ---
 template: marriage.debts.there_is_another_template
 content: |
-  % if not marriage.debts.pay_debts_in_own_names:
-  List each debt that is currently in one spouse's name, but that the other spouse **${"will" if marriage.debts.agree_responsibility_debts_own_name else "should"}** be responsible for.
-  % endif
+  % if marriage.debts.any:
+    % if not marriage.debts.pay_debts_in_own_names:
+    List each debt that is currently in one spouse's name, but that the other spouse **${"will" if marriage.debts.agree_responsibility_debts_own_name else "should"}** be responsible for.
+    % endif
 
-  % if marriage.debts.any_in_both_names:
-  ${"Also, list" if not marriage.debts.pay_debts_in_own_names else "List"} each jointly held debt (debts in both of your names) that will be divided and indicate whether you or your spouse **${"will" if marriage.debts.agree_responsibility_debts_both_names else "should"}** be responsible for it.
+    % if marriage.debts.any_in_both_names:
+    ${"Also, list" if not marriage.debts.pay_debts_in_own_names else "List"} each jointly held debt (debts in both of your names) that will be divided and indicate whether you or your spouse **${"will" if marriage.debts.agree_responsibility_debts_both_names else "should"}** be responsible for it.
+    % endif
   % endif
 ---
 # --------------------------------------------------------------------
@@ -1856,11 +1867,6 @@ fields:
   - label: Do you and your spouse own any vehicles (car, boat, trailer, motorcycle, snowmobile, etc.)?
     field: marriage.vehicles.any
     datatype: yesnoradio
----
-id: marriage.vehicles.keep_own
-question: |
-  ${marriage.vehicles.question_text}
-fields:
   - label: How do you want to divide your vehicles?
     field: marriage.vehicles.keep_own
     input type: radio
@@ -1869,6 +1875,13 @@ fields:
         value: True
       - label: We need to transfer title to one or more vehicles.
         value: False
+    show if: marriage.vehicles.any
+validation code: |
+  if marriage.vehicles.any and not marriage.vehicles.keep_own:
+    marriage.vehicles.need_items = True
+  else:
+    marriage.vehicles.need_items = False
+    marriage.vehicles.clear()
 ---
 id: marriage.vehicles[i]
 question: |
@@ -2258,31 +2271,53 @@ code: |
   interview_order_other_parties_attorney = True
 ---
 code: |
-  marriage.accounts   ## just defining these first 3 lines I think?
+  marriage.accounts
   marriage.other_pp
   marriage.mobile_home
   marriage.personal_property_info
-  if marriage.personal_property_acquired:
-    if not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual:
-      marriage.accounts.gather()
-      marriage.other_pp.gather()
-      marriage.mobile_home.gather()
+  if marriage.personal_property_need_items:
+    marriage.accounts.gather()
+    marriage.other_pp.gather()
+    marriage.mobile_home.gather()
+  else:
+    marriage.accounts.there_are_any = False
+    marriage.accounts.gathered = True
+    marriage.accounts.revisit = True
+
+    marriage.other_pp.there_are_any = False
+    marriage.other_pp.gathered = True
+    marriage.other_pp.revisit = True
+
+    marriage.mobile_home.there_are_any = False
+    marriage.mobile_home.gathered = True
+    marriage.mobile_home.revisit = True
+
   interview_order_personal_property = True
 ---
 code: |
   marriage.debts.info
-  if marriage.debts.any:
-    marriage.debts.pay_debts_in_own_names
-    marriage.debts.any_in_both_names
-    if not marriage.debts.pay_debts_in_own_names or marriage.debts.any_in_both_names:
-      marriage.debts.gather()
+  if marriage.debts.need_items:
+    marriage.debts.gather()
+  else:
+    marriage.debts.there_are_any = False
+    marriage.debts.gathered = True
+    marriage.debts.revisit = True
   interview_order_debts = True
 ---
 code: |
-  marriage.vehicles
+  if marriage.debts.any and (not marriage.debts.pay_debts_in_own_names or marriage.debts.any_in_both_names):
+    marriage.debts.need_items = True
+  else:
+    marriage.debts.need_items = False
+    marriage.debts.clear()
+---
+code: |
   marriage.vehicles.info
-  if marriage.vehicles.any:
-    if not marriage.vehicles.keep_own:
-      marriage.vehicles.gather()
+  if marriage.vehicles.need_items:
+    marriage.vehicles.gather()
+  else:
+    marriage.vehicles.there_are_any = False
+    marriage.vehicles.gathered = True
+    marriage.vehicles.revisit = True
   interview_order_vehicles = True
 ---
