@@ -57,21 +57,20 @@ table: children.table
 rows: children
 columns:
   - Name: row_item.name
-  - Date of birth (if provided): |
-      row_item.birthdate if row_item.legal_parent == "both" else "---"
-  - Entered family when?: |
-      "before marriage" if row_item.timing == "premarital" else "during marriage"
+  - Birthdate: |
+      row_item.birthdate if row_item.birthdate != None else "not provided"
+  - Legal parent: |
+      "Both spouses" if row_item.legal_parent == "both" else users[0] if row_item.legal_parent == "user" else other_parties[0] if row_item.legal_parent == "other_party" else ""
 edit:
-  - name.first
-  - timing
-  - origin
-  - bio_parent
-  - parentage_established
-  - legal_parent
-  - not_included_in_divorce_info
-  - parentage_revocation_info
-  - complicated_issue_kickout
-  - show_parentage_info # just for testing purposes
+  - rerun_parentage_logic
+#  - origin
+#  - complicated_issue_kickout
+#  - legal_parent
+#   - birthdate
+#   - stepchild_demographics
+#   - not_included_in_divorce_info
+#   - parentage_revocation_info
+#   - complicated_issue_kickout
 delete buttons: True
 confirm: True
 ---
@@ -85,12 +84,14 @@ code: |
   children_intro
   if children.there_are_any:
     children.gather()
+    enable_child_demographics_review_screen
   else:
     children.gathered = True
     children.revisit = True
   
   set_marital_children_or_not
   set_child_home_choices
+  children_previous_address # calling now so that reset_gathered works even if no kids
   
   if there_are_marital_children:
 
@@ -661,8 +662,8 @@ fields:
 # --------------------------------------------------------------------
 ---
 code: |
-  children[i].name.first
-  children[i].timing 
+  children[i].basic_info
+  children[i].adopted_during_marriage
   children[i].origin
 
   if children[i].origin == "marital_third_party_conceived" and children[i].how_conceived == "assisted_reproduction":
@@ -671,11 +672,11 @@ code: |
   children[i].legal_parent
 
   if children[i].legal_parent == "both":
-    children[i].birthdate
+    children[i].more_info
 
   if children[i].legal_parent != "both":
     if tool_ID != "JOD_only":
-      children[i].stepchild_demographics
+      children[i].more_info
     children[i].not_included_in_divorce_info
   
   elif ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived" and children[i].legal_parent == "both")) and children[i].parentage_plan_to_revoke:
@@ -726,7 +727,7 @@ content: |
   If you and your spouse have any **minor children together**, your divorce must address custody, parenting time, and child support. 
 
   % if tool_ID in ["divorce_complaint", "divorce_answer"]:
-  **Minor children of just one spouse** must also be listed in the divorce paperwork. However, the divorce will not cover their custody, parenting time, or child support.
+  If you have any children together, **minor children of just one spouse** must also be listed in the divorce paperwork. However, the divorce will not cover their custody, parenting time, or child support.
   % endif
 ---
 template: adult_children_info
@@ -747,19 +748,6 @@ if: tool_ID == "divorce_complaint"
 id: any children divorce complaint
 question: |
   Any minor children?
-subquestion: |
-  This includes:
-
-  * children either {spouse} had or adopted separately or with another partner
-  * children you and your spouse had or adopted together
-fields:
-  - Do you or your spouse have any living {minor} children? This includes children you had together and children you had separately.: children.there_are_any
-    datatype: yesnoradio
----
-if: tool_ID == "JOD_only"
-id: any children JOD-only
-question: |
-  Minor children
 subquestion: |
   Answer yes if there are:
   
@@ -790,6 +778,7 @@ fields:
     datatype: yesnoradio
 ---
 id: children info
+continue button field: children[i].basic_info
 sets:
   - children[i].name.first
   - children[i].name.middle
@@ -802,43 +791,67 @@ subquestion: |
 fields:
   - code: |
       children[i].name_fields()
-  - My spouse and I **adopted** this child together during our marriage.: children[i].adopted_during_marriage
-    required: False
-    datatype: yesno
+---
+id: children adoption/timing info
+question: When ${ children[i] } joined your family
+fields:
+  - Did you and ${other_parties[0]} **adopt** ${ children[i] } together during your marriage?: children[i].adopted_during_marriage
+    datatype: yesnoradio
   - Was this child born before or after you married ${other_parties}?: children[i].timing
     datatype: radio
     choices: 
       - They were born before we got married.: premarital
       - They were born after we got married.: marital
-    hide if:
+    show if:
       variable: children[i].adopted_during_marriage
-      is: True
+      is: False
   # TODO? need help text saying don't include children who were born to or adopted by either spouse prior to marriage
+validation code: |
+  if children[i].adopted_during_marriage:
+    children[i].timing = "marital"
+    children[i].origin = "marital_adoption"
+    children[i].legal_parent = "both"
 ---
 id: additional child info
-if: children[i].legal_parent == "both"
+continue button field: children[i].more_info
 question: More information about ${ children[i] }
+subquestion: |
+  % if children[i].legal_parent != "both":
+  Leave blank if unknown.
+  % endif
 fields:
   - Date of birth: children[i].birthdate
     datatype: BirthDate
     alMin: ${ format_date( today() - date_interval(years=18) + date_interval(days=1), format='MM/dd/yyyy') }
     alMinMessage: |
       Only include children younger than 18.
+    required: True if children[i].legal_parent == "both" else False
   - Gender: children[i].gender
     datatype: radio
     choices:
       - Female: female
       - Male: male
+    required: True if children[i].legal_parent == "both" else False
   - Social security number: children[i].ssn
     datatype: ssn
     required: False
+    show if:
+      code: |
+        children[i].legal_parent == "both"
   # TODO? need help text apologizing for gender question
+validation code: |
+  if defined("children[i].ssn"):
+    if children[i].ssn != "":
+      children[i].ssn_last_four = "∗∗∗-∗∗-" + children[i].ssn[-4:]
+    else:
+      children[i].ssn_last_four = "Not provided"
 ---
-code: |
-  if children[i].adopted_during_marriage:
-    children[i].timing = "marital"
-    children[i].origin = "adoption"
----
+# think this is unneeded, can delete after running without it for a while
+#code: |
+#  if children[i].adopted_during_marriage:
+#    children[i].timing = "marital"
+#    children[i].origin = "adoption"
+#---
 id: marital children's origin
 if: children[i].timing == "marital" and not children[i].adopted_during_marriage
 question: |
@@ -899,12 +912,13 @@ content: |
     * Intracytoplasmic sperm injection
     * Assisted reproductive technology
 ---
-id: adopted child set origin and legal parents
-code: |
-  if children[i].adopted_during_marriage:
-    children[i].origin = "marital_adoption"
-    children[i].legal_parent = "both"
----
+#id: adopted child set origin and legal parents
+#code: |
+#  if children[i].adopted_during_marriage:
+#    children[i].timing = "marital"
+#    children[i].origin = "marital_adoption"
+#    children[i].legal_parent = "both"
+#---
 id: set legal parents for certain situations
 code: |
   if children[i].origin == "marital_sex_AR":
@@ -1235,26 +1249,6 @@ subquestion: |
   If nobody files a Motion to Determine Child Born Out of Wedlock, your spouse will remain a legal parent. This means the judge can award them custody and/or parenting time, and they may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
   % endif
   % endif
----
-id: stepchild gender and DOB (optional)
-if: children[i].legal_parent != "both"
-question: More information about ${ children[i] }
-subquestion: |
-  Leave blank if unknown.
-continue button field: children[i].stepchild_demographics
-fields:
-  - Date of birth: children[i].birthdate
-    alMin: ${ format_date( today() - date_interval(years=18) + date_interval(days=1), format='MM/dd/yyyy') }
-    alMinMessage: |
-      Only include children younger than 18.
-    required: False
-    datatype: BirthDate
-  - Gender: children[i].gender
-    required: False
-    datatype: radio
-    choices:
-      - Female: female
-      - Male: male
 ---
 id: info about nonmarital children
 if: children[i].legal_parent != "both"
@@ -2104,25 +2098,33 @@ content:
 id: children.revisit
 if: children.there_are_any
 question: |
-  Any more children?
+  Edit legal parentage information
 subquestion: |
   % if tool_ID == "divorce_complaint":
-  Please list **all minor children** that you or your spouse have, either separately or together.
+  Use the table below to edit legal parentage information about a minor child.
+
+  To edit children's basic information (like their name or birthdate), or add or delete a child, tap the Review / Edit link. 
   % elif tool_ID == "JOD_only":
   Please include:
 
   * all minor children who have you and your spouse as legal parents, and
   * all minor children of either spouse, if you're not sure who their legal parents are.
   % endif
-  
-  You have already told us about:
 
+  % if len(children.complete_elements()) > 0:
+  You have already told us about:
   ${children.table}
-  ${x.add_action(color="success", size="md")}
+  % endif
 continue button field: children.revisit
 validation code: |
   if children.number_gathered() == 0:
     validation_error("You must add at least one child based on your previous answers. Please go back and change your answers if there are no children.")
+---
+event: children[i].rerun_parentage_logic
+code: |
+  invalidate("children[i].adopted_during_marriage", "children[i].timing", "children[i].origin", "children[i].complicated_issue_kickout", "children[i].bio_parent", "children[i].legal_parent", "children[i].more_info", "children[i].parentage_established", "children[i].how_conceived", "children[i].both_on_birth_cert", "children[i].marital_birth", "children[i].complete")
+
+  force_gather("children[i].complete")
 ---
 # --------------------------------------------------------------------
 ## pregnancy
@@ -2564,7 +2566,7 @@ id: prior family divorce case or order additional info
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type == "divorce"
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }", the divorce case in ${ prior_family_cases[i].county }, ${ state_name(prior_family_cases[i].state) }.
+  These questions are about "${ prior_family_cases[i].title }", the divorce case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
   - label: |
       % if prior_family_cases[i].status == "dismissed":
@@ -2585,7 +2587,7 @@ id: prior family separate maintenance case additional info
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].status in ["ended_with_order", "dismissed"]
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }", the separate maintenance case in ${ prior_family_cases[i].county }, ${ state_name(prior_family_cases[i].state) }.
+  These questions are about "${ prior_family_cases[i].title }", the separate maintenance case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
   - Did the separate maintenance case involve custody, parenting time, or child support?: prior_family_cases[i].involved_custody_pt_support
     datatype: yesnoradio
@@ -2625,7 +2627,7 @@ id: other prior family case or order additional info (completed case)
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status == "ended_with_order"
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ state_name(prior_family_cases[i].state) }.
+  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
   - What is the date of the final judgment or order?: prior_family_cases[i].final_order_date
     datatype: ThreePartsDate
@@ -2648,7 +2650,7 @@ id: other prior family case or order additional info (stayed, pending)
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status in ["stayed", "pending"]
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ state_name(prior_family_cases[i].state) }.
+  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
   - Is there a **custody or parenting time** order in this case?: prior_family_cases[i].included_custody_PT_order
     datatype: yesnoradio
@@ -2672,7 +2674,7 @@ id: other prior family case or order additional info (dismissed)
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status == "dismissed"
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county }, ${ state_name(prior_family_cases[i].state) }.
+  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
   - "Was a temporary custody or parenting time order entered in that case when the case was pending?": prior_family_cases[i].included_custody_PT_order
     datatype: yesnoradio
@@ -3664,6 +3666,11 @@ fields:
     required: False
     js show if: |
       ${ json.dumps(tool_ID) } !== "JOD_only" && val("users[0].has_foreign_citizenship") === true
+validation code: |
+  if users[0].ssn != "":
+    users[0].ssn_last_four = "∗∗∗-∗∗-" + users[0].ssn[-4:]
+  else:
+    users[0].ssn_last_four = "Not provided"
 ---
 template: why_need_SSN
 subject: |
@@ -3792,12 +3799,11 @@ fields:
     required: False
     js show if: |
       ${ json.dumps(tool_ID) } !== "JOD_only" && val("other_parties[0].has_foreign_citizenship") === true
----
-template: why_need_SSN
-subject: |
-  Why are you asking for a social security number?
-content: |
-  Social security numbers are only used in child support documents. If you don't want to type it here, you can hand write the number on the documents after you print them.
+validation code: |
+  if other_parties[0].ssn != "":
+    other_parties[0].ssn_last_four = "∗∗∗-∗∗-" + other_parties[0].ssn[-4:]
+  else:
+    other_parties[0].ssn_last_four = "Not provided"
 ---
 id: other party eye color, hair color, weight
 question: |

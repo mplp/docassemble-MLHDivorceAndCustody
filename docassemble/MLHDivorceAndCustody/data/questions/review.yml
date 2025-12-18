@@ -522,8 +522,8 @@ review:
 #
 # TODO ADD ACCORDION
   - Edit:
-      - recompute:
-        - children.there_are_any
+      - children_intro
+      - children.there_are_any
       - follow up:
         - children.revisit
       - invalidate:
@@ -539,7 +539,6 @@ review:
         - children_live_with_parent
         - children_now_live_with_which_parent
         - children_lived_with_which_parent_past
-        - guidepost_stepchildren
         - interview_order_stepchild_address
         - income_tax_method
         - users[0].insurance.gathered
@@ -553,23 +552,89 @@ review:
         - prior_family_cases.gathered_deep_reset
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
-      ##### Any minor children?
-        - ${word(yesno(children.there_are_any))}
-  - Edit:
-      - children.revisit
-    button: |
-      ##### ${marriage.mobile_home.question_text}
-
-      % if marriage.mobile_home:
-      % for idx, item in enumerate(marriage.mobile_home):
-        - **${ordinal(idx, capitalize=True)} mobile home**
-          - **VIN:** ${item.kind}
-          - **Location:** ${item.desc}
-          - **Award:** ${item.owner}
+      % if children.there_are_any:
+      ##### Need to add or delete minor children?
+      You have currently listed:
+      
+      % for child in children:
+        - **${ child }** (${ format_date(child.birthdate, format='M/d/yyyy') if child.birthdate != None else word("not provided") })
       % endfor
       % else:
-        - None
+      ##### Any minor children?
+        - ${word(yesno(children.there_are_any))}
       % endif
+  - Edit:
+      - child_demographics_review_screen
+    button: |
+      ##### Edit a child's name and basic info
+
+      % for child in children.filter(legal_parent="both"):
+      **${ child }**
+      
+        - DOB: ${ child.birthdate }
+        - Gender: ${ child.gender }
+        - SSN: ${ child.ssn_last_four }
+      
+      % endfor
+      % for child in children:
+      % if child.legal_parent != "both":
+      **${ child }**
+      
+        - DOB: ${ child.birthdate if child.birthdate != None else word("not provided") }
+        - Gender: ${ child.gender if child.gender != "" else word("not provided") }
+      
+      % endif
+      % endfor
+    show if: children.there_are_any
+  - Edit:
+      - children.revisit
+      - invalidate:
+        - set_marital_children_or_not
+        - set_child_home_choices
+        - guidepost_marital_children
+        - kids_had_other_custodian
+        - third_party_custody_claim
+        - need_temporary_order_kids
+        - temporary_order_kids_exit
+        - interview_order_home_state
+        - set_children_home_state_info
+        - children_live_with_parent
+        - children_now_live_with_which_parent
+        - children_lived_with_which_parent_past
+        - interview_order_stepchild_address
+        - income_tax_method
+        - users[0].insurance.gathered
+        - other_parties[0].insurance.gathered
+        - interview_order_pregnancy
+        - interview_order_user_income
+        - interview_order_income_tax
+      - recompute:
+        - children_previous_address.gathered_reset
+        - interview_order_children
+        - prior_family_cases.gathered_deep_reset
+      # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
+    button: |
+      ##### Edit a child's legal parent info
+
+      % for child in children.filter(legal_parent="both"):
+        **${ child }** (${format_date(child.birthdate, format='M/d/yyyy')})
+      
+        - You and ${ other_parties[0] } are **both legal parents.**
+      
+      % endfor
+      % for child in children:
+      % if child.legal_parent != "both":
+      **${ child }** (${ format_date(child.birthdate, format='M/d/yyyy') if child.birthdate != None else "" }
+      
+      % if child.legal_parent == "user":
+        - **You are their legal parent.** ${ other_parties[0] } is not.
+      % elif child.legal_parent == "other_party":
+        - **${ other_parties[0] } is their legal parent.** You are not.
+      % endif
+      
+      % endif
+      % endfor
+    show if: children.there_are_any
   - Edit:
       - home_state_review_screen
       - invalidate:
@@ -1076,4 +1141,27 @@ subquestion: |
   ${ children.edit_OP_kid_addresses }
   % endif
 continue button field: stepchild_address_review_screen
+---
+table: children.edit_basic_info
+rows: children
+columns:
+  - Name: |
+      row_item
+  - Birthdate: |
+      format_date(row_item.birthdate, format='M/d/yyyy') if row_item.birthdate != None else "not provided"
+  - Gender: |
+      row_item.gender if row_item.gender != "" else "not provided"
+  - SSN: |
+      row_item.ssn_last_four if defined("row_item.ssn") else "not required"
+edit:
+  - basic_info
+  - more_info
+delete buttons: False
+---
+id: review children demographics
+question: |
+  Edit children's names and basic info
+subquestion: |
+  ${ children.edit_basic_info }
+continue button field: child_demographics_review_screen
 ---
