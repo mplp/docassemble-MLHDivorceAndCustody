@@ -61,16 +61,6 @@ columns:
       row_item.birthdate if row_item.birthdate != None else "not provided"
   - Legal parent: |
       "Both spouses" if row_item.legal_parent == "both" else users[0] if row_item.legal_parent == "user" else other_parties[0] if row_item.legal_parent == "other_party" else ""
-edit:
-  - rerun_parentage_logic
-#  - origin
-#  - complicated_issue_kickout
-#  - legal_parent
-#   - birthdate
-#   - stepchild_demographics
-#   - not_included_in_divorce_info
-#   - parentage_revocation_info
-#   - complicated_issue_kickout
 delete buttons: True
 confirm: True
 ---
@@ -85,6 +75,7 @@ code: |
   if children.there_are_any:
     children.gather()
     enable_child_demographics_review_screen
+    enable_child_legal_parent_review_screen
   else:
     children.gathered = True
     children.revisit = True
@@ -1476,7 +1467,7 @@ code: |
         child.current_residence_is_home_state
         if child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.currently_resides_in_locality != "MI":
           child.spent_six_months_in_michigan
-        if not (child.currently_resides_in_type == "Michigan" and child.current_residence_is_home_state) and not (child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months"):
+        if not (child.currently_resides_in_type == "Michigan" and child.current_residence_is_home_state) and not (child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.currently_resides_in_locality != "MI" and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months"):
           if child.home_state_exit:
             exit_general
   set_children_home_state_info
@@ -1573,7 +1564,7 @@ fields:
   - note: |
       ${ collapse_template(home_state_trip_info) }
 validation code: |
-  invalidate("children[i].spent_six_months_in_michigan", "children[i].MI_stat_ended_when")
+  invalidate("children[i].spent_six_months_in_michigan", "children[i].MI_stay_ended_when")
 ---
 template: home_state_info
 subject: What is a "home state" and why does it matter?
@@ -2098,12 +2089,12 @@ content:
 id: children.revisit
 if: children.there_are_any
 question: |
-  Edit legal parentage information
+  Add or delete a child
 subquestion: |
+  Use the table below to add or delete a child. 
+  
   % if tool_ID == "divorce_complaint":
-  Use the table below to edit legal parentage information about a minor child.
-
-  To edit children's basic information (like their name or birthdate), or add or delete a child, tap the Review / Edit link. 
+  Please list **all minor children** that you or your spouse have, either separately or together.
   % elif tool_ID == "JOD_only":
   Please include:
 
@@ -2115,6 +2106,8 @@ subquestion: |
   You have already told us about:
   ${children.table}
   % endif
+
+  ${children.add_action(color="success", size="md")}
 continue button field: children.revisit
 validation code: |
   if children.number_gathered() == 0:
@@ -2207,6 +2200,15 @@ action buttons:
 # --------------------------------------------------------------------
 # for JOD-only, this is only shown if there are marital children. For other divorce filing types, there are questions needed here even if no marital children. 
 ---
+id: prior_family_cases.revisit
+question: |
+  Review prior family cases
+subquestion: |
+  ${prior_family_cases.table}
+
+  ${prior_family_cases.add_action(color="success", size="md")}
+continue button field: prior_family_cases.revisit
+---
 if: tool_ID != "JOD_only"
 id: prior family cases table
 table: prior_family_cases.table
@@ -2216,14 +2218,12 @@ columns:
   - Type: prior_family_case_types_ordered[row_item.type]
   - State: row_item.state
   - County: row_item.county
-#  - Entered family before or during marriage: |
-#      "before marriage" if row_item.timing == "premarital" else "during marriage"
 edit:
   - status
+  - involved_custody_pt_support
+  - separate_maintenance_pending_kickout
   - included_custody_PT_order
-  - custody_order_in_another_state_warning 
-#  - children_involved_number  ## think we're deleting this
-      
+  - custody_order_in_another_state_warning       
 delete buttons: True
 confirm: True
 ---
@@ -2234,13 +2234,10 @@ rows: prior_family_cases
 columns:
   - State: row_item.state
   - Case Number: row_item.docket_number
-#  - Entered family before or during marriage: |
-#      "before marriage" if row_item.timing == "premarital" else "during marriage"
 edit:
   - status
   - has_current_custody_PT_order
   - custody_order_in_another_state_warning 
-#  - children_involved_number ## think we're deleting this
       
 delete buttons: True
 confirm: True
@@ -2388,12 +2385,12 @@ code: |
     prior_family_cases[i].status
     if there_are_marital_children:
       if prior_family_cases[i].state != "MI":
-        prior_family_cases[i].address # trying to trigger this question if user changes answer on marital children from none to some, after case was already gathered
+        prior_family_cases[i].address # trigger this question if user changes answer on marital children from none to some, after case was already gathered
       if prior_family_cases[i].type == "separate_maintenance":
         if prior_family_cases[i].status in ["ended_with_order", "dismissed"]:
           prior_family_cases[i].involved_custody_pt_support
         elif prior_family_cases[i].status in ["pending", "stayed"]:
-          separate_maintenance_pending_kickout
+          prior_family_cases[i].separate_maintenance_pending_kickout
   
       elif prior_family_cases[i].type != "separate_maintenance":
         prior_family_cases[i].included_custody_PT_order
@@ -2403,11 +2400,10 @@ code: |
           if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids:
             prior_family_cases[i].custody_order_in_another_state_warning 
 
-      # prior_family_cases[i].children_involved_number ### think we're deleting this
-
   prior_family_cases[i].complete = True
 ---
 id: custody_order_in_another_state_warning
+if: there_are_marital_children and prior_family_cases[i].state != "MI" and ((prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and (prior_family_cases[i].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order))) and ((MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids)
 continue button field: prior_family_cases[i].custody_order_in_another_state_warning
 question: Warning! Custody order in another state
 subquestion: |
@@ -2576,7 +2572,7 @@ fields:
       % endif
     field: prior_family_cases[i].included_custody_PT_order
     datatype: yesnoradio
-  - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
+  - What is the date of the custody or parenting time order?: prior_family_cases[i].custody_PT_order_date
     datatype: ThreePartsDate
     max: |
      ${ today() }
@@ -2606,8 +2602,9 @@ fields:
     js show if: |
       (${ "true" if prior_family_cases[i].status == "dismissed" else "false" } || (${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true)) && val("prior_family_cases[i].included_custody_PT_order") === true
 ---
+if: there_are_marital_children and prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].status in ["pending", "stayed"]
 id: separate maintenance pending kickout
-event: separate_maintenance_pending_kickout
+event: prior_family_cases[i].separate_maintenance_pending_kickout
 question: Sorry, this tool cannot help you.
 subquestion: |
   If you have a separate maintenance case that is currently pending or stayed, you cannot file a new divorce case. Instead:
@@ -2616,11 +2613,6 @@ subquestion: |
   * If you are the "defendant" (if your spouse originally filed) in the separate maintenance case, you need to file a counterclaim for divorce in your separate maintenance case. 
   
   You may want to contact a lawyer for help. ${ MLH_GUIDE_FULL }
----
-id: separate maintenance pending kickout
-question: Sorry, this tool cannot help you.
-subquestion: |
-  If you have a separate maintenance case that is currently pending or stayed, you cannot file a new divorce case.
 ---
 # LHI "Prior Family Cases DLG" (start at row 132)
 id: other prior family case or order additional info (completed case)
@@ -2663,7 +2655,7 @@ fields:
     max: |
      ${ today() }
     js show if: |
-      val("prior_family_cases[i].has_current_custody_PT_order") === true
+      val("prior_family_cases[i].included_custody_PT_order") === true
   - Is there a **child support** order in this case that is **currently in effect?**: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
     show if: 
