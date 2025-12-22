@@ -533,9 +533,15 @@ review:
       % endfor
       % for child in children:
       % if child.legal_parent != "both":
-      **${ child }** ${ "(DOB: " + format_date(child.birthdate, format='M/d/yyyy') + ")" if child.birthdate != None else "(DOB: not provided)" }
+      **${ child }** ${ word("") if not defined("child.birthdate") else "(DOB: " + format_date(child.birthdate, format='M/d/yyyy') + ")" if child.birthdate != None else "(DOB: not provided)" }
       
-        - Gender: ${ child.gender if child.gender != "" else word("not provided") }
+      % if defined("child.gender"):
+      % if child.gender != "":
+        - Gender: ${ child.gender }
+      % else:
+        - Gender: not provided"
+      % endif
+      % endif
       % if child.legal_parent == "user":
         - **You are their legal parent.** ${ other_parties[0] } is not.
       % elif child.legal_parent == "other_party":
@@ -577,7 +583,7 @@ review:
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
       % if children.there_are_any:
-      ##### **Add or delete** a child
+      ##### **Add or remove** a child
       % else:
       ##### Any minor children?
         - ${word(yesno(children.there_are_any))}
@@ -790,41 +796,57 @@ review:
 # ---------- prior cases ----------
 # TODO add accordion?
   - Edit:
-      - prior_family_cases.revisit
+      - prior_family_cases.there_are_any
     button: |
-      ##### Family division cases
+      % if tool_ID == "JOD_only":
+      ##### Any prior custody or support orders?
+      % else:
+      ##### Any prior family division cases?
+      % endif
+        - ${word(yesno(prior_family_cases.there_are_any))}
+    show if: len(prior_family_cases.complete_elements()) < 1
+  - Edit:
+      - prior_family_cases.revisit
+    show if: prior_family_cases.there_are_any
+    button: |
+      % if tool_ID == "JOD_only":
+      Custody or support cases
+      % else:
+      Family division cases?
+      % endif
+      
       % if tool_ID == "JOD_only":
       % for case in prior_family_cases:
       **Case ${case.docket_number}**
+      
         - State or territory: ${case.state}
         - Case status: ${case.status}
         - Custody or parenting time order in effect? **${word(yesno(case.has_current_custody_PT_order))}**
-        - Child support order in effect? **${word(yesno(case.has_child_support-order))}**
+        - Child support order in effect? **${word(yesno(case.has_child_support_order))}**
 
       % endfor
       % else:
       % for case in prior_family_cases:
-      **Case ${case.docket_number}**
+      **Case ${case.docket_number}** (${prior_family_case_types_ordered[case.type]})
 
         - ${case.title}
         - ${case.county} County, ${case.state}
         % if defined("case.court"):
         - ${case.court}
-        % endif
         % if defined("case.address"):
-        - ${case.address}
+        ${"-- " + case.address}
+        % endif
         % endif
         - Judge ${case.judge}
-        - Case type: ${prior_family_case_types_ordered[case.type]} 
         % if case.type == "other":
         case.type_description
         % endif
-        - Case status: ${case.status}
+        - Case status: ${word("ended with final order") if case.status == "ended_with_order" else word("ongoing") if case.status == "pending" else case.status }
         % if case.type == "separate_maintenance":
         - Involved custody, parenting time, or child support? **${word(yesno(case.involved_custody_pt_support))}**
         % endif
         % if case.type == "divorce" or (case.type == "separate_maintenance" and case.involved_custody_pt_support):
-        - Included a custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
+        - Included custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
         % if case.included_custody_PT_order:
         - Date of custody/PT order: ${case.custody_PT_order_date}
         % endif
@@ -834,21 +856,109 @@ review:
         - Date of final judgment or order: ${case.final_order_date}
         % endif
         % if case.status in ["ended_with_order", "stayed", "pending"]:
-        - Case included custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
+        - Included custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
         % if case.included_custody_PT_order:
-        - Is the custody/parenting time order currently in effect? **${word(yesno(case.has_current_custody_PT_order))}**
+        - Custody/parenting time order currently in effect? **${word(yesno(case.has_current_custody_PT_order))}**
         % if case.status in ["stayed", "pending"]:
-        - Date of custody/parenting time order: ${case.custody_PT_order_date}
+        - Date of custody/PT order: ${case.custody_PT_order_date}
         % endif
         % endif
-        - Is there a child support order currently in effect? **${word(yesno(case.has_child_support_order))}**
+        - Child support order currently in effect? **${word(yesno(case.has_child_support_order))}**
         % elif case.status == "dismissed":
-        - Was there a custody or parenting order? **${word(yesno(case.included_custody_PT_order))}**
-        - Date of custody/parenting time order: ${case.custody_PT_order_date}
+        - Custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
+        - Date of custody/PT order: ${case.custody_PT_order_date}
         % endif
         % endif
+      
       % endfor
       % endif
+  - Edit:
+      - child_support_request_pending
+    button: |
+      ##### Active out-of-state child support requests?
+        - ${word(yesno(child_support_request_pending))}
+  - Edit:
+      - has_prior_civil_cases
+    button: |
+      ##### Active or resolved civil (not family court) action
+      % if has_prior_civil_cases:
+      % if prior_civil_case_is_pending != None:
+        - This case is **${ word("active.") if prior_civil_case_is_pending else word("over.") }**
+      % else:
+        - Case status: not provided
+      % endif
+      % if prior_civil_case_filed_outside_MI:
+        - Case outside Michigan. Court name: ${ prior_civil_case_non_MI_court if prior_civil_case_non_MI_court != "" else word("not provided") }
+      % else:
+        - Court type: ${ MI_court_type if MI_court_type != "" else word("not provided") }
+        - Michigan County: ${ prior_civil_case_county if prior_civil_case_county != "" else word("not provided") }
+      % endif
+        - Case number: ${ prior_civil_case_number if prior_civil_case_number != "" else word("not provided") }
+        - Judge's last name: ${ prior_civil_case_judge if prior_civil_case_judge != "" else word("not provided")  }
+      % else:
+        - None
+      % endif    
+#
+# ---------- income, insurance, etc? ----------
+#
+# todo accordion
+  - Edit:
+      - users[0].insurance.there_are_any
+    button: |
+      ##### Your health coverage
+        - You **${ word("have") if users[0].insurance.there_are_any else word("don't have")}** your own health care coverage through an employer, Medicaid or Medicare, or privately.
+    show if: len(users[0].insurance.complete_elements()) < 1
+  - Edit:
+      - users[0].insurance.revisit
+    button: |
+      ##### Your health coverage
+      % for policy in users[0].insurance:
+      **${policy.company_name}**
+      
+        - Provider address: ${ policy.company_address if policy.company_address != "" else word("not answered") }
+        - Coverage type: ${comma_and_list(policy.coverage_type.true_values()) if policy.coverage_type.any_true() else word("not answered") }
+        - Children covered: ${comma_and_list(policy.covers_child.true_values()) if policy.covers_child.any_true() else word("none")}
+      % if policy.in_own_name == None:
+        - Named policy holder: not answered
+      % elif policy.in_own_name:
+        - Named policy holder: ${ users[0] }
+      % elif not policy.in_own_name: 
+        - Named policy holder: ${ policy.policyholder }
+      % endif
+        - Policy number: ${ policy.policy_number if policy.policy_number != "" else word("not answered") }
+        - Certificate number: ${ policy.certificate_number if policy.certificate_number != "" else word("not answered") }
+      
+      % endfor
+    show if: users[0].insurance.there_are_any
+  - Edit:
+      - other_parties[0].insurance.there_are_any
+    button: |
+      ##### ${ capitalize(OP_label) }’s health coverage
+        - ${ capitalize(OP_label) } **${ word("has") if other_parties[0].insurance.there_are_any else word("doesn't have")}** their own health care coverage through an employer, Medicaid or Medicare, or privately.
+    show if: len(other_parties[0].insurance.complete_elements()) < 1
+  - Edit:
+      - other_parties[0].insurance.revisit
+    button: |
+      ##### ${ capitalize(OP_label) }’s health coverage
+      % for policy in other_parties[0].insurance:
+      **${policy.company_name}**
+      
+        - Provider address: ${ policy.company_address if policy.company_address != "" else word("not answered") }
+        - Coverage type: ${comma_and_list(policy.coverage_type.true_values()) if policy.coverage_type.any_true() else word("not answered")}
+        - Children covered: ${comma_and_list(policy.covers_child.true_values()) if policy.covers_child.any_true() else word("none")}
+      % if policy.in_own_name == None:
+        - Named policy holder: not answered
+      % elif policy.in_own_name:
+        - Named policy holder: ${ other_parties[0] }
+      % elif not policy.in_own_name: 
+        - Named policy holder: ${ policy.policyholder }
+      % endif
+        - Policy number: ${ policy.policy_number if policy.policy_number != "" else word("not answered") }
+        - Certificate number: ${ policy.certificate_number if policy.certificate_number != "" else word("not answered") }
+
+      % endfor
+    show if: other_parties[0].insurance.there_are_any
+    
 #
 # ---------- personal property ----------
 #
@@ -1201,9 +1311,9 @@ columns:
   - Name: |
       row_item
   - Birthdate: |
-      format_date(row_item.birthdate, format='M/d/yyyy') if row_item.birthdate != None else "not provided"
+      format_date(row_item.birthdate, format='M/d/yyyy') if defined("row_item.birthdate") and row_item.birthdate != None else "---"
   - Gender: |
-      row_item.gender if row_item.gender != "" else "not provided"
+      row_item.gender if defined("row_item.gender") and row_item.gender != "" else "---"
   - SSN: |
       row_item.ssn_last_four if defined("row_item.ssn") else "not required"
 edit:
@@ -1220,7 +1330,14 @@ subquestion: |
   * name
   * birthdate
   * gender, or
-  * social security number (only asked if both spouses are legal parents)
+  * social security number (SSN)
+  % if tool_ID == "JOD_only":
+  
+  **Note:** A child's birthdate, gender, and SSN (optional) will only be asked for if **both spouses** are legal parents. 
+  % else:
+  
+  **Note:** A child's SSN (optional) will only be asked for if **both spouses** are legal parents. Gender and birthdate are optional for stepchildren.
+  % endif
   
   ${ children.edit_basic_info }
 continue button field: child_demographics_review_screen
@@ -1229,7 +1346,7 @@ table: children.edit_legal_parents
 rows: children
 columns:
   - Child: |
-      f"{row_item.name} ({format_date(row_item.birthdate, format='M/d/yyyy')})" if row_item.birthdate != None else row_item.name
+      f"{row_item.name} ({format_date(row_item.birthdate, format='M/d/yyyy')})" if defined("row_item.birthdate") and row_item.birthdate != None else row_item.name
   - Legal parent: |
       "Both spouses" if row_item.legal_parent == "both" else users[0] if row_item.legal_parent == "user" else other_parties[0] if row_item.legal_parent == "other_party" else ""
 edit:

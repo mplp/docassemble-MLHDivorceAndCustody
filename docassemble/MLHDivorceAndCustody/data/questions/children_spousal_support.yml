@@ -57,8 +57,8 @@ table: children.table
 rows: children
 columns:
   - Name: row_item.name
-  - Birthdate: |
-      row_item.birthdate if row_item.birthdate != None else "not provided"
+  - Birthdate (if given): |
+      format_date(row_item.birthdate, format='M/d/yyyy') if defined("row_item.birthdate") and row_item.birthdate != None else "---"
   - Legal parent: |
       "Both spouses" if row_item.legal_parent == "both" else users[0] if row_item.legal_parent == "user" else other_parties[0] if row_item.legal_parent == "other_party" else ""
 delete buttons: True
@@ -735,8 +735,7 @@ content: |
   
   You can make your divorce forms using this tool, but the forms **will not** include a child support request for your adult child.
 ---
-if: tool_ID == "divorce_complaint"
-id: any children divorce complaint
+id: any children divorce 
 question: |
   Any minor children?
 subquestion: |
@@ -804,6 +803,7 @@ validation code: |
     children[i].legal_parent = "both"
 ---
 id: additional child info
+if: children[i].legal_parent == "both" or (children[i].legal_parent != "both" and tool_ID != "JOD_only")
 continue button field: children[i].more_info
 question: More information about ${ children[i] }
 subquestion: |
@@ -835,7 +835,7 @@ validation code: |
     if children[i].ssn != "":
       children[i].ssn_last_four = "∗∗∗-∗∗-" + children[i].ssn[-4:]
     else:
-      children[i].ssn_last_four = "Not provided"
+      children[i].ssn_last_four = "Not given"
 ---
 # think this is unneeded, can delete after running without it for a while
 #code: |
@@ -2089,9 +2089,9 @@ content:
 id: children.revisit
 if: children.there_are_any
 question: |
-  Add or delete a child
+  Add or remove a child
 subquestion: |
-  Use the table below to add or delete a child. 
+  Use the table below to add or remove a child. 
   
   % if tool_ID == "divorce_complaint":
   Please list **all minor children** that you or your spouse have, either separately or together.
@@ -2202,7 +2202,11 @@ action buttons:
 ---
 id: prior_family_cases.revisit
 question: |
+  % if tool_ID == "JOD_only":
+  Review prior cases involving custody or child support
+  % else:
   Review prior family cases
+  % endif
 subquestion: |
   ${prior_family_cases.table}
 
@@ -2244,9 +2248,13 @@ confirm: True
 ---
 # LHI Prior Court Cases Part 1
 # TODO: question for Amy: should the help text for family division cases exclude custody, paternity, and child support for custody interviews? (See Prior Court Cases Part 1 Dialog in Brett's materials.)
-# TODO: maybe ask about prior civil cases AFTER collecting custody/support orders and family division cases? This screen is long and clunky as-is.
-id: prior court cases
-question: Past court cases
+id: prior family cases
+question: |
+  % if tool_ID == "JOD_only":
+  Past custody or child support orders
+  % else:
+  Past family division cases
+  % endif
 fields:
   - label: |
       % if tool_ID == "JOD_only":
@@ -2266,18 +2274,20 @@ fields:
       % if tool_ID in ["custody_complaint", "custody_answer", "divorce_complaint", "divorce_answer"]:
       ${ collapse_template(family_division_info) }
       % endif
-  - note: |
-      % if tool_ID == "JOD_only":
-      You will enter information for **prior custody cases** on the next page.
-      % else:
-      You will enter information for **prior family division court cases** on the next page.
-      % endif
     js show if: |
       val("prior_family_cases.there_are_any") === true
+---
+# LHI Prior Court Cases Part 1
+id: pending child support requests out of state
+question: Active out-of-state child support requests
+fields:
   - Is a request for child support **currently pending** in another state?: child_support_request_pending
     datatype: yesnoradio
-    js show if: |
-      (val("prior_family_cases.there_are_any") === true || val("prior_family_cases.there_are_any") === false) && (${ json.dumps(tool_ID) } === "JOD_only" || ${ json.dumps(tool_ID) } === "divorce_complaint")
+---
+# LHI Prior Court Cases Part 1 #asked for divorce and custody complaints
+id: prior civil court cases
+question: Past civil court cases
+fields:
   - label: |
       % if tool_ID == "divorce_complaint":
       Do you know of any other pending or resolved **civil** actions (not family law cases) between you and ${ OP_label } related to your marriage? For example, has one spouse previously sued the other spouse for a tort, such as assault?
@@ -2286,8 +2296,6 @@ fields:
       % endif
     field: has_prior_civil_cases
     datatype: yesnoradio
-    js show if: |
-      (val("child_support_request_pending") === true || val("child_support_request_pending") === false) && (${ json.dumps(tool_ID) } === "custody_complaint" || ${ json.dumps(tool_ID) } === "divorce_complaint")
   - Is that case still active (pending)?: prior_civil_case_is_pending
     datatype: yesnoradio
     required: False
@@ -2295,7 +2303,7 @@ fields:
       val("has_prior_civil_cases") === true
   - If the case was filed in Michigan, select the county:: prior_civil_case_county
     required: False
-    code: court_list._load_courts()["address_county"].unique() + " County"
+    code: court_list._load_courts()["address_county"].unique()
     js show if: |
       val("has_prior_civil_cases") === true && val("prior_civil_case_filed_outside_MI") === false
   - The case was filed outside the state of Michigan: prior_civil_case_filed_outside_MI
@@ -2320,7 +2328,12 @@ fields:
     required: False
     js show if: |
       val("has_prior_civil_cases") === true
-  - What is the **last name** of the judge assigned to that case?: prior_civil_case_judge
+  - note: |
+      **Last name** of the judge assigned to the case:
+    js show if: |
+      val("has_prior_civil_cases") === true
+  - "Judge": prior_civil_case_judge
+    label above field: False    
     required: False
     js show if: |
       val("has_prior_civil_cases") === true
@@ -2378,8 +2391,10 @@ id: prior family cases gather logic
 code: |
   if tool_ID == "JOD_only" and there_are_marital_children:
     prior_family_cases[i].status
+  
     if prior_family_cases[i].state != "MI" and prior_family_cases[i].has_current_custody_PT_order:
-      prior_family_cases[i].custody_order_in_another_state_warning 
+      if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids:
+        prior_family_cases[i].custody_order_in_another_state_warning 
   
   elif tool_ID != "JOD_only":
     prior_family_cases[i].status
@@ -2403,7 +2418,7 @@ code: |
   prior_family_cases[i].complete = True
 ---
 id: custody_order_in_another_state_warning
-if: there_are_marital_children and prior_family_cases[i].state != "MI" and ((prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and (prior_family_cases[i].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order))) and ((MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids)
+if: there_are_marital_children and prior_family_cases[i].state != "MI" and ((tool_ID == "divorce_complaint" and ((prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and (prior_family_cases[i].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order))) and ((MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids)) or (tool_ID == "JOD_only" and prior_family_cases[i].has_current_custody_PT_order)) and ((MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids)
 continue button field: prior_family_cases[i].custody_order_in_another_state_warning
 question: Warning! Custody order in another state
 subquestion: |
@@ -2429,7 +2444,7 @@ content: |
 # JOD_only version should only be asked if there are marital children
 id: prior family case or order collection screen JOD_only IFF with kids
 if: tool_ID == "JOD_only" and there_are_marital_children
-question: ${ capitalize(ordinal(i)) } custody or support order
+question: ${ capitalize(ordinal(i)) } prior custody or support case
 subquestion: |
   ${prior_family_cases.question_text_table_template}
 fields:
@@ -2518,7 +2533,12 @@ fields:
       val("prior_family_cases[i].state") !== "MI" && ${ "true" if there_are_marital_children else "false" }
   - "Case name *(for example, Jones v. Smith or In re: Thomas)*:": prior_family_cases[i].title
   - Case number:: prior_family_cases[i].docket_number
-  - "Judge's last name *(do not include 'Judge' or 'Hon.')*": prior_family_cases[i].judge
+  - note: |
+      Judge's last name *(do not include 'Judge' or 'Hon.')*:
+    show if:
+      code: tool_ID in ["divorce_complaint", "custody_complaint"]
+  - "Judge": prior_family_cases[i].judge
+    label above field: False
     show if:
       code: tool_ID in ["divorce_complaint", "custody_complaint"]
   - What is the nature of this case?: prior_family_cases[i].type
@@ -2910,8 +2930,8 @@ rows: users[0].insurance
 columns:
   - Name: row_item.company_name
   - Type: row_item.coverage_type.true_values()
-#  - Entered family before or during marriage: |
-#      "before marriage" if row_item.timing == "premarital" else "during marriage"
+  - Covered children: |
+      row_item.covers_child.true_values()
 edit:
   - company_name
 delete buttons: True
@@ -2923,30 +2943,51 @@ rows: other_parties[0].insurance
 columns:
   - Name: row_item.company_name
   - Type: row_item.coverage_type.true_values()
-#  - Covered children: |
-#      row_item.covers_child.true_values() if len(children.filter(legal_parent="both")) > 1 else "during marriage"
-# can't figure out how to get this working for both single and multiple children in single chart
+  - Covered children: |
+      row_item.covers_child.true_values()
 edit:
   - company_name
 delete buttons: True
 confirm: True
 ---
+id: users[0].insurance.revisit
+question: |
+  Edit your insurance policies
+subquestion: |
+  ${users[0].insurance.table}
+
+  ${users[0].insurance.add_action(color="success", size="md")}
+continue button field: users[0].insurance.revisit
+---
+id: other_parties[0].insurance.revisit
+question: |
+  Edit ${ OP_label }'s insurance policies
+subquestion: |
+  ${other_parties[0].insurance.table}
+
+  ${other_parties[0].insurance.add_action(color="success", size="md")}
+continue button field: other_parties[0].insurance.revisit
+---
 # LHI "Health Coverage" (with kids version) (but we're using a different structure)
 id: user's health_coverage (with children)
 question: |
-  Health coverage
+  Your health coverage
 subquestion: |
+  This question is about medical, dental, vision, or other health care coverage.
 fields:
   - label: |
-      Do you have your own health care coverage, either through an employer, Medicaid or Medicare, or privately? **Do not include health care coverage provided by ${ OP_label } or ${ OP_label }’s employer here.**
+      Do you have your own health care coverage, either through an employer, Medicaid or Medicare, or privately? 
     field: users[0].insurance.there_are_any
     datatype: yesnoradio
+  - note: |
+      **Do not** include coverage provided by ${ OP_label } or ${ OP_label }’s employer here. We'll ask about that next.
 ---
 # LHI "Health Coverage" (with kids version) (but we're using a different structure)
 id: OP's health_coverage (with children)
 question: |
-  Health coverage
+  ${ capitalize(OP_label) }’s health coverage
 subquestion: |
+  This question is about medical, dental, vision, or other health care coverage.
 fields:
   - label: |
       Does ${ OP_label } hold their own health care coverage, either through an employer, Medicaid or Medicare, or privately?
@@ -2983,20 +3024,8 @@ question: |
 subquestion: |
   ${users[0].insurance.question_text_table_template}
 fields:
-  - Are you the named policy holder?: users[0].insurance[i].in_own_name
-    datatype: yesnoradio
-    required: False
-  - Please enter the name of the policy holder: users[0].insurance[i].policyholder
-    required: False
-    show if:
-      variable: users[0].insurance[i].in_own_name
-      is: False
   - What is the name of the provider?: users[0].insurance[i].company_name
   - What is the address of the provider?: users[0].insurance[i].company_address
-    required: False
-  - What is the policy number?: users[0].insurance[i].policy_number
-    required: False
-  - What is the certificate number?: users[0].insurance[i].certificate_number
     required: False
   - What coverage does the policy provide?: users[0].insurance[i].coverage_type
     required: False
@@ -3012,7 +3041,19 @@ fields:
     datatype: checkboxes
     none of the above: False
     code: |
-      children.filter(legal_parent="both")    
+      children.filter(legal_parent="both")      
+  - Are you the named policy holder?: users[0].insurance[i].in_own_name
+    datatype: yesnoradio
+    required: False
+  - Please enter the name of the policy holder: users[0].insurance[i].policyholder
+    required: False
+    show if:
+      variable: users[0].insurance[i].in_own_name
+      is: False
+  - What is the policy number?: users[0].insurance[i].policy_number
+    required: False
+  - What is the certificate number?: users[0].insurance[i].certificate_number
+    required: False
 ---
 id: OP insurance policy info (only shown if there_are_marital_children)
 question: |
@@ -3020,20 +3061,8 @@ question: |
 subquestion: |
   ${other_parties[0].insurance.question_text_table_template}
 fields:
-  - Is ${ OP_label } the named policy holder?: other_parties[0].insurance[i].in_own_name
-    datatype: yesnoradio
-    required: False
-  - Please enter the name of the policy holder: other_parties[0].insurance[i].policyholder
-    required: False
-    show if:
-      variable: other_parties[0].insurance[i].in_own_name
-      is: False
   - What is the name of the provider?: other_parties[0].insurance[i].company_name
   - What is the address of the provider?: other_parties[0].insurance[i].company_address
-    required: False
-  - What is the policy number?: other_parties[0].insurance[i].policy_number
-    required: False
-  - What is the certificate number?: other_parties[0].insurance[i].certificate_number
     required: False
   - What coverage does the policy provide?: other_parties[0].insurance[i].coverage_type
     required: False
@@ -3049,6 +3078,18 @@ fields:
     none of the above: False
     code: |
       children.filter(legal_parent="both")    
+  - Is ${ OP_label } the named policy holder?: other_parties[0].insurance[i].in_own_name
+    datatype: yesnoradio
+    required: False
+  - Please enter the name of the policy holder: other_parties[0].insurance[i].policyholder
+    required: False
+    show if:
+      variable: other_parties[0].insurance[i].in_own_name
+      is: False
+  - What is the policy number?: other_parties[0].insurance[i].policy_number
+    required: False
+  - What is the certificate number?: other_parties[0].insurance[i].certificate_number
+    required: False
 ---
 # --------------------------------------------------------------------
 ## Employment and income info

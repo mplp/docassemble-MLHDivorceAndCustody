@@ -184,6 +184,7 @@ code: |
 
   if there_are_marital_children:
     prior_family_cases.gather()
+    child_support_request_pending
 
   nav.set_section("signpost_income_etc")
   
