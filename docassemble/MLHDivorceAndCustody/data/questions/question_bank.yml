@@ -1428,7 +1428,7 @@ fields:
     js show if: |
       val("marriage.living_together_yn") === false && ${ "true" if there_are_marital_children else "false"}
 ---
-id: marriage.cobra_coverage (no children)
+id: marriage.cobra_coverage
 question: |
   Health coverage
 subquestion: |

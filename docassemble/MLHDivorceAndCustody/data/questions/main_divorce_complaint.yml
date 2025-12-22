@@ -118,7 +118,6 @@ code: |
     if not temporary_order_continue:
       exit_general
 
-  ########### UNDER CONSTRUCTION do qualification part 2 screening here ###########
   nav.set_section("signpost_user")
 
   users.gather()
@@ -154,8 +153,6 @@ code: |
   other_parties[0].no_phone_number
   other_parties[0].email
 
-  ###############################################################
-
   nav.set_section("signpost_support")
   interview_order_spousal_support
 
@@ -165,6 +162,8 @@ code: |
 
   nav.set_section("signpost_prior_cases")
   prior_family_cases.gather()
+  child_support_request_pending
+  has_prior_civil_cases
 
   nav.set_section("signpost_income_etc") 
   if there_are_marital_children:
