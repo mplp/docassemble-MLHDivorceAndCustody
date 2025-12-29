@@ -397,6 +397,8 @@ review:
       - user_wants_post_divorce_support
       - recompute: 
         - interview_order_spousal_support
+      - invalidate:
+        - interview_order_user_employment
       # Note validation logic on user_wants_post_divorce_support question
     button: |
       ##### Need spousal support **after** divorce is final?
@@ -405,6 +407,8 @@ review:
       - spousal_support_provisions
       - follow up:
         - spousal_support_is_immutable
+      - invalidate:
+        - interview_order_user_employment
     button: |
       ##### Spousal support agreement?
         % if user_wants_post_divorce_support:
@@ -574,6 +578,7 @@ review:
         - users[0].insurance.gathered
         - other_parties[0].insurance.gathered
         - interview_order_pregnancy
+        - interview_order_user_employment
         - interview_order_user_income
         - interview_order_income_tax
       - recompute:
@@ -613,6 +618,7 @@ review:
         - users[0].insurance.gathered
         - other_parties[0].insurance.gathered
         - interview_order_pregnancy
+        - interview_order_user_employment
         - interview_order_user_income
         - interview_order_income_tax
       - recompute:
@@ -958,7 +964,93 @@ review:
 
       % endfor
     show if: other_parties[0].insurance.there_are_any
-    
+  - Edit:
+      - users[0].has_job
+      - follow up:
+        - users[0].job.employer.name.first
+      - invalidate:
+        - interview_order_user_income
+    button: |
+      ##### Are you currently employed?
+        - ${ word(yesno(users[0].has_job)) }
+      % if users[0].has_job:
+        - Employer: ${ users[0].job.employer.name.first if users[0].job.employer.name.first != "" else word("not answered")}
+        - ${ users[0].job.employer.address.on_one_line() if users[0].job.employer.address.address != "" or users[0].job.employer.address.city != "" else word("address not given")}
+        - ${ phone_number_formatted(users[0].job.employer.phone) if users[0].job.employer.phone != "" else word("no phone given")}
+        - FEIN: ${ users[0].job.FEIN if users[0].job.FEIN != "" else word("unknown")}
+      % endif
+    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
+  - Edit:
+      - users[0].occupation
+    button: |
+      ##### Your occupation
+        - ${ users[0].occupation if users[0].occupation != "" else word("not answered")}
+    show if: tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support)
+  - Edit:
+      - users[0].has_professional_license
+    button: |
+      ##### Do you have a professional license?
+        - ${ word("not answered") if users[0].has_professional_license == None else word(yesno(users[0].has_professional_license)) }
+      % if users[0].has_professional_license:
+        - License number: ${ users[0].professional_license_number if users[0].professional_license_number != "" else word("not answered")}
+        - Type: ${ users[0].professional_license_type if users[0].professional_license_type != "" else word("not answered")}
+        - State/territory: ${ users[0].professional_license_state if users[0].professional_license_state != "" else word("not answered")}
+        - Date: ${ users[0].professional_license_date if users[0].professional_license_date != None else word("not answered")}
+      % endif
+    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
+  - Edit:
+      - other_parties[0].has_job
+      - follow up:
+        - other_parties[0].job.employer.name.first
+      - invalidate:
+        - interview_order_other_party_income
+    button: |
+      ##### Spouse currently employed?
+        - ${ word(yesno(other_parties[0].has_job)) }
+      % if other_parties[0].has_job:
+        - Employer: ${ other_parties[0].job.employer.name.first if other_parties[0].job.employer.name.first != "" else word("not answered")}
+        - ${ other_parties[0].job.employer.address.on_one_line() if other_parties[0].job.employer.address.address != "" or other_parties[0].job.employer.address.city != "" else word("address not given")}
+        - ${ phone_number_formatted(other_parties[0].job.employer.phone) if other_parties[0].job.employer.phone != "" else word("no phone given")}
+        - FEIN: ${ other_parties[0].job.FEIN if other_parties[0].job.FEIN != "" else word("unknown")}
+      % endif
+    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
+  - Edit:
+      - other_parties[0].occupation
+    button: |
+      ##### Spouse's occupation
+        - ${ other_parties[0].occupation if other_parties[0].occupation != "" else word("not answered")}
+    show if: tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support)
+  - Edit:
+      - other_parties[0].has_professional_license
+    button: |
+      ##### Spouse has professional license?
+        - ${ word("not answered") if other_parties[0].has_professional_license == None else word(yesno(other_parties[0].has_professional_license)) }
+      % if other_parties[0].has_professional_license:
+        - License number: ${ other_parties[0].professional_license_number if other_parties[0].professional_license_number != "" else word("not answered")}
+        - Type: ${ other_parties[0].professional_license_type if other_parties[0].professional_license_type != "" else word("not answered")}
+        - State/territory: ${ other_parties[0].professional_license_state if other_parties[0].professional_license_state != "" else word("not answered")}
+        - Date: ${ other_parties[0].professional_license_date if other_parties[0].professional_license_date != None else word("not answered")}
+      % endif
+    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
+  - Edit:
+      - users[0].income.value
+    button: |
+      ##### Your income
+        - Paycheck amount: ${ word("not answered") if users[0].income.value == 0.0 else word("$") + word(users[0].income.value) }
+        - Paycheck frequency: ${ word("not answered") if users[0].income.times_per_year == None else word("once a week") if users[0].income.times_per_year == 52 else word("every two weeks") if users[0].income.times_per_year == 26 else word("twice a month") if users[0].income.times_per_year == 24 else word("once a month") }
+    show if: there_are_marital_children or user_wants_post_divorce_support and users[0].has_job #for FOC23; never asked for JOD-only
+  - Edit:
+      - 
+    button: |
+      ##### Public assistance based on having low income
+        - ${ word("not answered") if pa_status == None else word("Applied, but not yet getting anything") if pa_status == "applied" else word("Currently getting assistance") if pa_status == "gets_assistance" else word("No active assistance or application") if pa_status == "none" else word("unknown")
+      % if pa_status == "gets_assistance" or (pa_status == "applied" and (there_are_marital_children or user_wants_post_divorce_support)):
+        - Program(s): ${ comma_and_list(public_assistance_list) }
+      % if pa_status == "gets_assistance":
+        - case number
+      % endif
+      % endif
+  
 #
 # ---------- personal property ----------
 #
