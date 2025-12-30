@@ -3106,7 +3106,7 @@ code: |
   interview_order_user_employment = True
 ---
 # LHI: "Plaintiff Income" or "Defendant Income"
-# never asked for JOD_only; 
+# used for FOC23 and fee waiver; never asked for JOD_only
 # note some of this code is in the fee waiver shared_code.yml
 code: |
   if there_are_marital_children or user_wants_post_divorce_support: #for FOC23
@@ -3143,7 +3143,7 @@ code: |
 ---
 # LHI: "Plaintiff Income" or "Defendant Income"
 # never asked for JOD_only
-# in divorce complaint, only asked if children or spousal support
+# in divorce complaint, only asked if children or spousal support request by user (FOC23)
 code: |
   if other_parties[0].has_job:
     other_parties[0].income.value
@@ -3337,6 +3337,7 @@ fields:
   - "Other means-tested public assistance": pa_other
     datatype: yesno
 ---
+if: pa_other
 id: public assistance other divorce/custody
 question: Other Public Assistance
 subquestion: |
@@ -3378,7 +3379,7 @@ code: |
   if pa_supplemental_security:
     public_assistance_list.append("SSI")
   if pa_other:
-    public_assistance_list.append(f"other(${ pa_other_types})")
+    public_assistance_list.append(f"other ({ pa_other_types})")
 depends on:
   - pa_food_assistance_program
   - pa_medicaid
@@ -3406,8 +3407,8 @@ depends on:
   - pa_supplemental_security
   - pa_other
   - pa_other_case_numbers
-  - pa_ssa_numbers
-  - pa_mdhhs_case_numbers
+  - pa_ssa_number
+  - pa_mdhhs_case_number
   - pa_mdhhs
 ---
 id: FOC 23 OP list of public assistance
@@ -3465,8 +3466,8 @@ depends on:
   - op_pa_supplemental_security
   - op_pa_other
   - op_pa_other_case_numbers
-  - op_pa_ssa_numbers
-  - op_pa_mdhhs_case_numbers
+  - op_pa_ssa_number
+  - op_pa_mdhhs_case_number
 ---
 # LHI: "Plaintiff Employer" or "Defendant Employer"
 id: other party employment
@@ -3621,6 +3622,7 @@ fields:
   - "${capitalize(OP_label)}'s MDHHS Case #": op_pa_mdhhs_case_number
     required: False
 ---
+if: op_pa_other
 id: public assistance other divorce/custody OP
 question: ${OP_label}'s Other Public Assistance
 subquestion: |
@@ -3657,7 +3659,7 @@ fields:
 #LHI: "Plaintiff Identifying Information" or "Defendant Identifying Information"
 ---
 code: |
-  users[0].ssn
+  users[0].ssn 
   if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
     users[0].eye_color
     users[0].height_feet
@@ -3667,7 +3669,7 @@ code: |
 ---
 code: |
   other_parties[0].ssn
-  if tool_ID != "JOD_only":
+  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
     other_parties[0].eye_color
     other_parties[0].height_feet
     other_parties[0].race
@@ -3781,6 +3783,7 @@ fields:
       - Other: Other
   - What is the other race?: users[0].other_race_description
     required: False
+    maxlength: 26
     show if: 
       variable: users[0].race 
       is: Other
@@ -3916,6 +3919,7 @@ fields:
       - Other: Other
   - What is the other race?: other_parties[0].other_race_description
     required: False
+    maxlength: 76
     show if: 
       variable: users[0].race 
       is: Other

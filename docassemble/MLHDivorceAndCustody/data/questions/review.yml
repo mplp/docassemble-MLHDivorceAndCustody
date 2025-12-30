@@ -1036,21 +1036,151 @@ review:
       - users[0].income.value
     button: |
       ##### Your income
-        - Paycheck amount: ${ word("not answered") if users[0].income.value == 0.0 else word("$") + word(users[0].income.value) }
+        - Paycheck amount: ${ word("not answered") if users[0].income.value == 0.0 else word(currency(users[0].income.value)) }
         - Paycheck frequency: ${ word("not answered") if users[0].income.times_per_year == None else word("once a week") if users[0].income.times_per_year == 52 else word("every two weeks") if users[0].income.times_per_year == 26 else word("twice a month") if users[0].income.times_per_year == 24 else word("once a month") }
     show if: there_are_marital_children or user_wants_post_divorce_support and users[0].has_job #for FOC23; never asked for JOD-only
   - Edit:
-      - 
+      - pa_status
+      - recompute:
+        - interview_order_user_income
     button: |
-      ##### Public assistance based on having low income
-        - ${ word("not answered") if pa_status == None else word("Applied, but not yet getting anything") if pa_status == "applied" else word("Currently getting assistance") if pa_status == "gets_assistance" else word("No active assistance or application") if pa_status == "none" else word("unknown")
-      % if pa_status == "gets_assistance" or (pa_status == "applied" and (there_are_marital_children or user_wants_post_divorce_support)):
-        - Program(s): ${ comma_and_list(public_assistance_list) }
-      % if pa_status == "gets_assistance":
-        - case number
+      ##### Your public assistance based on having low income
+        - ${ word("not answered") if pa_status == None else word("Applied, but not yet getting anything") if pa_status == "applied" else word("Currently getting assistance") if pa_status == "gets_assistance" else word("No active assistance or application") if pa_status == "none" else word("unknown") }
+  - Edit:
+      - pa_food_assistance_program
+      - follow up:
+        - pa_other_types
+      - recompute:
+        - interview_order_user_income
+    button: |
+      ##### Your public assistance programs
+        - ${ comma_and_list(public_assistance_list) }
+    show if: pa_status == "gets_assistance" or (pa_status == "applied" and (there_are_marital_children or user_wants_post_divorce_support))
+  - Edit:
+      - pa_mdhhs_case_number
+    button: |
+      ##### Your MDHHS case number: ${pa_mdhhs_case_number}
+    show if: pa_status == "gets_assistance" and pa_mdhhs
+  - Edit: 
+      - pa_ssa_number
+    button: |
+      ##### Your SSI case number: ${pa_ssa_number}
+    show if: pa_status == "gets_assistance" and pa_supplemental_security and not (pa_mdhhs or pa_other)
+  - Edit:
+      - pa_other_types
+    button: |
+      ##### Your other assistance case number: ${pa_other_case_numbers}
+    show if: pa_status == "gets_assistance" and pa_other
+  - Edit:
+      - other_parties[0].income.value
+    button: |
+      ##### ${other_parties[0]}'s income
+        - Paycheck amount: ${ word("not answered") if other_parties[0].income.value == 0.0 else word(currency(other_parties[0].income.value)) }
+        - Paycheck frequency: ${ word("not answered") if other_parties[0].income.times_per_year == None else word("once a week") if other_parties[0].income.times_per_year == 52 else word("every two weeks") if other_parties[0].income.times_per_year == 26 else word("twice a month") if other_parties[0].income.times_per_year == 24 else word("once a month") }
+    show if: there_are_marital_children or user_wants_post_divorce_support and other_parties[0].has_job #for FOC23; never asked for JOD-only
+  - Edit:
+      - other_party_pa_status
+      - recompute:
+        - interview_order_other_party_income
+    button: |
+      ##### ${other_parties[0]}'s public assistance based on having low income
+        - ${ word("not answered") if other_party_pa_status == None else word("Applied, but not yet getting anything") if other_party_pa_status == "applied" else word("Currently getting assistance") if other_party_pa_status == "gets_assistance" else word("No active assistance or application") if other_party_pa_status == "none" else word("unknown") }
+  - Edit:
+      - op_pa_food_assistance_program
+      - follow up:
+        - op_pa_other_types
+      - recompute:
+        - interview_order_other_party_income
+    button: |
+      ##### ${other_parties[0]}'s public assistance programs
+        - ${ comma_and_list(op_public_assistance_list) }
+    show if: other_party_pa_status == "gets_assistance" or (other_party_pa_status == "applied" and (there_are_marital_children or user_wants_post_divorce_support))
+  - Edit:
+      - op_pa_mdhhs_case_number
+    button: |
+      ##### ${other_parties[0]}'s MDHHS case number: ${op_pa_mdhhs_case_number}
+    show if: other_party_pa_status == "gets_assistance" and op_pa_food_assistance_program or op_pa_medicaid or op_pa_family_independence_program or op_pa_women_infants_children or op_pa_state_disability or op_pa_state_emergency_relief or op_pa_refugee_assistance
+  - Edit: 
+      - op_pa_ssa_number
+    button: |
+      ##### ${other_parties[0]}'s SSI case number: ${op_pa_ssa_number}
+    show if: other_party_pa_status == "gets_assistance" and op_pa_supplemental_security and not (op_pa_food_assistance_program or op_pa_medicaid or op_pa_family_independence_program or op_pa_women_infants_children or op_pa_state_disability or op_pa_state_emergency_relief or op_pa_refugee_assistance or op_pa_other)
+  - Edit:
+      - op_pa_other_types
+    button: |
+      ##### ${other_parties[0]}'s other assistance case number: ${op_pa_other_case_numbers}
+    show if: other_party_pa_status == "gets_assistance" and op_pa_other
+#
+# ---------- identifying information ----------
+#
+  - Edit:
+      - users[0].ssn
+    button: |
+      ##### Your identity documents
+        - Social security number: ${users[0].ssn_last_four}
+        - Driver's license number: ${ word("not answered") if users[0].license_number == "" else users[0].license_number }
+        - Driver's license state: ${ word("not answered") if users[0].license_state == "" else users[0].license_state }
+      % if tool_ID != "JOD_only":
+        - Foreign citizenship? **word(yesno(users[0].has_foreign_citizenship))**
+      % if users[0].has_foreign_citizenship:
+        - Foreign citizenship countries: ${ word("not answered") if users[0].countries_of_citizenship == "" else users[0].countries_of_citizenship }
+        - Foreign identity documents: ${ word("not answered") if users[0].foreign_identity_documents == "" else users[0].foreign_identity_documents }
       % endif
       % endif
-  
+  - Edit:
+      - users[0].eye_color
+      - users[0].height_feet
+    button: |
+      ##### Your physical description
+        - Eye color: ${ word("not answered") if users[0].eye_color == "" else users[0].eye_color }
+        - Hair color: ${ word("not answered") if users[0].hair_color == "" else users[0].hair_color }
+        - Weight (pounds): ${ word("not answered") if users[0].weight == 0 else users[0].weight }
+        - Height: ${ word("not answered") if users[0].height_feet == 0 else word(users[0].height_feet) + word("ft, ") + word(users[0].height_inches) + word("in") }
+        - Identifying marks: ${ word("not answered") if users[0].other_identifying_info == "" else users[0].other_identifying_info }
+    show if: there_are_marital_children or user_wants_post_divorce_support
+  - Edit:
+      - users[0].race
+    button: |
+      ##### Your race
+        - ${ word("not answered") if users[0].race == None else users[0].race }
+      % if users[0].race == "Other":
+        - Other race description: ${ word("not answered") if users[0].other_race_description == "" else users[0].other_race_description }
+      % endif
+    show if: there_are_marital_children or user_wants_post_divorce_support
+  - Edit:
+      - other_parties[0].ssn
+    button: |
+      ##### ${other_parties[0]}'s identity documents
+        - Social security number: ${other_parties[0].ssn_last_four}
+        - Driver's license number: ${ word("not answered") if other_parties[0].license_number == "" else other_parties[0].license_number }
+        - Driver's license state: ${ word("not answered") if other_parties[0].license_state == "" else other_parties[0].license_state }
+      % if tool_ID != "JOD_only":
+        - Foreign citizenship? **word(yesno(other_parties[0].has_foreign_citizenship))**
+      % if other_parties[0].has_foreign_citizenship:
+        - Foreign citizenship countries: ${ word("not answered") if other_parties[0].countries_of_citizenship == "" else other_parties[0].countries_of_citizenship }
+        - Foreign identity documents: ${ word("not answered") if other_parties[0].foreign_identity_documents == "" else other_parties[0].foreign_identity_documents }
+      % endif
+      % endif
+  - Edit:
+      - other_parties[0].eye_color
+      - other_parties[0].height_feet
+    button: |
+      ##### ${other_parties[0]}'s physical description
+        - Eye color: ${ word("not answered") if other_parties[0].eye_color == "" else other_parties[0].eye_color }
+        - Hair color: ${ word("not answered") if other_parties[0].hair_color == "" else other_parties[0].hair_color }
+        - Weight (pounds): ${ word("not answered") if other_parties[0].weight == 0 else other_parties[0].weight }
+        - Height: ${ word("not answered") if other_parties[0].height_feet == 0 else word(other_parties[0].height_feet) + word("ft, ") + word(other_parties[0].height_inches) + word("in") }
+        - Identifying marks: ${ word("not answered") if other_parties[0].other_identifying_info == "" else other_parties[0].other_identifying_info }
+    show if: there_are_marital_children or user_wants_post_divorce_support
+  - Edit:
+      - other_parties[0].race
+    button: |
+      ##### ${other_parties[0]}'s race
+        - ${ word("not answered") if other_parties[0].race == None else other_parties[0].race }
+      % if other_parties[0].race == "Other":
+        - Other race description: ${ word("not answered") if other_parties[0].other_race_description == "" else other_parties[0].other_race_description }
+      % endif
+    show if: there_are_marital_children or user_wants_post_divorce_support
 #
 # ---------- personal property ----------
 #

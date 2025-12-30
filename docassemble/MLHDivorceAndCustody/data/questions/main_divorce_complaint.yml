@@ -175,7 +175,7 @@ code: |
   elif not there_are_marital_children:
     marriage.cobra_coverage
 
-  if there_are_marital_children or user_wants_post_divorce_support:
+  if there_are_marital_children or user_wants_post_divorce_support: #FOC23/FOC100
     interview_order_user_employment
     interview_order_user_income
     interview_order_user_identifying_info
@@ -184,12 +184,13 @@ code: |
     interview_order_other_party_income
     interview_order_other_party_identifying_info
     other_parties[0].has_alias
-  elif spousal_support_provisions == "user_agrees_to_pay_spousal_support":
+  elif spousal_support_provisions == "user_agrees_to_pay_spousal_support": #FOC100
     interview_order_user_employment
     interview_order_user_income
     interview_order_user_identifying_info
     interview_order_other_party_employment
-  else:
+    interview_order_other_party_identifying_info
+  else: 
     interview_order_user_income
 
   nav.set_section("signpost_property")

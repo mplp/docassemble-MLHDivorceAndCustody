@@ -230,7 +230,7 @@ attachment:
           % if pa_status == "gets_assistance":
           ${ comma_and_list(public_assistance_list) } Case number: ${ comma_and_list(pa_case_numbers_foc_23) }
           % elif pa_status == "applied":
-          Applied for ${ public_assistance_list }
+          Applied for ${ comma_and_list(public_assistance_list) }
           % endif
       - users1_other_citizenship: |
           % if users[0].has_foreign_citizenship:
@@ -304,7 +304,7 @@ attachment:
           % if other_party_pa_status == "gets_assistance":
           ${ comma_and_list(op_public_assistance_list) } Case number: ${ comma_and_list(op_pa_case_numbers_foc_23) }
           % elif other_party_pa_status == "applied":
-          Applied for ${ op_public_assistance_list }
+          Applied for ${ comma_and_list(op_public_assistance_list) }
           % endif
       - other_parties1_other_citizenship: |
           % if other_parties[0].has_foreign_citizenship:
