@@ -3919,7 +3919,7 @@ fields:
       - Other: Other
   - What is the other race?: other_parties[0].other_race_description
     required: False
-    maxlength: 76
+    maxlength: 26
     show if: 
       variable: users[0].race 
       is: Other

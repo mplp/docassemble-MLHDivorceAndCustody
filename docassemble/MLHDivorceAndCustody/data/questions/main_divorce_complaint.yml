@@ -175,7 +175,7 @@ code: |
   elif not there_are_marital_children:
     marriage.cobra_coverage
 
-  if there_are_marital_children or user_wants_post_divorce_support: #FOC23/FOC100
+  if there_are_marital_children or user_wants_post_divorce_support: #FOC23+FOC100
     interview_order_user_employment
     interview_order_user_income
     interview_order_user_identifying_info

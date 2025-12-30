@@ -768,6 +768,10 @@ review:
       % endif
     show if: there_are_marital_children
   - Edit:
+      - income_tax_method
+    button: |-
+     should probably do this similar to kids' addresses or something like that
+  - Edit:
       - stepchild_address_review_screen
     button: |-
       ##### Stepchildren's addresses
@@ -1085,6 +1089,7 @@ review:
     button: |
       ##### ${other_parties[0]}'s public assistance based on having low income
         - ${ word("not answered") if other_party_pa_status == None else word("Applied, but not yet getting anything") if other_party_pa_status == "applied" else word("Currently getting assistance") if other_party_pa_status == "gets_assistance" else word("No active assistance or application") if other_party_pa_status == "none" else word("unknown") }
+    show if: there_are_marital_children or user_wants_post_divorce_support
   - Edit:
       - op_pa_food_assistance_program
       - follow up:
@@ -1094,7 +1099,7 @@ review:
     button: |
       ##### ${other_parties[0]}'s public assistance programs
         - ${ comma_and_list(op_public_assistance_list) }
-    show if: other_party_pa_status == "gets_assistance" or (other_party_pa_status == "applied" and (there_are_marital_children or user_wants_post_divorce_support))
+    show if: (there_are_marital_children or user_wants_post_divorce_support) and other_party_pa_status in ["gets_assistance", "applied"]
   - Edit:
       - op_pa_mdhhs_case_number
     button: |
@@ -1121,12 +1126,19 @@ review:
         - Driver's license number: ${ word("not answered") if users[0].license_number == "" else users[0].license_number }
         - Driver's license state: ${ word("not answered") if users[0].license_state == "" else users[0].license_state }
       % if tool_ID != "JOD_only":
-        - Foreign citizenship? **word(yesno(users[0].has_foreign_citizenship))**
+        - Foreign citizenship? ${word("not answered") if users[0].has_foreign_citizenship == None else word(yesno(users[0].has_foreign_citizenship))}
       % if users[0].has_foreign_citizenship:
         - Foreign citizenship countries: ${ word("not answered") if users[0].countries_of_citizenship == "" else users[0].countries_of_citizenship }
         - Foreign identity documents: ${ word("not answered") if users[0].foreign_identity_documents == "" else users[0].foreign_identity_documents }
       % endif
       % endif
+    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
+  - Edit:
+      - users[0].has_alias
+    button: |
+      ##### Your other names/aliases
+        - ${ word("None") if not users[0].has_previous_name else users[0].aliases }
+    show if: there_are_marital_children or user_wants_post_divorce_support
   - Edit:
       - users[0].eye_color
       - users[0].height_feet
@@ -1142,7 +1154,7 @@ review:
       - users[0].race
     button: |
       ##### Your race
-        - ${ word("not answered") if users[0].race == None else users[0].race }
+        - ${ word("not answered") if users[0].race == "" else users[0].race }
       % if users[0].race == "Other":
         - Other race description: ${ word("not answered") if users[0].other_race_description == "" else users[0].other_race_description }
       % endif
@@ -1155,12 +1167,19 @@ review:
         - Driver's license number: ${ word("not answered") if other_parties[0].license_number == "" else other_parties[0].license_number }
         - Driver's license state: ${ word("not answered") if other_parties[0].license_state == "" else other_parties[0].license_state }
       % if tool_ID != "JOD_only":
-        - Foreign citizenship? **word(yesno(other_parties[0].has_foreign_citizenship))**
+        - Foreign citizenship? ${word("not answered") if other_parties[0].has_foreign_citizenship == None else word(yesno(other_parties[0].has_foreign_citizenship))}
       % if other_parties[0].has_foreign_citizenship:
         - Foreign citizenship countries: ${ word("not answered") if other_parties[0].countries_of_citizenship == "" else other_parties[0].countries_of_citizenship }
         - Foreign identity documents: ${ word("not answered") if other_parties[0].foreign_identity_documents == "" else other_parties[0].foreign_identity_documents }
       % endif
       % endif
+    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
+  - Edit:
+      - other_parties[0].has_alias
+    button: |
+      ##### ${other_parties[0]}'s other names/aliases
+        - ${ word("None") if not other_parties[0].has_previous_name else other_parties[0].aliases }
+    show if: there_are_marital_children or user_wants_post_divorce_support
   - Edit:
       - other_parties[0].eye_color
       - other_parties[0].height_feet
@@ -1176,7 +1195,7 @@ review:
       - other_parties[0].race
     button: |
       ##### ${other_parties[0]}'s race
-        - ${ word("not answered") if other_parties[0].race == None else other_parties[0].race }
+        - ${ word("not answered") if other_parties[0].race == "" else other_parties[0].race }
       % if other_parties[0].race == "Other":
         - Other race description: ${ word("not answered") if other_parties[0].other_race_description == "" else other_parties[0].other_race_description }
       % endif
@@ -1416,8 +1435,8 @@ review:
           - **Address:** ${item.address.on_one_line()}
           - **Legal description:** ${item.desc}
           - **Parcel number:** ${item.parcel_number}
-          - **Do you and the ${op_ask_role.capitalize()} agree on what should happen with this property?** ${word(yesno(item.agree))}
-          - **Award this property to:** ${item.owner}
+          - **Do you and ${other_parties[0]} agree on what should happen with this property?** ${word(yesno(item.agree))}
+          - **Award this property to:** ${item.owner if item.owner in [users[0], other_parties[0]] else word("Sell and split value and debt")}
           % if item.attribute_defined("titled_together"):
           - **Is this property titled in both of your names?** ${word(yesno(item.titled_together))}
           % endif

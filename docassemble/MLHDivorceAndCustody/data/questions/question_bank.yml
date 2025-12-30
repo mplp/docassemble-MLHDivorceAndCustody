@@ -49,7 +49,7 @@ code: |
 ---
 generic object: ALAssetList
 id: x.revisit
-if: (x.instanceName in ("marriage.accounts", "marriage.other_pp", "marriage.mobile_home") and marriage.personal_property_need_items) or (x.instanceName == "marriage.debts" and marriage.debts.need_items) or (x.instanceName == "marriage.vehicles" and marriage.vehicles.need_items)
+if: (x.instanceName in ("marriage.accounts", "marriage.other_pp", "marriage.mobile_home") and marriage.personal_property_need_items) or (x.instanceName == "marriage.debts" and marriage.debts.need_items) or (x.instanceName == "marriage.vehicles" and marriage.vehicles.need_items) or x.instanceName == "marriage.real_property"
 question: |
   ${x.question_text}
 subquestion: |
