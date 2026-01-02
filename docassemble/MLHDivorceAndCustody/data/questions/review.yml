@@ -121,6 +121,11 @@ review:
         - interview_order_user_contact_info
       - invalidate:
         - interview_order_children # for Muskegon PT logic
+        - venue
+        - current_venue_options
+        - all_potential_venue_options
+        - check_for_required_venue
+        - there_is_venue_controlling_separate_maintenance_case
       # Note validation logic on users[0].address.address question
     button: |
       % if tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and confidential_contact_info_yn):
@@ -144,6 +149,11 @@ review:
         - users[0].ten_days_in_county
       - invalidate:
         - interview_order_children # because of Muskegon PT logic
+        - venue
+        - current_venue_options
+        - all_potential_venue_options
+        - check_for_required_venue
+        - there_is_venue_controlling_separate_maintenance_case
     button: |
       ##### Do you live in Michigan?
         - ${word(yesno(users[0].lives_in_Michigan))}   
@@ -255,6 +265,11 @@ review:
         - just_check_op_county
       - invalidate:
         - interview_order_children # because of Muskegon PT logic
+        - venue
+        - current_venue_options
+        - all_potential_venue_options
+        - check_for_required_venue
+        - there_is_venue_controlling_separate_maintenance_case
       # Note validation logic on other_parties[0].address.address question
     button: |
       % if tool_ID == "JOD_only":
@@ -381,6 +396,9 @@ review:
       % else:
       ##### Date you and your spouse stopped living together
         - ${marriage.living_together_stopped_date}
+      % if there_are_marital_children:
+        - Number of minor children living in household on this date: ${marriage.number_children_in_home_when_separated}
+      % endif
       % endif
 #
 # ---------- spousal support ----------
@@ -574,6 +592,7 @@ review:
         - children_now_live_with_which_parent
         - children_lived_with_which_parent_past
         - interview_order_stepchild_address
+        - tax_choices
         - income_tax_method
         - users[0].insurance.gathered
         - other_parties[0].insurance.gathered
@@ -581,6 +600,9 @@ review:
         - interview_order_user_employment
         - interview_order_user_income
         - interview_order_income_tax
+        - there_is_venue_controlling_separate_maintenance_case
+        - check_for_required_venue
+        - venue
       - recompute:
         - children_previous_address.gathered_reset
         - interview_order_children
@@ -614,6 +636,7 @@ review:
         - children_now_live_with_which_parent
         - children_lived_with_which_parent_past
         - interview_order_stepchild_address
+        - tax_choices
         - income_tax_method
         - users[0].insurance.gathered
         - other_parties[0].insurance.gathered
@@ -621,6 +644,9 @@ review:
         - interview_order_user_employment
         - interview_order_user_income
         - interview_order_income_tax
+        - there_is_venue_controlling_separate_maintenance_case
+        - check_for_required_venue
+        - venue
       - recompute:
         - children_previous_address.gathered_reset
         - interview_order_children
@@ -769,8 +795,29 @@ review:
     show if: there_are_marital_children
   - Edit:
       - income_tax_method
-    button: |-
-     should probably do this similar to kids' addresses or something like that
+      - invalidate:
+        - tax_deductions_who_first
+      - recompute:
+        - interview_order_income_tax
+      # Note validation logic on income_tax_method
+    button: |
+      ##### Income tax deductions and credits for ${ comma_and_list(children.filter(legal_parent='both').familiar()) } 
+        % if income_tax_method == "user":
+        **${ users[0] }** will be awarded all income tax deductions, credits, and exemptions for the ${ children.filter(legal_parent='both').as_noun() } for all tax years starting with ${ tax_start_year }.
+        % elif income_tax_method == "other_party":
+        **${ other_parties[0] }** will be awarded all income tax deductions, credits, and exemptions for the ${ children.filter(legal_parent='both').as_noun() } for all tax years starting with ${ tax_start_year }.
+        % elif income_tax_method == "default":
+        The **parent with whom ${ children.filter(legal_parent='both')[0].familiar() if len(children.filter(legal_parent='both')) == 1 else word("each child") } lives for more nights during a tax year** will be awarded all income tax deductions, credits, and exemptions for that child for that tax year.
+        % elif income_tax_method == "alternate_years":
+        ${ word("You") if tax_deductions_who_first == "users[0]" else other_parties[0] } will get the deductions, credits, and exemptions for tax year ${ tax_start_year }. ${ other_parties[0] if tax_deductions_who_first == "users[0]" else word("You") } will claim them for tax year ${ tax_start_year + 1 }. You will continue to claim the exemptions and deductions in **alternating years.**
+        % elif income_tax_method == "specify_per_child": 
+        ${ users[0] } and ${ other_parties[0] } will claim the deductions, credits, and exemptions for **different children** starting with tax year ${ tax_start_year }:
+      
+        % for child in children.filter(legal_parent='both'):  
+        - ${ child }'s tax deductions and credits will be claimed by **${ word("you") if child.tax_parent == "users[0]" else other_parties[0] }.**
+        % endfor
+        % endif     
+    show if: there_are_marital_children
   - Edit:
       - stepchild_address_review_screen
     button: |-
@@ -807,6 +854,10 @@ review:
 # TODO add accordion?
   - Edit:
       - prior_family_cases.there_are_any
+      - invalidate:
+        - there_is_venue_controlling_separate_maintenance_case
+        - venue
+        - check_for_required_venue
     button: |
       % if tool_ID == "JOD_only":
       ##### Any prior custody or support orders?
@@ -817,6 +868,10 @@ review:
     show if: len(prior_family_cases.complete_elements()) < 1
   - Edit:
       - prior_family_cases.revisit
+      - invalidate:
+        - there_is_venue_controlling_separate_maintenance_case
+        - venue
+        - check_for_required_venue
     show if: prior_family_cases.there_are_any
     button: |
       % if tool_ID == "JOD_only":
@@ -1462,6 +1517,56 @@ review:
 #  - raw html: |
 #      ${ next_accordion("""<h2 class="h5">Judgment Information</h2>""") }
 #    show if: marriage.attribute_defined("other_provisions_any")
+  - Edit:
+      - venue
+    button: |
+      ##### Where you will file      
+      You will file this case in **${county_choice} County.**
+      % if county_choice == users[0].address.county and not users[0].ten_days_in_county:
+      
+      You **must wait** to file in **${ users[0].address.county } County** until you have lived there for the last ten days or more.
+      % elif county_choice == other_parties[0].address.county and not other_parties[0].ten_days_in_county:
+      
+      You **must wait** to file in ${ other_parties[0].address.county } County until your spouse has lived there for the last ten days or more.
+      % endif
+    show if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 2 and not (there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case)
+    # conditions under which there is a basic choice of venue, matching id: "venue (normal choice)"
+  - Edit:
+      - venue
+    button: |
+      ##### Where you will file      
+      You will file this case in **${county_choice} County.**
+      
+      % if county_choice == users[0].address.county and users[0].ten_days_in_county == False:
+      You **must wait** until you have lived in ${ users[0].address.county } County for ten days or more before you file for divorce.
+      % elif county_choice == other_parties[0].address.county and other_parties[0].ten_days_in_county == False:
+      You **must wait** until your spouse has lived in ${ other_parties[0].address.county } County for ten days or more before you file for divorce.
+      % elif county_choice == users[0].address.county and other_parties[0].ten_days_in_county == False:
+      You have chosen to file in **${ users[0].address.county }** County **before** your spouse has lived in their current county for 10 days or more. 
+      
+      *If you miss that deadline, you must update this tool and get new forms to file instead in ${ other_parties[0].address.county } County. This is because of your past separate maintenance case in that county.*
+      % elif county_choice == other_parties[0].address.county and users[0].ten_days_in_county == False:
+      You have chosen to file in **${ other_parties[0].address.county }** County **before you have lived in your current county for 10 days or more. 
+      
+      *If you miss that deadline, you must update this tool and get new forms to file instead in ${ users[0].address.county } County. This is because of your past separate maintenance case in that county.*
+      % endif    
+    show if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options
+    # conditions under which there is a choice of venue but with special prior separate maintenance case logic, matching id: "venue: (weird separate maintenance choice)" 
+  - note: |
+      ##### Where you will file
+      % if len(all_potential_venue_options) == 0:  #TODO delete after testing.
+      If you're reading this, no venue has been selected. This means there's an **error** in the code. Please report an issue with as much detail as you can about the parties' Michigan-status, counties, time in Michigan, etc. Please close out this test and start a new one.
+      % elif len(all_potential_venue_options) == 1:
+      You only meet the requirements to file your divorce in **${ county_choice } County.** Your divorce forms will be prepared using ${ county_choice } as the filing county.  
+      % elif len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case:
+      Because of your earlier separate maintenance case, you must file in **${ prior_family_cases[separate_maintenance_case_index].county } County.** Your divorce forms will be prepared using ${ county_choice } as the filing county.  
+      % endif
+      % if len(current_venue_options) == 0:
+      
+      You **must wait** to file until you or your spouse have lived in ${ county_choice } County for the last ten days or more.
+      % endif
+    show if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 1 or (len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and (len(current_venue_options) in [2, 0] or (len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county in current_venue_options)))
+    # conditions under which there is only one option for venue, matching id: "venue (single option)"
   - Edit:
       - marriage.other_provisions_any
     button: |
