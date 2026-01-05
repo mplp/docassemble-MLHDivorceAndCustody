@@ -2156,8 +2156,8 @@ fields:
     field: returning_to_finalize
     datatype: radio
     choices:
-      - I'm getting ready to file for divorce.: False
-      - The divorce was already filed. I'm coming back to update my forms.: True
+      - I'm **getting ready to file** for divorce.: False
+      - The divorce was **already filed.** I'm back to update my forms.: True
     # idea: maybe we could include this question on download page with a note specifically telling people to edit this on review screen?
   - label: Has a temporary order been entered in your case for custody, parenting time, child support, or spousal support?
     field: marriage.temporary_order
@@ -2172,6 +2172,9 @@ fields:
     field: marriage.temporary_order_changed
     datatype: yesnoradio
     show if: marriage.temporary_order
+  - note: |
+      **Important:** Make sure to use the **Review / Edit** screen to update this information on your forms.
+    show if: marriage.temporary_order_changed 
 ---
 template: marriage.temporary_order_changed_template
 subject: |
@@ -2222,7 +2225,9 @@ fields:
     field: marriage.true_statement
     datatype: yesnoradio
   - note: |
-      **You must provide truthful and accurate information on your divorce forms. Prior to filing, you will be required to verify with your signature that the information contained in the forms is true to the best of your knowledge, information, and belief. If you do not believe the information you have provided is truthful and accurate, please go back and make the necessary changes.**
+      **You must provide truthful and accurate information on your divorce forms.** Before filing, you will be required to verify with your signature that the information contained in the forms is true to the best of your knowledge, information, and belief. 
+      
+      If you do not believe the information you have provided is truthful and accurate, please go back and make the necessary changes.
     show if:
       variable: marriage.true_statement
       is: False

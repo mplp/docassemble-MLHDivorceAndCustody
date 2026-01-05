@@ -233,9 +233,7 @@ code: |
   plaintiffs
   defendants
 
-  nav.set_section("signpost_done")
   MLH_standard_outro_pages  
+  nav.set_section("signpost_done")
   MLH_download
----
-# EKM note: interview_order code blocks moved from here to question_bank.yml
 ---

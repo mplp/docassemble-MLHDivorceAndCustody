@@ -3607,8 +3607,7 @@ code: |
 ---
 code: |
   def has_vehicle_addendum(marriage: DAObject) -> bool:
-    return (
-      marriage.vehicles.any
-      and not marriage.attr("vehicles.keep_own")
+    return marriage.vehicles.any and (
+      not marriage.vehicles.keep_own
     )
 ---

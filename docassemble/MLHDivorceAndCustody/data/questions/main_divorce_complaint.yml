@@ -214,17 +214,14 @@ code: |
   check_for_required_venue
   venue 
 
-  if returning_to_finalize:
-    if marriage.temporary_order:
-      marriage.temporary_order_changed
-
   if marriage.other_provisions_any:
     marriage.other_provisions
+
+  returning_to_finalize
 
   if not marriage.true_statement:
     exit_general
 
-  nav.set_section("signpost_done")
   MLH_standard_outro_pages
 
   # just making sure these are defined
@@ -232,5 +229,7 @@ code: |
   the_foc 
   docket_number
   stepchildren_for_addendum
-  
+
+  nav.set_section("signpost_done")
   MLH_download
+---

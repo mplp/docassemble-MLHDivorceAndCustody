@@ -4,6 +4,42 @@ event: review_full
 question: |
   Review your answers
 review:
+  - Edit:
+      - marriage.true_statement
+    button: |
+      ##### Is all the information you provided true?
+        - ${word(yesno(marriage.true_statement))}
+  - Edit:
+      - returning_to_finalize
+    button: |
+      ##### What stage of the case are you in?
+      % if not returning_to_finalize:
+       - You said you are **preparing to file** for divorce.
+      
+      **Important:** if you already filed, please tap **Edit** to update your case status.
+      % else:
+      
+      You said that:
+
+        - You **already filed** your divorce complaint.
+      % if marriage.temporary_order:
+        - A **temporary order was entered** in your case for custody, parenting time, child support, or spousal support.  
+      % if marriage.temporary_order_changed:
+        - Some information that goes on the *Domestic Relations Judgment Information* form (FOC 100) **has changed** since it was last filed.
+      
+      **Important!** Make sure all information below is correct and updated.
+      % else:
+        - The information that goes on the *Domestic Relations Judgment Information* form (FOC 100) has **not changed** since it was last filed.
+      % endif
+      % else:
+        - There has been **no temporary order** entered in your case for custody, parenting time, child support, or spousal support.
+
+      **Important:** if a temporary order has been entered, please tap **Edit** to update your case status.
+      % endif  
+      % endif
+    show if: tool_ID == "divorce_complaint"
+    # This is a special question in the divorce complaint context, because we fully expect for some people the answers will change between their first pass through the tool and when they return. We really want to try to bring it to people's attention.
+
 #
 # ---------- case information ----------
 #
@@ -1031,7 +1067,7 @@ review:
         - interview_order_user_income
     button: |
       ##### Are you currently employed?
-        - ${ word(yesno(users[0].has_job)) }
+        - ${ word("not answered") if users[0].has_job == None else word(yesno(users[0].has_job)) }
       % if users[0].has_job:
         - Employer: ${ users[0].job.employer.name.first if users[0].job.employer.name.first != "" else word("not answered")}
         - ${ users[0].job.employer.address.on_one_line() if users[0].job.employer.address.address != "" or users[0].job.employer.address.city != "" else word("address not given")}
@@ -1065,7 +1101,7 @@ review:
         - interview_order_other_party_income
     button: |
       ##### Spouse currently employed?
-        - ${ word(yesno(other_parties[0].has_job)) }
+        - ${ word("not answered") if other_parties[0].has_job == None else word(yesno(other_parties[0].has_job)) }
       % if other_parties[0].has_job:
         - Employer: ${ other_parties[0].job.employer.name.first if other_parties[0].job.employer.name.first != "" else word("not answered")}
         - ${ other_parties[0].job.employer.address.on_one_line() if other_parties[0].job.employer.address.address != "" or other_parties[0].job.employer.address.city != "" else word("address not given")}
@@ -1575,12 +1611,17 @@ review:
   - Edit:
       - marriage.temporary_order
     button: |
-      ##### Has a temporary order been entered in your case after meeting with the Friend of the Court (for example, a temporary order regarding custody, parenting time, and/or child support)?
+      ##### Was a **temporary order** entered in your case for custody, parenting time, child support, or spousal support?
         - ${word(yesno(marriage.temporary_order))}
-      % if marriage.attribute_defined("temporary_order_changed"):
-      ##### Has any of the information that goes on this form changed since the last time it was filed?
+      % if marriage.temporary_order:
+      ##### Has any of the information that goes on the *Domestic Relations Judgment Information* form (FOC 100) changed since the last time it was filed?
         - ${word(yesno(marriage.temporary_order_changed))}
+      % if marriage.temporary_order_changed:
+      
+      **Important!** Make sure all information on this page is correct and updated.
       % endif
+      % endif
+    show if: tool_ID == "JOD_only"
   - Edit:
       - MLH_esign
     button: |
