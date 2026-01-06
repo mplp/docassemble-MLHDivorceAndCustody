@@ -147,6 +147,14 @@ review:
         - interview_order_user_contact_info
       - invalidate:
         - interview_order_children # for Muskegon PT logic
+        - venue
+        - current_venue_options
+        - all_potential_venue_options
+        - check_for_required_venue
+        - there_is_venue_controlling_separate_maintenance_case
+        - court_index
+        - the_court
+        - the_foc
       # Note validation logic on confidential_contact_info_yn question
     button: |
       ##### Keep your contact info confidential?
@@ -162,6 +170,9 @@ review:
         - all_potential_venue_options
         - check_for_required_venue
         - there_is_venue_controlling_separate_maintenance_case
+        - court_index
+        - the_court
+        - the_foc
       # Note validation logic on users[0].address.address question
     button: |
       % if tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and confidential_contact_info_yn):
@@ -190,6 +201,9 @@ review:
         - all_potential_venue_options
         - check_for_required_venue
         - there_is_venue_controlling_separate_maintenance_case
+        - court_index
+        - the_court
+        - the_foc
     button: |
       ##### Do you live in Michigan?
         - ${word(yesno(users[0].lives_in_Michigan))}   
@@ -306,6 +320,9 @@ review:
         - all_potential_venue_options
         - check_for_required_venue
         - there_is_venue_controlling_separate_maintenance_case
+        - court_index
+        - the_court
+        - the_foc
       # Note validation logic on other_parties[0].address.address question
     button: |
       % if tool_ID == "JOD_only":
@@ -639,6 +656,9 @@ review:
         - there_is_venue_controlling_separate_maintenance_case
         - check_for_required_venue
         - venue
+        - court_index
+        - the_court
+        - the_foc
       - recompute:
         - children_previous_address.gathered_reset
         - interview_order_children
@@ -683,6 +703,9 @@ review:
         - there_is_venue_controlling_separate_maintenance_case
         - check_for_required_venue
         - venue
+        - court_index
+        - the_court
+        - the_foc
       - recompute:
         - children_previous_address.gathered_reset
         - interview_order_children
@@ -894,6 +917,9 @@ review:
         - there_is_venue_controlling_separate_maintenance_case
         - venue
         - check_for_required_venue
+        - court_index
+        - the_court
+        - the_foc
     button: |
       % if tool_ID == "JOD_only":
       ##### Any prior custody or support orders?
@@ -908,12 +934,15 @@ review:
         - there_is_venue_controlling_separate_maintenance_case
         - venue
         - check_for_required_venue
+        - court_index
+        - the_court
+        - the_foc
     show if: prior_family_cases.there_are_any
     button: |
       % if tool_ID == "JOD_only":
-      Custody or support cases
+      ##### Custody or support cases
       % else:
-      Family division cases?
+      ##### Family division cases?
       % endif
       
       % if tool_ID == "JOD_only":
@@ -1555,6 +1584,10 @@ review:
 #    show if: marriage.attribute_defined("other_provisions_any")
   - Edit:
       - venue
+      - invalidate:
+        - court_index
+        - the_court
+        - the_foc
     button: |
       ##### Where you will file      
       You will file this case in **${county_choice} County.**
@@ -1569,6 +1602,10 @@ review:
     # conditions under which there is a basic choice of venue, matching id: "venue (normal choice)"
   - Edit:
       - venue
+      - invalidate:
+        - court_index
+        - the_court
+        - the_foc
     button: |
       ##### Where you will file      
       You will file this case in **${county_choice} County.**

@@ -732,6 +732,9 @@ subquestion: |
 fields:
   - Do you and your spouse have any living {minor} children?: children.there_are_any
     datatype: yesnoradio
+validation code: |
+  if not children.there_are_any: 
+    children.clear()
 ---
 id: any more children
 question: |

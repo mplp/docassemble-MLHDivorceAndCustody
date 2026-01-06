@@ -141,6 +141,9 @@ code: |
     if not marriage.have_experienced_domestic_violence_continue:
       exit_general
 
+  if marriage.temporary_order:
+    marriage.temporary_order_changed
+
   nav.set_section("signpost_user")
 
   users.gather()
@@ -196,7 +199,7 @@ code: |
   elif not there_are_marital_children:
     marriage.cobra_coverage
 
-  if there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support":
+  if there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support" or marriage.temporary_order:
     interview_order_user_employment
     interview_order_user_identifying_info
     interview_order_other_party_employment
@@ -222,9 +225,6 @@ code: |
 
   if marriage.other_provisions_any:
     marriage.other_provisions
-
-  if marriage.temporary_order:
-    marriage.temporary_order_changed
 
   if not marriage.true_statement:
     exit_general

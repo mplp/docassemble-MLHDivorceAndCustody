@@ -37,6 +37,8 @@ code: |
 ---
 # enabling logic for JOD_only addenda overflow fields (personal property and debts, real property legal description, and other provisions)
 code: |
+  judgment_overflow_addendum.enabled = False
+  
   if send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum:
     judgment_overflow_addendum.enabled = True
   
@@ -47,9 +49,6 @@ code: |
   
   elif marriage.other_provisions_any and len(marriage.other_provisions) > 440:
     judgment_overflow_addendum.enabled = True
-
-  else:
-    judgment_overflow_addendum.enabled = False
 ---
 # not in JOD_only bundle
 code: |
@@ -111,10 +110,10 @@ code: |
     protected_pii_mc_97a_attachment.enabled = False
 ---
 code: |
-  foc_100_full.enabled = there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support" or (tool_ID == "divorce_complaint" and returning_to_finalize and marriage.temporary_order and marriage.temporary_order_changed) or (tool_ID == "JOD_only" and marriage.temporary_order and marriage.temporary_order_changed)
+  foc_100_full.enabled = there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support" or (tool_ID == "divorce_complaint" and returning_to_finalize and marriage.temporary_order) or (tool_ID == "JOD_only" and marriage.temporary_order)
   if foc_100_full.enabled:
     foc_100_main.enabled = True
-    foc_100_attachment.enabled = (len(children.filter(legal_parent="both")) > 4) or (len(users[0].insurance) > 5) or (len(other_parties[0].insurance) > 5) or children_now_live_with_which_parent == "both"
+    foc_100_attachment.enabled = there_are_marital_children and ((len(children.filter(legal_parent="both")) > 4) or (len(users[0].insurance) > 5) or (len(other_parties[0].insurance) > 5) or children_now_live_with_which_parent == "both")
 ---
 code: |
   foc_10_full.enabled = there_are_marital_children
@@ -1734,11 +1733,11 @@ attachment:
       - personal_property_in_addendum: |
           ${personal_property_in_addendum(marriage)}
       - debts_none: ${not debts_in_addendum(marriage)}
-      - debts_pay_debts_in_own_name: ${marriage.debts.any and marriage.attr("debts.pay_debts_in_own_names")}
+      - debts_pay_debts_in_own_name: ${marriage.debts.any and marriage.debts.pay_debts_in_own_names}
       - debts_in_addendum: ${debts_in_addendum(marriage)}
       - vehicles_none: ${not marriage.vehicles.any}
-      - vehicles_keep_same: ${marriage.vehicles.any and marriage.attr("vehicles.keep_own")}
-      - vehicles_in_addendum: ${marriage.vehicles.any and not marriage.attr("vehicles.keep_own")}
+      - vehicles_keep_same: ${marriage.vehicles.any and marriage.vehicles.keep_own}
+      - vehicles_in_addendum: ${marriage.vehicles.any and not marriage.vehicles.keep_own}
       - real_property_none: ${not bool(marriage.real_property)}
       - real_property_in_addendum: ${bool(marriage.real_property)}
       - pensions_none: ${not marriage.have_pension_retirement}
@@ -3601,8 +3600,8 @@ code: |
 code: |
   def debts_in_addendum(marriage: DAObject) -> bool:
     return marriage.debts.any and (
-      not marriage.attr("debts.agree_responsibility_debts_own_name")
-      or marriage.attr("debts.any_in_both_names")
+      marriage.debts.any_in_both_names
+      or not marriage.debts.pay_debts_in_own_names
     )
 ---
 code: |
