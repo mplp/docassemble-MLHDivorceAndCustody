@@ -413,6 +413,7 @@ review:
         - **Phone number:** ${other_parties[0].attorney.phone_number}
         % endif
       % endif
+    show if: tool_ID not in ["divorce_complaint", "custody_complaint"]
 #
 # ---------- marriage ----------
 #
@@ -647,8 +648,7 @@ review:
         - interview_order_stepchild_address
         - tax_choices
         - income_tax_method
-        - users[0].insurance.gathered
-        - other_parties[0].insurance.gathered
+        - insurance_in_addendum
         - interview_order_pregnancy
         - interview_order_user_employment
         - interview_order_user_income
@@ -663,6 +663,8 @@ review:
         - children_previous_address.gathered_reset
         - interview_order_children
         - prior_family_cases.gathered_deep_reset
+        - users[0].insurance.gathered_deep_reset
+        - other_parties[0].insurance.gathered_deep_reset
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
       % if children.there_are_any:
@@ -694,8 +696,7 @@ review:
         - interview_order_stepchild_address
         - tax_choices
         - income_tax_method
-        - users[0].insurance.gathered
-        - other_parties[0].insurance.gathered
+        - insurance_in_addendum
         - interview_order_pregnancy
         - interview_order_user_employment
         - interview_order_user_income
@@ -710,6 +711,8 @@ review:
         - children_previous_address.gathered_reset
         - interview_order_children
         - prior_family_cases.gathered_deep_reset
+        - users[0].insurance.gathered_deep_reset
+        - other_parties[0].insurance.gathered_deep_reset
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
       ##### Edit a child's **legal parent** info
@@ -1034,12 +1037,16 @@ review:
 # todo accordion
   - Edit:
       - users[0].insurance.there_are_any
+      - invalidate:
+        - insurance_in_addendum
     button: |
       ##### Your health coverage
         - You **${ word("have") if users[0].insurance.there_are_any else word("don't have")}** your own health care coverage through an employer, Medicaid or Medicare, or privately.
     show if: len(users[0].insurance.complete_elements()) < 1
   - Edit:
       - users[0].insurance.revisit
+      - invalidate:
+        - insurance_in_addendum
     button: |
       ##### Your health coverage
       % for policy in users[0].insurance:
@@ -1062,12 +1069,16 @@ review:
     show if: users[0].insurance.there_are_any
   - Edit:
       - other_parties[0].insurance.there_are_any
+      - invalidate:
+        - insurance_in_addendum
     button: |
       ##### ${ capitalize(OP_label) }’s health coverage
         - ${ capitalize(OP_label) } **${ word("has") if other_parties[0].insurance.there_are_any else word("doesn't have")}** their own health care coverage through an employer, Medicaid or Medicare, or privately.
     show if: len(other_parties[0].insurance.complete_elements()) < 1
   - Edit:
       - other_parties[0].insurance.revisit
+      - invalidate:
+        - insurance_in_addendum
     button: |
       ##### ${ capitalize(OP_label) }’s health coverage
       % for policy in other_parties[0].insurance:
@@ -1165,6 +1176,10 @@ review:
     show if: there_are_marital_children or user_wants_post_divorce_support and users[0].has_job #for FOC23; never asked for JOD-only
   - Edit:
       - pa_status
+      - invalidate:
+        - public_assistance_list
+        - pa_case_numbers_foc_23
+        - pa_mdhhs
       - recompute:
         - interview_order_user_income
     button: |
@@ -1174,6 +1189,10 @@ review:
       - pa_food_assistance_program
       - follow up:
         - pa_other_types
+      - invalidate:
+        - pa_case_numbers_foc_23
+        - public_assistance_list
+        - pa_mdhhs
       - recompute:
         - interview_order_user_income
     button: |
@@ -1182,18 +1201,25 @@ review:
     show if: pa_status == "gets_assistance" or (pa_status == "applied" and (there_are_marital_children or user_wants_post_divorce_support))
   - Edit:
       - pa_mdhhs_case_number
+      - recompute:
+        - pa_case_numbers_foc_23
     button: |
       ##### Your MDHHS case number: ${pa_mdhhs_case_number}
     show if: pa_status == "gets_assistance" and pa_mdhhs
   - Edit: 
       - pa_ssa_number
+      - recompute:
+        - pa_case_numbers_foc_23
     button: |
       ##### Your SSI case number: ${pa_ssa_number}
     show if: pa_status == "gets_assistance" and pa_supplemental_security and not (pa_mdhhs or pa_other)
   - Edit:
       - pa_other_types
+      - recompute:
+        - public_assistance_list
+        - pa_case_numbers_foc_23
     button: |
-      ##### Your other assistance case number: ${pa_other_case_numbers}
+      ##### Your ${ pa_other_types } case number(s): ${pa_other_case_numbers}
     show if: pa_status == "gets_assistance" and pa_other
   - Edit:
       - other_parties[0].income.value
@@ -1204,6 +1230,9 @@ review:
     show if: there_are_marital_children or user_wants_post_divorce_support and other_parties[0].has_job #for FOC23; never asked for JOD-only
   - Edit:
       - other_party_pa_status
+      - invalidate:
+        - op_public_assistance_list
+        - op_pa_case_numbers_foc_23
       - recompute:
         - interview_order_other_party_income
     button: |
@@ -1214,6 +1243,9 @@ review:
       - op_pa_food_assistance_program
       - follow up:
         - op_pa_other_types
+      - invalidate:
+        - op_public_assistance_list
+        - op_pa_case_numbers_foc_23
       - recompute:
         - interview_order_other_party_income
     button: |
@@ -1222,16 +1254,23 @@ review:
     show if: (there_are_marital_children or user_wants_post_divorce_support) and other_party_pa_status in ["gets_assistance", "applied"]
   - Edit:
       - op_pa_mdhhs_case_number
+      - recompute:
+        - op_pa_case_numbers_foc_23
     button: |
       ##### ${other_parties[0]}'s MDHHS case number: ${op_pa_mdhhs_case_number}
     show if: other_party_pa_status == "gets_assistance" and op_pa_food_assistance_program or op_pa_medicaid or op_pa_family_independence_program or op_pa_women_infants_children or op_pa_state_disability or op_pa_state_emergency_relief or op_pa_refugee_assistance
   - Edit: 
       - op_pa_ssa_number
+      - recompute:
+        - op_pa_case_numbers_foc_23
     button: |
       ##### ${other_parties[0]}'s SSI case number: ${op_pa_ssa_number}
     show if: other_party_pa_status == "gets_assistance" and op_pa_supplemental_security and not (op_pa_food_assistance_program or op_pa_medicaid or op_pa_family_independence_program or op_pa_women_infants_children or op_pa_state_disability or op_pa_state_emergency_relief or op_pa_refugee_assistance or op_pa_other)
   - Edit:
       - op_pa_other_types
+      - recompute:
+        - op_public_assistance_list
+        - op_pa_case_numbers_foc_23
     button: |
       ##### ${other_parties[0]}'s other assistance case number: ${op_pa_other_case_numbers}
     show if: other_party_pa_status == "gets_assistance" and op_pa_other
@@ -1365,6 +1404,8 @@ review:
       - invalidate:
         - marriage.personal_property_division_agreement
         - marriage.personal_property_division_actual
+        - send_plaintiff_personal_property_to_addendum
+        - send_defendant_personal_property_to_addendum
       - marriage.personal_property_info
       - marriage.personal_property_acquired
       - follow up:
@@ -1390,6 +1431,9 @@ review:
       - marriage.mobile_home.revisit
   - Edit:
       - marriage.accounts.revisit
+      - invalidate:
+        - send_plaintiff_personal_property_to_addendum
+        - send_defendant_personal_property_to_addendum
     button: |
       ##### ${marriage.accounts.question_text}
 
@@ -1407,6 +1451,9 @@ review:
     show if: marriage.personal_property_need_items
   - Edit:
       - marriage.other_pp.revisit
+      - invalidate:
+        - send_plaintiff_personal_property_to_addendum
+        - send_defendant_personal_property_to_addendum
     button: |
       ##### ${marriage.other_pp.question_text}
 
@@ -1423,6 +1470,9 @@ review:
     show if: marriage.personal_property_need_items
   - Edit:
       - marriage.mobile_home.revisit
+      - invalidate:
+        - send_plaintiff_personal_property_to_addendum
+        - send_defendant_personal_property_to_addendum
     button: |
       ##### ${marriage.mobile_home.question_text}
 
@@ -1495,6 +1545,8 @@ review:
         - marriage.debts.agree_responsibility_debts_own_name
         - marriage.debts.any_in_both_names
         - marriage.debts.agree_responsibility_debts_both_names
+        - send_plaintiff_debts_to_addendum
+        - send_defendant_debts_to_addendum
       - marriage.debts.info
       - recompute:
         - marriage.debts.need_items
@@ -1523,6 +1575,9 @@ review:
       % endif
   - Edit:
       - marriage.debts.revisit
+      - invalidate:
+        - send_plaintiff_debts_to_addendum
+        - send_defendant_debts_to_addendum
     button: |
       ##### ${marriage.debts.question_text}
 

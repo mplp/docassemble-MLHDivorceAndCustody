@@ -735,6 +735,10 @@ fields:
 validation code: |
   if not children.there_are_any: 
     children.clear()
+    other_parties[0].insurance.clear()
+    invalidate("other_parties[0].insurance.there_are_any")
+    users[0].insurance.clear()
+    invalidate("users[0].insurance.there_are_any")
 ---
 id: any more children
 question: |
@@ -2891,8 +2895,16 @@ code: |
   users[0].insurance[i].complete = True
 ---
 code: |
+  users[0].insurance.reset_gathered(mark_incomplete=True)
+  users[0].insurance.gathered_deep_reset = True
+---
+code: |
   other_parties[0].insurance[i].company_name
   other_parties[0].insurance[i].complete = True
+---
+code: |
+  other_parties[0].insurance.reset_gathered(mark_incomplete=True)
+  other_parties[0].insurance.gathered_deep_reset = True
 ---
 id: user insurance table
 table: users[0].insurance.table
@@ -2951,6 +2963,9 @@ fields:
     datatype: yesnoradio
   - note: |
       **Do not** include coverage provided by ${ OP_label } or ${ OP_label }’s employer here. We'll ask about that next.
+validation code: |
+  if not users[0].insurance.there_are_any:
+    users[0].insurance.clear()
 ---
 # LHI "Health Coverage" (with kids version) (but we're using a different structure)
 id: OP's health_coverage (with children)
@@ -2963,6 +2978,9 @@ fields:
       Does ${ OP_label } hold their own health care coverage, either through an employer, Medicaid or Medicare, or privately?
     field: other_parties[0].insurance.there_are_any
     datatype: yesnoradio
+validation code: |
+  if not other_parties[0].insurance.there_are_any:
+    other_parties[0].insurance.clear()
 ---
 id: user has any more health insurance
 question: |
@@ -3350,17 +3368,6 @@ code: |
     public_assistance_list.append("SSI")
   if pa_other:
     public_assistance_list.append(f"other ({ pa_other_types})")
-depends on:
-  - pa_food_assistance_program
-  - pa_medicaid
-  - pa_family_independence_program
-  - pa_women_infants_children
-  - pa_state_disability
-  - pa_state_emergency_relief
-  - pa_refugee_assistance
-  - pa_supplemental_security
-  - pa_other
-  - pa_other_types
 ---
 id: FOC 23 user list of case numbers
 code: |
@@ -3373,13 +3380,6 @@ code: |
       pa_case_numbers_foc_23.append(pa_other_case_numbers)
   elif pa_supplemental_security:
     pa_case_numbers_foc_23.append(pa_ssa_number)
-depends on:
-  - pa_supplemental_security
-  - pa_other
-  - pa_other_case_numbers
-  - pa_ssa_number
-  - pa_mdhhs_case_number
-  - pa_mdhhs
 ---
 id: FOC 23 OP list of public assistance
 code: |
@@ -3402,17 +3402,6 @@ code: |
     op_public_assistance_list.append("SSI")
   if op_pa_other:
     op_public_assistance_list.append(f"other(${ op_pa_other_types})")
-depends on:
-  - op_pa_food_assistance_program
-  - op_pa_medicaid
-  - op_pa_family_independence_program
-  - op_pa_women_infants_children
-  - op_pa_state_disability
-  - op_pa_state_emergency_relief
-  - op_pa_refugee_assistance
-  - op_pa_supplemental_security
-  - op_pa_other
-  - op_pa_other_types
 ---
 id: FOC 23 OP list of case numbers
 code: |
@@ -3425,19 +3414,6 @@ code: |
       op_pa_case_numbers_foc_23.append(op_pa_other_case_numbers)
   elif op_pa_supplemental_security:
     op_pa_case_numbers_foc_23.append(op_pa_ssa_number)
-depends on:
-  - op_pa_food_assistance_program
-  - op_pa_medicaid
-  - op_pa_family_independence_program
-  - op_pa_women_infants_children
-  - op_pa_state_disability
-  - op_pa_state_emergency_relief
-  - op_pa_refugee_assistance
-  - op_pa_supplemental_security
-  - op_pa_other
-  - op_pa_other_case_numbers
-  - op_pa_ssa_number
-  - op_pa_mdhhs_case_number
 ---
 # LHI: "Plaintiff Employer" or "Defendant Employer"
 id: other party employment

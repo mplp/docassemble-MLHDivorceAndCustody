@@ -66,13 +66,12 @@ code: |
 
   if verified_statement_foc_23_full.enabled:
     verified_statement_foc_23.enabled = True
-    if insurance_in_addendum or len(children.filter(legal_parent="both")) > 5 or len(stepchildren_for_addendum) > 2 or len(users[0].other_identifying_info) > 19 or len(other_parties[0].other_identifying_info) > 19:
+    if (there_are_marital_children and (insurance_in_addendum or len(children.filter(legal_parent="both")) > 5 or len(stepchildren_for_addendum) > 2)) or len(users[0].other_identifying_info) > 19 or len(other_parties[0].other_identifying_info) > 19:
       verified_statement_foc_23_addendum.enabled = True
     else:
       verified_statement_foc_23_addendum.enabled = False
 ---
-# ToDo: need to handle rerunning this in review screen if insurance edited or deleted or children changed (or use reconsider)
-# this one gets triggered by the enabling logic because it's the first possible condition
+# this gets triggered by the enabling logic because it's the first possible condition
 code: |
   insurance_in_addendum = False
   
@@ -3537,7 +3536,6 @@ attachment:
 ### personal property and debts addendum overflow code ###
 ---
 # plaintiff personal property overflow code
-# TODO, will need to reset "line_count" when property variables edited
 code: |
   if marriage.personal_property_acquired and (not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual):
     plaintiff_personal_property_line_count = (
