@@ -37,6 +37,8 @@ code: |
 ---
 # enabling logic for JOD_only addenda overflow fields (personal property and debts, real property legal description, and other provisions)
 code: |
+  judgment_overflow_addendum.enabled = False
+  
   if send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum:
     judgment_overflow_addendum.enabled = True
   
@@ -47,9 +49,6 @@ code: |
   
   elif marriage.other_provisions_any and len(marriage.other_provisions) > 440:
     judgment_overflow_addendum.enabled = True
-
-  else:
-    judgment_overflow_addendum.enabled = False
 ---
 # not in JOD_only bundle
 code: |
@@ -67,13 +66,12 @@ code: |
 
   if verified_statement_foc_23_full.enabled:
     verified_statement_foc_23.enabled = True
-    if insurance_in_addendum or len(children.filter(legal_parent="both")) > 5 or len(stepchildren_for_addendum) > 2 or len(users[0].other_identifying_info) > 19 or len(other_parties[0].other_identifying_info) > 19:
+    if (there_are_marital_children and (insurance_in_addendum or len(children.filter(legal_parent="both")) > 5 or len(stepchildren_for_addendum) > 2)) or len(users[0].other_identifying_info) > 19 or len(other_parties[0].other_identifying_info) > 19:
       verified_statement_foc_23_addendum.enabled = True
     else:
       verified_statement_foc_23_addendum.enabled = False
 ---
-# ToDo: need to handle rerunning this in review screen if insurance edited or deleted or children changed (or use reconsider)
-# this one gets triggered by the enabling logic because it's the first possible condition
+# this gets triggered by the enabling logic because it's the first possible condition
 code: |
   insurance_in_addendum = False
   
@@ -111,10 +109,10 @@ code: |
     protected_pii_mc_97a_attachment.enabled = False
 ---
 code: |
-  foc_100_full.enabled = there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support" or (tool_ID == "divorce_complaint" and returning_to_finalize and marriage.temporary_order and marriage.temporary_order_changed) or (tool_ID == "JOD_only" and marriage.temporary_order and marriage.temporary_order_changed)
+  foc_100_full.enabled = there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support" or (tool_ID == "divorce_complaint" and returning_to_finalize and marriage.temporary_order) or (tool_ID == "JOD_only" and marriage.temporary_order)
   if foc_100_full.enabled:
     foc_100_main.enabled = True
-    foc_100_attachment.enabled = (len(children.filter(legal_parent="both")) > 4) or (len(users[0].insurance) > 5) or (len(other_parties[0].insurance) > 5) or children_now_live_with_which_parent == "both"
+    foc_100_attachment.enabled = there_are_marital_children and ((len(children.filter(legal_parent="both")) > 4) or (len(users[0].insurance) > 5) or (len(other_parties[0].insurance) > 5) or children_now_live_with_which_parent == "both")
 ---
 code: |
   foc_10_full.enabled = there_are_marital_children
@@ -230,7 +228,7 @@ attachment:
           % if pa_status == "gets_assistance":
           ${ comma_and_list(public_assistance_list) } Case number: ${ comma_and_list(pa_case_numbers_foc_23) }
           % elif pa_status == "applied":
-          Applied for ${ public_assistance_list }
+          Applied for ${ comma_and_list(public_assistance_list) }
           % endif
       - users1_other_citizenship: |
           % if users[0].has_foreign_citizenship:
@@ -304,7 +302,7 @@ attachment:
           % if other_party_pa_status == "gets_assistance":
           ${ comma_and_list(op_public_assistance_list) } Case number: ${ comma_and_list(op_pa_case_numbers_foc_23) }
           % elif other_party_pa_status == "applied":
-          Applied for ${ op_public_assistance_list }
+          Applied for ${ comma_and_list(op_public_assistance_list) }
           % endif
       - other_parties1_other_citizenship: |
           % if other_parties[0].has_foreign_citizenship:
@@ -460,19 +458,21 @@ attachment:
           ${ other_parties[0].address.line_two() }
           % endif
           % endif
-      - stepchildren0_name: ${ stepchildren_for_addendum[0].name.full() }
+      - stepchildren0_name: ${ stepchildren_for_addendum[0].name.full() if there_are_marital_children else "" }
       - stepchildren0_sex: |
+          % if there_are_marital_children:
           % if stepchildren_for_addendum[0].gender == "female":
           f
           % elif stepchildren_for_addendum[0].gender == "male":
           m
           % endif
+          % endif
       - stepchildren0_birthdate: |
-          % if stepchildren_for_addendum[0].birthdate != None:
+          % if there_are_marital_children and stepchildren_for_addendum[0].birthdate != None:
           ${ format_date(stepchildren_for_addendum[0].birthdate, format='M/d/yyyy') }
           % endif
       - stepchildren0_age: |
-          % if stepchildren_for_addendum[0].birthdate != None:
+          % if there_are_marital_children and stepchildren_for_addendum[0].birthdate != None:
           % if stepchildren_for_addendum[0].age_in_years() < 1:
           ${ stepchildren_for_addendum[0].age_in_months() } months
           % else:
@@ -480,6 +480,7 @@ attachment:
           % endif
           % endif
       - stepchildren0_address_block: |
+          % if there_are_marital_children:
           % if stepchildren_for_addendum[0].stepchild_lives_with == "user":
           % if confidential_contact_info_yn:
           Confidential
@@ -498,13 +499,17 @@ attachment:
           ${ stepchildren_for_addendum[0].address.line_two() }
           % endif
           % endif
+          % endif
       - stepchildren1_name: |
+          % if there_are_marital_children:
           % if len(stepchildren_for_addendum) > 2:
           See addendum for additional stepchildren.
           % elif len(stepchildren_for_addendum) == 2:
           ${ stepchildren_for_addendum[1].name.full() }
           % endif
+          % endif
       - stepchildren1_sex: |
+          % if there_are_marital_children:
           % if len(stepchildren_for_addendum) == 2:
           % if stepchildren_for_addendum[1].gender == "female":
           f
@@ -512,13 +517,17 @@ attachment:
           m
           % endif
           % endif
+          % endif
       - stepchildren1_birthdate: |
+          % if there_are_marital_children:
           % if len(stepchildren_for_addendum) == 2:
           % if stepchildren_for_addendum[1].birthdate != None:
           ${ format_date(stepchildren_for_addendum[1].birthdate, format='M/d/yyyy') }
           % endif
           % endif
+          % endif
       - stepchildren1_age: |
+          % if there_are_marital_children:
           % if len(stepchildren_for_addendum) == 2:
           % if stepchildren_for_addendum[1].birthdate != None:
           % if stepchildren_for_addendum[1].age_in_years() < 1:
@@ -528,7 +537,9 @@ attachment:
           % endif
           % endif
           % endif
+          % endif
       - stepchildren1_address_block: |
+          % if there_are_marital_children:
           % if len(stepchildren_for_addendum) == 2:
           % if stepchildren_for_addendum[1].stepchild_lives_with == "user":
           % if confidential_contact_info_yn:
@@ -549,8 +560,9 @@ attachment:
           % endif
           % endif
           % endif
+          % endif
       - insurance_child_name0: |
-          % if insurance_in_addendum == True:
+          % if there_are_marital_children and insurance_in_addendum:
           See (49) in addendum for Health Care Coverage information.
           % endif     
       #- insurance_policy_holder0:
@@ -759,12 +771,15 @@ attachments:
   valid formats:
     - pdf
 ---
+# note dual template files -- needed to stop display of insurance information if it was gathered but review screen later changed to no marital children. Fields should be identical on the two templates, except for removal of insurance fields on "no_kids" version
 attachment:
   name: Judgment Information
   variable name: foc_100_main[i]
   skip undefined: True
   editable: False
-  pdf template file: judgment_information_foc_100.pdf
+  pdf template file:
+    code: |
+      "judgment_information_foc_100.pdf" if there_are_marital_children else "judgment_information_foc_100_no_kids.pdf"
   fields:
     - trial_court: ${ the_court.number }
     - trial_court_county: ${ county_choice.upper() }
@@ -1734,11 +1749,11 @@ attachment:
       - personal_property_in_addendum: |
           ${personal_property_in_addendum(marriage)}
       - debts_none: ${not debts_in_addendum(marriage)}
-      - debts_pay_debts_in_own_name: ${marriage.debts.any and marriage.attr("debts.pay_debts_in_own_names")}
+      - debts_pay_debts_in_own_name: ${marriage.debts.any and marriage.debts.pay_debts_in_own_names}
       - debts_in_addendum: ${debts_in_addendum(marriage)}
       - vehicles_none: ${not marriage.vehicles.any}
-      - vehicles_keep_same: ${marriage.vehicles.any and marriage.attr("vehicles.keep_own")}
-      - vehicles_in_addendum: ${marriage.vehicles.any and not marriage.attr("vehicles.keep_own")}
+      - vehicles_keep_same: ${marriage.vehicles.any and marriage.vehicles.keep_own}
+      - vehicles_in_addendum: ${marriage.vehicles.any and not marriage.vehicles.keep_own}
       - real_property_none: ${not bool(marriage.real_property)}
       - real_property_in_addendum: ${bool(marriage.real_property)}
       - pensions_none: ${not marriage.have_pension_retirement}
@@ -3538,7 +3553,6 @@ attachment:
 ### personal property and debts addendum overflow code ###
 ---
 # plaintiff personal property overflow code
-# TODO, will need to reset "line_count" when property variables edited
 code: |
   if marriage.personal_property_acquired and (not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual):
     plaintiff_personal_property_line_count = (
@@ -3601,14 +3615,13 @@ code: |
 code: |
   def debts_in_addendum(marriage: DAObject) -> bool:
     return marriage.debts.any and (
-      not marriage.attr("debts.agree_responsibility_debts_own_name")
-      or marriage.attr("debts.any_in_both_names")
+      marriage.debts.any_in_both_names
+      or not marriage.debts.pay_debts_in_own_names
     )
 ---
 code: |
   def has_vehicle_addendum(marriage: DAObject) -> bool:
-    return (
-      marriage.vehicles.any
-      and not marriage.attr("vehicles.keep_own")
+    return marriage.vehicles.any and (
+      not marriage.vehicles.keep_own
     )
 ---

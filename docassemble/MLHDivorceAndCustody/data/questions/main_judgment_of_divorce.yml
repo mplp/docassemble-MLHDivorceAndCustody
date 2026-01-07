@@ -141,6 +141,9 @@ code: |
     if not marriage.have_experienced_domestic_violence_continue:
       exit_general
 
+  if marriage.temporary_order:
+    marriage.temporary_order_changed
+
   nav.set_section("signpost_user")
 
   users.gather()
@@ -184,30 +187,23 @@ code: |
 
   if there_are_marital_children:
     prior_family_cases.gather()
+    child_support_request_pending
 
   nav.set_section("signpost_income_etc")
-  
-  if not there_are_marital_children:
-    marriage.cobra_coverage
-  
   if there_are_marital_children:
     users[0].insurance.gather()
     other_parties[0].insurance.gather()
     if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
       marriage.cobra_coverage
+    
+  elif not there_are_marital_children:
+    marriage.cobra_coverage
 
-  if there_are_marital_children or user_wants_post_divorce_support:
+  if there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support" or marriage.temporary_order:
     interview_order_user_employment
     interview_order_user_identifying_info
-    users[0].has_alias
     interview_order_other_party_employment
     interview_order_other_party_identifying_info
-    other_parties[0].has_alias
-  elif spousal_support_provisions == "user_agrees_to_pay_spousal_support":
-    if users[0].has_job:
-      users[0].job.employer.name.first
-    if other_parties[0].has_job:
-      other_parties[0].job.employer.name.first
 
   nav.set_section("signpost_property")
 
@@ -224,12 +220,11 @@ code: |
   marriage.address.city
   if not marriage.living_together_yn:
     marriage.living_together_stopped_date
+    if there_are_marital_children:
+      marriage.number_children_in_home_when_separated
 
   if marriage.other_provisions_any:
     marriage.other_provisions
-
-  if marriage.temporary_order:
-    marriage.temporary_order_changed
 
   if not marriage.true_statement:
     exit_general
@@ -238,9 +233,7 @@ code: |
   plaintiffs
   defendants
 
-  nav.set_section("signpost_done")
   MLH_standard_outro_pages  
+  nav.set_section("signpost_done")
   MLH_download
----
-# EKM note: interview_order code blocks moved from here to question_bank.yml
 ---

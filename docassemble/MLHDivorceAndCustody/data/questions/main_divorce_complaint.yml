@@ -117,8 +117,9 @@ code: |
   if need_temporary_order:
     if not temporary_order_continue:
       exit_general
+  
+  returning_to_finalize #TODO can we ask need_temporary_order only if not returning_to_finalize?
 
-  ########### UNDER CONSTRUCTION do qualification part 2 screening here ###########
   nav.set_section("signpost_user")
 
   users.gather()
@@ -154,8 +155,6 @@ code: |
   other_parties[0].no_phone_number
   other_parties[0].email
 
-  ###############################################################
-
   nav.set_section("signpost_support")
   interview_order_spousal_support
 
@@ -165,6 +164,8 @@ code: |
 
   nav.set_section("signpost_prior_cases")
   prior_family_cases.gather()
+  child_support_request_pending
+  has_prior_civil_cases
 
   nav.set_section("signpost_income_etc") 
   if there_are_marital_children:
@@ -176,7 +177,7 @@ code: |
   elif not there_are_marital_children:
     marriage.cobra_coverage
 
-  if there_are_marital_children or user_wants_post_divorce_support:
+  if there_are_marital_children or user_wants_post_divorce_support: #FOC23+FOC100
     interview_order_user_employment
     interview_order_user_income
     interview_order_user_identifying_info
@@ -185,13 +186,13 @@ code: |
     interview_order_other_party_income
     interview_order_other_party_identifying_info
     other_parties[0].has_alias
-  elif spousal_support_provisions == "user_agrees_to_pay_spousal_support":
-    if users[0].has_job:
-      users[0].job.employer.name.first
+  elif spousal_support_provisions == "user_agrees_to_pay_spousal_support" or (returning_to_finalize and marriage.temporary_order): #FOC100
+    interview_order_user_employment
     interview_order_user_income
-    if other_parties[0].has_job:
-      other_parties[0].job.employer.name.first
-  else:
+    interview_order_user_identifying_info
+    interview_order_other_party_employment
+    interview_order_other_party_identifying_info
+  else: 
     interview_order_user_income
 
   nav.set_section("signpost_property")
@@ -209,12 +210,11 @@ code: |
   marriage.address.city
   if not marriage.living_together_yn:
     marriage.living_together_stopped_date
-  
-  venue 
+    if there_are_marital_children:
+      marriage.number_children_in_home_when_separated
 
-  if returning_to_finalize:
-    if marriage.temporary_order:
-      marriage.temporary_order_changed
+  check_for_required_venue
+  venue 
 
   if marriage.other_provisions_any:
     marriage.other_provisions
@@ -222,7 +222,6 @@ code: |
   if not marriage.true_statement:
     exit_general
 
-  nav.set_section("signpost_done")
   MLH_standard_outro_pages
 
   # just making sure these are defined
@@ -230,5 +229,7 @@ code: |
   the_foc 
   docket_number
   stepchildren_for_addendum
-  
+
+  nav.set_section("signpost_done")
   MLH_download
+---
