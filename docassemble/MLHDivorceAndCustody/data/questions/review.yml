@@ -663,8 +663,6 @@ review:
         - children_previous_address.gathered_reset
         - interview_order_children
         - prior_family_cases.gathered_deep_reset
-        - users[0].insurance.gathered_deep_reset
-        - other_parties[0].insurance.gathered_deep_reset
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
       % if children.there_are_any:
@@ -711,8 +709,6 @@ review:
         - children_previous_address.gathered_reset
         - interview_order_children
         - prior_family_cases.gathered_deep_reset
-        - users[0].insurance.gathered_deep_reset
-        - other_parties[0].insurance.gathered_deep_reset
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
       ##### Edit a child's **legal parent** info
@@ -1037,12 +1033,14 @@ review:
 # todo accordion
   - Edit:
       - users[0].insurance.there_are_any
+      - follow up:
+        - users[0].insurance.revisit
       - invalidate:
         - insurance_in_addendum
     button: |
       ##### Your health coverage
         - You **${ word("have") if users[0].insurance.there_are_any else word("don't have")}** your own health care coverage through an employer, Medicaid or Medicare, or privately.
-    show if: len(users[0].insurance.complete_elements()) < 1
+    show if: there_are_marital_children and len(users[0].insurance.complete_elements()) < 1
   - Edit:
       - users[0].insurance.revisit
       - invalidate:
@@ -1066,15 +1064,17 @@ review:
         - Certificate number: ${ policy.certificate_number if policy.certificate_number != "" else word("not answered") }
       
       % endfor
-    show if: users[0].insurance.there_are_any
+    show if: there_are_marital_children and users[0].insurance.there_are_any
   - Edit:
       - other_parties[0].insurance.there_are_any
+      - follow up:
+        - other_parties[0].insurance.revisit
       - invalidate:
         - insurance_in_addendum
     button: |
       ##### ${ capitalize(OP_label) }’s health coverage
         - ${ capitalize(OP_label) } **${ word("has") if other_parties[0].insurance.there_are_any else word("doesn't have")}** their own health care coverage through an employer, Medicaid or Medicare, or privately.
-    show if: len(other_parties[0].insurance.complete_elements()) < 1
+    show if: there_are_marital_children and len(other_parties[0].insurance.complete_elements()) < 1
   - Edit:
       - other_parties[0].insurance.revisit
       - invalidate:
@@ -1098,7 +1098,7 @@ review:
         - Certificate number: ${ policy.certificate_number if policy.certificate_number != "" else word("not answered") }
 
       % endfor
-    show if: other_parties[0].insurance.there_are_any
+    show if: there_are_marital_children and other_parties[0].insurance.there_are_any
   - Edit:
       - users[0].has_job
       - follow up:

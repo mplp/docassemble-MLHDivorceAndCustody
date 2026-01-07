@@ -735,10 +735,6 @@ fields:
 validation code: |
   if not children.there_are_any: 
     children.clear()
-    other_parties[0].insurance.clear()
-    invalidate("other_parties[0].insurance.there_are_any")
-    users[0].insurance.clear()
-    invalidate("users[0].insurance.there_are_any")
 ---
 id: any more children
 question: |
@@ -2882,9 +2878,10 @@ fields:
 reconsider: True
 code: |
   stepchildren_for_addendum = []
-  for child in children:
-    if child.legal_parent != "both":
-      stepchildren_for_addendum.append(child)
+  if there_are_marital_children:
+    for child in children:
+      if child.legal_parent != "both":
+        stepchildren_for_addendum.append(child)
 ---
 # --------------------------------------------------------------------
 ## health insurance collection
@@ -2933,6 +2930,7 @@ delete buttons: True
 confirm: True
 ---
 id: users[0].insurance.revisit
+if: users[0].insurance.there_are_any
 question: |
   Edit your insurance policies
 subquestion: |
@@ -2942,6 +2940,7 @@ subquestion: |
 continue button field: users[0].insurance.revisit
 ---
 id: other_parties[0].insurance.revisit
+if: other_parties[0].insurance.there_are_any
 question: |
   Edit ${ OP_label }'s insurance policies
 subquestion: |

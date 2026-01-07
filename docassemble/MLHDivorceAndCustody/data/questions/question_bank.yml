@@ -102,7 +102,7 @@ content: |
 generic object: DAList
 template: x.question_text_table_template
 content: |
-  % if x.number_gathered() > 1:
+  % if len(x.complete_elements()) > 1:
   ${collapse_template(x.collapsed_table_template)}
   % endif
 ---
