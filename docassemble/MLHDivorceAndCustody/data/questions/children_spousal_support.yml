@@ -2892,16 +2892,8 @@ code: |
   users[0].insurance[i].complete = True
 ---
 code: |
-  users[0].insurance.reset_gathered(mark_incomplete=True)
-  users[0].insurance.gathered_deep_reset = True
----
-code: |
   other_parties[0].insurance[i].company_name
   other_parties[0].insurance[i].complete = True
----
-code: |
-  other_parties[0].insurance.reset_gathered(mark_incomplete=True)
-  other_parties[0].insurance.gathered_deep_reset = True
 ---
 id: user insurance table
 table: users[0].insurance.table
