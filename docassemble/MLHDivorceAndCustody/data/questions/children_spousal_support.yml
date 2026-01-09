@@ -2390,9 +2390,12 @@ code: |
     if there_are_marital_children:
       if prior_family_cases[i].state != "MI":
         prior_family_cases[i].address # trigger this question if user changes answer on marital children from none to some, after case was already gathered
+  
       if prior_family_cases[i].type == "separate_maintenance":
         if prior_family_cases[i].status in ["ended_with_order", "dismissed"]:
           prior_family_cases[i].involved_custody_pt_support
+          if prior_family_cases[i].status == "ended_with_order":
+            prior_family_cases[i].convert_separate_maintenance_notice
         elif prior_family_cases[i].status in ["pending", "stayed"]:
           prior_family_cases[i].separate_maintenance_pending_kickout
   
@@ -2604,12 +2607,33 @@ fields:
     datatype: yesnoradio
     js show if: |
       ${ "true" if prior_family_cases[i].status == "dismissed" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true
-  - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
+  - Date of the custody or parenting time order:: prior_family_cases[i].custody_PT_order_date
     datatype: ThreePartsDate
     max: |
      ${ today() }
     js show if: |
       (${ "true" if prior_family_cases[i].status == "dismissed" else "false" } || (${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true)) && val("prior_family_cases[i].included_custody_PT_order") === true
+  - Is the custody or parenting time order **currently in effect?**: prior_family_cases[i].has_current_custody_PT_order
+    datatype: yesnoradio
+    js show if: |
+      ${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true && val("prior_family_cases[i].included_custody_PT_order") === true
+  - Is there a **child support** order in this case that is **currently in effect?**: prior_family_cases[i].has_child_support_order
+    datatype: yesnoradio
+    js show if: |
+      ${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true
+---
+id: separate maintenance conversion notice
+continue button field: prior_family_cases[i].convert_separate_maintenance_notice
+question: You **might** be able to convert your separate maintenance to a divorce instead of filing a new divorce
+subquestion: |
+  If you have a prior judgment of separate maintenance, some courts allow the parties to sign an order converting the separate maintenance judgment to a judgment of divorce. 
+  
+  Not all courts allow this. Some courts require you to file a separate divorce case instead.
+  
+  To find out if converting your separate maintenance judgment is an option:
+  
+  * call the clerk's office of the court where you had the separate maintenance case, or 
+  * talk to a lawyer. 
 ---
 if: there_are_marital_children and prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].status in ["pending", "stayed"]
 id: separate maintenance pending kickout
