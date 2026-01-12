@@ -2382,7 +2382,7 @@ code: |
     prior_family_cases[i].status
   
     if prior_family_cases[i].state != "MI" and prior_family_cases[i].has_current_custody_PT_order:
-      if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [state_name(users[0].address.state), state_name(other_parties[0].address.state)]) or not MI_has_jurisdiction_all_kids:
+      if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [str(state_name(users[0].address.state)), str(state_name(other_parties[0].address.state))]) or not MI_has_jurisdiction_all_kids:
         prior_family_cases[i].custody_order_in_another_state_warning 
   
   elif tool_ID != "JOD_only":
