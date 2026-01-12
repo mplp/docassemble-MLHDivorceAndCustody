@@ -2382,14 +2382,14 @@ code: |
     prior_family_cases[i].status
   
     if prior_family_cases[i].state != "MI" and prior_family_cases[i].has_current_custody_PT_order:
-      if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids:
+      if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [state_name(users[0].address.state), state_name(other_parties[0].address.state)]) or not MI_has_jurisdiction_all_kids:
         prior_family_cases[i].custody_order_in_another_state_warning 
   
   elif tool_ID != "JOD_only":
     prior_family_cases[i].status
     if there_are_marital_children:
       if prior_family_cases[i].state != "MI":
-        prior_family_cases[i].address # trigger this question if user changes answer on marital children from none to some, after case was already gathered
+        prior_family_cases[i].address # trigger question if user changes answer on marital children from none to some, after case already gathered
   
       if prior_family_cases[i].type == "separate_maintenance":
         if prior_family_cases[i].status in ["ended_with_order", "dismissed"]:
@@ -2404,17 +2404,17 @@ code: |
   
       if prior_family_cases[i].state != "MI":
         if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and (prior_family_cases[i].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order)):
-          if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids:
+          if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [str(state_name(users[0].address.state)), str(state_name(other_parties[0].address.state))]) or not MI_has_jurisdiction_all_kids:
             prior_family_cases[i].custody_order_in_another_state_warning 
 
   prior_family_cases[i].complete = True
 ---
 id: custody_order_in_another_state_warning
-if: there_are_marital_children and prior_family_cases[i].state != "MI" and ((tool_ID == "divorce_complaint" and ((prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and (prior_family_cases[i].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order))) and ((MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids)) or (tool_ID == "JOD_only" and prior_family_cases[i].has_current_custody_PT_order)) and ((MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids)
+if: there_are_marital_children and prior_family_cases[i].state != "MI" and ((tool_ID == "divorce_complaint" and ((prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and (prior_family_cases[i].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order))) and ((MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [str(state_name(users[0].address.state)), str(state_name(other_parties[0].address.state))]) or not MI_has_jurisdiction_all_kids)) or (tool_ID == "JOD_only" and prior_family_cases[i].has_current_custody_PT_order)) and ((MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [str(state_name(users[0].address.state)), str(state_name(other_parties[0].address.state))]) or not MI_has_jurisdiction_all_kids)
 continue button field: prior_family_cases[i].custody_order_in_another_state_warning
 question: Warning! Custody order in another state
 subquestion: |
-  % if MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]:
+  % if MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [str(state_name(users[0].address.state)), str(state_name(other_parties[0].address.state))]:
   ${ prior_custody_warning }
   % elif not MI_has_jurisdiction_all_kids:
   ${ prior_custody_warning_home_state }
