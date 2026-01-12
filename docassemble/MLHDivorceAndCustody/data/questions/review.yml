@@ -971,6 +971,7 @@ review:
         case.type_description
         % endif
         - Case status: ${word("ended with final order") if case.status == "ended_with_order" else word("ongoing") if case.status == "pending" else case.status }
+        % if there_are_marital_children:
         % if case.type == "separate_maintenance":
         - Involved custody, parenting time, or child support? **${word(yesno(case.involved_custody_pt_support))}**
         % endif
@@ -978,8 +979,14 @@ review:
         - Included custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
         % if case.included_custody_PT_order:
         - Date of custody/PT order: ${case.custody_PT_order_date}
+        % if case.type == "separate_maintenance" and case.status == "ended_with_order":
+        - Custody/parenting time order currently in effect? **${word(yesno(case.has_current_custody_PT_order))}**
         % endif
         % endif
+        % if case.type == "separate_maintenance" and case.status == "ended_with_order":
+        - Child support order currently in effect? **${word(yesno(case.has_child_support_order))}**
+        % endif
+        % endif    
         % if case.type not in ["divorce", "separate_maintenance"]:
         % if case.status == "ended_with_order":
         - Date of final judgment or order: ${case.final_order_date}
@@ -996,6 +1003,7 @@ review:
         % elif case.status == "dismissed":
         - Custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
         - Date of custody/PT order: ${case.custody_PT_order_date}
+        % endif
         % endif
         % endif
       
