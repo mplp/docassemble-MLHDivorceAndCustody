@@ -9,7 +9,7 @@ objects:
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[confidential_case_inventory_mc21_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, except without the instructions, testimony, flowchart]
 ---
 # ====================================================================
@@ -57,6 +57,19 @@ code: |
     confidential_case_inventory_mc21_1.enabled = True
     confidential_case_inventory_mc21_2.enabled = len(prior_family_cases) > 4
     confidential_case_inventory_mc21_3.enabled = len(prior_family_cases) > 8
+---
+# not in JOD_only bundle
+code: |
+  if tool_ID == "divorce_complaint":
+    UCCJEA_affidavit_mc416_full.enabled = there_are_marital_children
+  if tool_ID == "custody_complaint":
+    UCCJEA_affidavit_mc416_full.enabled = True
+
+  if UCCJEA_affidavit_mc416_full.enabled:
+    UCCJEA_affidavit_mc416.enabled = True
+    # UCCJEA_affidavit_mc416_addendum.enabled = 
+
+# for divorce_answer and custody_answer, only enabled if filing counterclaim
 ---
 # not in JOD_only bundle
 code: |
@@ -565,6 +578,37 @@ attachment:
           ${ '' }
           % endif
       - pursuant_to: ${ MLH_esign_tag if MLH_esign else "" }
+---
+# --------------------------------------------------------------------
+## UCCJEA, MC 416
+# --------------------------------------------------------------------
+---
+objects:
+  - UCCJEA_affidavit_mc416_full: ALDocumentBundle.using(elements=[UCCJEA_affidavit_mc416, UCCJEA_affidavit_mc416_addendum], filename="UCCJEA Affidavit - MC 416", title="UCCJEA Affidavit - MC 416")
+---
+objects:
+  - UCCJEA_affidavit_mc416: ALDocument.using(title="UCCJEA Affidavit - MC 416", filename="UCCJEA Affidavit - MC 416")
+  - UCCJEA_affidavit_mc416_addendum: ALDocument.using(title="UCCJEA Affidavit - MC 416 - Addendum", filename="UCCJEA Affidavit - MC 416 - Addendum")
+---
+attachment:
+  - name: UCCJEA Affidavit - MC 416
+    filename: UCCJEA Affidavit - MC 416
+    variable name: UCCJEA_affidavit_mc416[i]
+    pdf template file: UCCJEA_affidavit_mc416
+    skip undefined: True
+    editable: False
+    fields:
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_address_county: ${the_court.address.county.upper()}
+      - docket_number: ${docket_number}
+      - docket_number__1: ${docket_number}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${ the_court.phone }
+      #- judge_name: 	
+      - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
+      - defendants0_name_full: ${defendants[0].name_full()}
+
+
 ---
 # --------------------------------------------------------------------
 ## Verified Statement, FOC 23
