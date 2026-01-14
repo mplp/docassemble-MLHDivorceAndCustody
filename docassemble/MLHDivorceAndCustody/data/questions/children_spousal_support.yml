@@ -2437,7 +2437,7 @@ content: |
   You can still use this tool to prepare your divorce forms, but your Judgment of Divorce will not include custody and parenting time arrangements. It will be up to the court to decide whether it has jurisdiction to include custody and parenting time orders in your divorce judgment. ${MLH_GUIDE_FULL}
 ---
 # LHI "Prior Family Cases DLG"
-# JOD_only version should only be asked if there are marital children
+# JOD_only version: only ask if there are marital children
 id: prior family case or order collection screen JOD_only IFF with kids
 if: tool_ID == "JOD_only" and there_are_marital_children
 question: ${ capitalize(ordinal(i)) } prior custody or support case
@@ -2594,6 +2594,8 @@ fields:
      ${ today() }
     js show if: |
       val("prior_family_cases[i].included_custody_PT_order") === true
+validation code: |
+  prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
 ---
 id: prior family separate maintenance case additional info
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].status in ["ended_with_order", "dismissed"]
@@ -2625,6 +2627,8 @@ fields:
     datatype: yesnoradio
     js show if: |
       ${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true
+validation code: |
+  prior_family_cases[i].add_to_MC416_4 = True if prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order else False
 ---
 id: separate maintenance conversion notice
 continue button field: prior_family_cases[i].convert_separate_maintenance_notice
@@ -2672,6 +2676,11 @@ fields:
     datatype: yesnoradio
     show if: 
       code: tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] 
+validation code: |
+  if prior_family_cases[i].type in ["paternity", "custody", "guardianship"]: 
+    prior_family_cases[i].add_to_MC416_4 = True
+  else:
+    prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
 ---
 # LHI "Prior Family Cases DLG" (start at row 174)
 id: other prior family case or order additional info (stayed, pending)
@@ -2696,6 +2705,8 @@ fields:
     datatype: yesnoradio
     show if: 
       code: tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] 
+validation code: |
+  prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
 ---
 # LHI "Prior Family Cases DLG" (start at row 151)
 id: other prior family case or order additional info (dismissed)
@@ -2712,6 +2723,8 @@ fields:
      ${ today() }
     js show if: |
       val("prior_family_cases[i].included_custody_PT_order") === true
+validation code: |
+  prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
 ---
 # LHI "Prior Family Cases DLG" (start at row 108)
 # not sure how much of this logic makes sense to replicate, but trying to at least record it for now
