@@ -9,7 +9,7 @@ objects:
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, except without the instructions, testimony, flowchart]
 ---
 # ====================================================================
@@ -61,13 +61,9 @@ code: |
 # not in JOD_only bundle
 code: |
   if tool_ID == "divorce_complaint":
-    UCCJEA_affidavit_mc416_full.enabled = there_are_marital_children
+    UCCJEA_affidavit_mc416.enabled = there_are_marital_children
   if tool_ID == "custody_complaint":
-    UCCJEA_affidavit_mc416_full.enabled = True
-
-  if UCCJEA_affidavit_mc416_full.enabled:
     UCCJEA_affidavit_mc416.enabled = True
-    # UCCJEA_affidavit_mc416_addendum.enabled = 
 
 # for divorce_answer and custody_answer, only enabled if filing counterclaim
 ---
@@ -584,17 +580,13 @@ attachment:
 # --------------------------------------------------------------------
 ---
 objects:
-  - UCCJEA_affidavit_mc416_full: ALDocumentBundle.using(elements=[UCCJEA_affidavit_mc416, UCCJEA_affidavit_mc416_addendum], filename="UCCJEA Affidavit - MC 416", title="UCCJEA Affidavit - MC 416")
----
-objects:
   - UCCJEA_affidavit_mc416: ALDocument.using(title="UCCJEA Affidavit - MC 416", filename="UCCJEA Affidavit - MC 416")
-  - UCCJEA_affidavit_mc416_addendum: ALDocument.using(title="UCCJEA Affidavit - MC 416 - Addendum", filename="UCCJEA Affidavit - MC 416 - Addendum")
 ---
 attachment:
   - name: UCCJEA Affidavit - MC 416
     filename: UCCJEA Affidavit - MC 416
     variable name: UCCJEA_affidavit_mc416[i]
-    pdf template file: UCCJEA_affidavit_mc416
+    pdf template file: UCCJEA_affidavit_mc416.pdf
     skip undefined: True
     editable: False
     fields:
@@ -604,10 +596,67 @@ attachment:
       - docket_number__1: ${docket_number}
       - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
       - trial_court_phone_number: ${ the_court.phone }
-      #- judge_name: 	
       - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
       - defendants0_name_full: ${defendants[0].name_full()}
-
+      - marital_children_names_current_addresses: |
+          % if children_now_live_with_which_parent == "users[0]":
+          ${ comma_and_list(children.filter(legal_parent='both')) } ${ children.filter(legal_parent="both").does_verb('live') } at ${ word("Confidential Address") if confidential_contact_info_yn else users[0].address.on_one_line() }.
+          % elif children_now_live_with_which_parent == "other_parties[0]":
+          ${ comma_and_list(children.filter(legal_parent='both')) } ${ children.filter(legal_parent="both").does_verb('live') } at ${ other_parties[0].address.on_one_line() }.
+          % elif children_now_live_with_which_parent == "both":
+          ${ comma_and_list(children.filter(legal_parent='both')) } ${ children.filter(legal_parent="both").does_verb('live') } at ${ word("Confidential Address") if confidential_contact_info_yn else users[0].address.on_one_line() } and ${ other_parties[0].address.on_one_line() }.
+          % elif children_now_live_with_which_parent == "depends_on_child":
+          ${ comma_and_list(children.filter(legal_parent='both').filter(lives_with="users[0]")) } live(s) at ${ word("Confidential Address") if confidential_contact_info_yn else users[0].address.on_one_line() }. ${ comma_and_list(children.filter(legal_parent='both').filter(lives_with="other_parties[0]")) } live(s) at ${ other_parties[0].address.on_one_line() }
+          % endif
+      - marital_children_past_addresses: |
+          % if children_previous_address.there_are_any:
+          % for address in children_previous_address:
+          ${address.on_one_line()} -- from ${address.start_date} to ${address.end_date}; 
+          % endfor
+          % else:
+          N/A
+          % endif
+      - users0_name_address_block: |
+          % if children_lived_with_which_parent_past in ["both", "users[0]"]:
+          ${users[0].name_full()}
+          % if confidential_contact_info_yn:
+          Confidential 
+          % else:
+          ${ users[0].address.line_one() }
+          ${ users[0].address.line_two() }
+          % endif
+          % endif
+      - other_parties0_name_address_block: |
+          % if children_lived_with_which_parent_past in ["both", "other_parties[0]"]:
+          ${other_parties[0].name_full()}
+          ${ other_parties[0].address.line_one() }
+          ${ other_parties[0].address.line_two() }
+          % endif
+      - court_cases_concerning_custody_parenting_time:
+      - pending_cases_affecting_custody:
+      - pending_proceeding_continuing:
+      - pending_proceeding_stayed:
+      - childrens_home_state: |
+          % if MI_home_state_all_kids:
+          Michigan
+          % elif len(children.filter(legal_parent='both')) == 1:
+          ${ word("None. Michigan has jurisdiction because the child lived 6 months in MI within the last 6 months. MCL 722.1201(1)(b)") if children[0].home_state == "none" and children[0].MI_jurisdiction == True else children[0].home_state }
+          % elif len(children.filter(legal_parent='both')) > 1:
+          See addendum.
+          % endif
+      - risk_if_disclose_identifying_information: ${ confidential_contact_info_yn }
+      - users0_name_full: ${users[0].name_full()}
+      - users0_address_block: |
+          % if confidential_contact_info_yn:
+          Confidential- Mailing: 
+          % endif
+          ${ users[0].address.line_one() }
+          ${ users[0].address.line_two() }      
+      # Unused fields (in addition to most of the the notary part)
+      #- judge_name: 	
+      #- need_temporary_order_protect_kids:
+      #- need_temporary_order_protect_kids_explanation:
+      #- nonparties_with_custody_PT_claims:
 
 ---
 # --------------------------------------------------------------------

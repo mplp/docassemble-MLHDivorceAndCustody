@@ -1470,8 +1470,8 @@ code: |
   for child in children:
       if child.legal_parent == "both":
         if child.current_residence_is_home_state:
-          child.home_state = child.currently_resides_in_locality
-          if child.home_state == "MI":
+          child.home_state = child.currently_resides_in_locality_display_name
+          if child.home_state == "Michigan":
             child.MI_jurisdiction = True
           else: 
             child.MI_jurisdiction = False
@@ -1487,6 +1487,12 @@ code: |
       if child.legal_parent == "both":
         if child.MI_jurisdiction == False:
           MI_has_jurisdiction_all_kids = False
+
+  MI_home_state_all_kids = True
+  for child in children:
+      if child.legal_parent == "both":
+        if child.home_state != "Michigan":
+          MI_home_state_all_kids = False
   
   set_children_home_state_info = True
 ---
@@ -1522,17 +1528,15 @@ fields:
     show if: 
       variable: children[i].currently_resides_in_type
       is: other_US_state
----
-code: |
-  if children[i].currently_resides_in_type in ["Michigan", "other_US_state"]:
+validation code: |
+  if children[i].currently_resides_in_type == "Michigan":
+    children[i].currently_resides_in_locality_display_name = "Michigan"
+  elif children[i].currently_resides_in_type == "other_US_state":
     children[i].currently_resides_in_locality_display_name = state_name(children[i].currently_resides_in_locality)
   elif children[i].currently_resides_in_type == "foreign_country":
     children[i].currently_resides_in_locality_display_name = country_name(children[i].currently_resides_in_locality)
   else:
     children[i].currently_resides_in_locality_display_name = children[i].currently_resides_in_locality
-depends on:
-  - children[i].currently_resides_in_type
-  - children[i].currently_resides_in_locality
 ---
 id: home state inquiry -- length of current residence
 question: ${ children[i] }'s legal "home state", part 2
