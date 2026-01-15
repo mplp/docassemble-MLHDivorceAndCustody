@@ -2572,6 +2572,9 @@ fields:
       - "It has ended but was dismissed by the court": dismissed
     js show if: |
       val("prior_family_cases[i].type") === "divorce"
+validation code: |
+  if prior_family_cases[i].type == "divorce":
+    prior_family_cases[i].resolved = True
 ---
 # LHI "Prior Family Cases DLG" (start at row 108)
 id: prior family divorce case or order additional info
