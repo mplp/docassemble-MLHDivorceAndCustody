@@ -634,6 +634,8 @@ review:
         - children.revisit
       - invalidate:
         - set_marital_children_or_not
+        - children_line_1
+        - children_line_2
         - set_child_home_choices
         - guidepost_marital_children
         - kids_had_other_custodian
@@ -642,12 +644,18 @@ review:
         - temporary_order_kids_exit
         - interview_order_home_state
         - set_children_home_state_info
+        - jurisdiction_for_custody
+        - other_court_controls_child_support
         - children_live_with_parent
         - children_now_live_with_which_parent
         - children_lived_with_which_parent_past
         - interview_order_stepchild_address
         - tax_choices
         - income_tax_method
+        - income_tax_children_plaintiff_line_1
+        - income_tax_children_plaintiff_line_2 
+        - income_tax_children_defendant_line_1
+        - income_tax_children_defendant_line_2
         - insurance_in_addendum
         - interview_order_pregnancy
         - interview_order_user_employment
@@ -680,6 +688,8 @@ review:
       - child_legal_parent_review_screen
       - invalidate:
         - set_marital_children_or_not
+        - children_line_1
+        - children_line_2
         - set_child_home_choices
         - guidepost_marital_children
         - kids_had_other_custodian
@@ -688,12 +698,18 @@ review:
         - temporary_order_kids_exit
         - interview_order_home_state
         - set_children_home_state_info
+        - jurisdiction_for_custody
+        - other_court_controls_child_support
         - children_live_with_parent
         - children_now_live_with_which_parent
         - children_lived_with_which_parent_past
         - interview_order_stepchild_address
         - tax_choices
         - income_tax_method
+        - income_tax_children_plaintiff_line_1
+        - income_tax_children_plaintiff_line_2 
+        - income_tax_children_defendant_line_1
+        - income_tax_children_defendant_line_2
         - insurance_in_addendum
         - interview_order_pregnancy
         - interview_order_user_employment
@@ -722,6 +738,8 @@ review:
         - set_children_home_state_info
       - recompute: 
         - interview_order_home_state
+      - invalidate:
+        - jurisdiction_for_custody
     button: |-
       ##### Marital children's legal "home state"
       % for child in children.filter(legal_parent="both"):
@@ -857,6 +875,11 @@ review:
         - tax_deductions_who_first
       - recompute:
         - interview_order_income_tax
+      - invalidate:
+        - income_tax_children_plaintiff_line_1
+        - income_tax_children_plaintiff_line_2 
+        - income_tax_children_defendant_line_1
+        - income_tax_children_defendant_line_2
       # Note validation logic on income_tax_method
     button: |
       ##### Income tax deductions and credits for ${ comma_and_list(children.filter(legal_parent='both').familiar()) } 
@@ -914,6 +937,7 @@ review:
       - prior_family_cases.there_are_any
       - invalidate:
         - there_is_venue_controlling_separate_maintenance_case
+        - other_court_controls_child_support
         - venue
         - check_for_required_venue
         - court_index
@@ -931,6 +955,7 @@ review:
       - prior_family_cases.revisit
       - invalidate:
         - there_is_venue_controlling_separate_maintenance_case
+        - other_court_controls_child_support
         - venue
         - check_for_required_venue
         - court_index
@@ -1011,6 +1036,8 @@ review:
       % endif
   - Edit:
       - child_support_request_pending
+      - invalidate:
+        - other_court_controls_child_support
     button: |
       ##### Active out-of-state child support requests?
         - ${word(yesno(child_support_request_pending))}

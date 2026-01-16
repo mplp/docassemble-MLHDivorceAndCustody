@@ -17,7 +17,11 @@ objects:
 # ====================================================================
 ---
 ### List of enabling logic that is TBD
-
+---
+# enabling logic for judgment with or without kids
+code: |
+  judgment_ccmlh413.enabled = there_are_marital_children
+  judgment_ccmlh412.enabled = not there_are_marital_children
 ---
 # enabling logic for judgment addenda bundle 
 code: |
@@ -32,10 +36,13 @@ code: |
   judgment_addendum_real_property_5_to_6.enabled = bool(marriage.real_property) and len(marriage.real_property) > 4
   judgment_addendum_real_property_7_to_8.enabled = bool(marriage.real_property) and len(marriage.real_property) > 6
   judgment_addendum_real_property_9_to_10.enabled = bool(marriage.real_property) and len(marriage.real_property) > 8
+
+  judgment_addendum_income_tax.enabled = there_are_marital_children
   
   judgment_addendum_pensions.enabled = (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own)
 ---
 # enabling logic for JOD_only addenda overflow fields (personal property and debts, real property legal description, and other provisions)
+# add parenting time to regular addenda overflow? Waiting on Amy's opinion
 code: |
   judgment_overflow_addendum.enabled = False
   
@@ -676,7 +683,7 @@ attachment:
           % if MI_home_state_all_kids:
           Michigan
           % elif len(children.filter(legal_parent='both')) == 1:
-          ${ word("None. Michigan has jurisdiction because the child lived 6 months in MI within the last 6 months. MCL 722.1201(1)(b)") if children[0].home_state == "none" and children[0].MI_jurisdiction == True else children[0].home_state }
+          ${ word("None. Michigan has jurisdiction because the child lived 6 months in MI within the last 6 months. MCL 722.1201(1)(b)") if children.filter(legal_parent='both')[0].home_state == "none" and children.filter(legal_parent='both')[0].MI_jurisdiction == True else children.filter(legal_parent='both')[0].home_state }
           % elif len(children.filter(legal_parent='both')) > 1:
           See addendum. 
           % endif
@@ -2091,13 +2098,13 @@ attachment:
         % endif
         ${ phone_number_formatted(defendants[0].job.employer.phone) if defendants[0].job.employer.phone != "" else "" }
         % endif
-    - children1: ${ children[0] }
-    - children2: ${ children[1] }
-    - children3: ${ children[2] }
-    - children4: ${ children[3] }
-    - children5: ${ children[4] }
+    - children1: ${ children.filter(legal_parent='both')[0] }
+    - children2: ${ children.filter(legal_parent='both')[1] }
+    - children3: ${ children.filter(legal_parent='both')[2] }
+    - children4: ${ children.filter(legal_parent='both')[3] }
+    - children5: ${ children.filter(legal_parent='both')[4] }
     - more_children: |
-        % if len(children.complete_elements()) > 5:
+        % if len(children.filter(legal_parent='both')) > 5:
         See "Children's Names" in Addendum.
         % else:
         ${ '' }
@@ -2259,12 +2266,13 @@ attachment:
           % endif
 ---
 # --------------------------------------------------------------------
-## Judgment CC-MLH-412 and Attachments
+## Judgment CC-MLH-412/413 and Attachments
 # --------------------------------------------------------------------
 ---
 objects:
   - judgment_and_addenda_bundle: ALDocumentBundle.using(elements=[
       judgment_ccmlh412,
+      judgment_ccmlh413,
       judgment_addendum_personal_property_and_debt,
       judgment_addendum_vehicles_1_to_4,
       judgment_addendum_vehicles_5_to_8,
@@ -2274,12 +2282,14 @@ objects:
       judgment_addendum_real_property_5_to_6,
       judgment_addendum_real_property_7_to_8,
       judgment_addendum_real_property_9_to_10,
+      judgment_addendum_income_tax,
       judgment_addendum_pensions,
       judgment_overflow_addendum
       ], filename="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", title="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", enabled=True)
 ---
 objects:
-  - judgment_ccmlh412: ALDocument.using(title="Judgment", filename="Judgment.pdf", enabled=True)
+  - judgment_ccmlh412: ALDocument.using(title="Judgment", filename="Judgment.pdf")
+  - judgment_ccmlh413: ALDocument.using(title="Judgment", filename="Judgment.pdf")
   - judgment_addendum_personal_property_and_debt: ALDocument.using(title="Personal property and debt addendum", filename="Personal property and debt addendum.pdf")
   - judgment_addendum_vehicles_1_to_4: ALDocument.using(title="Vehicles addendum 1", filename="Vehicles addendum.pdf")
   - judgment_addendum_vehicles_5_to_8: ALDocument.using(title="Vehicles addendum 2", filename="Vehicles addendum.pdf")
@@ -2289,6 +2299,7 @@ objects:
   - judgment_addendum_real_property_5_to_6: ALDocument.using(title="Real property addendum 3", filename="Real property addendum.pdf")
   - judgment_addendum_real_property_7_to_8: ALDocument.using(title="Real property addendum 4", filename="Real property addendum.pdf")
   - judgment_addendum_real_property_9_to_10: ALDocument.using(title="Real property addendum 5", filename="Real property addendum.pdf")
+  - judgment_addendum_income_tax: ALDocument.using(title="Income tax addendum 3.5", filename="Income tax addendum.pdf")
   - judgment_addendum_pensions: ALDocument.using(title="Pensions addendum", filename="Pensions addendum.pdf")
   - judgment_overflow_addendum: ALDocument.using(title="Judgment overflow addendum", filename="Judgment overflow addendum.pdf")
 ---
@@ -2298,6 +2309,8 @@ attachment:
     variable name: judgment_ccmlh412[i]
     pdf template file: judgment_ccmlh412_no_kids.pdf
     editable: False
+    ### note difference from most forms:
+    skip undefined: False
     fields:
       - trial_court_circuit: |
           % if the_court.type == "circuit":
@@ -2355,6 +2368,245 @@ attachment:
           % else:
           ${""}
           % endif
+---
+attachment:
+  - name: Judgment ccmlh413 (with kids)
+    filename: Judgment ccmlh413 (with kids)
+    variable name: judgment_ccmlh413[i]
+    pdf template file: judgment_ccmlh413_with_kids.pdf
+    editable: False
+    ### note difference from most forms:
+    skip undefined: False
+    fields:
+      - trial_court_circuit: ${the_court.number}
+      - docket_number: ${docket_number}
+      - trial_court_county: ${the_court.address.county.upper()}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${the_court.phone}
+      - plaintiffs_block: |
+          ${plaintiffs}
+          ${plaintiffs[0].address.on_one_line()}
+          ${word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number)}
+      - defendants_block: |
+          ${defendants}
+          ${defendants[0].address.on_one_line()}
+          ${word("Does not have phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number)}
+      - plaintiffs1_name: ${plaintiffs}
+      - defendants1_name: ${defendants}
+      - children_line_1: ${children_line_1}
+      - children_line_2: ${children_line_2}
+      - awards_legal_custody: ${jurisdiction_for_custody}
+      - legal_custody_plaintiff: |
+          % if jurisdiction_for_custody and legal_custody_who == "user" and user_ask_role == "plaintiff":
+          True
+          % elif jurisdiction_for_custody and legal_custody_who == "other_party" and user_ask_role == "defendant":
+          True
+          % else:
+          False
+          % endif
+      - legal_custody_defendant: |
+          % if jurisdiction_for_custody and legal_custody_who == "user" and user_ask_role == "defendant":
+          True
+          % elif jurisdiction_for_custody and legal_custody_who == "other_party" and user_ask_role == "plaintiff":
+          True
+          % else:
+          False
+          % endif
+      - legal_custody_joint: |
+          % if jurisdiction_for_custody and legal_custody_who == "both":
+          True
+          % else:
+          False
+          % endif
+      - awards_physical_custody: ${jurisdiction_for_custody}
+      - physical_custody_plaintiff: |
+          % if jurisdiction_for_custody and physical_custody_who == "user" and user_ask_role == "plaintiff":
+          True
+          % elif jurisdiction_for_custody and physical_custody_who == "other_party" and user_ask_role == "defendant":
+          True
+          % else:
+          False
+          % endif
+      - physical_custody_defendant: |
+          % if jurisdiction_for_custody and physical_custody_who == "user" and user_ask_role == "defendant":
+          True
+          % elif jurisdiction_for_custody and physical_custody_who == "other_party" and user_ask_role == "plaintiff":
+          True
+          % else:
+          False
+          % endif
+      - physical_custody_joint: |
+          % if jurisdiction_for_custody and physical_custody_who == "both":
+          True
+          % else:
+          False
+          % endif
+      - custody_not_determined: ${ not MI_has_jurisdiction_all_kids }
+      - must_notify_address_change: ${jurisdiction_for_custody}
+      - court_must_approve_domicile_change: ${jurisdiction_for_custody}
+      - 100_mile_rule_applies: |
+          % if jurisdiction_for_custody and legal_custody_who == "both" and not already_over_100_miles and not allow_over_100_miles:
+          True
+          % else:
+          False
+          % endif
+      - 100_mile_NA_already_exceeded: |
+          % if jurisdiction_for_custody and legal_custody_who == "both" and already_over_100_miles:
+          True
+          % else:
+          False
+          % endif
+      - 100_mile_NA_sole_custody: |
+          % if jurisdiction_for_custody and legal_custody_who != "both":
+          True
+          % else:
+          False
+          % endif
+      - 100_mile_waived: |
+          % if jurisdiction_for_custody and legal_custody_who == "both" and not already_over_100_miles and allow_over_100_miles:
+          True
+          % else:
+          False
+          % endif
+      - docket_number__1: ${docket_number}
+      - parents_shall_cooperate: ${jurisdiction_for_custody}
+      - parenting_time_established: ${jurisdiction_for_custody}
+      - parenting_time_provisions: |
+          % if jurisdiction_for_custody:
+            % if physical_custody_who != "both":
+              % if PT_who == "user":
+          ${OP_party_label.capitalize()} will not have parenting time.
+              % elif PT_who == "other_party":
+          ${user_party_label.capitalize()} will not have parenting time.
+              % endif
+            % endif
+            % if physical_custody_who == "both" or PT_who == "both":
+              % if PT_type == "reasonable":
+          Parenting time arrangements will be made by mutual agreement of the parties.
+              % elif PT_type in ["specific", "supervised"]:
+                % if specific_PT_how == "custom":
+                  % if len(custom_PT_details) > 440:
+          Both parties will have specific parenting time with the minor ${"child" if len(children.filter(legal_parent="both")) == 1 else "children"} according to the Parenting Time Addendum.
+                  % else:
+          ${custom_PT_details}
+                  % endif
+                % else:
+          Both parties will have specific parenting time with the minor ${"child" if len(children.filter(legal_parent="both")) else "children"} according to the ${the_court.address.county} County Friend of the Court parenting time schedule.
+                % endif
+                % if PT_type == "supervised":
+                  % if physical_custody_who == "user":
+      
+          Parenting time for ${OP_party_label.lower()} will be supervised by ${PT_supervisor if defined("PT_supervisor") and PT_supervisor else "________________________"}.
+                  % elif physical_custody_who == "other_party":
+      
+          Parenting time for ${user_party_label.lower()} will be supervised by ${PT_supervisor if defined("PT_supervisor") and PT_supervisor else "________________________"}.
+                  % endif
+                % endif
+              % endif
+            % endif
+          % endif
+      - child_support_ordered:  |
+          % if jurisdiction_for_custody and not other_court_controls_child_support:
+          True
+          % else:
+          False
+          % endif
+      - no_child_support_ordered:
+      - previous_child_support_ordered_no_jurisdiction:
+      - previous_child_support_ordered_docket_number:
+      - previous_child_support_ordered_court_name:
+      - previous_child_support_ordered_state:
+      - previous_child_support_ordered_payor:
+      - no_jurisdiction_for_child_support_order:
+      - docket_number__2: ${docket_number}
+      - settlement_spousal_support_reserved: |
+          % if spousal_support_provisions == "agree_no_current_spousal_support_but_may_change":
+          True
+          % else:
+          False
+          % endif
+      - settlement_spousal_support_none: |
+          % if spousal_support_provisions == "agree_never_spousal_support":
+          True
+          % else:
+          False
+          % endif
+      - settlement_spousal_support_awarded: |
+          % if spousal_support_provisions in ["OP_agrees_to_pay_spousal_support", "user_agrees_to_pay_spousal_support"]:
+          True
+          % else:
+          False
+          % endif
+      - settlement_spousal_support_can_change: |
+          % if spousal_support_provisions in ["OP_agrees_to_pay_spousal_support", "user_agrees_to_pay_spousal_support"] and not spousal_support_is_immutable:
+          True
+          % else:
+          False
+          % endif
+      - settlement_spousal_support_cannot_change: |
+          % if spousal_support_provisions in ["OP_agrees_to_pay_spousal_support", "user_agrees_to_pay_spousal_support"] and spousal_support_is_immutable:
+          True
+          % else:
+          False
+          % endif
+      - no_settlement_spousal_support_reserved:
+      - no_settlement_spousal_support_none:
+      - no_settlement_spousal_support_awarded:
+      - wants_name_change: ${users[0].new_last_name_yn}
+      - name_change_plaintiff: ${plaintiffs[0].attr("new_last_name_yn")}
+      - name_change_defendant: ${defendants[0].attr("new_last_name_yn")}
+      - new_name: ${users[0].attr("new_last_name")}
+      - has_personal_property_debt_addendum: ${personal_property_in_addendum(marriage) or debts_in_addendum(marriage)}
+      - has_vehicle_addendum: ${has_vehicle_addendum(marriage)}
+      - has_real_property_addendum: ${bool(marriage.real_property)}
+      - has_pension_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
+      - docket_number__3: ${docket_number}
+      - personal_property_as_is: ${not personal_property_in_addendum(marriage)}
+      - personal_property_in_addendum: ${personal_property_in_addendum(marriage)}
+      - debts_none: ${not debts_in_addendum(marriage)}
+      - debts_pay_debts_in_own_name: ${marriage.debts.any and marriage.attr("debts.pay_debts_in_own_names")}
+      - debts_in_addendum: ${debts_in_addendum(marriage)}
+      - vehicles_none: ${not marriage.vehicles.any}
+      - vehicles_keep_same: ${marriage.vehicles.any and marriage.attr("vehicles.keep_own")}
+      - vehicles_in_addendum: ${marriage.vehicles.any and not marriage.attr("vehicles.keep_own")}
+      - real_property_none: ${not bool(marriage.real_property)}
+      - real_property_in_addendum: ${bool(marriage.real_property)}
+      - pensions_none: ${not marriage.have_pension_retirement}
+      - pensions_keep_own: ${marriage.have_pension_retirement and marriage.attr("pension_retirement_accounts_keep_own")}
+      - pensions_in_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
+      - has_income_tax_addendum: ${there_are_marital_children}
+      - has_parenting_time_addendum: 
+      - has_other_provisions: ${marriage.other_provisions_any}
+      - other_provisions: |
+          % if marriage.other_provisions_any:
+            % if len(marriage.other_provisions) > 440:
+          See addendum.
+            % else:
+            ${marriage.other_provisions}
+            % endif
+          % else:
+          ${""}
+          % endif
+---
+# determine whether Michigan has jurisdiction over the custody of minor children
+code: |
+  jurisdiction_for_custody = True
+  for child in children.filter(legal_parent="both"):
+    if not (child.currently_resides_in_type == "Michigan" and child.current_residence_is_home_state) and not (child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months"):
+      jurisdiction_for_custody = False
+#TODO we still need to add the rest of the logic from "Michigan court can make custody decisions CO", e.g. checking for custody orders. But waiting on answer from AB re desired logic.
+---
+# determine whether there are prior child support cases
+code: |
+  other_court_controls_child_support = False
+  if child_support_request_pending:
+    other_court_controls_child_support = True
+  if prior_family_cases.there_are_any:
+    for case in prior_family_cases:
+      if case.status != "dismissed" and case.type != "divorce" and case.has_child_support_order:
+        other_court_controls_child_support = True
+  
+# assume there's no controlling order in a dismissed case or a divorce case
 ---
 attachment:
   - name: Judgment addendum 1 (personal property and debt)
@@ -4113,6 +4365,75 @@ attachment:
       - docket_number1: ${docket_number}
 ---
 attachment:
+  - name: Judgment addendum 3.5 (income tax)
+    filename: Judgment addendum 3.5 (income tax)
+    variable name: judgment_addendum_income_tax[i]
+    pdf template file: judgment_addendum_3_5_income_tax.pdf
+    editable: False
+    fields:
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_county: ${the_court.address.county.upper()}
+      - docket_number: ${ docket_number }
+      - docket_number__1: ${ docket_number }
+      - judge: ${""}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${ the_court.phone }
+      - plaintiffs1_name: ${plaintiffs}
+      - defendants1_name: ${defendants}
+      - income_tax_credits_greater_number_of_nights: ${income_tax_method == "default"}
+      - income_tax_credits_plaintiff: |
+          % if income_tax_method == "user" and user_ask_role == "plaintiff":
+          True
+          % elif income_tax_method == "other_party" and user_ask_role == "defendant":
+          True
+          % else:
+          False
+          % endif
+      - income_tax_credits_start_year: |
+          % if (income_tax_method == "user" and user_ask_role == "plaintiff") or (income_tax_method == "other_party" and user_ask_role == "defendant"):
+          ${tax_start_year}
+          % else:
+          ${""}
+          % endif
+      - income_tax_credits_defendant: |
+          % if income_tax_method == "user" and user_ask_role == "defendant":
+          True
+          % elif income_tax_method == "other_party" and user_ask_role == "plaintiff":
+          True
+          % else:
+          False
+          % endif
+      - income_tax_credits_start_year__1: |
+          % if (income_tax_method == "user" and user_ask_role == "defendant") or (income_tax_method == "other_party" and user_ask_role == "plaintiff"):
+          ${tax_start_year}
+          % else:
+          ${""}
+          % endif
+      - income_tax_credits_shared_by_child: ${income_tax_method == "specify_per_child"}
+      - income_tax_children_plaintiff_line_1: ${income_tax_children_plaintiff_line_1 if income_tax_method == "specify_per_child" else ""}
+      - income_tax_children_plaintiff_line_2: ${income_tax_children_plaintiff_line_2 if income_tax_method == "specify_per_child" else ""}
+      - income_tax_children_defendant_line_1: ${income_tax_children_defendant_line_1 if income_tax_method == "specify_per_child" else ""}
+      - income_tax_children_defendant_line_2: ${income_tax_children_defendant_line_2 if income_tax_method == "specify_per_child" else ""}
+      - income_tax_credits_start_year__2: ${tax_start_year if income_tax_method == "specify_per_child" else ""}
+      - income_tax_credits_alternate_years: ${income_tax_method == "alternate_years"}
+      - income_tax_credits_start_year__3: |
+          % if income_tax_method == "alternate_years":
+          ${tax_start_year}
+          % else:
+          ${""}
+          % endif
+      - alternate_years_even_plaintiff: ${income_tax_method == "alternate_years" and ((tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "plaintiff") or (tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "defendant") or (not tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "defendant") or (not tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "plaintiff"))}
+      - alternate_years_even_defendant: ${income_tax_method == "alternate_years" and ((tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "defendant") or (tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "plaintiff") or (not tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "plaintiff") or (not tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "defendant"))}
+      - alternate_years_odd_plaintiff: ${income_tax_method == "alternate_years" and ((not tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "plaintiff") or (not tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "defendant") or (tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "defendant") or (tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "plaintiff"))}
+      - alternate_years_odd_defendant: ${income_tax_method == "alternate_years" and ((not tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "defendant") or (not tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "plaintiff") or (tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "plaintiff") or (tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "defendant"))}
+      - page_number_first: 
+      - page_number_second: 
+---
+# determine whether the tax_start_year is even
+code: |
+  tax_start_year_is_even = (tax_start_year % 2 == 0)
+---
+attachment:
   - name: Judgment addendum 4 (pensions)
     filename: Judgment addendum 4 (pensions)
     variable name: judgment_addendum_pensions[i]
@@ -4125,6 +4446,67 @@ attachment:
     variable name: judgment_overflow_addendum[i]
     docx template file: judgment_overflow_addendum.docx
     skip undefined: True
+---
+## judgment_ccmlh413 (with kids) ##
+# add commas and the word "and" plus split children names to two lines when over character count
+code: |
+    def format_children_names(children, max_len=90):
+            names = [child.name.full() for child in children.filter(legal_parent="both")]
+            if not names:
+                    return "", ""
+            if len(names) == 1:
+                    return names[0], ""
+            joined = ", ".join(names[:-1]) + " and " + names[-1]
+            if len(joined) <= max_len:
+                    return joined, ""
+            split_at = joined.rfind(",", 0, max_len)
+            if split_at == -1:
+                    return joined[:max_len].rstrip(), joined[max_len:].lstrip(", ").lstrip()
+            return joined[:split_at].rstrip(","), joined[split_at+1:].lstrip()
+    children_line_1, children_line_2 = format_children_names(children)
+---
+### income tax addendum code ###
+# add commas and the word "and" plus split specific plaintiff/defendant tax children names to two lines when over character count
+code: |
+    def tax_format_names(names, max_len=120):
+        if not names:
+            return "", ""
+        # Add commas and 'and'
+        if len(names) == 1:
+            joined = names[0]
+        else:
+            joined = ", ".join(names[:-1]) + " and " + names[-1]
+        # Split to two lines if needed
+        if len(joined) <= max_len:
+            return joined, ""
+        else:
+            # Try to split at last comma before max_len
+            split_at = joined.rfind(",", 0, max_len)
+            if split_at == -1:
+                # No comma, just split at max_len
+                return joined[:max_len].rstrip(), joined[max_len:].lstrip(", ").lstrip()
+            else:
+                return joined[:split_at].rstrip(","), joined[split_at+1:].lstrip()
+---
+code: |
+    tax_children_plaintiff = [
+        child.name.full()
+        for child in children.filter(legal_parent="both")
+        if (
+            (child.tax_parent == "users[0]" and user_ask_role == "plaintiff") or
+            (child.tax_parent == "other_parties[0]" and user_ask_role == "defendant")
+        )
+    ]
+    tax_children_defendant = [
+        child.name.full()
+        for child in children.filter(legal_parent="both")
+        if (
+            (child.tax_parent == "users[0]" and user_ask_role == "defendant") or
+            (child.tax_parent == "other_parties[0]" and user_ask_role == "plaintiff")
+        )
+    ]
+    income_tax_children_plaintiff_line_1, income_tax_children_plaintiff_line_2 = tax_format_names(tax_children_plaintiff)
+    income_tax_children_defendant_line_1, income_tax_children_defendant_line_2 = tax_format_names(tax_children_defendant)
 ---
 ### personal property and debts addendum overflow code ###
 ---

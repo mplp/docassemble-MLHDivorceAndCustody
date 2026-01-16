@@ -1835,7 +1835,7 @@ fields:
       - Specific: specific
       - Specific and supervised: supervised
     js show if: |
-      val("physical_custody_who") != "both" && val("PT_who") == "both"
+      val("physical_custody_who") != "both" && val("PT_who") === "both"
   - label: "If you know the name of the person or agency you want to supervise parenting time, enter it here. If you don't know, leave this blank."
     field: PT_supervisor
     js show if: |
@@ -1885,6 +1885,8 @@ subquestion: |
   % if not user_logged_in():
   If you need time to come up with a schedule, please create an account and sign in to save your answers for later.
   % endif
+validation code: |
+  specific_PT_how = "custom"
 ---
 template: MI_PT_guideline_info
 subject: |
