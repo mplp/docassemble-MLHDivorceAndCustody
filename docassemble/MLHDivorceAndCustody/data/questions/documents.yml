@@ -683,7 +683,7 @@ attachment:
           % if MI_home_state_all_kids:
           Michigan
           % elif len(children.filter(legal_parent='both')) == 1:
-          ${ word("None. Michigan has jurisdiction because the child lived 6 months in MI within the last 6 months. MCL 722.1201(1)(b)") if children[0].home_state == "none" and children[0].MI_jurisdiction == True else children[0].home_state }
+          ${ word("None. Michigan has jurisdiction because the child lived 6 months in MI within the last 6 months. MCL 722.1201(1)(b)") if children.filter(legal_parent='both')[0].home_state == "none" and children.filter(legal_parent='both')[0].MI_jurisdiction == True else children.filter(legal_parent='both')[0].home_state }
           % elif len(children.filter(legal_parent='both')) > 1:
           See addendum. 
           % endif
@@ -2098,13 +2098,13 @@ attachment:
         % endif
         ${ phone_number_formatted(defendants[0].job.employer.phone) if defendants[0].job.employer.phone != "" else "" }
         % endif
-    - children1: ${ children[0] }
-    - children2: ${ children[1] }
-    - children3: ${ children[2] }
-    - children4: ${ children[3] }
-    - children5: ${ children[4] }
+    - children1: ${ children.filter(legal_parent='both')[0] }
+    - children2: ${ children.filter(legal_parent='both')[1] }
+    - children3: ${ children.filter(legal_parent='both')[2] }
+    - children4: ${ children.filter(legal_parent='both')[3] }
+    - children5: ${ children.filter(legal_parent='both')[4] }
     - more_children: |
-        % if len(children.complete_elements()) > 5:
+        % if len(children.filter(legal_parent='both')) > 5:
         See "Children's Names" in Addendum.
         % else:
         ${ '' }
@@ -2486,12 +2486,12 @@ attachment:
               % elif PT_type in ["specific", "supervised"]:
                 % if specific_PT_how == "custom":
                   % if len(custom_PT_details) > 440:
-          Both parties will have specific parenting time with the minor ${"child" if len(children) == 1 else "children"} according to the Parenting Time Addendum.
+          Both parties will have specific parenting time with the minor ${"child" if len(children.filter(legal_parent="both")) == 1 else "children"} according to the Parenting Time Addendum.
                   % else:
           ${custom_PT_details}
                   % endif
                 % else:
-          Both parties will have specific parenting time with the minor ${"child" if len(children) == 1 else "children"} according to the ${the_court.address.county} County Friend of the Court parenting time schedule.
+          Both parties will have specific parenting time with the minor ${"child" if len(children.filter(legal_parent="both")) else "children"} according to the ${the_court.address.county} County Friend of the Court parenting time schedule.
                 % endif
                 % if PT_type == "supervised":
                   % if physical_custody_who == "user":
@@ -2591,7 +2591,7 @@ attachment:
 # determine whether Michigan has jurisdiction over the custody of minor children
 code: |
   jurisdiction_for_custody = True
-  for child in children:
+  for child in children.filter(legal_parent="both"):
     if not (child.currently_resides_in_type == "Michigan" and child.current_residence_is_home_state) and not (child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months"):
       jurisdiction_for_custody = False
 #TODO we still need to add the rest of the logic from "Michigan court can make custody decisions CO", e.g. checking for custody orders. But waiting on answer from AB re desired logic.
