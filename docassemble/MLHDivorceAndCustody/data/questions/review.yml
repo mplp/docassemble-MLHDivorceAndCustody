@@ -634,6 +634,8 @@ review:
         - children.revisit
       - invalidate:
         - set_marital_children_or_not
+        - children_line_1
+        - children_line_2
         - set_child_home_choices
         - guidepost_marital_children
         - kids_had_other_custodian
@@ -650,6 +652,10 @@ review:
         - interview_order_stepchild_address
         - tax_choices
         - income_tax_method
+        - income_tax_children_plaintiff_line_1
+        - income_tax_children_plaintiff_line_2 
+        - income_tax_children_defendant_line_1
+        - income_tax_children_defendant_line_2
         - insurance_in_addendum
         - interview_order_pregnancy
         - interview_order_user_employment
@@ -682,6 +688,8 @@ review:
       - child_legal_parent_review_screen
       - invalidate:
         - set_marital_children_or_not
+        - children_line_1
+        - children_line_2
         - set_child_home_choices
         - guidepost_marital_children
         - kids_had_other_custodian
@@ -698,6 +706,10 @@ review:
         - interview_order_stepchild_address
         - tax_choices
         - income_tax_method
+        - income_tax_children_plaintiff_line_1
+        - income_tax_children_plaintiff_line_2 
+        - income_tax_children_defendant_line_1
+        - income_tax_children_defendant_line_2
         - insurance_in_addendum
         - interview_order_pregnancy
         - interview_order_user_employment
@@ -863,6 +875,11 @@ review:
         - tax_deductions_who_first
       - recompute:
         - interview_order_income_tax
+      - invalidate:
+        - income_tax_children_plaintiff_line_1
+        - income_tax_children_plaintiff_line_2 
+        - income_tax_children_defendant_line_1
+        - income_tax_children_defendant_line_2
       # Note validation logic on income_tax_method
     button: |
       ##### Income tax deductions and credits for ${ comma_and_list(children.filter(legal_parent='both').familiar()) } 

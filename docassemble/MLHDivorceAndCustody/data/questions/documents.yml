@@ -4410,10 +4410,10 @@ attachment:
           ${""}
           % endif
       - income_tax_credits_shared_by_child: ${income_tax_method == "specify_per_child"}
-      - income_tax_children_plaintiff_line_1: ${tax_income_tax_children_plaintiff_line_1 if income_tax_method == "specify_per_child" else ""}
-      - income_tax_children_plaintiff_line_2: ${tax_income_tax_children_plaintiff_line_2 if income_tax_method == "specify_per_child" else ""}
-      - income_tax_children_defendant_line_1: ${tax_income_tax_children_defendant_line_1 if income_tax_method == "specify_per_child" else ""}
-      - income_tax_children_defendant_line_2: ${tax_income_tax_children_defendant_line_2 if income_tax_method == "specify_per_child" else ""}
+      - income_tax_children_plaintiff_line_1: ${income_tax_children_plaintiff_line_1 if income_tax_method == "specify_per_child" else ""}
+      - income_tax_children_plaintiff_line_2: ${income_tax_children_plaintiff_line_2 if income_tax_method == "specify_per_child" else ""}
+      - income_tax_children_defendant_line_1: ${income_tax_children_defendant_line_1 if income_tax_method == "specify_per_child" else ""}
+      - income_tax_children_defendant_line_2: ${income_tax_children_defendant_line_2 if income_tax_method == "specify_per_child" else ""}
       - income_tax_credits_start_year__2: ${tax_start_year if income_tax_method == "specify_per_child" else ""}
       - income_tax_credits_alternate_years: ${income_tax_method == "alternate_years"}
       - income_tax_credits_start_year__3: |
@@ -4451,7 +4451,7 @@ attachment:
 # add commas and the word "and" plus split children names to two lines when over character count
 code: |
     def format_children_names(children, max_len=90):
-            names = [child.name.full() for child in children]
+            names = [child.name.full() for child in children.filter(legal_parent="both")]
             if not names:
                     return "", ""
             if len(names) == 1:
@@ -4491,7 +4491,7 @@ code: |
 code: |
     tax_children_plaintiff = [
         child.name.full()
-        for child in children
+        for child in children.filter(legal_parent="both")
         if (
             (child.tax_parent == "users[0]" and user_ask_role == "plaintiff") or
             (child.tax_parent == "other_parties[0]" and user_ask_role == "defendant")
@@ -4499,14 +4499,14 @@ code: |
     ]
     tax_children_defendant = [
         child.name.full()
-        for child in children
+        for child in children.filter(legal_parent="both")
         if (
             (child.tax_parent == "users[0]" and user_ask_role == "defendant") or
             (child.tax_parent == "other_parties[0]" and user_ask_role == "plaintiff")
         )
     ]
-    tax_income_tax_children_plaintiff_line_1, tax_income_tax_children_plaintiff_line_2 = tax_format_names(tax_children_plaintiff)
-    tax_income_tax_children_defendant_line_1, tax_income_tax_children_defendant_line_2 = tax_format_names(tax_children_defendant)
+    income_tax_children_plaintiff_line_1, income_tax_children_plaintiff_line_2 = tax_format_names(tax_children_plaintiff)
+    income_tax_children_defendant_line_1, income_tax_children_defendant_line_2 = tax_format_names(tax_children_defendant)
 ---
 ### personal property and debts addendum overflow code ###
 ---
