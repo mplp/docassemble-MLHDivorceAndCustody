@@ -731,7 +731,7 @@ review:
       % for child in children.filter(legal_parent="both"):
         - ${ child.familiar() } currently lives in ${ child.currently_resides_in_locality_display_name }. This is ${ "" if child.current_residence_is_home_state else word("**not**") } their legal "home state". 
         % if not (child.currently_resides_in_type == "Michigan" and child.current_residence_is_home_state) and (child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.currently_resides_in_locality != "MI" and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months"):
-        Their legal home state is Michigan becaues they recently lived in Michigan for 6 months.
+        Michigan has jurisdiction becaues they recently lived in Michigan for 6 months.
         % endif
       % endfor
     show if: there_are_marital_children
@@ -975,6 +975,7 @@ review:
         case.type_description
         % endif
         - Case status: ${word("ended with final order") if case.status == "ended_with_order" else word("ongoing") if case.status == "pending" else case.status }
+        % if there_are_marital_children:
         % if case.type == "separate_maintenance":
         - Involved custody, parenting time, or child support? **${word(yesno(case.involved_custody_pt_support))}**
         % endif
@@ -982,8 +983,14 @@ review:
         - Included custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
         % if case.included_custody_PT_order:
         - Date of custody/PT order: ${case.custody_PT_order_date}
+        % if case.type == "separate_maintenance" and case.status == "ended_with_order":
+        - Custody/parenting time order currently in effect? **${word(yesno(case.has_current_custody_PT_order))}**
         % endif
         % endif
+        % if case.type == "separate_maintenance" and case.status == "ended_with_order":
+        - Child support order currently in effect? **${word(yesno(case.has_child_support_order))}**
+        % endif
+        % endif    
         % if case.type not in ["divorce", "separate_maintenance"]:
         % if case.status == "ended_with_order":
         - Date of final judgment or order: ${case.final_order_date}
@@ -1000,6 +1007,7 @@ review:
         % elif case.status == "dismissed":
         - Custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
         - Date of custody/PT order: ${case.custody_PT_order_date}
+        % endif
         % endif
         % endif
       
