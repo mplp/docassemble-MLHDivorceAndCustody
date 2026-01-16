@@ -1823,108 +1823,108 @@ attachment:
       - children_line_1: ${children_line_1}
       - children_line_2: ${children_line_2}
       - awards_legal_custody: |
-          % if not no_jurisdiction_for_custody:
+          % if jurisdiction_for_custody:
           True
           % else:
           False
           % endif
       - legal_custody_plaintiff: |
-          % if not no_jurisdiction_for_custody and legal_custody_who == "user" and user_ask_role == "plaintiff":
+          % if jurisdiction_for_custody and legal_custody_who == "user" and user_ask_role == "plaintiff":
           True
-          % elif not no_jurisdiction_for_custody and legal_custody_who == "other_party" and user_ask_role == "defendant":
+          % elif jurisdiction_for_custody and legal_custody_who == "other_party" and user_ask_role == "defendant":
           True
           % else:
           False
           % endif
       - legal_custody_defendant: |
-          % if not no_jurisdiction_for_custody and legal_custody_who == "user" and user_ask_role == "defendant":
+          % if jurisdiction_for_custody and legal_custody_who == "user" and user_ask_role == "defendant":
           True
-          % elif not no_jurisdiction_for_custody and legal_custody_who == "other_party" and user_ask_role == "plaintiff":
+          % elif jurisdiction_for_custody and legal_custody_who == "other_party" and user_ask_role == "plaintiff":
           True
           % else:
           False
           % endif
       - legal_custody_joint: |
-          % if not no_jurisdiction_for_custody and legal_custody_who == "both":
+          % if jurisdiction_for_custody and legal_custody_who == "both":
           True
           % else:
           False
           % endif
       - awards_physical_custody: |
-          % if not no_jurisdiction_for_custody:
+          % if jurisdiction_for_custody:
           True
           % else:
           False
           % endif
       - physical_custody_plaintiff: |
-          % if not no_jurisdiction_for_custody and physical_custody_who == "user" and user_ask_role == "plaintiff":
+          % if jurisdiction_for_custody and physical_custody_who == "user" and user_ask_role == "plaintiff":
           True
-          % elif not no_jurisdiction_for_custody and physical_custody_who == "other_party" and user_ask_role == "defendant":
+          % elif jurisdiction_for_custody and physical_custody_who == "other_party" and user_ask_role == "defendant":
           True
           % else:
           False
           % endif
       - physical_custody_defendant: |
-          % if not no_jurisdiction_for_custody and physical_custody_who == "user" and user_ask_role == "defendant":
+          % if jurisdiction_for_custody and physical_custody_who == "user" and user_ask_role == "defendant":
           True
-          % elif not no_jurisdiction_for_custody and physical_custody_who == "other_party" and user_ask_role == "plaintiff":
+          % elif jurisdiction_for_custody and physical_custody_who == "other_party" and user_ask_role == "plaintiff":
           True
           % else:
           False
           % endif
       - physical_custody_joint: |
-          % if not no_jurisdiction_for_custody and physical_custody_who == "both":
+          % if jurisdiction_for_custody and physical_custody_who == "both":
           True
           % else:
           False
           % endif
       - custody_not_determined: |
-          % if no_jurisdiction_for_custody:
+          % if not jurisdiction_for_custody:
           True
           % else:
           False
           % endif
       - must_notify_address_change: |
-          % if not no_jurisdiction_for_custody:
+          % if jurisdiction_for_custody:
           True
           % else:
           False
           % endif
       - court_must_approve_domicile_change: |
-          % if not no_jurisdiction_for_custody:
+          % if jurisdiction_for_custody:
           True
           % else:
           False
           % endif
       - 100_mile_rule_applies: |
-          % if not no_jurisdiction_for_custody and legal_custody_who == "both" and not already_over_100_miles and not allow_over_100_miles:
+          % if jurisdiction_for_custody and legal_custody_who == "both" and not already_over_100_miles and not allow_over_100_miles:
           True
           % else:
           False
           % endif
       - 100_mile_NA_already_exceeded: |
-          % if not no_jurisdiction_for_custody and legal_custody_who == "both" and already_over_100_miles:
+          % if jurisdiction_for_custody and legal_custody_who == "both" and already_over_100_miles:
           True
           % else:
           False
           % endif
       - 100_mile_NA_sole_custody: |
-          % if not no_jurisdiction_for_custody and legal_custody_who != "both":
+          % if jurisdiction_for_custody and legal_custody_who != "both":
           True
           % else:
           False
           % endif
       - 100_mile_waived: |
-          % if not no_jurisdiction_for_custody and legal_custody_who == "both" and not already_over_100_miles and allow_over_100_miles:
+          % if jurisdiction_for_custody and legal_custody_who == "both" and not already_over_100_miles and allow_over_100_miles:
           True
           % else:
           False
           % endif
       - docket_number__1: ${docket_number}
-      - parents_shall_cooperate: ${not no_jurisdiction_for_custody}
-      - parenting_time_established: ${not no_jurisdiction_for_custody}
+      - parents_shall_cooperate: ${jurisdiction_for_custody}
+      - parenting_time_established: ${jurisdiction_for_custody}
       - parenting_time_provisions: |
-          % if not no_jurisdiction_for_custody:
+          % if jurisdiction_for_custody:
             % if defined("PT_who"):
               % if PT_who == "user":
           ${OP_party_label.capitalize()} will not have parenting time.
@@ -2028,7 +2028,7 @@ attachment:
             % endif
           % endif
       - child_support_ordered:  |
-          % if not no_jurisdiction_for_custody and not prior_family_cases.there_are_any or not controlling_support_order_issued:
+          % if jurisdiction_for_custody and not prior_family_cases.there_are_any or not controlling_support_order_issued:
           True
           % else:
           False
@@ -2112,11 +2112,10 @@ attachment:
 ---
 # determine whether Michigan has jurisdiction over the custody of minor children
 code: |
+  jurisdiction_for_custody = True
   for child in children:
     if not (child.currently_resides_in_type == "Michigan" and child.current_residence_is_home_state) and not (child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months"):
-      no_jurisdiction_for_custody = True
-    else:
-      no_jurisdiction_for_custody = False
+      jurisdiction_for_custody = False
 ---
 # determine whether there are prior child support cases
 code: |
