@@ -643,6 +643,7 @@ review:
         - interview_order_home_state
         - set_children_home_state_info
         - jurisdiction_for_custody
+        - other_court_controls_child_support
         - children_live_with_parent
         - children_now_live_with_which_parent
         - children_lived_with_which_parent_past
@@ -690,6 +691,7 @@ review:
         - interview_order_home_state
         - set_children_home_state_info
         - jurisdiction_for_custody
+        - other_court_controls_child_support
         - children_live_with_parent
         - children_now_live_with_which_parent
         - children_lived_with_which_parent_past
@@ -918,6 +920,7 @@ review:
       - prior_family_cases.there_are_any
       - invalidate:
         - there_is_venue_controlling_separate_maintenance_case
+        - other_court_controls_child_support
         - venue
         - check_for_required_venue
         - court_index
@@ -935,6 +938,7 @@ review:
       - prior_family_cases.revisit
       - invalidate:
         - there_is_venue_controlling_separate_maintenance_case
+        - other_court_controls_child_support
         - venue
         - check_for_required_venue
         - court_index
@@ -1015,6 +1019,8 @@ review:
       % endif
   - Edit:
       - child_support_request_pending
+      - invalidate:
+        - other_court_controls_child_support
     button: |
       ##### Active out-of-state child support requests?
         - ${word(yesno(child_support_request_pending))}

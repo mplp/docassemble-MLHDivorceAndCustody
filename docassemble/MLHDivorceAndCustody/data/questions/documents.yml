@@ -2608,7 +2608,7 @@ attachment:
             % endif
           % endif
       - child_support_ordered:  |
-          % if jurisdiction_for_custody and court_can_order_support:
+          % if jurisdiction_for_custody and not other_court_controls_child_support:
           True
           % else:
           False
@@ -2700,13 +2700,15 @@ code: |
 ---
 # determine whether there are prior child support cases
 code: |
-  court_can_order_support = True
+  other_court_controls_child_support = False
   if child_support_request_pending:
-    court_can_order_support = False
+    other_court_controls_child_support = True
   if prior_family_cases.there_are_any:
     for case in prior_family_cases:
-      if case.status == "ended_with_order" or (case.status == "pending" and case.has_child_support_order):
-        court_can_order_support = False
+      if case.status != "dismissed" and case.type != "divorce" and case.has_child_support_order:
+        other_court_controls_child_support = True
+  
+# assume there's no controlling order in a dismissed case or a divorce case
 ---
 attachment:
   - name: Judgment addendum 1 (personal property and debt)
