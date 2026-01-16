@@ -9,7 +9,7 @@ objects:
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[confidential_case_inventory_mc21_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, except without the instructions, testimony, flowchart]
 ---
 # ====================================================================
@@ -57,6 +57,23 @@ code: |
     confidential_case_inventory_mc21_1.enabled = True
     confidential_case_inventory_mc21_2.enabled = len(prior_family_cases) > 4
     confidential_case_inventory_mc21_3.enabled = len(prior_family_cases) > 8
+---
+# not in JOD_only bundle
+# Future note: for divorce_answer and custody_answer, only enabled if filing counterclaim
+code: |
+  if tool_ID == "divorce_complaint":
+    UCCJEA_affidavit_mc416.enabled = there_are_marital_children
+  if tool_ID == "custody_complaint":
+    UCCJEA_affidavit_mc416.enabled = True
+
+# if UCCJEA_affidavit_mc416.enabled:
+#   addendum will be enabled if any of the below:
+#     - not MI_home_state_all_kids and len(children.filter(legal_parent='both')) > 1 (or if you think it's worth coming up with a way to turn this into a proper "overflow" calculus, I'm open to that)
+#     - there is overflow in:
+#       - court_cases_concerning_custody_parenting_time
+#       - pending_cases_affecting_custody
+#       - marital_children_past_addresses
+#       - marital_children_names_current_addresses (maybe overflow is unlikely here, can see how many fit safely and consider using auto sizing instead)
 ---
 # not in JOD_only bundle
 code: |
@@ -166,7 +183,7 @@ attachment:
       - family_cases0_court_same: ${True if prior_family_cases[0].state == "MI" and the_court.address.county == prior_family_cases[0].county else False}
       - family_cases0_court_other: ${False if prior_family_cases[0].state == "MI" and the_court.address.county == prior_family_cases[0].county else True}
       - family_cases0_court_name_number_county_state: |
-          ${prior_family_cases[0].court if prior_family_cases[0].state != "MI" else next(iter(court_list.filter_courts_by_2([prior_family_cases[0].county], ['circuit'], column_1='address_county', column_2='type')),("","Unknown County"))[1]}, ${prior_family_cases[0].county} County, ${state_name(prior_family_cases[0].state)}
+          ${prior_family_cases[0].court if prior_family_cases[0].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[0].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[0].county} County, ${state_name(prior_family_cases[0].state)}
       - family_cases0_name: ${prior_family_cases[0].title}
       - family_cases0_docket_number: ${prior_family_cases[0].docket_number}
       - family_cases0_judge: ${word("Judge ") + word(prior_family_cases[0].judge)}
@@ -195,7 +212,7 @@ attachment:
       - family_cases1_court_same: ${True if prior_family_cases[1].state == "MI" and the_court.address.county == prior_family_cases[1].county else False}
       - family_cases1_court_other: ${False if prior_family_cases[1].state == "MI" and the_court.address.county == prior_family_cases[1].county else True}
       - family_cases1_court_name_number_county_state: |
-          ${prior_family_cases[1].court if prior_family_cases[1].state != "MI" else next(iter(court_list.filter_courts_by_2([prior_family_cases[1].county], ['circuit'], column_1='address_county', column_2='type')),("","Unknown County"))[1]}, ${prior_family_cases[1].county} County, ${state_name(prior_family_cases[1].state)}
+          ${prior_family_cases[1].court if prior_family_cases[1].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[1].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[1].county} County, ${state_name(prior_family_cases[1].state)}
       - family_cases1_name: ${prior_family_cases[1].title}
       - family_cases1_docket_number: ${prior_family_cases[1].docket_number}
       - family_cases1_judge: ${word("Judge ") + word(prior_family_cases[1].judge)}
@@ -224,7 +241,7 @@ attachment:
       - family_cases2_court_same: ${True if prior_family_cases[2].state == "MI" and the_court.address.county == prior_family_cases[2].county else False}
       - family_cases2_court_other: ${False if prior_family_cases[2].state == "MI" and the_court.address.county == prior_family_cases[2].county else True}
       - family_cases2_court_name_number_county_state: |
-          ${prior_family_cases[2].court if prior_family_cases[2].state != "MI" else next(iter(court_list.filter_courts_by_2([prior_family_cases[2].county], ['circuit'], column_1='address_county', column_2='type')),("","Unknown County"))[1]}, ${prior_family_cases[2].county} County, ${state_name(prior_family_cases[2].state)}
+          ${prior_family_cases[2].court if prior_family_cases[2].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[2].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[2].county} County, ${state_name(prior_family_cases[2].state)}
       - family_cases2_name: ${prior_family_cases[2].title}
       - family_cases2_docket_number: ${prior_family_cases[2].docket_number}
       - family_cases2_judge: ${word("Judge ") + word(prior_family_cases[2].judge)}
@@ -253,7 +270,7 @@ attachment:
       - family_cases3_court_same: ${True if prior_family_cases[3].state == "MI" and the_court.address.county == prior_family_cases[3].county else False}
       - family_cases3_court_other: ${False if prior_family_cases[3].state == "MI" and the_court.address.county == prior_family_cases[3].county else True}
       - family_cases3_court_name_number_county_state: |
-          ${prior_family_cases[3].court if prior_family_cases[3].state != "MI" else next(iter(court_list.filter_courts_by_2([prior_family_cases[3].county], ['circuit'], column_1='address_county', column_2='type')),("","Unknown County"))[1]}, ${prior_family_cases[3].county} County, ${state_name(prior_family_cases[3].state)}
+          ${prior_family_cases[3].court if prior_family_cases[3].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[3].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[3].county} County, ${state_name(prior_family_cases[3].state)}
       - family_cases3_name: ${prior_family_cases[3].title}
       - family_cases3_docket_number: ${prior_family_cases[3].docket_number}
       - family_cases3_judge: ${word("Judge ") + word(prior_family_cases[3].judge)}
@@ -305,7 +322,7 @@ attachment:
       - family_cases0_court_same: ${True if prior_family_cases[4].state == "MI" and the_court.address.county == prior_family_cases[4].county else False}
       - family_cases0_court_other: ${False if prior_family_cases[4].state == "MI" and the_court.address.county == prior_family_cases[4].county else True}
       - family_cases0_court_name_number_county_state: |
-          ${prior_family_cases[4].court if prior_family_cases[4].state != "MI" else next(iter(court_list.filter_courts_by_2([prior_family_cases[4].county], ['circuit'], column_1='address_county', column_2='type')),("","Unknown County"))[1]}, ${prior_family_cases[4].county} County, ${state_name(prior_family_cases[4].state)}
+          ${prior_family_cases[4].court if prior_family_cases[4].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[4].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[4].county} County, ${state_name(prior_family_cases[4].state)}
       - family_cases0_name: ${prior_family_cases[4].title}
       - family_cases0_docket_number: ${prior_family_cases[4].docket_number}
       - family_cases0_judge: ${word("Judge ") + word(prior_family_cases[4].judge)}
@@ -334,7 +351,7 @@ attachment:
       - family_cases1_court_same: ${True if prior_family_cases[5].state == "MI" and the_court.address.county == prior_family_cases[5].county else False}
       - family_cases1_court_other: ${False if prior_family_cases[5].state == "MI" and the_court.address.county == prior_family_cases[5].county else True}
       - family_cases1_court_name_number_county_state: |
-          ${prior_family_cases[5].court if prior_family_cases[5].state != "MI" else next(iter(court_list.filter_courts_by_2([prior_family_cases[5].county], ['circuit'], column_1='address_county', column_2='type')),("","Unknown County"))[1]}, ${prior_family_cases[5].county} County, ${state_name(prior_family_cases[5].state)}
+          ${prior_family_cases[5].court if prior_family_cases[5].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[5].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[5].county} County, ${state_name(prior_family_cases[5].state)}
       - family_cases1_name: ${prior_family_cases[5].title}
       - family_cases1_docket_number: ${prior_family_cases[5].docket_number}
       - family_cases1_judge: ${word("Judge ") + word(prior_family_cases[5].judge)}
@@ -363,7 +380,7 @@ attachment:
       - family_cases2_court_same: ${True if prior_family_cases[6].state == "MI" and the_court.address.county == prior_family_cases[6].county else False}
       - family_cases2_court_other: ${False if prior_family_cases[6].state == "MI" and the_court.address.county == prior_family_cases[6].county else True}
       - family_cases2_court_name_number_county_state: |
-          ${prior_family_cases[6].court if prior_family_cases[6].state != "MI" else next(iter(court_list.filter_courts_by_2([prior_family_cases[6].county], ['circuit'], column_1='address_county', column_2='type')),("","Unknown County"))[1]}, ${prior_family_cases[6].county} County, ${state_name(prior_family_cases[6].state)}
+          ${prior_family_cases[6].court if prior_family_cases[6].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[6].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[6].county} County, ${state_name(prior_family_cases[6].state)}
       - family_cases2_name: ${prior_family_cases[6].title}
       - family_cases2_docket_number: ${prior_family_cases[6].docket_number}
       - family_cases2_judge: ${word("Judge ") + word(prior_family_cases[6].judge)}
@@ -392,7 +409,7 @@ attachment:
       - family_cases3_court_same: ${True if prior_family_cases[7].state == "MI" and the_court.address.county == prior_family_cases[7].county else False}
       - family_cases3_court_other: ${False if prior_family_cases[7].state == "MI" and the_court.address.county == prior_family_cases[7].county else True}
       - family_cases3_court_name_number_county_state: |
-          ${prior_family_cases[7].court if prior_family_cases[7].state != "MI" else next(iter(court_list.filter_courts_by_2([prior_family_cases[7].county], ['circuit'], column_1='address_county', column_2='type')),("","Unknown County"))[1]}, ${prior_family_cases[7].county} County, ${state_name(prior_family_cases[7].state)}
+          ${prior_family_cases[7].court if prior_family_cases[7].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[7].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[7].county} County, ${state_name(prior_family_cases[7].state)}
       - family_cases3_name: ${prior_family_cases[7].title}
       - family_cases3_docket_number: ${prior_family_cases[7].docket_number}
       - family_cases3_judge: ${word("Judge ") + word(prior_family_cases[7].judge)}
@@ -444,7 +461,7 @@ attachment:
       - family_cases0_court_same: ${True if prior_family_cases[8].state == "MI" and the_court.address.county == prior_family_cases[8].county else False}
       - family_cases0_court_other: ${False if prior_family_cases[8].state == "MI" and the_court.address.county == prior_family_cases[8].county else True}
       - family_cases0_court_name_number_county_state: |
-          ${prior_family_cases[8].court if prior_family_cases[8].state != "MI" else next(iter(court_list.filter_courts_by_2([prior_family_cases[8].county], ['circuit'], column_1='address_county', column_2='type')),("","Unknown County"))[1]}, ${prior_family_cases[8].county} County, ${state_name(prior_family_cases[8].state)}
+          ${prior_family_cases[8].court if prior_family_cases[8].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[8].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[8].county} County, ${state_name(prior_family_cases[8].state)}
       - family_cases0_name: ${prior_family_cases[8].title}
       - family_cases0_docket_number: ${prior_family_cases[8].docket_number}
       - family_cases0_judge: ${word("Judge ") + word(prior_family_cases[8].judge)}
@@ -473,7 +490,7 @@ attachment:
       - family_cases1_court_same: ${True if prior_family_cases[9].state == "MI" and the_court.address.county == prior_family_cases[9].county else False}
       - family_cases1_court_other: ${False if prior_family_cases[9].state == "MI" and the_court.address.county == prior_family_cases[9].county else True}
       - family_cases1_court_name_number_county_state: |
-          ${prior_family_cases[9].court if prior_family_cases[9].state != "MI" else next(iter(court_list.filter_courts_by_2([prior_family_cases[9].county], ['circuit'], column_1='address_county', column_2='type')),("","Unknown County"))[1]}, ${prior_family_cases[9].county} County, ${state_name(prior_family_cases[9].state)}
+          ${prior_family_cases[9].court if prior_family_cases[9].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[9].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[9].county} County, ${state_name(prior_family_cases[9].state)}
       - family_cases1_name: ${prior_family_cases[9].title}
       - family_cases1_docket_number: ${prior_family_cases[9].docket_number}
       - family_cases1_judge: ${word("Judge ") + word(prior_family_cases[9].judge)}
@@ -502,7 +519,7 @@ attachment:
       - family_cases2_court_same: ${True if prior_family_cases[10].state == "MI" and the_court.address.county == prior_family_cases[10].county else False}
       - family_cases2_court_other: ${False if prior_family_cases[10].state == "MI" and the_court.address.county == prior_family_cases[10].county else True}
       - family_cases2_court_name_number_county_state: |
-          ${prior_family_cases[10].court if prior_family_cases[10].state != "MI" else next(iter(court_list.filter_courts_by_2([prior_family_cases[10].county], ['circuit'], column_1='address_county', column_2='type')),("","Unknown County"))[1]}, ${prior_family_cases[10].county} County, ${state_name(prior_family_cases[10].state)}
+          ${prior_family_cases[10].court if prior_family_cases[10].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[10].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[10].county} County, ${state_name(prior_family_cases[10].state)}
       - family_cases2_name: ${prior_family_cases[10].title}
       - family_cases2_docket_number: ${prior_family_cases[10].docket_number}
       - family_cases2_judge: ${word("Judge ") + word(prior_family_cases[10].judge)}
@@ -531,7 +548,7 @@ attachment:
       - family_cases3_court_same: ${True if prior_family_cases[11].state == "MI" and the_court.address.county == prior_family_cases[11].county else False}
       - family_cases3_court_other: ${False if prior_family_cases[11].state == "MI" and the_court.address.county == prior_family_cases[11].county else True}
       - family_cases3_court_name_number_county_state: |
-          ${prior_family_cases[11].court if prior_family_cases[11].state != "MI" else next(iter(court_list.filter_courts_by_2([prior_family_cases[11].county], ['circuit'], column_1='address_county', column_2='type')),("","Unknown County"))[1]}, ${prior_family_cases[11].county} County, ${state_name(prior_family_cases[11].state)}
+          ${prior_family_cases[11].court if prior_family_cases[11].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[11].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[11].county} County, ${state_name(prior_family_cases[11].state)}
       - family_cases3_name: ${prior_family_cases[11].title}
       - family_cases3_docket_number: ${prior_family_cases[11].docket_number}
       - family_cases3_judge: ${word("Judge ") + word(prior_family_cases[11].judge)}
@@ -565,6 +582,128 @@ attachment:
           ${ '' }
           % endif
       - pursuant_to: ${ MLH_esign_tag if MLH_esign else "" }
+---
+# --------------------------------------------------------------------
+## UCCJEA, MC 416
+# --------------------------------------------------------------------
+---
+objects:
+  - UCCJEA_affidavit_mc416: ALDocument.using(title="UCCJEA Affidavit - MC 416", filename="UCCJEA Affidavit - MC 416")
+---
+attachment:
+  - name: UCCJEA Affidavit - MC 416
+    filename: UCCJEA Affidavit - MC 416
+    variable name: UCCJEA_affidavit_mc416[i]
+    pdf template file: UCCJEA_affidavit_mc416.pdf
+    skip undefined: True
+    editable: False
+    fields:
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_address_county: ${the_court.address.county.upper()}
+      - docket_number: ${docket_number}
+      - docket_number__1: ${docket_number}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${ the_court.phone }
+      - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
+      - defendants0_name_full: ${defendants[0].name_full()}
+      - marital_children_names_current_addresses: |
+          % if children_now_live_with_which_parent == "users[0]":
+          ${ comma_and_list(children.filter(legal_parent='both')) } ${ children.filter(legal_parent="both").does_verb('live') } at ${ word("Confidential Address") if confidential_contact_info_yn else users[0].address.on_one_line() }.
+          % elif children_now_live_with_which_parent == "other_parties[0]":
+          ${ comma_and_list(children.filter(legal_parent='both')) } ${ children.filter(legal_parent="both").does_verb('live') } at ${ other_parties[0].address.on_one_line() }.
+          % elif children_now_live_with_which_parent == "both":
+          ${ comma_and_list(children.filter(legal_parent='both')) } ${ children.filter(legal_parent="both").does_verb('live') } at ${ word("Confidential Address") if confidential_contact_info_yn else users[0].address.on_one_line() } and ${ other_parties[0].address.on_one_line() }.
+          % elif children_now_live_with_which_parent == "depends_on_child":
+          ${ comma_and_list(children.filter(legal_parent='both').filter(lives_with="users[0]")) } live(s) at ${ word("Confidential Address") if confidential_contact_info_yn else users[0].address.on_one_line() }. ${ comma_and_list(children.filter(legal_parent='both').filter(lives_with="other_parties[0]")) } live(s) at ${ other_parties[0].address.on_one_line() }
+          % endif
+      - marital_children_past_addresses: |
+          % if children_previous_address.there_are_any:
+          % for address in children_previous_address:
+          ${address.on_one_line()} -- from ${address.start_date} to ${address.end_date}; 
+          % endfor
+          % else:
+          N/A
+          % endif
+      - users0_name_address_block: |
+          % if children_lived_with_which_parent_past in ["both", "users[0]"]:
+          ${users[0].name_full()}
+          % if confidential_contact_info_yn:
+          Confidential 
+          % else:
+          ${ users[0].address.line_one() }
+          ${ users[0].address.line_two() }
+          % endif
+          % endif
+      - other_parties0_name_address_block: |
+          % if children_lived_with_which_parent_past in ["both", "other_parties[0]"]:
+          ${other_parties[0].name_full()}
+          ${ other_parties[0].address.line_one() }
+          ${ other_parties[0].address.line_two() }
+          % endif
+      - court_cases_concerning_custody_parenting_time: |
+          % for case in prior_family_cases:
+          % if case.add_to_MC416_4:
+          ${case.title}; Case #: ${case.docket_number}; ${case.court if case.state != "MI" else court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}; ${case.address if case.state != "MI" else word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_address')) + word(" ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_unit')) + word(", ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='CSZ'))}; Order date: ${format_date(case.final_order_date, format='M/d/yyyy') if case.type not in ["divorce", "separate_maintenance"] and case.status == "ended_with_order" else format_date(case.custody_PT_order_date, format='M/d/yyyy')} ${word("; This proceeding is continuing.") if case.status == "pending" else word("; This proceeding has been stayed by the court.") if case.status == "stayed" else word("; This proceeding was later dismissed.") if case.status == "dismissed" else word("")}
+          % endif
+          % endfor
+      - pending_cases_affecting_custody: |
+          % for case in prior_family_cases:
+          % if case.add_to_MC416_4:
+          % if case.status in ["pending", "stayed"]:
+          ${case.title}; Case #: ${case.docket_number}; ${case.court if case.state != "MI" else court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}; ${case.address if case.state != "MI" else word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_address')) + word(" ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_unit')) + word(", ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='CSZ'))}; Nature: ${prior_family_case_types_ordered[case.type]}; Order date: ${format_date(case.final_order_date, format='M/d/yyyy') if case.type not in ["divorce", "separate_maintenance"] and case.status == "ended_with_order" else format_date(case.custody_PT_order_date, format='M/d/yyyy')} ${word("; This proceeding is continuing.") if case.status == "pending" else word("; This proceeding has been stayed by the court.")}
+          % endif
+          % endif
+          % endfor
+      - pending_proceeding_continuing: |
+          % if len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)) == 1:
+          % if prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)[0].status == "pending":
+          True
+          % else:
+          False
+          % endif
+          % endif
+        # if there's only one pending or stayed (resolved=False) case affecting custody, this checks if that one case is pending. If there's multiple unresolved cases affecting custody, leave blank.
+      - pending_proceeding_stayed: |
+          % if len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)) == 1:
+          % if prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)[0].status == "stayed":
+          True
+          % else:
+          False
+          % endif
+          % endif
+        # see note on pending_proceeding_continuing. Same here except checking if case is stayed.
+      - childrens_home_state: |
+          % if MI_home_state_all_kids:
+          Michigan
+          % elif len(children.filter(legal_parent='both')) == 1:
+          ${ word("None. Michigan has jurisdiction because the child lived 6 months in MI within the last 6 months. MCL 722.1201(1)(b)") if children[0].home_state == "none" and children[0].MI_jurisdiction == True else children[0].home_state }
+          % elif len(children.filter(legal_parent='both')) > 1:
+          See addendum. 
+          % endif
+# If it goes to addendum (last option above), we would basically run a for loop for children.filter(legal_parent='both') and print same as in the elif above, except formatted something like: 
+# The home states of the children are:
+#  - Michigan for kljlkjkljk jkljkljlk and Child4 Child
+#  - Louisiana for chiuld on
+#  - Iowa for Child Child3
+#  - Kentucky for Child5 fiver
+#  - Kentucky for Sextus Sixty
+#  - None for Child Seven
+#  - None for Child Eight. Michigan has jurisdiction because the child lived 6 months in MI within the last 6 months. MCL 722.1201(1)(b)
+# (the above is just an example, anything similar would be fine (for example if you want to just print "- Name: <home state text>". It's not important to group kids with the same home state, unless it feels very easy, fine by me to list them separately. )
+      - risk_if_disclose_identifying_information: ${ confidential_contact_info_yn }
+      - users0_name_full: ${users[0].name_full()}
+      - users0_address_block: |
+          % if confidential_contact_info_yn:
+          Confidential- Mailing: 
+          % endif
+          ${ users[0].address.line_one() }
+          ${ users[0].address.line_two() }      
+      # Unused fields (in addition to most of the the notary part)
+      #- judge_name: 	
+      #- need_temporary_order_protect_kids:
+      #- need_temporary_order_protect_kids_explanation:
+      #- nonparties_with_custody_PT_claims:
+
 ---
 # --------------------------------------------------------------------
 ## Verified Statement, FOC 23
