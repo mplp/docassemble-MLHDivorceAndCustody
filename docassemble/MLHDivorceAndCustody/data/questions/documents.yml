@@ -2470,7 +2470,7 @@ attachment:
           % endif
       - docket_number__1: ${docket_number}
       - parents_shall_cooperate: ${jurisdiction_for_custody}
-      - parenting_time_established: ${jurisdiction_for_custody and (physical_custody_who == "both" or PT_who == "both")}
+      - parenting_time_established: ${jurisdiction_for_custody}
       - parenting_time_provisions: |
           % if jurisdiction_for_custody:
             % if physical_custody_who != "both":
