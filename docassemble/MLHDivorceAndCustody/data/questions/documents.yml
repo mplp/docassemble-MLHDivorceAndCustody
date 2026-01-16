@@ -2032,7 +2032,7 @@ attachment:
             % endif
           % endif
       - child_support_ordered:  |
-          % if jurisdiction_for_custody and not prior_family_cases.there_are_any or not controlling_support_order_issued:
+          % if jurisdiction_for_custody and court_can_order_support:
           True
           % else:
           False
@@ -2120,15 +2120,17 @@ code: |
   for child in children:
     if not (child.currently_resides_in_type == "Michigan" and child.current_residence_is_home_state) and not (child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months"):
       jurisdiction_for_custody = False
+#TODO we still need to add the rest of the logic from "Michigan court can make custody decisions CO", e.g. checking for custody orders. But waiting on answer from AB re desired logic.
 ---
 # determine whether there are prior child support cases
 code: |
+  court_can_order_support = True
+  if child_support_request_pending:
+    court_can_order_support = False
   if prior_family_cases.there_are_any:
     for case in prior_family_cases:
       if case.status == "ended_with_order" or (case.status == "pending" and case.has_child_support_order):
-        controlling_support_order_issued = True
-      else:
-        controlling_support_order_issued = False
+        court_can_order_support = False
 ---
 attachment:
   - name: Judgment addendum 1 (personal property and debt)
