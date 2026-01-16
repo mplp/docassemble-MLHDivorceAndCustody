@@ -20,12 +20,8 @@ objects:
 ---
 # enabling logic for judgment with or without kids
 code: |
-  if there_are_marital_children:
-    judgment_ccmlh413.enabled = True
-    judgment_ccmlh412.enabled = False
-  else:
-    judgment_ccmlh413.enabled = False
-    judgment_ccmlh412.enabled = True
+  judgment_ccmlh413.enabled = there_are_marital_children
+  judgment_ccmlh412.enabled = not there_are_marital_children
 ---
 # enabling logic for judgment addenda bundle 
 code: |
@@ -41,10 +37,7 @@ code: |
   judgment_addendum_real_property_7_to_8.enabled = bool(marriage.real_property) and len(marriage.real_property) > 6
   judgment_addendum_real_property_9_to_10.enabled = bool(marriage.real_property) and len(marriage.real_property) > 8
 
-  if there_are_marital_children:
-    judgment_addendum_income_tax.enabled = True
-  else:
-    judgment_addendum_income_tax.enabled = False
+  judgment_addendum_income_tax.enabled = there_are_marital_children
   
   judgment_addendum_pensions.enabled = (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own)
 ---
@@ -2402,12 +2395,7 @@ attachment:
       - defendants1_name: ${defendants}
       - children_line_1: ${children_line_1}
       - children_line_2: ${children_line_2}
-      - awards_legal_custody: |
-          % if jurisdiction_for_custody:
-          True
-          % else:
-          False
-          % endif
+      - awards_legal_custody: ${jurisdiction_for_custody}
       - legal_custody_plaintiff: |
           % if jurisdiction_for_custody and legal_custody_who == "user" and user_ask_role == "plaintiff":
           True
@@ -2430,12 +2418,7 @@ attachment:
           % else:
           False
           % endif
-      - awards_physical_custody: |
-          % if jurisdiction_for_custody:
-          True
-          % else:
-          False
-          % endif
+      - awards_physical_custody: ${jurisdiction_for_custody}
       - physical_custody_plaintiff: |
           % if jurisdiction_for_custody and physical_custody_who == "user" and user_ask_role == "plaintiff":
           True
@@ -2458,24 +2441,9 @@ attachment:
           % else:
           False
           % endif
-      - custody_not_determined: |
-          % if not jurisdiction_for_custody:
-          True
-          % else:
-          False
-          % endif
-      - must_notify_address_change: |
-          % if jurisdiction_for_custody:
-          True
-          % else:
-          False
-          % endif
-      - court_must_approve_domicile_change: |
-          % if jurisdiction_for_custody:
-          True
-          % else:
-          False
-          % endif
+      - custody_not_determined: ${ not MI_has_jurisdiction_all_kids }
+      - must_notify_address_change: ${jurisdiction_for_custody}
+      - court_must_approve_domicile_change: ${jurisdiction_for_custody}
       - 100_mile_rule_applies: |
           % if jurisdiction_for_custody and legal_custody_who == "both" and not already_over_100_miles and not allow_over_100_miles:
           True
@@ -2502,108 +2470,38 @@ attachment:
           % endif
       - docket_number__1: ${docket_number}
       - parents_shall_cooperate: ${jurisdiction_for_custody}
-      - parenting_time_established: ${jurisdiction_for_custody}
+      - parenting_time_established: ${jurisdiction_for_custody and (physical_custody_who == "both" or PT_who == "both")}
       - parenting_time_provisions: |
           % if jurisdiction_for_custody:
-            % if defined("PT_who"):
+            % if physical_custody_who != "both":
               % if PT_who == "user":
           ${OP_party_label.capitalize()} will not have parenting time.
               % elif PT_who == "other_party":
           ${user_party_label.capitalize()} will not have parenting time.
-              % elif PT_who == "both":
-                % if defined("PT_type"):
-                  % if PT_type == "reasonable":
+              % endif
+            % endif
+            % if physical_custody_who == "both" or PT_who == "both":
+              % if PT_type == "reasonable":
           Parenting time arrangements will be made by mutual agreement of the parties.
-                  % elif PT_type in ["specific", "supervised"]:
-                    % if county_choice == "Muskegon" or (defined("specific_PT_how") and specific_PT_how == "custom"):
-                      % if defined("custom_PT_details") and custom_PT_details and len(custom_PT_details) > 440:
+              % elif PT_type in ["specific", "supervised"]:
+                % if specific_PT_how == "custom":
+                  % if len(custom_PT_details) > 440:
           Both parties will have specific parenting time with the minor ${"child" if len(children) == 1 else "children"} according to the Parenting Time Addendum.
-                      % elif defined("custom_PT_details") and custom_PT_details:
-          ${custom_PT_details}
-                      % else:
-          Both parties will have specific parenting time with the minor ${"child" if len(children) == 1 else "children"} according to the Parenting Time Addendum.
-                      % endif
-                    % else:
-          Both parties will have specific parenting time with the minor ${"child" if len(children) == 1 else "children"} according to the ${the_court.address.county} County Friend of the Court parenting time schedule.
-                    % endif
-                    % if PT_type == "supervised":
-                      % if PT_who == "both":
-                        % if physical_custody_who == "user":
-          
-          Parenting time for ${OP_party_label.lower()} will be supervised by ${PT_supervisor if defined("PT_supervisor") and PT_supervisor else "________________________"}.
-                        % elif physical_custody_who == "other_party":
-          
-          Parenting time for ${user_party_label.lower()} will be supervised by ${PT_supervisor if defined("PT_supervisor") and PT_supervisor else "________________________"}.
-                        % endif
-                      % elif PT_who == "user":
-                        % if physical_custody_who == "user":
-          
-          Parenting time for ${OP_party_label.lower()} will be supervised by ${PT_supervisor if defined("PT_supervisor") and PT_supervisor else "________________________"}.
-                        % else:
-          
-          Parenting time for ${user_party_label.lower()} will be supervised by ${PT_supervisor if defined("PT_supervisor") and PT_supervisor else "________________________"}.
-                        % endif
-                      % elif PT_who == "other_party":
-                        % if physical_custody_who == "other_party":
-          
-          Parenting time for ${user_party_label.lower()} will be supervised by ${PT_supervisor if defined("PT_supervisor") and PT_supervisor else "________________________"}.
-                        % else:
-          
-          Parenting time for ${OP_party_label.lower()} will be supervised by ${PT_supervisor if defined("PT_supervisor") and PT_supervisor else "________________________"}.
-                        % endif
-                      % endif
-                    % endif
                   % else:
-          Parenting time arrangements will be made by mutual agreement of the parties.
+          ${custom_PT_details}
                   % endif
                 % else:
-          Parenting time arrangements will be made by mutual agreement of the parties.
-                % endif
-              % elif defined("PT_type"):
-                % if PT_type == "reasonable":
-          Parenting time arrangements will be made by mutual agreement of the parties.
-                % elif PT_type in ["specific", "supervised"]:
-                  % if county_choice == "Muskegon" or (defined("specific_PT_how") and specific_PT_how == "custom"):
-                    % if defined("custom_PT_details") and custom_PT_details and len(custom_PT_details) > 440:
-          Both parties will have specific parenting time with the minor ${"child" if len(children) == 1 else "children"} according to the Parenting Time Addendum.
-                    % elif defined("custom_PT_details") and custom_PT_details:
-          ${custom_PT_details}
-                    % else:
-          Both parties will have specific parenting time with the minor ${"child" if len(children) == 1 else "children"} according to the Parenting Time Addendum.
-                    % endif
-                  % else:
           Both parties will have specific parenting time with the minor ${"child" if len(children) == 1 else "children"} according to the ${the_court.address.county} County Friend of the Court parenting time schedule.
-                  % endif
-                  % if PT_type == "supervised":
-                    % if PT_who == "both":
-                      % if physical_custody_who == "user":
-          
+                % endif
+                % if PT_type == "supervised":
+                  % if physical_custody_who == "user":
+      
           Parenting time for ${OP_party_label.lower()} will be supervised by ${PT_supervisor if defined("PT_supervisor") and PT_supervisor else "________________________"}.
-                      % elif physical_custody_who == "other_party":
-          
+                  % elif physical_custody_who == "other_party":
+      
           Parenting time for ${user_party_label.lower()} will be supervised by ${PT_supervisor if defined("PT_supervisor") and PT_supervisor else "________________________"}.
-                      % endif
-                    % elif PT_who == "user":
-                      % if physical_custody_who == "user":
-          
-          Parenting time for ${OP_party_label.lower()} will be supervised by ${PT_supervisor if defined("PT_supervisor") and PT_supervisor else "________________________"}.
-                      % else:
-          
-          Parenting time for ${user_party_label.lower()} will be supervised by ${PT_supervisor if defined("PT_supervisor") and PT_supervisor else "________________________"}.
-                      % endif
-                    % elif PT_who == "other_party":
-                      % if physical_custody_who == "other_party":
-          
-          Parenting time for ${user_party_label.lower()} will be supervised by ${PT_supervisor if defined("PT_supervisor") and PT_supervisor else "________________________"}.
-                      % else:
-          
-          Parenting time for ${OP_party_label.lower()} will be supervised by ${PT_supervisor if defined("PT_supervisor") and PT_supervisor else "________________________"}.
-                      % endif
-                    % endif
                   % endif
                 % endif
-              % else:
-          Parenting time arrangements will be made by mutual agreement of the parties.
               % endif
             % endif
           % endif
