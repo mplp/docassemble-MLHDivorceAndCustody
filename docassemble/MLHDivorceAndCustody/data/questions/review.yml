@@ -642,6 +642,7 @@ review:
         - temporary_order_kids_exit
         - interview_order_home_state
         - set_children_home_state_info
+        - jurisdiction_for_custody
         - children_live_with_parent
         - children_now_live_with_which_parent
         - children_lived_with_which_parent_past
@@ -688,6 +689,7 @@ review:
         - temporary_order_kids_exit
         - interview_order_home_state
         - set_children_home_state_info
+        - jurisdiction_for_custody
         - children_live_with_parent
         - children_now_live_with_which_parent
         - children_lived_with_which_parent_past
@@ -722,6 +724,8 @@ review:
         - set_children_home_state_info
       - recompute: 
         - interview_order_home_state
+      - invalidate:
+        - jurisdiction_for_custody
     button: |-
       ##### Marital children's legal "home state"
       % for child in children.filter(legal_parent="both"):

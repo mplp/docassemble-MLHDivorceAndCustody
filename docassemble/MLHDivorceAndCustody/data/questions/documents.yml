@@ -1740,6 +1740,8 @@ attachment:
     variable name: judgment_ccmlh412[i]
     pdf template file: judgment_ccmlh412_no_kids.pdf
     editable: False
+    ### note difference from most forms:
+    skip undefined: False
     fields:
       - trial_court_circuit: |
           % if the_court.type == "circuit":
@@ -1804,6 +1806,8 @@ attachment:
     variable name: judgment_ccmlh413[i]
     pdf template file: judgment_ccmlh413_with_kids.pdf
     editable: False
+    ### note difference from most forms:
+    skip undefined: False
     fields:
       - trial_court_circuit: ${the_court.number}
       - docket_number: ${docket_number}
