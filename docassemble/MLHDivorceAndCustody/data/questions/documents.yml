@@ -61,7 +61,7 @@ code: |
       if len(property.desc) > 123:
         judgment_overflow_addendum.enabled = True
   
-  elif marriage.other_provisions_any and len(marriage.other_provisions) > 440:
+  elif marriage.other_provisions_any and len(marriage.other_provisions) > 240:
     judgment_overflow_addendum.enabled = True
 ---
 # not in JOD_only bundle
@@ -1759,9 +1759,39 @@ attachment:
           ${word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
       - plaintiffs1_name: ${plaintiffs}
       - defendants1_name: ${defendants}
-      - spousal_support_none: Yes
-      - spousal_support_reserved: No
-      - spousal_support_awarded: No
+      - settlement_spousal_support_reserved: |
+          % if spousal_support_provisions == "agree_no_current_spousal_support_but_may_change":
+          True
+          % else:
+          False
+          % endif
+      - settlement_spousal_support_none: |
+          % if spousal_support_provisions == "agree_never_spousal_support":
+          True
+          % else:
+          False
+          % endif
+      - settlement_spousal_support_awarded: |
+          % if spousal_support_provisions in ["OP_agrees_to_pay_spousal_support", "user_agrees_to_pay_spousal_support"]:
+          True
+          % else:
+          False
+          % endif
+      - settlement_spousal_support_can_change: |
+          % if spousal_support_provisions in ["OP_agrees_to_pay_spousal_support", "user_agrees_to_pay_spousal_support"] and not spousal_support_is_immutable:
+          True
+          % else:
+          False
+          % endif
+      - settlement_spousal_support_cannot_change: |
+          % if spousal_support_provisions in ["OP_agrees_to_pay_spousal_support", "user_agrees_to_pay_spousal_support"] and spousal_support_is_immutable:
+          True
+          % else:
+          False
+          % endif
+      - no_settlement_spousal_support_reserved:
+      - no_settlement_spousal_support_none:
+      - no_settlement_spousal_support_awarded:
       - personal_property_as_is: |
           ${not personal_property_in_addendum(marriage)}
       - personal_property_in_addendum: |
@@ -1772,12 +1802,14 @@ attachment:
       - vehicles_none: ${not marriage.vehicles.any}
       - vehicles_keep_same: ${marriage.vehicles.any and marriage.vehicles.keep_own}
       - vehicles_in_addendum: ${marriage.vehicles.any and not marriage.vehicles.keep_own}
+      - page_number_second:
+      - total_pages:
+      - docket_number__1: ${docket_number}
       - real_property_none: ${not bool(marriage.real_property)}
       - real_property_in_addendum: ${bool(marriage.real_property)}
       - pensions_none: ${not marriage.have_pension_retirement}
       - pensions_keep_own: ${marriage.have_pension_retirement and marriage.attr("pension_retirement_accounts_keep_own")}
       - pensions_in_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
-      - total_pages: ""
       - wants_name_change: ${users[0].new_last_name_yn}
       - name_change_plaintiff: ${plaintiffs[0].attr("new_last_name_yn")}
       - name_change_defendant: ${defendants[0].attr("new_last_name_yn")}
@@ -1789,7 +1821,7 @@ attachment:
       - has_other_provisions: ${marriage.other_provisions_any}
       - other_provisions: |
           % if marriage.other_provisions_any:
-            % if len(marriage.other_provisions) > 440:
+            % if len(marriage.other_provisions) > 240:
           See addendum.
             % else:
             ${marriage.other_provisions}
@@ -1936,7 +1968,7 @@ attachment:
           Parenting time arrangements will be made by mutual agreement of the parties.
                   % elif PT_type in ["specific", "supervised"]:
                     % if county_choice == "Muskegon" or (defined("specific_PT_how") and specific_PT_how == "custom"):
-                      % if defined("custom_PT_details") and custom_PT_details and len(custom_PT_details) > 440:
+                      % if defined("custom_PT_details") and custom_PT_details and len(custom_PT_details) > 240:
           Both parties will have specific parenting time with the minor ${"child" if len(children) == 1 else "children"} according to the Parenting Time Addendum.
                       % elif defined("custom_PT_details") and custom_PT_details:
           ${custom_PT_details}
@@ -1984,7 +2016,7 @@ attachment:
           Parenting time arrangements will be made by mutual agreement of the parties.
                 % elif PT_type in ["specific", "supervised"]:
                   % if county_choice == "Muskegon" or (defined("specific_PT_how") and specific_PT_how == "custom"):
-                    % if defined("custom_PT_details") and custom_PT_details and len(custom_PT_details) > 440:
+                    % if defined("custom_PT_details") and custom_PT_details and len(custom_PT_details) > 240:
           Both parties will have specific parenting time with the minor ${"child" if len(children) == 1 else "children"} according to the Parenting Time Addendum.
                     % elif defined("custom_PT_details") and custom_PT_details:
           ${custom_PT_details}
@@ -2101,7 +2133,7 @@ attachment:
       - has_other_provisions: ${marriage.other_provisions_any}
       - other_provisions: |
           % if marriage.other_provisions_any:
-            % if len(marriage.other_provisions) > 440:
+            % if len(marriage.other_provisions) > 240:
           See addendum.
             % else:
             ${marriage.other_provisions}
