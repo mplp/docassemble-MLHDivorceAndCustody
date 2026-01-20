@@ -103,7 +103,7 @@ code: |
 
     legal_custody_who
     if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]:
-      if (tool_ID == "divorce_complaint" and (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon")) or (tool_ID == "JOD_only" and county_choice == "Muskegon"):  
+      if (tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID == "JOD_only" and county_choice == "Muskegon"):  
         Muskegon_specific_PT_info
         custom_PT_details
       else:
@@ -1470,8 +1470,8 @@ code: |
   for child in children:
       if child.legal_parent == "both":
         if child.current_residence_is_home_state:
-          child.home_state = child.currently_resides_in_locality
-          if child.home_state == "MI":
+          child.home_state = child.currently_resides_in_locality_display_name
+          if child.home_state == "Michigan":
             child.MI_jurisdiction = True
           else: 
             child.MI_jurisdiction = False
@@ -1487,6 +1487,12 @@ code: |
       if child.legal_parent == "both":
         if child.MI_jurisdiction == False:
           MI_has_jurisdiction_all_kids = False
+
+  MI_home_state_all_kids = True
+  for child in children:
+      if child.legal_parent == "both":
+        if child.home_state != "Michigan":
+          MI_home_state_all_kids = False
   
   set_children_home_state_info = True
 ---
@@ -1522,17 +1528,15 @@ fields:
     show if: 
       variable: children[i].currently_resides_in_type
       is: other_US_state
----
-code: |
-  if children[i].currently_resides_in_type in ["Michigan", "other_US_state"]:
+validation code: |
+  if children[i].currently_resides_in_type == "Michigan":
+    children[i].currently_resides_in_locality_display_name = "Michigan"
+  elif children[i].currently_resides_in_type == "other_US_state":
     children[i].currently_resides_in_locality_display_name = state_name(children[i].currently_resides_in_locality)
   elif children[i].currently_resides_in_type == "foreign_country":
     children[i].currently_resides_in_locality_display_name = country_name(children[i].currently_resides_in_locality)
   else:
     children[i].currently_resides_in_locality_display_name = children[i].currently_resides_in_locality
-depends on:
-  - children[i].currently_resides_in_type
-  - children[i].currently_resides_in_locality
 ---
 id: home state inquiry -- length of current residence
 question: ${ children[i] }'s legal "home state", part 2
@@ -1831,7 +1835,7 @@ fields:
       - Specific: specific
       - Specific and supervised: supervised
     js show if: |
-      val("physical_custody_who") != "both" && val("PT_who") == "both"
+      val("physical_custody_who") != "both" && val("PT_who") === "both"
   - label: "If you know the name of the person or agency you want to supervise parenting time, enter it here. If you don't know, leave this blank."
     field: PT_supervisor
     js show if: |
@@ -1841,7 +1845,7 @@ fields:
       ${ collapse_template(custody_definitions) }
       ${ collapse_template(PT_definitions) }
 ---
-if: PT_type in ["specific", "supervised"] and not (tool_ID == "divorce_complaint" and (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon")) or (tool_ID == "JOD_only" and county_choice == "Muskegon")
+if: PT_type in ["specific", "supervised"] and not ((tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID == "JOD_only" and county_choice == "Muskegon"))
 id: specific parenting time options
 question: |
   Specific Parenting Time Schedules
@@ -1866,7 +1870,7 @@ fields:
       - "Use a sample schedule from my county’s Friend of the Court office (If you choose this option, you can either find the schedule on your court website or ask the Friend of the Court how to get one).": FOC_sample
 
 ---
-if: PT_type in ["specific", "supervised"] and (tool_ID == "divorce_complaint" and (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon")) or (tool_ID == "JOD_only" and county_choice == "Muskegon")
+if: PT_type in ["specific", "supervised"] and ((tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID == "JOD_only" and county_choice == "Muskegon"))
 id: specific parenting time info
 continue button field: Muskegon_specific_PT_info
 question: |
@@ -1881,6 +1885,8 @@ subquestion: |
   % if not user_logged_in():
   If you need time to come up with a schedule, please create an account and sign in to save your answers for later.
   % endif
+validation code: |
+  specific_PT_how = "custom"
 ---
 template: MI_PT_guideline_info
 subject: |
@@ -1953,7 +1959,7 @@ content: |
 
 ---
 id: custom parenting time schedule
-if: (tool_ID == "divorce_complaint" and (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon")) or (tool_ID == "JOD_only" and county_choice == "Muskegon") or specific_PT_how == "custom"
+if: (tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID == "JOD_only" and county_choice == "Muskegon") or specific_PT_how == "custom"
 question: Parenting Time Schedule
 subquestion: |
   What parenting time schedule do you want the judge to order?
@@ -2382,17 +2388,20 @@ code: |
     prior_family_cases[i].status
   
     if prior_family_cases[i].state != "MI" and prior_family_cases[i].has_current_custody_PT_order:
-      if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids:
+      if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [str(state_name(users[0].address.state)), str(state_name(other_parties[0].address.state))]) or not MI_has_jurisdiction_all_kids:
         prior_family_cases[i].custody_order_in_another_state_warning 
   
   elif tool_ID != "JOD_only":
     prior_family_cases[i].status
     if there_are_marital_children:
       if prior_family_cases[i].state != "MI":
-        prior_family_cases[i].address # trigger this question if user changes answer on marital children from none to some, after case was already gathered
+        prior_family_cases[i].address # trigger question if user changes answer on marital children from none to some, after case already gathered
+  
       if prior_family_cases[i].type == "separate_maintenance":
         if prior_family_cases[i].status in ["ended_with_order", "dismissed"]:
           prior_family_cases[i].involved_custody_pt_support
+          if prior_family_cases[i].status == "ended_with_order":
+            prior_family_cases[i].convert_separate_maintenance_notice
         elif prior_family_cases[i].status in ["pending", "stayed"]:
           prior_family_cases[i].separate_maintenance_pending_kickout
   
@@ -2401,17 +2410,17 @@ code: |
   
       if prior_family_cases[i].state != "MI":
         if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and (prior_family_cases[i].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order)):
-          if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids:
+          if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [str(state_name(users[0].address.state)), str(state_name(other_parties[0].address.state))]) or not MI_has_jurisdiction_all_kids:
             prior_family_cases[i].custody_order_in_another_state_warning 
 
   prior_family_cases[i].complete = True
 ---
 id: custody_order_in_another_state_warning
-if: there_are_marital_children and prior_family_cases[i].state != "MI" and ((tool_ID == "divorce_complaint" and ((prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and (prior_family_cases[i].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order))) and ((MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids)) or (tool_ID == "JOD_only" and prior_family_cases[i].has_current_custody_PT_order)) and ((MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]) or not MI_has_jurisdiction_all_kids)
+if: there_are_marital_children and prior_family_cases[i].state != "MI" and ((tool_ID == "divorce_complaint" and ((prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and (prior_family_cases[i].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order))) and ((MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [str(state_name(users[0].address.state)), str(state_name(other_parties[0].address.state))]) or not MI_has_jurisdiction_all_kids)) or (tool_ID == "JOD_only" and prior_family_cases[i].has_current_custody_PT_order)) and ((MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [str(state_name(users[0].address.state)), str(state_name(other_parties[0].address.state))]) or not MI_has_jurisdiction_all_kids)
 continue button field: prior_family_cases[i].custody_order_in_another_state_warning
 question: Warning! Custody order in another state
 subquestion: |
-  % if MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [f"${ state_name(users[0].address.state) }", f"${ state_name(other_parties[0].address.state) }"]:
+  % if MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [str(state_name(users[0].address.state)), str(state_name(other_parties[0].address.state))]:
   ${ prior_custody_warning }
   % elif not MI_has_jurisdiction_all_kids:
   ${ prior_custody_warning_home_state }
@@ -2430,7 +2439,7 @@ content: |
   You can still use this tool to prepare your divorce forms, but your Judgment of Divorce will not include custody and parenting time arrangements. It will be up to the court to decide whether it has jurisdiction to include custody and parenting time orders in your divorce judgment. ${MLH_GUIDE_FULL}
 ---
 # LHI "Prior Family Cases DLG"
-# JOD_only version should only be asked if there are marital children
+# JOD_only version: only ask if there are marital children
 id: prior family case or order collection screen JOD_only IFF with kids
 if: tool_ID == "JOD_only" and there_are_marital_children
 question: ${ capitalize(ordinal(i)) } prior custody or support case
@@ -2565,6 +2574,9 @@ fields:
       - "It has ended but was dismissed by the court": dismissed
     js show if: |
       val("prior_family_cases[i].type") === "divorce"
+validation code: |
+  if prior_family_cases[i].type == "divorce":
+    prior_family_cases[i].resolved = True
 ---
 # LHI "Prior Family Cases DLG" (start at row 108)
 id: prior family divorce case or order additional info
@@ -2587,6 +2599,8 @@ fields:
      ${ today() }
     js show if: |
       val("prior_family_cases[i].included_custody_PT_order") === true
+validation code: |
+  prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
 ---
 id: prior family separate maintenance case additional info
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].status in ["ended_with_order", "dismissed"]
@@ -2604,12 +2618,35 @@ fields:
     datatype: yesnoradio
     js show if: |
       ${ "true" if prior_family_cases[i].status == "dismissed" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true
-  - What is the date of that order?: prior_family_cases[i].custody_PT_order_date
+  - Date of the custody or parenting time order:: prior_family_cases[i].custody_PT_order_date
     datatype: ThreePartsDate
     max: |
      ${ today() }
     js show if: |
       (${ "true" if prior_family_cases[i].status == "dismissed" else "false" } || (${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true)) && val("prior_family_cases[i].included_custody_PT_order") === true
+  - Is the custody or parenting time order **currently in effect?**: prior_family_cases[i].has_current_custody_PT_order
+    datatype: yesnoradio
+    js show if: |
+      ${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true && val("prior_family_cases[i].included_custody_PT_order") === true
+  - Is there a **child support** order in this case that is **currently in effect?**: prior_family_cases[i].has_child_support_order
+    datatype: yesnoradio
+    js show if: |
+      ${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true
+validation code: |
+  prior_family_cases[i].add_to_MC416_4 = True if prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order else False
+---
+id: separate maintenance conversion notice
+continue button field: prior_family_cases[i].convert_separate_maintenance_notice
+question: You **might** be able to convert your separate maintenance to a divorce instead of filing a new divorce
+subquestion: |
+  If you have a prior judgment of separate maintenance, some courts allow the parties to sign an order converting the separate maintenance judgment to a judgment of divorce. 
+  
+  Not all courts allow this. Some courts require you to file a separate divorce case instead.
+  
+  To find out if converting your separate maintenance judgment is an option:
+  
+  * call the clerk's office of the court where you had the separate maintenance case, or 
+  * talk to a lawyer. 
 ---
 if: there_are_marital_children and prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].status in ["pending", "stayed"]
 id: separate maintenance pending kickout
@@ -2644,6 +2681,11 @@ fields:
     datatype: yesnoradio
     show if: 
       code: tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] 
+validation code: |
+  if prior_family_cases[i].type in ["paternity", "custody", "guardianship"]: 
+    prior_family_cases[i].add_to_MC416_4 = True
+  else:
+    prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
 ---
 # LHI "Prior Family Cases DLG" (start at row 174)
 id: other prior family case or order additional info (stayed, pending)
@@ -2668,6 +2710,8 @@ fields:
     datatype: yesnoradio
     show if: 
       code: tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] 
+validation code: |
+  prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
 ---
 # LHI "Prior Family Cases DLG" (start at row 151)
 id: other prior family case or order additional info (dismissed)
@@ -2684,6 +2728,8 @@ fields:
      ${ today() }
     js show if: |
       val("prior_family_cases[i].included_custody_PT_order") === true
+validation code: |
+  prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
 ---
 # LHI "Prior Family Cases DLG" (start at row 108)
 # not sure how much of this logic makes sense to replicate, but trying to at least record it for now
