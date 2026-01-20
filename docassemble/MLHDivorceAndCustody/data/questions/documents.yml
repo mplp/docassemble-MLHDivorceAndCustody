@@ -2517,7 +2517,7 @@ attachment:
           Parenting time arrangements will be made by mutual agreement of the parties.
               % elif PT_type in ["specific", "supervised"]:
                 % if specific_PT_how == "custom":
-                  % if len(custom_PT_details) > 440:
+                  % if len(custom_PT_details) > 240:
           Both parties will have specific parenting time with the minor ${"child" if len(children.filter(legal_parent="both")) == 1 else "children"} according to the Parenting Time Addendum.
                   % else:
           ${custom_PT_details}
