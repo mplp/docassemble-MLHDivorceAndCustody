@@ -4,12 +4,12 @@
 ---
 if: tool_ID == "JOD_only"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, judgment_and_addenda_bundle, proof_of_service, noh_divorce, noh_motion_consent, noh_motion_default], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, JOD_only doesn't have instructions anyway]
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, judgment_and_addenda_bundle, proof_of_service, noh_divorce, noh_motion_consent, noh_motion_default], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, except without the instructions]
 ---
 # ====================================================================
@@ -50,6 +50,15 @@ code: |
 
   else:
     judgment_overflow_addendum.enabled = False
+---
+code: |
+  noh_divorce.enabled = (tool_ID == "divorce_complaint") or ((user_ask_role == "plaintiff") and (tool_ID == "JOD_only"))
+---
+code: |
+  noh_motion_default.enabled = (tool_ID == "divorce_complaint") or ((user_ask_role == "plaintiff") and (tool_ID == "JOD_only"))
+---
+code: |
+  noh_motion_consent.enabled = (tool_ID == "divorce_complaint") or (tool_ID == "JOD_only")
 ---
 # not in JOD_only bundle
 code: |
@@ -130,6 +139,57 @@ code: |
 ## Example form title or category here
 # --------------------------------------------------------------------
 ---
+# --------------------------------------------------------------------
+## Proof of Service
+# --------------------------------------------------------------------
+---
+attachment:
+    name: proof_of_service
+    filename: Proof of Service
+    docx template file: proof_of_service.docx
+    variable name: proof_of_service[i]
+    skip undefined: True
+    valid formats:
+        - pdf 
+---
+objects:
+  - proof_of_service: ALDocument.using(title="Proof of Service", filename="proof_of_service", enabled=True, has_addendum=False)
+---
+# --------------------------------------------------------------------
+## Notice of Hearing
+# --------------------------------------------------------------------
+---
+attachment:
+    name: noh_divorce
+    filename: Notice of Hearing
+    docx template file: noh_divorce.docx
+    variable name: noh_divorce[i]
+    skip undefined: True
+    valid formats:
+        - pdf 
+---
+attachment:
+    name: noh_motion_consent
+    filename: Notice of Hearing and Motion for Entry of Consent Judgment of Divorce 
+    docx template file: noh_motion_consent.docx
+    variable name: noh_motion_consent[i]
+    skip undefined: True
+    valid formats:
+        - pdf 
+---
+attachment:
+    name: noh_motion_default
+    filename: Notice of Hearing and Motion for Entry of Default Judgment of Divorce 
+    docx template file: noh_motion_default.docx
+    variable name: noh_motion_default[i]
+    skip undefined: True
+    valid formats:
+        - pdf 
+---
+objects:
+  - noh_divorce: ALDocument.using(title="Notice of Hearing", filename="noh_divorce", has_addendum=False)
+  - noh_motion_consent: ALDocument.using(title="Notice of Hearing and Motion for Entry of Consent Judgment of Divorce", filename="noh_motion_consent", has_addendum=False)
+  - noh_motion_default: ALDocument.using(title="Notice of Hearing and Motion for Entry of Default Judgment of Divorce", filename="noh_motion_default", has_addendum=False)
 ---
 # --------------------------------------------------------------------
 ## Verified Statement, FOC 23
