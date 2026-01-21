@@ -4,20 +4,24 @@
 ---
 if: tool_ID == "JOD_only"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, judgment_and_addenda_bundle, proof_of_service, noh_divorce, noh_motion_consent, noh_motion_default], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, judgment_and_addenda_bundle, proof_of_service, noh_divorce, noh_motion_consent, noh_motion_default, filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, JOD_only doesn't have instructions anyway]
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, judgment_and_addenda_bundle, proof_of_service, noh_divorce, noh_motion_consent, noh_motion_default], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
-  # - al_court_bundle: [will be same as above, except without the instructions]
+  - al_user_bundle: ALDocumentBundle.using(elements=[confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, judgment_and_addenda_bundle, proof_of_service, noh_divorce, noh_motion_consent, noh_motion_default], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  # - al_court_bundle: [will be same as above, except without the instructions, testimony, flowchart]
 ---
 # ====================================================================
 ## Enabling logic
 # ====================================================================
 ---
 ### List of enabling logic that is TBD
-
+---
+# enabling logic for judgment with or without kids
+code: |
+  judgment_ccmlh413.enabled = there_are_marital_children
+  judgment_ccmlh412.enabled = not there_are_marital_children
 ---
 # enabling logic for judgment addenda bundle 
 code: |
@@ -32,11 +36,16 @@ code: |
   judgment_addendum_real_property_5_to_6.enabled = bool(marriage.real_property) and len(marriage.real_property) > 4
   judgment_addendum_real_property_7_to_8.enabled = bool(marriage.real_property) and len(marriage.real_property) > 6
   judgment_addendum_real_property_9_to_10.enabled = bool(marriage.real_property) and len(marriage.real_property) > 8
+
+  judgment_addendum_income_tax.enabled = there_are_marital_children
   
   judgment_addendum_pensions.enabled = (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own)
 ---
 # enabling logic for JOD_only addenda overflow fields (personal property and debts, real property legal description, and other provisions)
+# add parenting time to regular addenda overflow? Waiting on Amy's opinion
 code: |
+  judgment_overflow_addendum.enabled = False
+  
   if send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum:
     judgment_overflow_addendum.enabled = True
   
@@ -45,11 +54,42 @@ code: |
       if len(property.desc) > 123:
         judgment_overflow_addendum.enabled = True
   
-  elif marriage.other_provisions_any and len(marriage.other_provisions) > 440:
+  elif marriage.other_provisions_any and len(marriage.other_provisions) > 240:
     judgment_overflow_addendum.enabled = True
+---
+# only in divorce_complaint and custody_complaint bundles
+code: |
+  confidential_case_inventory_mc21_full.enabled = prior_family_cases.there_are_any
+  if confidential_case_inventory_mc21_full.enabled:
+    confidential_case_inventory_mc21_1.enabled = True
+    confidential_case_inventory_mc21_2.enabled = len(prior_family_cases) > 4
+    confidential_case_inventory_mc21_3.enabled = len(prior_family_cases) > 8
+---
+# not in JOD_only bundle
+# Future note: for divorce_answer and custody_answer, only enabled if filing counterclaim
+code: |
+  if tool_ID == "divorce_complaint":
+    UCCJEA_affidavit_mc416.enabled = there_are_marital_children
+  if tool_ID == "custody_complaint":
+    UCCJEA_affidavit_mc416.enabled = True
 
-  else:
-    judgment_overflow_addendum.enabled = False
+# if UCCJEA_affidavit_mc416.enabled:
+#   addendum will be enabled if any of the below:
+#     - not MI_home_state_all_kids and len(children.filter(legal_parent='both')) > 1 (or if you think it's worth coming up with a way to turn this into a proper "overflow" calculus, I'm open to that)
+#     - there is overflow in:
+#       - court_cases_concerning_custody_parenting_time
+#       - pending_cases_affecting_custody
+#       - marital_children_past_addresses
+#       - marital_children_names_current_addresses (maybe overflow is unlikely here, can see how many fit safely and consider using auto sizing instead)
+---
+code: |
+  noh_divorce.enabled = (tool_ID == "divorce_complaint") or ((user_ask_role == "plaintiff") and (tool_ID == "JOD_only"))
+---
+code: |
+  noh_motion_default.enabled = (tool_ID == "divorce_complaint") or ((user_ask_role == "plaintiff") and (tool_ID == "JOD_only"))
+---
+code: |
+  noh_motion_consent.enabled = (tool_ID == "divorce_complaint") or (tool_ID == "JOD_only")
 ---
 code: |
   noh_divorce.enabled = (tool_ID == "divorce_complaint") or ((user_ask_role == "plaintiff") and (tool_ID == "JOD_only"))
@@ -76,13 +116,12 @@ code: |
 
   if verified_statement_foc_23_full.enabled:
     verified_statement_foc_23.enabled = True
-    if insurance_in_addendum or len(children.filter(legal_parent="both")) > 5 or len(stepchildren_for_addendum) > 2 or len(users[0].other_identifying_info) > 19 or len(other_parties[0].other_identifying_info) > 19:
+    if (there_are_marital_children and (insurance_in_addendum or len(children.filter(legal_parent="both")) > 5 or len(stepchildren_for_addendum) > 2)) or len(users[0].other_identifying_info) > 19 or len(other_parties[0].other_identifying_info) > 19:
       verified_statement_foc_23_addendum.enabled = True
     else:
       verified_statement_foc_23_addendum.enabled = False
 ---
-# ToDo: need to handle rerunning this in review screen if insurance edited or deleted or children changed (or use reconsider)
-# this one gets triggered by the enabling logic because it's the first possible condition
+# this gets triggered by the enabling logic because it's the first possible condition
 code: |
   insurance_in_addendum = False
   
@@ -120,10 +159,10 @@ code: |
     protected_pii_mc_97a_attachment.enabled = False
 ---
 code: |
-  foc_100_full.enabled = there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support" or (tool_ID == "divorce_complaint" and returning_to_finalize and marriage.temporary_order and marriage.temporary_order_changed) or (tool_ID == "JOD_only" and marriage.temporary_order and marriage.temporary_order_changed)
+  foc_100_full.enabled = there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support" or (tool_ID == "divorce_complaint" and returning_to_finalize and marriage.temporary_order) or (tool_ID == "JOD_only" and marriage.temporary_order)
   if foc_100_full.enabled:
     foc_100_main.enabled = True
-    foc_100_attachment.enabled = (len(children.filter(legal_parent="both")) > 4) or (len(users[0].insurance) > 5) or (len(other_parties[0].insurance) > 5) or children_now_live_with_which_parent == "both"
+    foc_100_attachment.enabled = there_are_marital_children and ((len(children.filter(legal_parent="both")) > 4) or (len(users[0].insurance) > 5) or (len(other_parties[0].insurance) > 5) or children_now_live_with_which_parent == "both")
 ---
 code: |
   foc_10_full.enabled = there_are_marital_children
@@ -190,6 +229,557 @@ objects:
   - noh_divorce: ALDocument.using(title="Notice of Hearing", filename="noh_divorce", has_addendum=False)
   - noh_motion_consent: ALDocument.using(title="Notice of Hearing and Motion for Entry of Consent Judgment of Divorce", filename="noh_motion_consent", has_addendum=False)
   - noh_motion_default: ALDocument.using(title="Notice of Hearing and Motion for Entry of Default Judgment of Divorce", filename="noh_motion_default", has_addendum=False)
+---
+# --------------------------------------------------------------------
+## Confidential Case Inventory, MC 21
+# --------------------------------------------------------------------
+---
+objects:
+  - confidential_case_inventory_mc21_full: ALDocumentBundle.using(elements=[confidential_case_inventory_mc21_1, confidential_case_inventory_mc21_2, confidential_case_inventory_mc21_3], filename="Confidential Case Inventory - MC 21", title="Confidential Case Inventory - MC 21")
+---
+objects:
+  - confidential_case_inventory_mc21_1: ALDocument.using(title="Confidential Case Inventory - MC 21 (1)", filename="Confidential Case Inventory - MC 21 (1)")
+  - confidential_case_inventory_mc21_2: ALDocument.using(title="Confidential Case Inventory - MC 21 (2)", filename="Confidential Case Inventory - MC 21 (2)")
+  - confidential_case_inventory_mc21_3: ALDocument.using(title="Confidential Case Inventory - MC 21 (3)", filename="Confidential Case Inventory - MC 21 (3)")
+---
+attachment:
+  - name: Confidential Case Inventory - MC 21 (1)
+    filename: Confidential Case Inventory - MC 21 (1)
+    variable name: confidential_case_inventory_mc21_1[i]
+    pdf template file: confidential_case_inventory_mc21.pdf
+    skip undefined: True
+    editable: False
+    fields:
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_address_county: ${the_court.address.county.upper()}
+      - docket_number: ${docket_number}
+      #- judge_name: 	
+      - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
+      - defendants0_name_full: ${defendants[0].name_full()}
+      - family_cases0_court_same: ${True if prior_family_cases[0].state == "MI" and the_court.address.county == prior_family_cases[0].county else False}
+      - family_cases0_court_other: ${False if prior_family_cases[0].state == "MI" and the_court.address.county == prior_family_cases[0].county else True}
+      - family_cases0_court_name_number_county_state: |
+          ${prior_family_cases[0].court if prior_family_cases[0].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[0].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[0].county} County, ${state_name(prior_family_cases[0].state)}
+      - family_cases0_name: ${prior_family_cases[0].title}
+      - family_cases0_docket_number: ${prior_family_cases[0].docket_number}
+      - family_cases0_judge: ${word("Judge ") + word(prior_family_cases[0].judge)}
+      - family_cases0_status_pending: ${True if prior_family_cases[0].status in ["pending", "stayed"] else False}
+      - family_cases0_status_resolved: ${True if prior_family_cases[0].status in ["dismissed", "ended_with_order"] else False}
+      - family_cases0_effective_order_support: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[0].type == "separate_maintenance" and prior_family_cases[0].status == "ended_with_order" and prior_family_cases[0].involved_custody_pt_support and prior_family_cases[0].has_child_support_order:
+          True
+          % elif prior_family_cases[0].type not in ["divorce", "separate_maintenance"] and prior_family_cases[0].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[0].has_child_support_order:
+          True         
+          % else:
+          False
+          % endif
+      - family_cases0_effective_order_custody_pt: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[0].type == "separate_maintenance" and prior_family_cases[0].status == "ended_with_order" and prior_family_cases[0].involved_custody_pt_support and prior_family_cases[0].included_custody_PT_order and prior_family_cases[0].has_current_custody_PT_order:
+          True
+          % elif prior_family_cases[0].type not in ["divorce", "separate_maintenance"] and prior_family_cases[0].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[0].included_custody_PT_order and prior_family_cases[0].has_current_custody_PT_order:
+          True         
+          % else:
+          False
+          % endif 	
+      - family_cases1_court_same: ${True if prior_family_cases[1].state == "MI" and the_court.address.county == prior_family_cases[1].county else False}
+      - family_cases1_court_other: ${False if prior_family_cases[1].state == "MI" and the_court.address.county == prior_family_cases[1].county else True}
+      - family_cases1_court_name_number_county_state: |
+          ${prior_family_cases[1].court if prior_family_cases[1].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[1].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[1].county} County, ${state_name(prior_family_cases[1].state)}
+      - family_cases1_name: ${prior_family_cases[1].title}
+      - family_cases1_docket_number: ${prior_family_cases[1].docket_number}
+      - family_cases1_judge: ${word("Judge ") + word(prior_family_cases[1].judge)}
+      - family_cases1_status_pending: ${True if prior_family_cases[1].status in ["pending", "stayed"] else False}
+      - family_cases1_status_resolved: ${True if prior_family_cases[1].status in ["dismissed", "ended_with_order"] else False}
+      - family_cases1_effective_order_support: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[1].type == "separate_maintenance" and prior_family_cases[1].status == "ended_with_order" and prior_family_cases[1].involved_custody_pt_support and prior_family_cases[1].has_child_support_order:
+          True
+          % elif prior_family_cases[1].type not in ["divorce", "separate_maintenance"] and prior_family_cases[1].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[1].has_child_support_order:
+          True         
+          % else:
+          False
+          % endif
+      - family_cases1_effective_order_custody_pt: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[1].type == "separate_maintenance" and prior_family_cases[1].status == "ended_with_order" and prior_family_cases[1].involved_custody_pt_support and prior_family_cases[1].included_custody_PT_order and prior_family_cases[1].has_current_custody_PT_order:
+          True
+          % elif prior_family_cases[1].type not in ["divorce", "separate_maintenance"] and prior_family_cases[1].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[1].included_custody_PT_order and prior_family_cases[1].has_current_custody_PT_order:
+          True         
+          % else:
+          False
+          % endif 	
+      - family_cases2_court_same: ${True if prior_family_cases[2].state == "MI" and the_court.address.county == prior_family_cases[2].county else False}
+      - family_cases2_court_other: ${False if prior_family_cases[2].state == "MI" and the_court.address.county == prior_family_cases[2].county else True}
+      - family_cases2_court_name_number_county_state: |
+          ${prior_family_cases[2].court if prior_family_cases[2].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[2].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[2].county} County, ${state_name(prior_family_cases[2].state)}
+      - family_cases2_name: ${prior_family_cases[2].title}
+      - family_cases2_docket_number: ${prior_family_cases[2].docket_number}
+      - family_cases2_judge: ${word("Judge ") + word(prior_family_cases[2].judge)}
+      - family_cases2_status_pending: ${True if prior_family_cases[2].status in ["pending", "stayed"] else False}
+      - family_cases2_status_resolved: ${True if prior_family_cases[2].status in ["dismissed", "ended_with_order"] else False}
+      - family_cases2_effective_order_support: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[2].type == "separate_maintenance" and prior_family_cases[2].status == "ended_with_order" and prior_family_cases[2].involved_custody_pt_support and prior_family_cases[2].has_child_support_order:
+          True
+          % elif prior_family_cases[2].type not in ["divorce", "separate_maintenance"] and prior_family_cases[2].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[2].has_child_support_order:
+          True         
+          % else:
+          False
+          % endif
+      - family_cases2_effective_order_custody_pt: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[2].type == "separate_maintenance" and prior_family_cases[2].status == "ended_with_order" and prior_family_cases[2].involved_custody_pt_support and prior_family_cases[2].included_custody_PT_order and prior_family_cases[2].has_current_custody_PT_order:
+          True
+          % elif prior_family_cases[2].type not in ["divorce", "separate_maintenance"] and prior_family_cases[2].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[2].included_custody_PT_order and prior_family_cases[2].has_current_custody_PT_order:
+          True         
+          % else:
+          False
+          % endif 	
+      - family_cases3_court_same: ${True if prior_family_cases[3].state == "MI" and the_court.address.county == prior_family_cases[3].county else False}
+      - family_cases3_court_other: ${False if prior_family_cases[3].state == "MI" and the_court.address.county == prior_family_cases[3].county else True}
+      - family_cases3_court_name_number_county_state: |
+          ${prior_family_cases[3].court if prior_family_cases[3].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[3].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[3].county} County, ${state_name(prior_family_cases[3].state)}
+      - family_cases3_name: ${prior_family_cases[3].title}
+      - family_cases3_docket_number: ${prior_family_cases[3].docket_number}
+      - family_cases3_judge: ${word("Judge ") + word(prior_family_cases[3].judge)}
+      - family_cases3_status_pending: ${True if prior_family_cases[3].status in ["pending", "stayed"] else False}
+      - family_cases3_status_resolved: ${True if prior_family_cases[3].status in ["dismissed", "ended_with_order"] else False}
+      - family_cases3_effective_order_support: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[3].type == "separate_maintenance" and prior_family_cases[3].status == "ended_with_order" and prior_family_cases[3].involved_custody_pt_support and prior_family_cases[3].has_child_support_order:
+          True
+          % elif prior_family_cases[3].type not in ["divorce", "separate_maintenance"] and prior_family_cases[3].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[3].has_child_support_order:
+          True         
+          % else:
+          False
+          % endif
+      - family_cases3_effective_order_custody_pt: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[3].type == "separate_maintenance" and prior_family_cases[3].status == "ended_with_order" and prior_family_cases[3].involved_custody_pt_support and prior_family_cases[3].included_custody_PT_order and prior_family_cases[3].has_current_custody_PT_order:
+          True
+          % elif prior_family_cases[3].type not in ["divorce", "separate_maintenance"] and prior_family_cases[3].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[3].included_custody_PT_order and prior_family_cases[3].has_current_custody_PT_order:
+          True         
+          % else:
+          False
+          % endif 	
+      - signature_date: ${ signature_date if MLH_esign else "" }
+      - signature: |
+          % if MLH_esign:
+          /s/ ${ users[0].name_full() }
+          % else:
+          ${ '' }
+          % endif
+      - pursuant_to: ${ MLH_esign_tag if MLH_esign else "" }
+---
+attachment:
+  - name: Confidential Case Inventory - MC 21 (2)
+    filename: Confidential Case Inventory - MC 21 (2)
+    variable name: confidential_case_inventory_mc21_2[i]
+    pdf template file: confidential_case_inventory_mc21.pdf
+    skip undefined: True
+    editable: False
+    fields:
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_address_county: ${the_court.address.county.upper()}
+      - docket_number: ${docket_number}
+      #- judge_name: 	
+      - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
+      - defendants0_name_full: ${defendants[0].name_full()}
+      - family_cases0_court_same: ${True if prior_family_cases[4].state == "MI" and the_court.address.county == prior_family_cases[4].county else False}
+      - family_cases0_court_other: ${False if prior_family_cases[4].state == "MI" and the_court.address.county == prior_family_cases[4].county else True}
+      - family_cases0_court_name_number_county_state: |
+          ${prior_family_cases[4].court if prior_family_cases[4].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[4].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[4].county} County, ${state_name(prior_family_cases[4].state)}
+      - family_cases0_name: ${prior_family_cases[4].title}
+      - family_cases0_docket_number: ${prior_family_cases[4].docket_number}
+      - family_cases0_judge: ${word("Judge ") + word(prior_family_cases[4].judge)}
+      - family_cases0_status_pending: ${True if prior_family_cases[4].status in ["pending", "stayed"] else False}
+      - family_cases0_status_resolved: ${True if prior_family_cases[4].status in ["dismissed", "ended_with_order"] else False}
+      - family_cases0_effective_order_support: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[4].type == "separate_maintenance" and prior_family_cases[4].status == "ended_with_order" and prior_family_cases[4].involved_custody_pt_support and prior_family_cases[4].has_child_support_order:
+          True
+          % elif prior_family_cases[4].type not in ["divorce", "separate_maintenance"] and prior_family_cases[4].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[4].has_child_support_order:
+          True         
+          % else:
+          False
+          % endif
+      - family_cases0_effective_order_custody_pt: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[4].type == "separate_maintenance" and prior_family_cases[4].status == "ended_with_order" and prior_family_cases[4].involved_custody_pt_support and prior_family_cases[4].included_custody_PT_order and prior_family_cases[4].has_current_custody_PT_order:
+          True
+          % elif prior_family_cases[4].type not in ["divorce", "separate_maintenance"] and prior_family_cases[4].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[4].included_custody_PT_order and prior_family_cases[4].has_current_custody_PT_order:
+          True         
+          % else:
+          False
+          % endif 	
+      - family_cases1_court_same: ${True if prior_family_cases[5].state == "MI" and the_court.address.county == prior_family_cases[5].county else False}
+      - family_cases1_court_other: ${False if prior_family_cases[5].state == "MI" and the_court.address.county == prior_family_cases[5].county else True}
+      - family_cases1_court_name_number_county_state: |
+          ${prior_family_cases[5].court if prior_family_cases[5].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[5].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[5].county} County, ${state_name(prior_family_cases[5].state)}
+      - family_cases1_name: ${prior_family_cases[5].title}
+      - family_cases1_docket_number: ${prior_family_cases[5].docket_number}
+      - family_cases1_judge: ${word("Judge ") + word(prior_family_cases[5].judge)}
+      - family_cases1_status_pending: ${True if prior_family_cases[5].status in ["pending", "stayed"] else False}
+      - family_cases1_status_resolved: ${True if prior_family_cases[5].status in ["dismissed", "ended_with_order"] else False}
+      - family_cases1_effective_order_support: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[5].type == "separate_maintenance" and prior_family_cases[5].status == "ended_with_order" and prior_family_cases[5].involved_custody_pt_support and prior_family_cases[5].has_child_support_order:
+          True
+          % elif prior_family_cases[5].type not in ["divorce", "separate_maintenance"] and prior_family_cases[5].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[5].has_child_support_order:
+          True         
+          % else:
+          False
+          % endif
+      - family_cases1_effective_order_custody_pt: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[5].type == "separate_maintenance" and prior_family_cases[5].status == "ended_with_order" and prior_family_cases[5].involved_custody_pt_support and prior_family_cases[5].included_custody_PT_order and prior_family_cases[5].has_current_custody_PT_order:
+          True
+          % elif prior_family_cases[5].type not in ["divorce", "separate_maintenance"] and prior_family_cases[5].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[5].included_custody_PT_order and prior_family_cases[5].has_current_custody_PT_order:
+          True         
+          % else:
+          False
+          % endif 	
+      - family_cases2_court_same: ${True if prior_family_cases[6].state == "MI" and the_court.address.county == prior_family_cases[6].county else False}
+      - family_cases2_court_other: ${False if prior_family_cases[6].state == "MI" and the_court.address.county == prior_family_cases[6].county else True}
+      - family_cases2_court_name_number_county_state: |
+          ${prior_family_cases[6].court if prior_family_cases[6].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[6].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[6].county} County, ${state_name(prior_family_cases[6].state)}
+      - family_cases2_name: ${prior_family_cases[6].title}
+      - family_cases2_docket_number: ${prior_family_cases[6].docket_number}
+      - family_cases2_judge: ${word("Judge ") + word(prior_family_cases[6].judge)}
+      - family_cases2_status_pending: ${True if prior_family_cases[6].status in ["pending", "stayed"] else False}
+      - family_cases2_status_resolved: ${True if prior_family_cases[6].status in ["dismissed", "ended_with_order"] else False}
+      - family_cases2_effective_order_support: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[6].type == "separate_maintenance" and prior_family_cases[6].status == "ended_with_order" and prior_family_cases[6].involved_custody_pt_support and prior_family_cases[6].has_child_support_order:
+          True
+          % elif prior_family_cases[6].type not in ["divorce", "separate_maintenance"] and prior_family_cases[6].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[6].has_child_support_order:
+          True         
+          % else:
+          False
+          % endif
+      - family_cases2_effective_order_custody_pt: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[6].type == "separate_maintenance" and prior_family_cases[6].status == "ended_with_order" and prior_family_cases[6].involved_custody_pt_support and prior_family_cases[6].included_custody_PT_order and prior_family_cases[6].has_current_custody_PT_order:
+          True
+          % elif prior_family_cases[6].type not in ["divorce", "separate_maintenance"] and prior_family_cases[6].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[6].included_custody_PT_order and prior_family_cases[6].has_current_custody_PT_order:
+          True         
+          % else:
+          False
+          % endif 	
+      - family_cases3_court_same: ${True if prior_family_cases[7].state == "MI" and the_court.address.county == prior_family_cases[7].county else False}
+      - family_cases3_court_other: ${False if prior_family_cases[7].state == "MI" and the_court.address.county == prior_family_cases[7].county else True}
+      - family_cases3_court_name_number_county_state: |
+          ${prior_family_cases[7].court if prior_family_cases[7].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[7].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[7].county} County, ${state_name(prior_family_cases[7].state)}
+      - family_cases3_name: ${prior_family_cases[7].title}
+      - family_cases3_docket_number: ${prior_family_cases[7].docket_number}
+      - family_cases3_judge: ${word("Judge ") + word(prior_family_cases[7].judge)}
+      - family_cases3_status_pending: ${True if prior_family_cases[7].status in ["pending", "stayed"] else False}
+      - family_cases3_status_resolved: ${True if prior_family_cases[7].status in ["dismissed", "ended_with_order"] else False}
+      - family_cases3_effective_order_support: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[7].type == "separate_maintenance" and prior_family_cases[7].status == "ended_with_order" and prior_family_cases[7].involved_custody_pt_support and prior_family_cases[7].has_child_support_order:
+          True
+          % elif prior_family_cases[7].type not in ["divorce", "separate_maintenance"] and prior_family_cases[7].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[7].has_child_support_order:
+          True         
+          % else:
+          False
+          % endif
+      - family_cases3_effective_order_custody_pt: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[7].type == "separate_maintenance" and prior_family_cases[7].status == "ended_with_order" and prior_family_cases[7].involved_custody_pt_support and prior_family_cases[7].included_custody_PT_order and prior_family_cases[7].has_current_custody_PT_order:
+          True
+          % elif prior_family_cases[7].type not in ["divorce", "separate_maintenance"] and prior_family_cases[7].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[7].included_custody_PT_order and prior_family_cases[7].has_current_custody_PT_order:
+          True         
+          % else:
+          False
+          % endif 	
+      - signature_date: ${ signature_date if MLH_esign else "" }
+      - signature: |
+          % if MLH_esign:
+          /s/ ${ users[0].name_full() }
+          % else:
+          ${ '' }
+          % endif
+      - pursuant_to: ${ MLH_esign_tag if MLH_esign else "" }
+---
+attachment:
+  - name: Confidential Case Inventory - MC 21 (3)
+    filename: Confidential Case Inventory - MC 21 (3)
+    variable name: confidential_case_inventory_mc21_3[i]
+    pdf template file: confidential_case_inventory_mc21.pdf
+    skip undefined: True
+    editable: False
+    fields:
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_address_county: ${the_court.address.county.upper()}
+      - docket_number: ${docket_number}
+      #- judge_name: 	
+      - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
+      - defendants0_name_full: ${defendants[0].name_full()}
+      - family_cases0_court_same: ${True if prior_family_cases[8].state == "MI" and the_court.address.county == prior_family_cases[8].county else False}
+      - family_cases0_court_other: ${False if prior_family_cases[8].state == "MI" and the_court.address.county == prior_family_cases[8].county else True}
+      - family_cases0_court_name_number_county_state: |
+          ${prior_family_cases[8].court if prior_family_cases[8].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[8].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[8].county} County, ${state_name(prior_family_cases[8].state)}
+      - family_cases0_name: ${prior_family_cases[8].title}
+      - family_cases0_docket_number: ${prior_family_cases[8].docket_number}
+      - family_cases0_judge: ${word("Judge ") + word(prior_family_cases[8].judge)}
+      - family_cases0_status_pending: ${True if prior_family_cases[8].status in ["pending", "stayed"] else False}
+      - family_cases0_status_resolved: ${True if prior_family_cases[8].status in ["dismissed", "ended_with_order"] else False}
+      - family_cases0_effective_order_support: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[8].type == "separate_maintenance" and prior_family_cases[8].status == "ended_with_order" and prior_family_cases[8].involved_custody_pt_support and prior_family_cases[8].has_child_support_order:
+          True
+          % elif prior_family_cases[8].type not in ["divorce", "separate_maintenance"] and prior_family_cases[8].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[8].has_child_support_order:
+          True         
+          % else:
+          False
+          % endif
+      - family_cases0_effective_order_custody_pt: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[8].type == "separate_maintenance" and prior_family_cases[8].status == "ended_with_order" and prior_family_cases[8].involved_custody_pt_support and prior_family_cases[8].included_custody_PT_order and prior_family_cases[8].has_current_custody_PT_order:
+          True
+          % elif prior_family_cases[8].type not in ["divorce", "separate_maintenance"] and prior_family_cases[8].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[8].included_custody_PT_order and prior_family_cases[8].has_current_custody_PT_order:
+          True         
+          % else:
+          False
+          % endif 	
+      - family_cases1_court_same: ${True if prior_family_cases[9].state == "MI" and the_court.address.county == prior_family_cases[9].county else False}
+      - family_cases1_court_other: ${False if prior_family_cases[9].state == "MI" and the_court.address.county == prior_family_cases[9].county else True}
+      - family_cases1_court_name_number_county_state: |
+          ${prior_family_cases[9].court if prior_family_cases[9].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[9].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[9].county} County, ${state_name(prior_family_cases[9].state)}
+      - family_cases1_name: ${prior_family_cases[9].title}
+      - family_cases1_docket_number: ${prior_family_cases[9].docket_number}
+      - family_cases1_judge: ${word("Judge ") + word(prior_family_cases[9].judge)}
+      - family_cases1_status_pending: ${True if prior_family_cases[9].status in ["pending", "stayed"] else False}
+      - family_cases1_status_resolved: ${True if prior_family_cases[9].status in ["dismissed", "ended_with_order"] else False}
+      - family_cases1_effective_order_support: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[9].type == "separate_maintenance" and prior_family_cases[9].status == "ended_with_order" and prior_family_cases[9].involved_custody_pt_support and prior_family_cases[9].has_child_support_order:
+          True
+          % elif prior_family_cases[9].type not in ["divorce", "separate_maintenance"] and prior_family_cases[9].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[9].has_child_support_order:
+          True         
+          % else:
+          False
+          % endif
+      - family_cases1_effective_order_custody_pt: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[9].type == "separate_maintenance" and prior_family_cases[9].status == "ended_with_order" and prior_family_cases[9].involved_custody_pt_support and prior_family_cases[9].included_custody_PT_order and prior_family_cases[9].has_current_custody_PT_order:
+          True
+          % elif prior_family_cases[9].type not in ["divorce", "separate_maintenance"] and prior_family_cases[9].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[9].included_custody_PT_order and prior_family_cases[9].has_current_custody_PT_order:
+          True         
+          % else:
+          False
+          % endif 	
+      - family_cases2_court_same: ${True if prior_family_cases[10].state == "MI" and the_court.address.county == prior_family_cases[10].county else False}
+      - family_cases2_court_other: ${False if prior_family_cases[10].state == "MI" and the_court.address.county == prior_family_cases[10].county else True}
+      - family_cases2_court_name_number_county_state: |
+          ${prior_family_cases[10].court if prior_family_cases[10].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[10].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[10].county} County, ${state_name(prior_family_cases[10].state)}
+      - family_cases2_name: ${prior_family_cases[10].title}
+      - family_cases2_docket_number: ${prior_family_cases[10].docket_number}
+      - family_cases2_judge: ${word("Judge ") + word(prior_family_cases[10].judge)}
+      - family_cases2_status_pending: ${True if prior_family_cases[10].status in ["pending", "stayed"] else False}
+      - family_cases2_status_resolved: ${True if prior_family_cases[10].status in ["dismissed", "ended_with_order"] else False}
+      - family_cases2_effective_order_support: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[10].type == "separate_maintenance" and prior_family_cases[10].status == "ended_with_order" and prior_family_cases[10].involved_custody_pt_support and prior_family_cases[10].has_child_support_order:
+          True
+          % elif prior_family_cases[10].type not in ["divorce", "separate_maintenance"] and prior_family_cases[10].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[10].has_child_support_order:
+          True         
+          % else:
+          False
+          % endif
+      - family_cases2_effective_order_custody_pt: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[10].type == "separate_maintenance" and prior_family_cases[10].status == "ended_with_order" and prior_family_cases[10].involved_custody_pt_support and prior_family_cases[10].included_custody_PT_order and prior_family_cases[10].has_current_custody_PT_order:
+          True
+          % elif prior_family_cases[10].type not in ["divorce", "separate_maintenance"] and prior_family_cases[10].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[10].included_custody_PT_order and prior_family_cases[10].has_current_custody_PT_order:
+          True         
+          % else:
+          False
+          % endif 	
+      - family_cases3_court_same: ${True if prior_family_cases[11].state == "MI" and the_court.address.county == prior_family_cases[11].county else False}
+      - family_cases3_court_other: ${False if prior_family_cases[11].state == "MI" and the_court.address.county == prior_family_cases[11].county else True}
+      - family_cases3_court_name_number_county_state: |
+          ${prior_family_cases[11].court if prior_family_cases[11].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[11].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[11].county} County, ${state_name(prior_family_cases[11].state)}
+      - family_cases3_name: ${prior_family_cases[11].title}
+      - family_cases3_docket_number: ${prior_family_cases[11].docket_number}
+      - family_cases3_judge: ${word("Judge ") + word(prior_family_cases[11].judge)}
+      - family_cases3_status_pending: ${True if prior_family_cases[11].status in ["pending", "stayed"] else False}
+      - family_cases3_status_resolved: ${True if prior_family_cases[11].status in ["dismissed", "ended_with_order"] else False}
+      - family_cases3_effective_order_support: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[11].type == "separate_maintenance" and prior_family_cases[11].status == "ended_with_order" and prior_family_cases[11].involved_custody_pt_support and prior_family_cases[11].has_child_support_order:
+          True
+          % elif prior_family_cases[11].type not in ["divorce", "separate_maintenance"] and prior_family_cases[11].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[11].has_child_support_order:
+          True         
+          % else:
+          False
+          % endif
+      - family_cases3_effective_order_custody_pt: |
+          % if not there_are_marital_children:
+          False
+          % elif prior_family_cases[11].type == "separate_maintenance" and prior_family_cases[11].status == "ended_with_order" and prior_family_cases[11].involved_custody_pt_support and prior_family_cases[11].included_custody_PT_order and prior_family_cases[11].has_current_custody_PT_order:
+          True
+          % elif prior_family_cases[11].type not in ["divorce", "separate_maintenance"] and prior_family_cases[11].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[11].included_custody_PT_order and prior_family_cases[11].has_current_custody_PT_order:
+          True         
+          % else:
+          False
+          % endif 	
+      - signature_date: ${ signature_date if MLH_esign else "" }
+      - signature: |
+          % if MLH_esign:
+          /s/ ${ users[0].name_full() }
+          % else:
+          ${ '' }
+          % endif
+      - pursuant_to: ${ MLH_esign_tag if MLH_esign else "" }
+---
+# --------------------------------------------------------------------
+## UCCJEA, MC 416
+# --------------------------------------------------------------------
+---
+objects:
+  - UCCJEA_affidavit_mc416: ALDocument.using(title="UCCJEA Affidavit - MC 416", filename="UCCJEA Affidavit - MC 416")
+---
+attachment:
+  - name: UCCJEA Affidavit - MC 416
+    filename: UCCJEA Affidavit - MC 416
+    variable name: UCCJEA_affidavit_mc416[i]
+    pdf template file: UCCJEA_affidavit_mc416.pdf
+    skip undefined: True
+    editable: False
+    fields:
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_address_county: ${the_court.address.county.upper()}
+      - docket_number: ${docket_number}
+      - docket_number__1: ${docket_number}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${ the_court.phone }
+      - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
+      - defendants0_name_full: ${defendants[0].name_full()}
+      - marital_children_names_current_addresses: |
+          % if children_now_live_with_which_parent == "users[0]":
+          ${ comma_and_list(children.filter(legal_parent='both')) } ${ children.filter(legal_parent="both").does_verb('live') } at ${ word("Confidential Address") if confidential_contact_info_yn else users[0].address.on_one_line() }.
+          % elif children_now_live_with_which_parent == "other_parties[0]":
+          ${ comma_and_list(children.filter(legal_parent='both')) } ${ children.filter(legal_parent="both").does_verb('live') } at ${ other_parties[0].address.on_one_line() }.
+          % elif children_now_live_with_which_parent == "both":
+          ${ comma_and_list(children.filter(legal_parent='both')) } ${ children.filter(legal_parent="both").does_verb('live') } at ${ word("Confidential Address") if confidential_contact_info_yn else users[0].address.on_one_line() } and ${ other_parties[0].address.on_one_line() }.
+          % elif children_now_live_with_which_parent == "depends_on_child":
+          ${ comma_and_list(children.filter(legal_parent='both').filter(lives_with="users[0]")) } live(s) at ${ word("Confidential Address") if confidential_contact_info_yn else users[0].address.on_one_line() }. ${ comma_and_list(children.filter(legal_parent='both').filter(lives_with="other_parties[0]")) } live(s) at ${ other_parties[0].address.on_one_line() }
+          % endif
+      - marital_children_past_addresses: |
+          % if children_previous_address.there_are_any:
+          % for address in children_previous_address:
+          ${address.on_one_line()} -- from ${address.start_date} to ${address.end_date}; 
+          % endfor
+          % else:
+          N/A
+          % endif
+      - users0_name_address_block: |
+          % if children_lived_with_which_parent_past in ["both", "users[0]"]:
+          ${users[0].name_full()}
+          % if confidential_contact_info_yn:
+          Confidential 
+          % else:
+          ${ users[0].address.line_one() }
+          ${ users[0].address.line_two() }
+          % endif
+          % endif
+      - other_parties0_name_address_block: |
+          % if children_lived_with_which_parent_past in ["both", "other_parties[0]"]:
+          ${other_parties[0].name_full()}
+          ${ other_parties[0].address.line_one() }
+          ${ other_parties[0].address.line_two() }
+          % endif
+      - court_cases_concerning_custody_parenting_time: |
+          % for case in prior_family_cases:
+          % if case.add_to_MC416_4:
+          ${case.title}; Case #: ${case.docket_number}; ${case.court if case.state != "MI" else court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}; ${case.address if case.state != "MI" else word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_address')) + word(" ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_unit')) + word(", ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='CSZ'))}; Order date: ${format_date(case.final_order_date, format='M/d/yyyy') if case.type not in ["divorce", "separate_maintenance"] and case.status == "ended_with_order" else format_date(case.custody_PT_order_date, format='M/d/yyyy')} ${word("; This proceeding is continuing.") if case.status == "pending" else word("; This proceeding has been stayed by the court.") if case.status == "stayed" else word("; This proceeding was later dismissed.") if case.status == "dismissed" else word("")}
+          % endif
+          % endfor
+      - pending_cases_affecting_custody: |
+          % for case in prior_family_cases:
+          % if case.add_to_MC416_4:
+          % if case.status in ["pending", "stayed"]:
+          ${case.title}; Case #: ${case.docket_number}; ${case.court if case.state != "MI" else court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}; ${case.address if case.state != "MI" else word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_address')) + word(" ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_unit')) + word(", ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='CSZ'))}; Nature: ${prior_family_case_types_ordered[case.type]}; Order date: ${format_date(case.final_order_date, format='M/d/yyyy') if case.type not in ["divorce", "separate_maintenance"] and case.status == "ended_with_order" else format_date(case.custody_PT_order_date, format='M/d/yyyy')} ${word("; This proceeding is continuing.") if case.status == "pending" else word("; This proceeding has been stayed by the court.")}
+          % endif
+          % endif
+          % endfor
+      - pending_proceeding_continuing: |
+          % if len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)) == 1:
+          % if prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)[0].status == "pending":
+          True
+          % else:
+          False
+          % endif
+          % endif
+        # if there's only one pending or stayed (resolved=False) case affecting custody, this checks if that one case is pending. If there's multiple unresolved cases affecting custody, leave blank.
+      - pending_proceeding_stayed: |
+          % if len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)) == 1:
+          % if prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)[0].status == "stayed":
+          True
+          % else:
+          False
+          % endif
+          % endif
+        # see note on pending_proceeding_continuing. Same here except checking if case is stayed.
+      - childrens_home_state: |
+          % if MI_home_state_all_kids:
+          Michigan
+          % elif len(children.filter(legal_parent='both')) == 1:
+          ${ word("None. Michigan has jurisdiction because the child lived 6 months in MI within the last 6 months. MCL 722.1201(1)(b)") if children.filter(legal_parent='both')[0].home_state == "none" and children.filter(legal_parent='both')[0].MI_jurisdiction == True else children.filter(legal_parent='both')[0].home_state }
+          % elif len(children.filter(legal_parent='both')) > 1:
+          See addendum. 
+          % endif
+# If it goes to addendum (last option above), we would basically run a for loop for children.filter(legal_parent='both') and print same as in the elif above, except formatted something like: 
+# The home states of the children are:
+#  - Michigan for kljlkjkljk jkljkljlk and Child4 Child
+#  - Louisiana for chiuld on
+#  - Iowa for Child Child3
+#  - Kentucky for Child5 fiver
+#  - Kentucky for Sextus Sixty
+#  - None for Child Seven
+#  - None for Child Eight. Michigan has jurisdiction because the child lived 6 months in MI within the last 6 months. MCL 722.1201(1)(b)
+# (the above is just an example, anything similar would be fine (for example if you want to just print "- Name: <home state text>". It's not important to group kids with the same home state, unless it feels very easy, fine by me to list them separately. )
+      - risk_if_disclose_identifying_information: ${ confidential_contact_info_yn }
+      - users0_name_full: ${users[0].name_full()}
+      - users0_address_block: |
+          % if confidential_contact_info_yn:
+          Confidential- Mailing: 
+          % endif
+          ${ users[0].address.line_one() }
+          ${ users[0].address.line_two() }      
+      # Unused fields (in addition to most of the the notary part)
+      #- judge_name: 	
+      #- need_temporary_order_protect_kids:
+      #- need_temporary_order_protect_kids_explanation:
+      #- nonparties_with_custody_PT_claims:
+
 ---
 # --------------------------------------------------------------------
 ## Verified Statement, FOC 23
@@ -290,7 +880,7 @@ attachment:
           % if pa_status == "gets_assistance":
           ${ comma_and_list(public_assistance_list) } Case number: ${ comma_and_list(pa_case_numbers_foc_23) }
           % elif pa_status == "applied":
-          Applied for ${ public_assistance_list }
+          Applied for ${ comma_and_list(public_assistance_list) }
           % endif
       - users1_other_citizenship: |
           % if users[0].has_foreign_citizenship:
@@ -364,7 +954,7 @@ attachment:
           % if other_party_pa_status == "gets_assistance":
           ${ comma_and_list(op_public_assistance_list) } Case number: ${ comma_and_list(op_pa_case_numbers_foc_23) }
           % elif other_party_pa_status == "applied":
-          Applied for ${ op_public_assistance_list }
+          Applied for ${ comma_and_list(op_public_assistance_list) }
           % endif
       - other_parties1_other_citizenship: |
           % if other_parties[0].has_foreign_citizenship:
@@ -520,19 +1110,21 @@ attachment:
           ${ other_parties[0].address.line_two() }
           % endif
           % endif
-      - stepchildren0_name: ${ stepchildren_for_addendum[0].name.full() }
+      - stepchildren0_name: ${ stepchildren_for_addendum[0].name.full() if there_are_marital_children else "" }
       - stepchildren0_sex: |
+          % if there_are_marital_children:
           % if stepchildren_for_addendum[0].gender == "female":
           f
           % elif stepchildren_for_addendum[0].gender == "male":
           m
           % endif
+          % endif
       - stepchildren0_birthdate: |
-          % if stepchildren_for_addendum[0].birthdate != None:
+          % if there_are_marital_children and stepchildren_for_addendum[0].birthdate != None:
           ${ format_date(stepchildren_for_addendum[0].birthdate, format='M/d/yyyy') }
           % endif
       - stepchildren0_age: |
-          % if stepchildren_for_addendum[0].birthdate != None:
+          % if there_are_marital_children and stepchildren_for_addendum[0].birthdate != None:
           % if stepchildren_for_addendum[0].age_in_years() < 1:
           ${ stepchildren_for_addendum[0].age_in_months() } months
           % else:
@@ -540,6 +1132,7 @@ attachment:
           % endif
           % endif
       - stepchildren0_address_block: |
+          % if there_are_marital_children:
           % if stepchildren_for_addendum[0].stepchild_lives_with == "user":
           % if confidential_contact_info_yn:
           Confidential
@@ -558,13 +1151,17 @@ attachment:
           ${ stepchildren_for_addendum[0].address.line_two() }
           % endif
           % endif
+          % endif
       - stepchildren1_name: |
+          % if there_are_marital_children:
           % if len(stepchildren_for_addendum) > 2:
           See addendum for additional stepchildren.
           % elif len(stepchildren_for_addendum) == 2:
           ${ stepchildren_for_addendum[1].name.full() }
           % endif
+          % endif
       - stepchildren1_sex: |
+          % if there_are_marital_children:
           % if len(stepchildren_for_addendum) == 2:
           % if stepchildren_for_addendum[1].gender == "female":
           f
@@ -572,13 +1169,17 @@ attachment:
           m
           % endif
           % endif
+          % endif
       - stepchildren1_birthdate: |
+          % if there_are_marital_children:
           % if len(stepchildren_for_addendum) == 2:
           % if stepchildren_for_addendum[1].birthdate != None:
           ${ format_date(stepchildren_for_addendum[1].birthdate, format='M/d/yyyy') }
           % endif
           % endif
+          % endif
       - stepchildren1_age: |
+          % if there_are_marital_children:
           % if len(stepchildren_for_addendum) == 2:
           % if stepchildren_for_addendum[1].birthdate != None:
           % if stepchildren_for_addendum[1].age_in_years() < 1:
@@ -588,7 +1189,9 @@ attachment:
           % endif
           % endif
           % endif
+          % endif
       - stepchildren1_address_block: |
+          % if there_are_marital_children:
           % if len(stepchildren_for_addendum) == 2:
           % if stepchildren_for_addendum[1].stepchild_lives_with == "user":
           % if confidential_contact_info_yn:
@@ -609,8 +1212,9 @@ attachment:
           % endif
           % endif
           % endif
+          % endif
       - insurance_child_name0: |
-          % if insurance_in_addendum == True:
+          % if there_are_marital_children and insurance_in_addendum:
           See (49) in addendum for Health Care Coverage information.
           % endif     
       #- insurance_policy_holder0:
@@ -819,12 +1423,15 @@ attachments:
   valid formats:
     - pdf
 ---
+# note dual template files -- needed to stop display of insurance information if it was gathered but review screen later changed to no marital children. Fields should be identical on the two templates, except for removal of insurance fields on "no_kids" version
 attachment:
   name: Judgment Information
   variable name: foc_100_main[i]
   skip undefined: True
   editable: False
-  pdf template file: judgment_information_foc_100.pdf
+  pdf template file:
+    code: |
+      "judgment_information_foc_100.pdf" if there_are_marital_children else "judgment_information_foc_100_no_kids.pdf"
   fields:
     - trial_court: ${ the_court.number }
     - trial_court_county: ${ county_choice.upper() }
@@ -1560,13 +2167,13 @@ attachment:
         % endif
         ${ phone_number_formatted(defendants[0].job.employer.phone) if defendants[0].job.employer.phone != "" else "" }
         % endif
-    - children1: ${ children[0] }
-    - children2: ${ children[1] }
-    - children3: ${ children[2] }
-    - children4: ${ children[3] }
-    - children5: ${ children[4] }
+    - children1: ${ children.filter(legal_parent='both')[0] }
+    - children2: ${ children.filter(legal_parent='both')[1] }
+    - children3: ${ children.filter(legal_parent='both')[2] }
+    - children4: ${ children.filter(legal_parent='both')[3] }
+    - children5: ${ children.filter(legal_parent='both')[4] }
     - more_children: |
-        % if len(children.complete_elements()) > 5:
+        % if len(children.filter(legal_parent='both')) > 5:
         See "Children's Names" in Addendum.
         % else:
         ${ '' }
@@ -1728,12 +2335,13 @@ attachment:
           % endif
 ---
 # --------------------------------------------------------------------
-## Judgment CC-MLH-412 and Attachments
+## Judgment CC-MLH-412/413 and Attachments
 # --------------------------------------------------------------------
 ---
 objects:
   - judgment_and_addenda_bundle: ALDocumentBundle.using(elements=[
       judgment_ccmlh412,
+      judgment_ccmlh413,
       judgment_addendum_personal_property_and_debt,
       judgment_addendum_vehicles_1_to_4,
       judgment_addendum_vehicles_5_to_8,
@@ -1743,12 +2351,14 @@ objects:
       judgment_addendum_real_property_5_to_6,
       judgment_addendum_real_property_7_to_8,
       judgment_addendum_real_property_9_to_10,
+      judgment_addendum_income_tax,
       judgment_addendum_pensions,
       judgment_overflow_addendum
       ], filename="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", title="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", enabled=True)
 ---
 objects:
-  - judgment_ccmlh412: ALDocument.using(title="Judgment", filename="Judgment.pdf", enabled=True)
+  - judgment_ccmlh412: ALDocument.using(title="Judgment", filename="Judgment.pdf")
+  - judgment_ccmlh413: ALDocument.using(title="Judgment", filename="Judgment.pdf")
   - judgment_addendum_personal_property_and_debt: ALDocument.using(title="Personal property and debt addendum", filename="Personal property and debt addendum.pdf")
   - judgment_addendum_vehicles_1_to_4: ALDocument.using(title="Vehicles addendum 1", filename="Vehicles addendum.pdf")
   - judgment_addendum_vehicles_5_to_8: ALDocument.using(title="Vehicles addendum 2", filename="Vehicles addendum.pdf")
@@ -1758,6 +2368,7 @@ objects:
   - judgment_addendum_real_property_5_to_6: ALDocument.using(title="Real property addendum 3", filename="Real property addendum.pdf")
   - judgment_addendum_real_property_7_to_8: ALDocument.using(title="Real property addendum 4", filename="Real property addendum.pdf")
   - judgment_addendum_real_property_9_to_10: ALDocument.using(title="Real property addendum 5", filename="Real property addendum.pdf")
+  - judgment_addendum_income_tax: ALDocument.using(title="Income tax addendum 3.5", filename="Income tax addendum.pdf")
   - judgment_addendum_pensions: ALDocument.using(title="Pensions addendum", filename="Pensions addendum.pdf")
   - judgment_overflow_addendum: ALDocument.using(title="Judgment overflow addendum", filename="Judgment overflow addendum.pdf")
 ---
@@ -1767,6 +2378,8 @@ attachment:
     variable name: judgment_ccmlh412[i]
     pdf template file: judgment_ccmlh412_no_kids.pdf
     editable: False
+    ### note difference from most forms:
+    skip undefined: False
     fields:
       - trial_court_circuit: |
           % if the_court.type == "circuit":
@@ -1786,25 +2399,57 @@ attachment:
           ${word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
       - plaintiffs1_name: ${plaintiffs}
       - defendants1_name: ${defendants}
-      - spousal_support_none: Yes
-      - spousal_support_reserved: No
-      - spousal_support_awarded: No
+      - settlement_spousal_support_reserved: |
+          % if spousal_support_provisions == "agree_no_current_spousal_support_but_may_change":
+          True
+          % else:
+          False
+          % endif
+      - settlement_spousal_support_none: |
+          % if spousal_support_provisions == "agree_never_spousal_support":
+          True
+          % else:
+          False
+          % endif
+      - settlement_spousal_support_awarded: |
+          % if spousal_support_provisions in ["OP_agrees_to_pay_spousal_support", "user_agrees_to_pay_spousal_support"]:
+          True
+          % else:
+          False
+          % endif
+      - settlement_spousal_support_can_change: |
+          % if spousal_support_provisions in ["OP_agrees_to_pay_spousal_support", "user_agrees_to_pay_spousal_support"] and not spousal_support_is_immutable:
+          True
+          % else:
+          False
+          % endif
+      - settlement_spousal_support_cannot_change: |
+          % if spousal_support_provisions in ["OP_agrees_to_pay_spousal_support", "user_agrees_to_pay_spousal_support"] and spousal_support_is_immutable:
+          True
+          % else:
+          False
+          % endif
+      - no_settlement_spousal_support_reserved:
+      - no_settlement_spousal_support_none:
+      - no_settlement_spousal_support_awarded:
       - personal_property_as_is: |
           ${not personal_property_in_addendum(marriage)}
       - personal_property_in_addendum: |
           ${personal_property_in_addendum(marriage)}
       - debts_none: ${not debts_in_addendum(marriage)}
-      - debts_pay_debts_in_own_name: ${marriage.debts.any and marriage.attr("debts.pay_debts_in_own_names")}
+      - debts_pay_debts_in_own_name: ${marriage.debts.any and marriage.debts.pay_debts_in_own_names}
       - debts_in_addendum: ${debts_in_addendum(marriage)}
       - vehicles_none: ${not marriage.vehicles.any}
-      - vehicles_keep_same: ${marriage.vehicles.any and marriage.attr("vehicles.keep_own")}
-      - vehicles_in_addendum: ${marriage.vehicles.any and not marriage.attr("vehicles.keep_own")}
+      - vehicles_keep_same: ${marriage.vehicles.any and marriage.vehicles.keep_own}
+      - vehicles_in_addendum: ${marriage.vehicles.any and not marriage.vehicles.keep_own}
+      - page_number_second:
+      - total_pages:
+      - docket_number__1: ${docket_number}
       - real_property_none: ${not bool(marriage.real_property)}
       - real_property_in_addendum: ${bool(marriage.real_property)}
       - pensions_none: ${not marriage.have_pension_retirement}
       - pensions_keep_own: ${marriage.have_pension_retirement and marriage.attr("pension_retirement_accounts_keep_own")}
       - pensions_in_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
-      - total_pages: ""
       - wants_name_change: ${users[0].new_last_name_yn}
       - name_change_plaintiff: ${plaintiffs[0].attr("new_last_name_yn")}
       - name_change_defendant: ${defendants[0].attr("new_last_name_yn")}
@@ -1816,7 +2461,7 @@ attachment:
       - has_other_provisions: ${marriage.other_provisions_any}
       - other_provisions: |
           % if marriage.other_provisions_any:
-            % if len(marriage.other_provisions) > 440:
+            % if len(marriage.other_provisions) > 240:
           See addendum.
             % else:
             ${marriage.other_provisions}
@@ -1824,6 +2469,236 @@ attachment:
           % else:
           ${""}
           % endif
+---
+attachment:
+  - name: Judgment ccmlh413 (with kids)
+    filename: Judgment ccmlh413 (with kids)
+    variable name: judgment_ccmlh413[i]
+    pdf template file: judgment_ccmlh413_with_kids.pdf
+    editable: False
+    ### note difference from most forms:
+    skip undefined: False
+    fields:
+      - trial_court_circuit: ${the_court.number}
+      - docket_number: ${docket_number}
+      - trial_court_county: ${the_court.address.county.upper()}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${the_court.phone}
+      - plaintiffs_block: |
+          ${plaintiffs}
+          ${plaintiffs[0].address.on_one_line()}
+          ${word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number)}
+      - defendants_block: |
+          ${defendants}
+          ${defendants[0].address.on_one_line()}
+          ${word("Does not have phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number)}
+      - plaintiffs1_name: ${plaintiffs}
+      - defendants1_name: ${defendants}
+      - children_line_1: ${children_line_1}
+      - children_line_2: ${children_line_2}
+      - awards_legal_custody: ${MI_has_jurisdiction_all_kids}
+      - legal_custody_plaintiff: |
+          % if MI_has_jurisdiction_all_kids and legal_custody_who == "user" and user_ask_role == "plaintiff":
+          True
+          % elif MI_has_jurisdiction_all_kids and legal_custody_who == "other_party" and user_ask_role == "defendant":
+          True
+          % else:
+          False
+          % endif
+      - legal_custody_defendant: |
+          % if MI_has_jurisdiction_all_kids and legal_custody_who == "user" and user_ask_role == "defendant":
+          True
+          % elif MI_has_jurisdiction_all_kids and legal_custody_who == "other_party" and user_ask_role == "plaintiff":
+          True
+          % else:
+          False
+          % endif
+      - legal_custody_joint: |
+          % if MI_has_jurisdiction_all_kids and legal_custody_who == "both":
+          True
+          % else:
+          False
+          % endif
+      - awards_physical_custody: ${MI_has_jurisdiction_all_kids}
+      - physical_custody_plaintiff: |
+          % if MI_has_jurisdiction_all_kids and physical_custody_who == "user" and user_ask_role == "plaintiff":
+          True
+          % elif MI_has_jurisdiction_all_kids and physical_custody_who == "other_party" and user_ask_role == "defendant":
+          True
+          % else:
+          False
+          % endif
+      - physical_custody_defendant: |
+          % if MI_has_jurisdiction_all_kids and physical_custody_who == "user" and user_ask_role == "defendant":
+          True
+          % elif MI_has_jurisdiction_all_kids and physical_custody_who == "other_party" and user_ask_role == "plaintiff":
+          True
+          % else:
+          False
+          % endif
+      - physical_custody_joint: |
+          % if MI_has_jurisdiction_all_kids and physical_custody_who == "both":
+          True
+          % else:
+          False
+          % endif
+      - custody_not_determined: ${ not MI_has_jurisdiction_all_kids }
+      - must_notify_address_change: ${MI_has_jurisdiction_all_kids}
+      - court_must_approve_domicile_change: ${MI_has_jurisdiction_all_kids}
+      - 100_mile_rule_applies: |
+          % if MI_has_jurisdiction_all_kids and legal_custody_who == "both" and not already_over_100_miles and not allow_over_100_miles:
+          True
+          % else:
+          False
+          % endif
+      - 100_mile_NA_already_exceeded: |
+          % if MI_has_jurisdiction_all_kids and legal_custody_who == "both" and already_over_100_miles:
+          True
+          % else:
+          False
+          % endif
+      - 100_mile_NA_sole_custody: |
+          % if MI_has_jurisdiction_all_kids and legal_custody_who != "both":
+          True
+          % else:
+          False
+          % endif
+      - 100_mile_waived: |
+          % if MI_has_jurisdiction_all_kids and legal_custody_who == "both" and not already_over_100_miles and allow_over_100_miles:
+          True
+          % else:
+          False
+          % endif
+      - docket_number__1: ${docket_number}
+      - parents_shall_cooperate: ${MI_has_jurisdiction_all_kids}
+      - parenting_time_established: ${MI_has_jurisdiction_all_kids}
+      - parenting_time_provisions: |
+          % if MI_has_jurisdiction_all_kids:
+            % if physical_custody_who != "both":
+              % if PT_who == "user":
+          ${OP_party_label.capitalize()} will not have parenting time.
+              % elif PT_who == "other_party":
+          ${user_party_label.capitalize()} will not have parenting time.
+              % endif
+            % endif
+            % if physical_custody_who == "both" or PT_who == "both":
+              % if PT_type == "reasonable":
+          Parenting time arrangements will be made by mutual agreement of the parties.
+              % elif PT_type in ["specific", "supervised"]:
+                % if specific_PT_how == "custom":
+                  % if len(custom_PT_details) > 240:
+          Both parties will have specific parenting time with the minor ${"child" if len(children.filter(legal_parent="both")) == 1 else "children"} according to the Parenting Time Addendum.
+                  % else:
+          ${custom_PT_details}
+                  % endif
+                % else:
+          Both parties will have specific parenting time with the minor ${"child" if len(children.filter(legal_parent="both")) else "children"} according to the ${the_court.address.county} County Friend of the Court parenting time schedule.
+                % endif
+                % if PT_type == "supervised":
+                  % if physical_custody_who == "user":
+      
+          Parenting time for ${OP_party_label.lower()} will be supervised by ${PT_supervisor if PT_supervisor != "" else "________________________"}.
+                  % elif physical_custody_who == "other_party":
+      
+          Parenting time for ${user_party_label.lower()} will be supervised by ${PT_supervisor if PT_supervisor != "" else "________________________"}.
+                  % endif
+                % endif
+              % endif
+            % endif
+          % endif
+      - child_support_ordered:  |
+          % if MI_has_jurisdiction_all_kids and not other_case_controls_child_support:
+          True
+          % else:
+          False
+          % endif
+      - no_child_support_ordered:
+      - previous_child_support_ordered_no_jurisdiction:
+      - previous_child_support_ordered_docket_number:
+      - previous_child_support_ordered_court_name:
+      - previous_child_support_ordered_state:
+      - previous_child_support_ordered_payor:
+      - no_jurisdiction_for_child_support_order:
+      - docket_number__2: ${docket_number}
+      - settlement_spousal_support_reserved: |
+          % if spousal_support_provisions == "agree_no_current_spousal_support_but_may_change":
+          True
+          % else:
+          False
+          % endif
+      - settlement_spousal_support_none: |
+          % if spousal_support_provisions == "agree_never_spousal_support":
+          True
+          % else:
+          False
+          % endif
+      - settlement_spousal_support_awarded: |
+          % if spousal_support_provisions in ["OP_agrees_to_pay_spousal_support", "user_agrees_to_pay_spousal_support"]:
+          True
+          % else:
+          False
+          % endif
+      - settlement_spousal_support_can_change: |
+          % if spousal_support_provisions in ["OP_agrees_to_pay_spousal_support", "user_agrees_to_pay_spousal_support"] and not spousal_support_is_immutable:
+          True
+          % else:
+          False
+          % endif
+      - settlement_spousal_support_cannot_change: |
+          % if spousal_support_provisions in ["OP_agrees_to_pay_spousal_support", "user_agrees_to_pay_spousal_support"] and spousal_support_is_immutable:
+          True
+          % else:
+          False
+          % endif
+      - no_settlement_spousal_support_reserved:
+      - no_settlement_spousal_support_none:
+      - no_settlement_spousal_support_awarded:
+      - wants_name_change: ${users[0].new_last_name_yn}
+      - name_change_plaintiff: ${plaintiffs[0].attr("new_last_name_yn")}
+      - name_change_defendant: ${defendants[0].attr("new_last_name_yn")}
+      - new_name: ${users[0].attr("new_last_name")}
+      - has_personal_property_debt_addendum: ${personal_property_in_addendum(marriage) or debts_in_addendum(marriage)}
+      - has_vehicle_addendum: ${has_vehicle_addendum(marriage)}
+      - has_real_property_addendum: ${bool(marriage.real_property)}
+      - has_pension_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
+      - docket_number__3: ${docket_number}
+      - personal_property_as_is: ${not personal_property_in_addendum(marriage)}
+      - personal_property_in_addendum: ${personal_property_in_addendum(marriage)}
+      - debts_none: ${not debts_in_addendum(marriage)}
+      - debts_pay_debts_in_own_name: ${marriage.debts.any and marriage.attr("debts.pay_debts_in_own_names")}
+      - debts_in_addendum: ${debts_in_addendum(marriage)}
+      - vehicles_none: ${not marriage.vehicles.any}
+      - vehicles_keep_same: ${marriage.vehicles.any and marriage.attr("vehicles.keep_own")}
+      - vehicles_in_addendum: ${marriage.vehicles.any and not marriage.attr("vehicles.keep_own")}
+      - real_property_none: ${not bool(marriage.real_property)}
+      - real_property_in_addendum: ${bool(marriage.real_property)}
+      - pensions_none: ${not marriage.have_pension_retirement}
+      - pensions_keep_own: ${marriage.have_pension_retirement and marriage.attr("pension_retirement_accounts_keep_own")}
+      - pensions_in_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
+      - has_income_tax_addendum: ${there_are_marital_children}
+      - has_parenting_time_addendum: ${MI_has_jurisdiction_all_kids and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 240}
+      - has_other_provisions: ${marriage.other_provisions_any}
+      - other_provisions: |
+          % if marriage.other_provisions_any:
+            % if len(marriage.other_provisions) > 240:
+          See addendum.
+            % else:
+            ${marriage.other_provisions}
+            % endif
+          % else:
+          ${""}
+          % endif
+---
+# determine whether there's a controlling child support case
+# we assume there's no controlling order in a dismissed case or a divorce case
+code: |
+  other_case_controls_child_support = False
+  if child_support_pending_elsewhere:
+    other_case_controls_child_support = True
+  if prior_family_cases.there_are_any:
+    for case in prior_family_cases:
+      if case.status != "dismissed" and case.type != "divorce" and case.has_child_support_order:
+        other_case_controls_child_support = True
 ---
 attachment:
   - name: Judgment addendum 1 (personal property and debt)
@@ -3582,6 +4457,75 @@ attachment:
       - docket_number1: ${docket_number}
 ---
 attachment:
+  - name: Judgment addendum 3.5 (income tax)
+    filename: Judgment addendum 3.5 (income tax)
+    variable name: judgment_addendum_income_tax[i]
+    pdf template file: judgment_addendum_3_5_income_tax.pdf
+    editable: False
+    fields:
+      - trial_court_circuit: ${the_court.number}
+      - trial_court_county: ${the_court.address.county.upper()}
+      - docket_number: ${ docket_number }
+      - docket_number__1: ${ docket_number }
+      - judge: ${""}
+      - trial_court_address_on_one_line: ${the_court.address.on_one_line()}
+      - trial_court_phone_number: ${ the_court.phone }
+      - plaintiffs1_name: ${plaintiffs}
+      - defendants1_name: ${defendants}
+      - income_tax_credits_greater_number_of_nights: ${income_tax_method == "default"}
+      - income_tax_credits_plaintiff: |
+          % if income_tax_method == "user" and user_ask_role == "plaintiff":
+          True
+          % elif income_tax_method == "other_party" and user_ask_role == "defendant":
+          True
+          % else:
+          False
+          % endif
+      - income_tax_credits_start_year: |
+          % if (income_tax_method == "user" and user_ask_role == "plaintiff") or (income_tax_method == "other_party" and user_ask_role == "defendant"):
+          ${tax_start_year}
+          % else:
+          ${""}
+          % endif
+      - income_tax_credits_defendant: |
+          % if income_tax_method == "user" and user_ask_role == "defendant":
+          True
+          % elif income_tax_method == "other_party" and user_ask_role == "plaintiff":
+          True
+          % else:
+          False
+          % endif
+      - income_tax_credits_start_year__1: |
+          % if (income_tax_method == "user" and user_ask_role == "defendant") or (income_tax_method == "other_party" and user_ask_role == "plaintiff"):
+          ${tax_start_year}
+          % else:
+          ${""}
+          % endif
+      - income_tax_credits_shared_by_child: ${income_tax_method == "specify_per_child"}
+      - income_tax_children_plaintiff_line_1: ${income_tax_children_plaintiff_line_1 if income_tax_method == "specify_per_child" else ""}
+      - income_tax_children_plaintiff_line_2: ${income_tax_children_plaintiff_line_2 if income_tax_method == "specify_per_child" else ""}
+      - income_tax_children_defendant_line_1: ${income_tax_children_defendant_line_1 if income_tax_method == "specify_per_child" else ""}
+      - income_tax_children_defendant_line_2: ${income_tax_children_defendant_line_2 if income_tax_method == "specify_per_child" else ""}
+      - income_tax_credits_start_year__2: ${tax_start_year if income_tax_method == "specify_per_child" else ""}
+      - income_tax_credits_alternate_years: ${income_tax_method == "alternate_years"}
+      - income_tax_credits_start_year__3: |
+          % if income_tax_method == "alternate_years":
+          ${tax_start_year}
+          % else:
+          ${""}
+          % endif
+      - alternate_years_even_plaintiff: ${income_tax_method == "alternate_years" and ((tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "plaintiff") or (tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "defendant") or (not tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "defendant") or (not tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "plaintiff"))}
+      - alternate_years_even_defendant: ${income_tax_method == "alternate_years" and ((tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "defendant") or (tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "plaintiff") or (not tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "plaintiff") or (not tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "defendant"))}
+      - alternate_years_odd_plaintiff: ${income_tax_method == "alternate_years" and ((not tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "plaintiff") or (not tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "defendant") or (tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "defendant") or (tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "plaintiff"))}
+      - alternate_years_odd_defendant: ${income_tax_method == "alternate_years" and ((not tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "defendant") or (not tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "plaintiff") or (tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "plaintiff") or (tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "defendant"))}
+      - page_number_first: 
+      - page_number_second: 
+---
+# determine whether the tax_start_year is even
+code: |
+  tax_start_year_is_even = (tax_start_year % 2 == 0)
+---
+attachment:
   - name: Judgment addendum 4 (pensions)
     filename: Judgment addendum 4 (pensions)
     variable name: judgment_addendum_pensions[i]
@@ -3595,10 +4539,70 @@ attachment:
     docx template file: judgment_overflow_addendum.docx
     skip undefined: True
 ---
+## judgment_ccmlh413 (with kids) ##
+# add commas and the word "and" plus split children names to two lines when over character count
+code: |
+    def format_children_names(children, max_len=90):
+            names = [child.name.full() for child in children.filter(legal_parent="both")]
+            if not names:
+                    return "", ""
+            if len(names) == 1:
+                    return names[0], ""
+            joined = ", ".join(names[:-1]) + " and " + names[-1]
+            if len(joined) <= max_len:
+                    return joined, ""
+            split_at = joined.rfind(",", 0, max_len)
+            if split_at == -1:
+                    return joined[:max_len].rstrip(), joined[max_len:].lstrip(", ").lstrip()
+            return joined[:split_at].rstrip(","), joined[split_at+1:].lstrip()
+    children_line_1, children_line_2 = format_children_names(children)
+---
+### income tax addendum code ###
+# add commas and the word "and" plus split specific plaintiff/defendant tax children names to two lines when over character count
+code: |
+    def tax_format_names(names, max_len=120):
+        if not names:
+            return "", ""
+        # Add commas and 'and'
+        if len(names) == 1:
+            joined = names[0]
+        else:
+            joined = ", ".join(names[:-1]) + " and " + names[-1]
+        # Split to two lines if needed
+        if len(joined) <= max_len:
+            return joined, ""
+        else:
+            # Try to split at last comma before max_len
+            split_at = joined.rfind(",", 0, max_len)
+            if split_at == -1:
+                # No comma, just split at max_len
+                return joined[:max_len].rstrip(), joined[max_len:].lstrip(", ").lstrip()
+            else:
+                return joined[:split_at].rstrip(","), joined[split_at+1:].lstrip()
+---
+code: |
+    tax_children_plaintiff = [
+        child.name.full()
+        for child in children.filter(legal_parent="both")
+        if (
+            (child.tax_parent == "users[0]" and user_ask_role == "plaintiff") or
+            (child.tax_parent == "other_parties[0]" and user_ask_role == "defendant")
+        )
+    ]
+    tax_children_defendant = [
+        child.name.full()
+        for child in children.filter(legal_parent="both")
+        if (
+            (child.tax_parent == "users[0]" and user_ask_role == "defendant") or
+            (child.tax_parent == "other_parties[0]" and user_ask_role == "plaintiff")
+        )
+    ]
+    income_tax_children_plaintiff_line_1, income_tax_children_plaintiff_line_2 = tax_format_names(tax_children_plaintiff)
+    income_tax_children_defendant_line_1, income_tax_children_defendant_line_2 = tax_format_names(tax_children_defendant)
+---
 ### personal property and debts addendum overflow code ###
 ---
 # plaintiff personal property overflow code
-# TODO, will need to reset "line_count" when property variables edited
 code: |
   if marriage.personal_property_acquired and (not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual):
     plaintiff_personal_property_line_count = (
@@ -3661,14 +4665,13 @@ code: |
 code: |
   def debts_in_addendum(marriage: DAObject) -> bool:
     return marriage.debts.any and (
-      not marriage.attr("debts.agree_responsibility_debts_own_name")
-      or marriage.attr("debts.any_in_both_names")
+      marriage.debts.any_in_both_names
+      or not marriage.debts.pay_debts_in_own_names
     )
 ---
 code: |
   def has_vehicle_addendum(marriage: DAObject) -> bool:
-    return (
-      marriage.vehicles.any
-      and not marriage.attr("vehicles.keep_own")
+    return marriage.vehicles.any and (
+      not marriage.vehicles.keep_own
     )
 ---

@@ -4,6 +4,42 @@ event: review_full
 question: |
   Review your answers
 review:
+  - Edit:
+      - marriage.true_statement
+    button: |
+      ##### Is all the information you provided true?
+        - ${word(yesno(marriage.true_statement))}
+  - Edit:
+      - returning_to_finalize
+    button: |
+      ##### What stage of the case are you in?
+      % if not returning_to_finalize:
+       - You said you are **preparing to file** for divorce.
+      
+      **Important:** if you already filed, please tap **Edit** to update your case status.
+      % else:
+      
+      You said that:
+
+        - You **already filed** your divorce complaint.
+      % if marriage.temporary_order:
+        - A **temporary order was entered** in your case for custody, parenting time, child support, or spousal support.  
+      % if marriage.temporary_order_changed:
+        - Some information that goes on the *Domestic Relations Judgment Information* form (FOC 100) **has changed** since it was last filed.
+      
+      **Important!** Make sure all information below is correct and updated.
+      % else:
+        - The information that goes on the *Domestic Relations Judgment Information* form (FOC 100) has **not changed** since it was last filed.
+      % endif
+      % else:
+        - There has been **no temporary order** entered in your case for custody, parenting time, child support, or spousal support.
+
+      **Important:** if a temporary order has been entered, please tap **Edit** to update your case status.
+      % endif  
+      % endif
+    show if: tool_ID == "divorce_complaint"
+    # This is a special question in the divorce complaint context, because we fully expect for some people the answers will change between their first pass through the tool and when they return. We really want to try to bring it to people's attention.
+
 #
 # ---------- case information ----------
 #
@@ -111,6 +147,14 @@ review:
         - interview_order_user_contact_info
       - invalidate:
         - interview_order_children # for Muskegon PT logic
+        - venue
+        - current_venue_options
+        - all_potential_venue_options
+        - check_for_required_venue
+        - there_is_venue_controlling_separate_maintenance_case
+        - court_index
+        - the_court
+        - the_foc
       # Note validation logic on confidential_contact_info_yn question
     button: |
       ##### Keep your contact info confidential?
@@ -121,6 +165,14 @@ review:
         - interview_order_user_contact_info
       - invalidate:
         - interview_order_children # for Muskegon PT logic
+        - venue
+        - current_venue_options
+        - all_potential_venue_options
+        - check_for_required_venue
+        - there_is_venue_controlling_separate_maintenance_case
+        - court_index
+        - the_court
+        - the_foc
       # Note validation logic on users[0].address.address question
     button: |
       % if tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and confidential_contact_info_yn):
@@ -144,6 +196,14 @@ review:
         - users[0].ten_days_in_county
       - invalidate:
         - interview_order_children # because of Muskegon PT logic
+        - venue
+        - current_venue_options
+        - all_potential_venue_options
+        - check_for_required_venue
+        - there_is_venue_controlling_separate_maintenance_case
+        - court_index
+        - the_court
+        - the_foc
     button: |
       ##### Do you live in Michigan?
         - ${word(yesno(users[0].lives_in_Michigan))}   
@@ -255,6 +315,14 @@ review:
         - just_check_op_county
       - invalidate:
         - interview_order_children # because of Muskegon PT logic
+        - venue
+        - current_venue_options
+        - all_potential_venue_options
+        - check_for_required_venue
+        - there_is_venue_controlling_separate_maintenance_case
+        - court_index
+        - the_court
+        - the_foc
       # Note validation logic on other_parties[0].address.address question
     button: |
       % if tool_ID == "JOD_only":
@@ -345,6 +413,7 @@ review:
         - **Phone number:** ${other_parties[0].attorney.phone_number}
         % endif
       % endif
+    show if: tool_ID not in ["divorce_complaint", "custody_complaint"]
 #
 # ---------- marriage ----------
 #
@@ -381,6 +450,9 @@ review:
       % else:
       ##### Date you and your spouse stopped living together
         - ${marriage.living_together_stopped_date}
+      % if there_are_marital_children:
+        - Number of minor children living in household on this date: ${marriage.number_children_in_home_when_separated}
+      % endif
       % endif
 #
 # ---------- spousal support ----------
@@ -397,6 +469,8 @@ review:
       - user_wants_post_divorce_support
       - recompute: 
         - interview_order_spousal_support
+      - invalidate:
+        - interview_order_user_employment
       # Note validation logic on user_wants_post_divorce_support question
     button: |
       ##### Need spousal support **after** divorce is final?
@@ -405,6 +479,8 @@ review:
       - spousal_support_provisions
       - follow up:
         - spousal_support_is_immutable
+      - invalidate:
+        - interview_order_user_employment
     button: |
       ##### Spousal support agreement?
         % if user_wants_post_divorce_support:
@@ -521,10 +597,45 @@ review:
 # ---------- children and pregnancy ----------
 #
 # TODO ADD ACCORDION
+  - note: |
+      ##### Children
+      % for child in children.filter(legal_parent="both"):
+        **${ child }** (DOB: ${format_date(child.birthdate, format='M/d/yyyy')})
+
+        - Gender: ${ child.gender }
+        - SSN: ${ child.ssn_last_four }
+        - You and ${ other_parties[0] } are **both legal parents.**
+      
+      % endfor
+      % for child in children:
+      % if child.legal_parent != "both":
+      **${ child }** ${ word("") if not defined("child.birthdate") else "(DOB: " + format_date(child.birthdate, format='M/d/yyyy') + ")" if child.birthdate != None else "(DOB: not provided)" }
+      
+      % if defined("child.gender"):
+      % if child.gender != "":
+        - Gender: ${ child.gender }
+      % else:
+        - Gender: not provided"
+      % endif
+      % endif
+      % if child.legal_parent == "user":
+        - **You are their legal parent.** ${ other_parties[0] } is not.
+      % elif child.legal_parent == "other_party":
+        - **${ other_parties[0] } is their legal parent.** You are not.
+      % endif
+      
+      % endif
+      % endfor     
+    show if: children.there_are_any and child_legal_parent_review_screen
+    # using child_legal_parent_review_screen as a proxy for having finished child gathering once
   - Edit:
       - children.there_are_any
+      - follow up:
+        - children.revisit
       - invalidate:
         - set_marital_children_or_not
+        - children_line_1
+        - children_line_2
         - set_child_home_choices
         - guidepost_marital_children
         - kids_had_other_custodian
@@ -533,41 +644,92 @@ review:
         - temporary_order_kids_exit
         - interview_order_home_state
         - set_children_home_state_info
+        - other_case_controls_child_support
         - children_live_with_parent
         - children_now_live_with_which_parent
         - children_lived_with_which_parent_past
-        - guidepost_stepchildren
         - interview_order_stepchild_address
+        - tax_choices
         - income_tax_method
-        - users[0].insurance.gathered
-        - other_parties[0].insurance.gathered
+        - income_tax_children_plaintiff_line_1
+        - income_tax_children_plaintiff_line_2 
+        - income_tax_children_defendant_line_1
+        - income_tax_children_defendant_line_2
+        - insurance_in_addendum
         - interview_order_pregnancy
+        - interview_order_user_employment
         - interview_order_user_income
         - interview_order_income_tax
+        - there_is_venue_controlling_separate_maintenance_case
+        - check_for_required_venue
+        - venue
+        - court_index
+        - the_court
+        - the_foc
       - recompute:
-        - children.gathered_reset
         - children_previous_address.gathered_reset
         - interview_order_children
         - prior_family_cases.gathered_deep_reset
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
+      % if children.there_are_any:
+      ##### **Add or remove** a child
+      % else:
       ##### Any minor children?
         - ${word(yesno(children.there_are_any))}
-  - Edit:
-      - children.revisit
-    button: |
-      ##### ${marriage.mobile_home.question_text}
-
-      % if marriage.mobile_home:
-      % for idx, item in enumerate(marriage.mobile_home):
-        - **${ordinal(idx, capitalize=True)} mobile home**
-          - **VIN:** ${item.kind}
-          - **Location:** ${item.desc}
-          - **Award:** ${item.owner}
-      % endfor
-      % else:
-        - None
       % endif
+  - Edit:
+      - child_demographics_review_screen
+    button: |
+      ##### Edit a child's **name and basic info**
+    show if: children.there_are_any
+  - Edit:
+      - child_legal_parent_review_screen
+      - invalidate:
+        - set_marital_children_or_not
+        - children_line_1
+        - children_line_2
+        - set_child_home_choices
+        - guidepost_marital_children
+        - kids_had_other_custodian
+        - third_party_custody_claim
+        - need_temporary_order_kids
+        - temporary_order_kids_exit
+        - interview_order_home_state
+        - set_children_home_state_info
+        - other_case_controls_child_support
+        - children_live_with_parent
+        - children_now_live_with_which_parent
+        - children_lived_with_which_parent_past
+        - interview_order_stepchild_address
+        - tax_choices
+        - income_tax_method
+        - income_tax_children_plaintiff_line_1
+        - income_tax_children_plaintiff_line_2 
+        - income_tax_children_defendant_line_1
+        - income_tax_children_defendant_line_2
+        - insurance_in_addendum
+        - interview_order_pregnancy
+        - interview_order_user_employment
+        - interview_order_user_income
+        - interview_order_income_tax
+        - there_is_venue_controlling_separate_maintenance_case
+        - check_for_required_venue
+        - venue
+        - court_index
+        - the_court
+        - the_foc
+      - recompute:
+        - children_previous_address.gathered_reset
+        - interview_order_children
+        - prior_family_cases.gathered_deep_reset
+      # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
+    button: |
+      ##### Edit a child's **legal parent** info
+    show if: children.there_are_any
+  - note: |
+      <hr>
+    show if: children.there_are_any and child_legal_parent_review_screen
   - Edit:
       - home_state_review_screen
       - invalidate:
@@ -575,13 +737,14 @@ review:
       - recompute: 
         - interview_order_home_state
     button: |-
-      ##### Children's legal "home state"
+      ##### Marital children's legal "home state"
       % for child in children.filter(legal_parent="both"):
-        - ${ child.familiar() } currently lives in ${ child.currently_resides_in_locality_display_name }. This is ${ "" if child.current_residence_is_home_state else word("not") } their legal "home state". 
-        % if not (child.currently_resides_in_type == "Michigan" and child.current_residence_is_home_state) and (child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months"):
-        Their legal home state is Michigan becaues they recently lived in Michigan for 6 months.
+        - ${ child.familiar() } currently lives in ${ child.currently_resides_in_locality_display_name }. This is ${ "" if child.current_residence_is_home_state else word("**not**") } their legal "home state". 
+        % if not (child.currently_resides_in_type == "Michigan" and child.current_residence_is_home_state) and (child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.currently_resides_in_locality != "MI" and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months"):
+        Michigan has jurisdiction becaues they recently lived in Michigan for 6 months.
         % endif
       % endfor
+    show if: there_are_marital_children
   - Edit:
       - children_live_with_parent
       - invalidate:
@@ -591,7 +754,7 @@ review:
       # Note validation logic on children_live_with_parent
     button: |
       ##### Home of marital children
-      The ${ children.filter(legal_parent='both').as_noun() } ${ children.filter(legal_parent="both").does_verb('live') } with: 
+      ${ comma_and_list(children.filter(legal_parent='both').familiar()) } ${ children.filter(legal_parent="both").does_verb('live') } with: 
         % if children_now_live_with_which_parent == "users[0]":
         you.
         % elif children_now_live_with_which_parent == "other_parties[0]":
@@ -604,6 +767,7 @@ review:
         - ${ child.familiar() } lives with ${ word("you") if child.lives_with == "users[0]" else word("your spouse") }.
         % endfor
         % endif
+    show if: there_are_marital_children
   - Edit:
       - recompute:
         - children_previous_address.gathered_reset
@@ -613,7 +777,7 @@ review:
         - interview_order_children
     button: |
       ##### Past homes of marital children
-        - Over the last 5 years, the ${ children.filter(legal_parent='both').as_noun() } lived with 
+        - Over the last 5 years, ${ comma_and_list(children.filter(legal_parent='both').familiar()) } lived with 
         % if children_lived_with_which_parent_past == "users[0]":
         you.
         % elif children_lived_with_which_parent_past == "other_parties[0]":
@@ -621,7 +785,7 @@ review:
         % elif children_lived_with_which_parent_past == "both":
         you and your spouse.
         % endif
-        - In the last five years, the ${ children.filter(legal_parent='both').as_noun() } ${ word("moved") if children_previous_address.there_are_any else word("did not move") } to a new address.
+        - In the last five years, ${ word("one or more children moved") if children_previous_address.there_are_any else word("they did not move") } to a new address.
         % if children_previous_address.there_are_any:
         - Past addresses:
       
@@ -629,6 +793,7 @@ review:
           - ${ address.on_one_line() }---Dates: ${ address.start_date } to ${ address. end_date }
         % endfor
         % endif
+    show if: there_are_marital_children
   - Edit:
       - legal_custody_who
       - invalidate:
@@ -672,13 +837,14 @@ review:
         % elif specific_PT_how == "FOC_sample":
         **use sample from Friend of the Court.**
         % endif
-        % endif        
+        % endif   
+    show if: there_are_marital_children
   - Edit:
       - custom_PT_details
     button: |
       ##### Custom parenting time plan:
       ${ custom_PT_details }
-    show if: ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]) and (((tool_ID == "divorce_complaint" and (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon")) or (tool_ID == "JOD_only" and county_choice == "Muskegon")) or specific_PT_how == "custom")
+    show if: there_are_marital_children and ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]) and (((tool_ID == "divorce_complaint" and (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon")) or (tool_ID == "JOD_only" and county_choice == "Muskegon")) or specific_PT_how == "custom")
   - Edit:
       - child_domicile_info
       - hundred_mile_rule
@@ -688,7 +854,7 @@ review:
       % if not already_over_100_miles:
       - You and your spouse **${ word("agree") if allow_over_100_miles else word("don't agree") }** either of you may move more than 100 miles from where you currently live, as long as you stay in Michigan.
       % endif
-    show if: legal_custody_who == "both"
+    show if: there_are_marital_children and legal_custody_who == "both"
   - Edit:
       - allow_child_support_overpayment_correction
     button: |
@@ -698,6 +864,37 @@ review:
       % else:
       - If you end up receiving too much child support due to an error by the State of Michigan, you **do not authorize** the State to take a percentage from future child support payments until the mistake is corrected. 
       % endif
+    show if: there_are_marital_children
+  - Edit:
+      - income_tax_method
+      - invalidate:
+        - tax_deductions_who_first
+      - recompute:
+        - interview_order_income_tax
+      - invalidate:
+        - income_tax_children_plaintiff_line_1
+        - income_tax_children_plaintiff_line_2 
+        - income_tax_children_defendant_line_1
+        - income_tax_children_defendant_line_2
+      # Note validation logic on income_tax_method
+    button: |
+      ##### Income tax deductions and credits for ${ comma_and_list(children.filter(legal_parent='both').familiar()) } 
+        % if income_tax_method == "user":
+        **${ users[0] }** will be awarded all income tax deductions, credits, and exemptions for the ${ children.filter(legal_parent='both').as_noun() } for all tax years starting with ${ tax_start_year }.
+        % elif income_tax_method == "other_party":
+        **${ other_parties[0] }** will be awarded all income tax deductions, credits, and exemptions for the ${ children.filter(legal_parent='both').as_noun() } for all tax years starting with ${ tax_start_year }.
+        % elif income_tax_method == "default":
+        The **parent with whom ${ children.filter(legal_parent='both')[0].familiar() if len(children.filter(legal_parent='both')) == 1 else word("each child") } lives for more nights during a tax year** will be awarded all income tax deductions, credits, and exemptions for that child for that tax year.
+        % elif income_tax_method == "alternate_years":
+        ${ word("You") if tax_deductions_who_first == "users[0]" else other_parties[0] } will get the deductions, credits, and exemptions for tax year ${ tax_start_year }. ${ other_parties[0] if tax_deductions_who_first == "users[0]" else word("You") } will claim them for tax year ${ tax_start_year + 1 }. You will continue to claim the exemptions and deductions in **alternating years.**
+        % elif income_tax_method == "specify_per_child": 
+        ${ users[0] } and ${ other_parties[0] } will claim the deductions, credits, and exemptions for **different children** starting with tax year ${ tax_start_year }:
+      
+        % for child in children.filter(legal_parent='both'):  
+        - ${ child }'s tax deductions and credits will be claimed by **${ word("you") if child.tax_parent == "users[0]" else other_parties[0] }.**
+        % endfor
+        % endif     
+    show if: there_are_marital_children
   - Edit:
       - stepchild_address_review_screen
     button: |-
@@ -720,7 +917,7 @@ review:
       % endif    
       % endif
       % endfor
-    show if: len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0
+    show if: children.there_are_any and len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0
   - Edit:
       - users[0].pregnant
       - other_parties[0].pregnant
@@ -729,6 +926,470 @@ review:
         - ${word(yesno(users[0].pregnant))}
       ##### Is spouse pregnant?
         - ${word(yesno(other_parties[0].pregnant))}  
+#
+# ---------- prior cases ----------
+# TODO add accordion?
+  - Edit:
+      - prior_family_cases.there_are_any
+      - invalidate:
+        - there_is_venue_controlling_separate_maintenance_case
+        - other_case_controls_child_support
+        - venue
+        - check_for_required_venue
+        - court_index
+        - the_court
+        - the_foc
+    button: |
+      % if tool_ID == "JOD_only":
+      ##### Any prior custody or support orders?
+      % else:
+      ##### Any prior family division cases?
+      % endif
+        - ${word(yesno(prior_family_cases.there_are_any))}
+    show if: len(prior_family_cases.complete_elements()) < 1
+  - Edit:
+      - prior_family_cases.revisit
+      - invalidate:
+        - there_is_venue_controlling_separate_maintenance_case
+        - other_case_controls_child_support
+        - venue
+        - check_for_required_venue
+        - court_index
+        - the_court
+        - the_foc
+    show if: prior_family_cases.there_are_any
+    button: |
+      % if tool_ID == "JOD_only":
+      ##### Custody or support cases
+      % else:
+      ##### Family division cases?
+      % endif
+      
+      % if tool_ID == "JOD_only":
+      % for case in prior_family_cases:
+      **Case ${case.docket_number}**
+      
+        - State or territory: ${case.state}
+        - Case status: ${case.status}
+        - Custody or parenting time order in effect? **${word(yesno(case.has_current_custody_PT_order))}**
+        - Child support order in effect? **${word(yesno(case.has_child_support_order))}**
+
+      % endfor
+      % else:
+      % for case in prior_family_cases:
+      **Case ${case.docket_number}** (${prior_family_case_types_ordered[case.type]})
+
+        - ${case.title}
+        - ${case.county} County, ${case.state}
+        % if defined("case.court"):
+        - ${case.court}
+        % if defined("case.address"):
+        ${"-- " + case.address}
+        % endif
+        % endif
+        - Judge ${case.judge}
+        % if case.type == "other":
+        case.type_description
+        % endif
+        - Case status: ${word("ended with final order") if case.status == "ended_with_order" else word("ongoing") if case.status == "pending" else case.status }
+        % if there_are_marital_children:
+        % if case.type == "separate_maintenance":
+        - Involved custody, parenting time, or child support? **${word(yesno(case.involved_custody_pt_support))}**
+        % endif
+        % if case.type == "divorce" or (case.type == "separate_maintenance" and case.involved_custody_pt_support):
+        - Included custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
+        % if case.included_custody_PT_order:
+        - Date of custody/PT order: ${case.custody_PT_order_date}
+        % if case.type == "separate_maintenance" and case.status == "ended_with_order":
+        - Custody/parenting time order currently in effect? **${word(yesno(case.has_current_custody_PT_order))}**
+        % endif
+        % endif
+        % if case.type == "separate_maintenance" and case.status == "ended_with_order":
+        - Child support order currently in effect? **${word(yesno(case.has_child_support_order))}**
+        % endif
+        % endif    
+        % if case.type not in ["divorce", "separate_maintenance"]:
+        % if case.status == "ended_with_order":
+        - Date of final judgment or order: ${case.final_order_date}
+        % endif
+        % if case.status in ["ended_with_order", "stayed", "pending"]:
+        - Included custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
+        % if case.included_custody_PT_order:
+        - Custody/parenting time order currently in effect? **${word(yesno(case.has_current_custody_PT_order))}**
+        % if case.status in ["stayed", "pending"]:
+        - Date of custody/PT order: ${case.custody_PT_order_date}
+        % endif
+        % endif
+        - Child support order currently in effect? **${word(yesno(case.has_child_support_order))}**
+        % elif case.status == "dismissed":
+        - Custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
+        - Date of custody/PT order: ${case.custody_PT_order_date}
+        % endif
+        % endif
+        % endif
+      
+      % endfor
+      % endif
+  - Edit:
+      - child_support_pending_elsewhere
+      - invalidate:
+        - other_case_controls_child_support
+    button: |
+      ##### Active out-of-state child support requests?
+        - ${word(yesno(child_support_pending_elsewhere))}
+  - Edit:
+      - has_prior_civil_cases
+    button: |
+      ##### Active or resolved civil (not family court) action
+      % if has_prior_civil_cases:
+      % if prior_civil_case_is_pending != None:
+        - This case is **${ word("active.") if prior_civil_case_is_pending else word("over.") }**
+      % else:
+        - Case status: not provided
+      % endif
+      % if prior_civil_case_filed_outside_MI:
+        - Case outside Michigan. Court name: ${ prior_civil_case_non_MI_court if prior_civil_case_non_MI_court != "" else word("not provided") }
+      % else:
+        - Court type: ${ MI_court_type if MI_court_type != "" else word("not provided") }
+        - Michigan County: ${ prior_civil_case_county if prior_civil_case_county != "" else word("not provided") }
+      % endif
+        - Case number: ${ prior_civil_case_number if prior_civil_case_number != "" else word("not provided") }
+        - Judge's last name: ${ prior_civil_case_judge if prior_civil_case_judge != "" else word("not provided")  }
+      % else:
+        - None
+      % endif    
+#
+# ---------- income, insurance, etc? ----------
+#
+# todo accordion
+  - Edit:
+      - users[0].insurance.there_are_any
+      - follow up:
+        - users[0].insurance.revisit
+      - invalidate:
+        - insurance_in_addendum
+    button: |
+      ##### Your health coverage
+        - You **${ word("have") if users[0].insurance.there_are_any else word("don't have")}** your own health care coverage through an employer, Medicaid or Medicare, or privately.
+    show if: there_are_marital_children and len(users[0].insurance.complete_elements()) < 1
+  - Edit:
+      - users[0].insurance.revisit
+      - invalidate:
+        - insurance_in_addendum
+    button: |
+      ##### Your health coverage
+      % for policy in users[0].insurance:
+      **${policy.company_name}**
+      
+        - Provider address: ${ policy.company_address if policy.company_address != "" else word("not answered") }
+        - Coverage type: ${comma_and_list(policy.coverage_type.true_values()) if policy.coverage_type.any_true() else word("not answered") }
+        - Children covered: ${comma_and_list(policy.covers_child.true_values()) if policy.covers_child.any_true() else word("none")}
+      % if policy.in_own_name == None:
+        - Named policy holder: not answered
+      % elif policy.in_own_name:
+        - Named policy holder: ${ users[0] }
+      % elif not policy.in_own_name: 
+        - Named policy holder: ${ policy.policyholder }
+      % endif
+        - Policy number: ${ policy.policy_number if policy.policy_number != "" else word("not answered") }
+        - Certificate number: ${ policy.certificate_number if policy.certificate_number != "" else word("not answered") }
+      
+      % endfor
+    show if: there_are_marital_children and users[0].insurance.there_are_any
+  - Edit:
+      - other_parties[0].insurance.there_are_any
+      - follow up:
+        - other_parties[0].insurance.revisit
+      - invalidate:
+        - insurance_in_addendum
+    button: |
+      ##### ${ capitalize(OP_label) }’s health coverage
+        - ${ capitalize(OP_label) } **${ word("has") if other_parties[0].insurance.there_are_any else word("doesn't have")}** their own health care coverage through an employer, Medicaid or Medicare, or privately.
+    show if: there_are_marital_children and len(other_parties[0].insurance.complete_elements()) < 1
+  - Edit:
+      - other_parties[0].insurance.revisit
+      - invalidate:
+        - insurance_in_addendum
+    button: |
+      ##### ${ capitalize(OP_label) }’s health coverage
+      % for policy in other_parties[0].insurance:
+      **${policy.company_name}**
+      
+        - Provider address: ${ policy.company_address if policy.company_address != "" else word("not answered") }
+        - Coverage type: ${comma_and_list(policy.coverage_type.true_values()) if policy.coverage_type.any_true() else word("not answered")}
+        - Children covered: ${comma_and_list(policy.covers_child.true_values()) if policy.covers_child.any_true() else word("none")}
+      % if policy.in_own_name == None:
+        - Named policy holder: not answered
+      % elif policy.in_own_name:
+        - Named policy holder: ${ other_parties[0] }
+      % elif not policy.in_own_name: 
+        - Named policy holder: ${ policy.policyholder }
+      % endif
+        - Policy number: ${ policy.policy_number if policy.policy_number != "" else word("not answered") }
+        - Certificate number: ${ policy.certificate_number if policy.certificate_number != "" else word("not answered") }
+
+      % endfor
+    show if: there_are_marital_children and other_parties[0].insurance.there_are_any
+  - Edit:
+      - users[0].has_job
+      - follow up:
+        - users[0].job.employer.name.first
+      - invalidate:
+        - interview_order_user_income
+    button: |
+      ##### Are you currently employed?
+        - ${ word("not answered") if users[0].has_job == None else word(yesno(users[0].has_job)) }
+      % if users[0].has_job:
+        - Employer: ${ users[0].job.employer.name.first if users[0].job.employer.name.first != "" else word("not answered")}
+        - ${ users[0].job.employer.address.on_one_line() if users[0].job.employer.address.address != "" or users[0].job.employer.address.city != "" else word("address not given")}
+        - ${ phone_number_formatted(users[0].job.employer.phone) if users[0].job.employer.phone != "" else word("no phone given")}
+        - FEIN: ${ users[0].job.FEIN if users[0].job.FEIN != "" else word("unknown")}
+      % endif
+    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
+  - Edit:
+      - users[0].occupation
+    button: |
+      ##### Your occupation
+        - ${ users[0].occupation if users[0].occupation != "" else word("not answered")}
+    show if: tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support)
+  - Edit:
+      - users[0].has_professional_license
+    button: |
+      ##### Do you have a professional license?
+        - ${ word("not answered") if users[0].has_professional_license == None else word(yesno(users[0].has_professional_license)) }
+      % if users[0].has_professional_license:
+        - License number: ${ users[0].professional_license_number if users[0].professional_license_number != "" else word("not answered")}
+        - Type: ${ users[0].professional_license_type if users[0].professional_license_type != "" else word("not answered")}
+        - State/territory: ${ users[0].professional_license_state if users[0].professional_license_state != "" else word("not answered")}
+        - Date: ${ users[0].professional_license_date if users[0].professional_license_date != None else word("not answered")}
+      % endif
+    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
+  - Edit:
+      - other_parties[0].has_job
+      - follow up:
+        - other_parties[0].job.employer.name.first
+      - invalidate:
+        - interview_order_other_party_income
+    button: |
+      ##### Spouse currently employed?
+        - ${ word("not answered") if other_parties[0].has_job == None else word(yesno(other_parties[0].has_job)) }
+      % if other_parties[0].has_job:
+        - Employer: ${ other_parties[0].job.employer.name.first if other_parties[0].job.employer.name.first != "" else word("not answered")}
+        - ${ other_parties[0].job.employer.address.on_one_line() if other_parties[0].job.employer.address.address != "" or other_parties[0].job.employer.address.city != "" else word("address not given")}
+        - ${ phone_number_formatted(other_parties[0].job.employer.phone) if other_parties[0].job.employer.phone != "" else word("no phone given")}
+        - FEIN: ${ other_parties[0].job.FEIN if other_parties[0].job.FEIN != "" else word("unknown")}
+      % endif
+    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
+  - Edit:
+      - other_parties[0].occupation
+    button: |
+      ##### Spouse's occupation
+        - ${ other_parties[0].occupation if other_parties[0].occupation != "" else word("not answered")}
+    show if: tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support)
+  - Edit:
+      - other_parties[0].has_professional_license
+    button: |
+      ##### Spouse has professional license?
+        - ${ word("not answered") if other_parties[0].has_professional_license == None else word(yesno(other_parties[0].has_professional_license)) }
+      % if other_parties[0].has_professional_license:
+        - License number: ${ other_parties[0].professional_license_number if other_parties[0].professional_license_number != "" else word("not answered")}
+        - Type: ${ other_parties[0].professional_license_type if other_parties[0].professional_license_type != "" else word("not answered")}
+        - State/territory: ${ other_parties[0].professional_license_state if other_parties[0].professional_license_state != "" else word("not answered")}
+        - Date: ${ other_parties[0].professional_license_date if other_parties[0].professional_license_date != None else word("not answered")}
+      % endif
+    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
+  - Edit:
+      - users[0].income.value
+    button: |
+      ##### Your income
+        - Paycheck amount: ${ word("not answered") if users[0].income.value == 0.0 else word(currency(users[0].income.value)) }
+        - Paycheck frequency: ${ word("not answered") if users[0].income.times_per_year == None else word("once a week") if users[0].income.times_per_year == 52 else word("every two weeks") if users[0].income.times_per_year == 26 else word("twice a month") if users[0].income.times_per_year == 24 else word("once a month") }
+    show if: there_are_marital_children or user_wants_post_divorce_support and users[0].has_job #for FOC23; never asked for JOD-only
+  - Edit:
+      - pa_status
+      - invalidate:
+        - public_assistance_list
+        - pa_case_numbers_foc_23
+        - pa_mdhhs
+      - recompute:
+        - interview_order_user_income
+    button: |
+      ##### Your public assistance based on having low income
+        - ${ word("not answered") if pa_status == None else word("Applied, but not yet getting anything") if pa_status == "applied" else word("Currently getting assistance") if pa_status == "gets_assistance" else word("No active assistance or application") if pa_status == "none" else word("unknown") }
+  - Edit:
+      - pa_food_assistance_program
+      - follow up:
+        - pa_other_types
+      - invalidate:
+        - pa_case_numbers_foc_23
+        - public_assistance_list
+        - pa_mdhhs
+      - recompute:
+        - interview_order_user_income
+    button: |
+      ##### Your public assistance programs
+        - ${ comma_and_list(public_assistance_list) }
+    show if: pa_status == "gets_assistance" or (pa_status == "applied" and (there_are_marital_children or user_wants_post_divorce_support))
+  - Edit:
+      - pa_mdhhs_case_number
+      - recompute:
+        - pa_case_numbers_foc_23
+    button: |
+      ##### Your MDHHS case number: ${pa_mdhhs_case_number}
+    show if: pa_status == "gets_assistance" and pa_mdhhs
+  - Edit: 
+      - pa_ssa_number
+      - recompute:
+        - pa_case_numbers_foc_23
+    button: |
+      ##### Your SSI case number: ${pa_ssa_number}
+    show if: pa_status == "gets_assistance" and pa_supplemental_security and not (pa_mdhhs or pa_other)
+  - Edit:
+      - pa_other_types
+      - recompute:
+        - public_assistance_list
+        - pa_case_numbers_foc_23
+    button: |
+      ##### Your ${ pa_other_types } case number(s): ${pa_other_case_numbers}
+    show if: pa_status == "gets_assistance" and pa_other
+  - Edit:
+      - other_parties[0].income.value
+    button: |
+      ##### ${other_parties[0]}'s income
+        - Paycheck amount: ${ word("not answered") if other_parties[0].income.value == 0.0 else word(currency(other_parties[0].income.value)) }
+        - Paycheck frequency: ${ word("not answered") if other_parties[0].income.times_per_year == None else word("once a week") if other_parties[0].income.times_per_year == 52 else word("every two weeks") if other_parties[0].income.times_per_year == 26 else word("twice a month") if other_parties[0].income.times_per_year == 24 else word("once a month") }
+    show if: there_are_marital_children or user_wants_post_divorce_support and other_parties[0].has_job #for FOC23; never asked for JOD-only
+  - Edit:
+      - other_party_pa_status
+      - invalidate:
+        - op_public_assistance_list
+        - op_pa_case_numbers_foc_23
+      - recompute:
+        - interview_order_other_party_income
+    button: |
+      ##### ${other_parties[0]}'s public assistance based on having low income
+        - ${ word("not answered") if other_party_pa_status == None else word("Applied, but not yet getting anything") if other_party_pa_status == "applied" else word("Currently getting assistance") if other_party_pa_status == "gets_assistance" else word("No active assistance or application") if other_party_pa_status == "none" else word("unknown") }
+    show if: there_are_marital_children or user_wants_post_divorce_support
+  - Edit:
+      - op_pa_food_assistance_program
+      - follow up:
+        - op_pa_other_types
+      - invalidate:
+        - op_public_assistance_list
+        - op_pa_case_numbers_foc_23
+      - recompute:
+        - interview_order_other_party_income
+    button: |
+      ##### ${other_parties[0]}'s public assistance programs
+        - ${ comma_and_list(op_public_assistance_list) }
+    show if: (there_are_marital_children or user_wants_post_divorce_support) and other_party_pa_status in ["gets_assistance", "applied"]
+  - Edit:
+      - op_pa_mdhhs_case_number
+      - recompute:
+        - op_pa_case_numbers_foc_23
+    button: |
+      ##### ${other_parties[0]}'s MDHHS case number: ${op_pa_mdhhs_case_number}
+    show if: other_party_pa_status == "gets_assistance" and op_pa_food_assistance_program or op_pa_medicaid or op_pa_family_independence_program or op_pa_women_infants_children or op_pa_state_disability or op_pa_state_emergency_relief or op_pa_refugee_assistance
+  - Edit: 
+      - op_pa_ssa_number
+      - recompute:
+        - op_pa_case_numbers_foc_23
+    button: |
+      ##### ${other_parties[0]}'s SSI case number: ${op_pa_ssa_number}
+    show if: other_party_pa_status == "gets_assistance" and op_pa_supplemental_security and not (op_pa_food_assistance_program or op_pa_medicaid or op_pa_family_independence_program or op_pa_women_infants_children or op_pa_state_disability or op_pa_state_emergency_relief or op_pa_refugee_assistance or op_pa_other)
+  - Edit:
+      - op_pa_other_types
+      - recompute:
+        - op_public_assistance_list
+        - op_pa_case_numbers_foc_23
+    button: |
+      ##### ${other_parties[0]}'s other assistance case number: ${op_pa_other_case_numbers}
+    show if: other_party_pa_status == "gets_assistance" and op_pa_other
+#
+# ---------- identifying information ----------
+#
+  - Edit:
+      - users[0].ssn
+    button: |
+      ##### Your identity documents
+        - Social security number: ${users[0].ssn_last_four}
+        - Driver's license number: ${ word("not answered") if users[0].license_number == "" else users[0].license_number }
+        - Driver's license state: ${ word("not answered") if users[0].license_state == "" else users[0].license_state }
+      % if tool_ID != "JOD_only":
+        - Foreign citizenship? ${word("not answered") if users[0].has_foreign_citizenship == None else word(yesno(users[0].has_foreign_citizenship))}
+      % if users[0].has_foreign_citizenship:
+        - Foreign citizenship countries: ${ word("not answered") if users[0].countries_of_citizenship == "" else users[0].countries_of_citizenship }
+        - Foreign identity documents: ${ word("not answered") if users[0].foreign_identity_documents == "" else users[0].foreign_identity_documents }
+      % endif
+      % endif
+    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
+  - Edit:
+      - users[0].has_alias
+    button: |
+      ##### Your other names/aliases
+        - ${ word("None") if not users[0].has_previous_name else users[0].aliases }
+    show if: there_are_marital_children or user_wants_post_divorce_support
+  - Edit:
+      - users[0].eye_color
+      - users[0].height_feet
+    button: |
+      ##### Your physical description
+        - Eye color: ${ word("not answered") if users[0].eye_color == "" else users[0].eye_color }
+        - Hair color: ${ word("not answered") if users[0].hair_color == "" else users[0].hair_color }
+        - Weight (pounds): ${ word("not answered") if users[0].weight == 0 else users[0].weight }
+        - Height: ${ word("not answered") if users[0].height_feet == 0 else word(users[0].height_feet) + word("ft, ") + word(users[0].height_inches) + word("in") }
+        - Identifying marks: ${ word("not answered") if users[0].other_identifying_info == "" else users[0].other_identifying_info }
+    show if: there_are_marital_children or user_wants_post_divorce_support
+  - Edit:
+      - users[0].race
+    button: |
+      ##### Your race
+        - ${ word("not answered") if users[0].race == "" else users[0].race }
+      % if users[0].race == "Other":
+        - Other race description: ${ word("not answered") if users[0].other_race_description == "" else users[0].other_race_description }
+      % endif
+    show if: there_are_marital_children or user_wants_post_divorce_support
+  - Edit:
+      - other_parties[0].ssn
+    button: |
+      ##### ${other_parties[0]}'s identity documents
+        - Social security number: ${other_parties[0].ssn_last_four}
+        - Driver's license number: ${ word("not answered") if other_parties[0].license_number == "" else other_parties[0].license_number }
+        - Driver's license state: ${ word("not answered") if other_parties[0].license_state == "" else other_parties[0].license_state }
+      % if tool_ID != "JOD_only":
+        - Foreign citizenship? ${word("not answered") if other_parties[0].has_foreign_citizenship == None else word(yesno(other_parties[0].has_foreign_citizenship))}
+      % if other_parties[0].has_foreign_citizenship:
+        - Foreign citizenship countries: ${ word("not answered") if other_parties[0].countries_of_citizenship == "" else other_parties[0].countries_of_citizenship }
+        - Foreign identity documents: ${ word("not answered") if other_parties[0].foreign_identity_documents == "" else other_parties[0].foreign_identity_documents }
+      % endif
+      % endif
+    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
+  - Edit:
+      - other_parties[0].has_alias
+    button: |
+      ##### ${other_parties[0]}'s other names/aliases
+        - ${ word("None") if not other_parties[0].has_previous_name else other_parties[0].aliases }
+    show if: there_are_marital_children or user_wants_post_divorce_support
+  - Edit:
+      - other_parties[0].eye_color
+      - other_parties[0].height_feet
+    button: |
+      ##### ${other_parties[0]}'s physical description
+        - Eye color: ${ word("not answered") if other_parties[0].eye_color == "" else other_parties[0].eye_color }
+        - Hair color: ${ word("not answered") if other_parties[0].hair_color == "" else other_parties[0].hair_color }
+        - Weight (pounds): ${ word("not answered") if other_parties[0].weight == 0 else other_parties[0].weight }
+        - Height: ${ word("not answered") if other_parties[0].height_feet == 0 else word(other_parties[0].height_feet) + word("ft, ") + word(other_parties[0].height_inches) + word("in") }
+        - Identifying marks: ${ word("not answered") if other_parties[0].other_identifying_info == "" else other_parties[0].other_identifying_info }
+    show if: there_are_marital_children or user_wants_post_divorce_support
+  - Edit:
+      - other_parties[0].race
+    button: |
+      ##### ${other_parties[0]}'s race
+        - ${ word("not answered") if other_parties[0].race == "" else other_parties[0].race }
+      % if other_parties[0].race == "Other":
+        - Other race description: ${ word("not answered") if other_parties[0].other_race_description == "" else other_parties[0].other_race_description }
+      % endif
+    show if: there_are_marital_children or user_wants_post_divorce_support
 #
 # ---------- personal property ----------
 #
@@ -774,6 +1435,8 @@ review:
       - invalidate:
         - marriage.personal_property_division_agreement
         - marriage.personal_property_division_actual
+        - send_plaintiff_personal_property_to_addendum
+        - send_defendant_personal_property_to_addendum
       - marriage.personal_property_info
       - marriage.personal_property_acquired
       - follow up:
@@ -799,6 +1462,9 @@ review:
       - marriage.mobile_home.revisit
   - Edit:
       - marriage.accounts.revisit
+      - invalidate:
+        - send_plaintiff_personal_property_to_addendum
+        - send_defendant_personal_property_to_addendum
     button: |
       ##### ${marriage.accounts.question_text}
 
@@ -816,6 +1482,9 @@ review:
     show if: marriage.personal_property_need_items
   - Edit:
       - marriage.other_pp.revisit
+      - invalidate:
+        - send_plaintiff_personal_property_to_addendum
+        - send_defendant_personal_property_to_addendum
     button: |
       ##### ${marriage.other_pp.question_text}
 
@@ -832,6 +1501,9 @@ review:
     show if: marriage.personal_property_need_items
   - Edit:
       - marriage.mobile_home.revisit
+      - invalidate:
+        - send_plaintiff_personal_property_to_addendum
+        - send_defendant_personal_property_to_addendum
     button: |
       ##### ${marriage.mobile_home.question_text}
 
@@ -904,6 +1576,8 @@ review:
         - marriage.debts.agree_responsibility_debts_own_name
         - marriage.debts.any_in_both_names
         - marriage.debts.agree_responsibility_debts_both_names
+        - send_plaintiff_debts_to_addendum
+        - send_defendant_debts_to_addendum
       - marriage.debts.info
       - recompute:
         - marriage.debts.need_items
@@ -932,6 +1606,9 @@ review:
       % endif
   - Edit:
       - marriage.debts.revisit
+      - invalidate:
+        - send_plaintiff_debts_to_addendum
+        - send_defendant_debts_to_addendum
     button: |
       ##### ${marriage.debts.question_text}
 
@@ -964,8 +1641,8 @@ review:
           - **Address:** ${item.address.on_one_line()}
           - **Legal description:** ${item.desc}
           - **Parcel number:** ${item.parcel_number}
-          - **Do you and the ${op_ask_role.capitalize()} agree on what should happen with this property?** ${word(yesno(item.agree))}
-          - **Award this property to:** ${item.owner}
+          - **Do you and ${other_parties[0]} agree on what should happen with this property?** ${word(yesno(item.agree))}
+          - **Award this property to:** ${item.owner if item.owner in [users[0], other_parties[0]] else word("Sell and split value and debt")}
           % if item.attribute_defined("titled_together"):
           - **Is this property titled in both of your names?** ${word(yesno(item.titled_together))}
           % endif
@@ -992,6 +1669,64 @@ review:
 #      ${ next_accordion("""<h2 class="h5">Judgment Information</h2>""") }
 #    show if: marriage.attribute_defined("other_provisions_any")
   - Edit:
+      - venue
+      - invalidate:
+        - court_index
+        - the_court
+        - the_foc
+    button: |
+      ##### Where you will file      
+      You will file this case in **${county_choice} County.**
+      % if county_choice == users[0].address.county and not users[0].ten_days_in_county:
+      
+      You **must wait** to file in **${ users[0].address.county } County** until you have lived there for the last ten days or more.
+      % elif county_choice == other_parties[0].address.county and not other_parties[0].ten_days_in_county:
+      
+      You **must wait** to file in ${ other_parties[0].address.county } County until your spouse has lived there for the last ten days or more.
+      % endif
+    show if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 2 and not (there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case)
+    # conditions under which there is a basic choice of venue, matching id: "venue (normal choice)"
+  - Edit:
+      - venue
+      - invalidate:
+        - court_index
+        - the_court
+        - the_foc
+    button: |
+      ##### Where you will file      
+      You will file this case in **${county_choice} County.**
+      
+      % if county_choice == users[0].address.county and users[0].ten_days_in_county == False:
+      You **must wait** until you have lived in ${ users[0].address.county } County for ten days or more before you file for divorce.
+      % elif county_choice == other_parties[0].address.county and other_parties[0].ten_days_in_county == False:
+      You **must wait** until your spouse has lived in ${ other_parties[0].address.county } County for ten days or more before you file for divorce.
+      % elif county_choice == users[0].address.county and other_parties[0].ten_days_in_county == False:
+      You have chosen to file in **${ users[0].address.county }** County **before** your spouse has lived in their current county for 10 days or more. 
+      
+      *If you miss that deadline, you must update this tool and get new forms to file instead in ${ other_parties[0].address.county } County. This is because of your past separate maintenance case in that county.*
+      % elif county_choice == other_parties[0].address.county and users[0].ten_days_in_county == False:
+      You have chosen to file in **${ other_parties[0].address.county }** County **before you have lived in your current county for 10 days or more. 
+      
+      *If you miss that deadline, you must update this tool and get new forms to file instead in ${ users[0].address.county } County. This is because of your past separate maintenance case in that county.*
+      % endif    
+    show if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options
+    # conditions under which there is a choice of venue but with special prior separate maintenance case logic, matching id: "venue: (weird separate maintenance choice)" 
+  - note: |
+      ##### Where you will file
+      % if len(all_potential_venue_options) == 0:  #TODO delete after testing.
+      If you're reading this, no venue has been selected. This means there's an **error** in the code. Please report an issue with as much detail as you can about the parties' Michigan-status, counties, time in Michigan, etc. Please close out this test and start a new one.
+      % elif len(all_potential_venue_options) == 1:
+      You only meet the requirements to file your divorce in **${ county_choice } County.** Your divorce forms will be prepared using ${ county_choice } as the filing county.  
+      % elif len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case:
+      Because of your earlier separate maintenance case, you must file in **${ prior_family_cases[separate_maintenance_case_index].county } County.** Your divorce forms will be prepared using ${ county_choice } as the filing county.  
+      % endif
+      % if len(current_venue_options) == 0:
+      
+      You **must wait** to file until you or your spouse have lived in ${ county_choice } County for the last ten days or more.
+      % endif
+    show if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 1 or (len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and (len(current_venue_options) in [2, 0] or (len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county in current_venue_options)))
+    # conditions under which there is only one option for venue, matching id: "venue (single option)"
+  - Edit:
       - marriage.other_provisions_any
     button: |
       ##### Other provisions
@@ -999,12 +1734,17 @@ review:
   - Edit:
       - marriage.temporary_order
     button: |
-      ##### Has a temporary order been entered in your case after meeting with the Friend of the Court (for example, a temporary order regarding custody, parenting time, and/or child support)?
+      ##### Was a **temporary order** entered in your case for custody, parenting time, child support, or spousal support?
         - ${word(yesno(marriage.temporary_order))}
-      % if marriage.attribute_defined("temporary_order_changed"):
-      ##### Has any of the information that goes on this form changed since the last time it was filed?
+      % if marriage.temporary_order:
+      ##### Has any of the information that goes on the *Domestic Relations Judgment Information* form (FOC 100) changed since the last time it was filed?
         - ${word(yesno(marriage.temporary_order_changed))}
+      % if marriage.temporary_order_changed:
+      
+      **Important!** Make sure all information on this page is correct and updated.
       % endif
+      % endif
+    show if: tool_ID == "JOD_only"
   - Edit:
       - MLH_esign
     button: |
@@ -1074,4 +1814,85 @@ subquestion: |
   ${ children.edit_OP_kid_addresses }
   % endif
 continue button field: stepchild_address_review_screen
+---
+table: children.edit_basic_info
+rows: children
+columns:
+  - Name: |
+      row_item
+  - Birthdate: |
+      format_date(row_item.birthdate, format='M/d/yyyy') if defined("row_item.birthdate") and row_item.birthdate != None else "---"
+  - Gender: |
+      row_item.gender if defined("row_item.gender") and row_item.gender != "" else "---"
+  - SSN: |
+      row_item.ssn_last_four if defined("row_item.ssn") else "not required"
+edit:
+  - basic_info
+  - more_info
+delete buttons: False
+---
+id: review children demographics
+question: |
+  Edit children's names and basic info
+subquestion: |
+  Use the table below to edit a child's:
+
+  * name
+  * birthdate
+  * gender, or
+  * social security number (SSN)
+  % if tool_ID == "JOD_only":
+  
+  **Note:** A child's birthdate, gender, and SSN (optional) will only be asked for if **both spouses** are legal parents. 
+  % else:
+  
+  **Note:** A child's SSN (optional) will only be asked for if **both spouses** are legal parents. Gender and birthdate are optional for stepchildren.
+  % endif
+  
+  ${ children.edit_basic_info }
+continue button field: child_demographics_review_screen
+---
+table: children.edit_legal_parents
+rows: children
+columns:
+  - Child: |
+      f"{row_item.name} ({format_date(row_item.birthdate, format='M/d/yyyy')})" if defined("row_item.birthdate") and row_item.birthdate != None else row_item.name
+  - Legal parent: |
+      "Both spouses" if row_item.legal_parent == "both" else users[0] if row_item.legal_parent == "user" else other_parties[0] if row_item.legal_parent == "other_party" else ""
+edit:
+  - rerun_parentage_logic
+delete buttons: False
+---
+id: review children legal parents
+question: |
+  Edit children's legal parent info
+subquestion: |
+  Use the table below to edit legal parent information about a minor child.
+
+  ${ children.edit_legal_parents }
+continue button field: child_legal_parent_review_screen
+---
+only sets: enable_home_state_review_screen
+code: |
+  home_state_review_screen = True
+  
+  enable_home_state_review_screen = True
+---
+only sets: enable_stepchild_address_review_screen
+code: |
+  stepchild_address_review_screen = True
+  
+  enable_stepchild_address_review_screen = True
+---
+only sets: enable_child_demographics_review_screen
+code: |
+  child_demographics_review_screen = True
+  
+  enable_child_demographics_review_screen = True
+---
+only sets: enable_child_legal_parent_review_screen
+code: |
+  child_legal_parent_review_screen = True
+
+  enable_child_legal_parent_review_screen = True
 ---
