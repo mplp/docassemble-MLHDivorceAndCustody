@@ -644,8 +644,7 @@ review:
         - temporary_order_kids_exit
         - interview_order_home_state
         - set_children_home_state_info
-        - jurisdiction_for_custody
-        - other_court_controls_child_support
+        - other_case_controls_child_support
         - children_live_with_parent
         - children_now_live_with_which_parent
         - children_lived_with_which_parent_past
@@ -698,8 +697,7 @@ review:
         - temporary_order_kids_exit
         - interview_order_home_state
         - set_children_home_state_info
-        - jurisdiction_for_custody
-        - other_court_controls_child_support
+        - other_case_controls_child_support
         - children_live_with_parent
         - children_now_live_with_which_parent
         - children_lived_with_which_parent_past
@@ -738,8 +736,6 @@ review:
         - set_children_home_state_info
       - recompute: 
         - interview_order_home_state
-      - invalidate:
-        - jurisdiction_for_custody
     button: |-
       ##### Marital children's legal "home state"
       % for child in children.filter(legal_parent="both"):
@@ -937,7 +933,7 @@ review:
       - prior_family_cases.there_are_any
       - invalidate:
         - there_is_venue_controlling_separate_maintenance_case
-        - other_court_controls_child_support
+        - other_case_controls_child_support
         - venue
         - check_for_required_venue
         - court_index
@@ -955,7 +951,7 @@ review:
       - prior_family_cases.revisit
       - invalidate:
         - there_is_venue_controlling_separate_maintenance_case
-        - other_court_controls_child_support
+        - other_case_controls_child_support
         - venue
         - check_for_required_venue
         - court_index
@@ -1035,12 +1031,12 @@ review:
       % endfor
       % endif
   - Edit:
-      - child_support_request_pending
+      - child_support_pending_elsewhere
       - invalidate:
-        - other_court_controls_child_support
+        - other_case_controls_child_support
     button: |
       ##### Active out-of-state child support requests?
-        - ${word(yesno(child_support_request_pending))}
+        - ${word(yesno(child_support_pending_elsewhere))}
   - Edit:
       - has_prior_civil_cases
     button: |
