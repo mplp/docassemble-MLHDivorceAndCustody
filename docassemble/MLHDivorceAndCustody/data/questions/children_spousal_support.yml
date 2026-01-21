@@ -56,8 +56,6 @@ confirm: True
 id: child questions
 # mandatory: True # remove later
 code: |
-  # interview_order_spousal_support  
-  
   children_intro
   if children.there_are_any:
     children.gather()
@@ -121,7 +119,6 @@ code: |
         guidepost_stepchildren
         interview_order_stepchild_address
   
-  # test_end_screen
   interview_order_children = True
 ---
 # --------------------------------------------------------------------
@@ -662,8 +659,6 @@ code: |
 
   elif children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "assisted_reproduction":
     children[i].complicated_issue_kickout
-
-  children[i].show_parentage_info
 
   children[i].complete = True
 # TODO: IF (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) and children[i].legal_parent == "both" and children[i].parentage_plan_to_revoke: we need to say in the complaint and Answer? that user intends to file motion to establish child born out of wedlock
@@ -1271,26 +1266,6 @@ fields:
     js show if: |
       (val("children[i].bio_parent") == "user" || val("children[i].bio_parent") == "other_party") && ${ json.dumps(children[i].origin) } === "marital_third_party_conceived"
 ---
-id: display parentage interview for testing purposes
-question: Parentage Result [ONLY FOR TESTING]
-continue button field: children[i].show_parentage_info
-subquestion: |
-  ${children[i]}'s legal parents is/are:
-
-  % if children[i].legal_parent == "both":
-  **Both** the user and their spouse. (Custody, etc., will be decided in the divorce.)
-  % elif children[i].legal_parent == "user":
-  **Only the user**. (${children[i].familiar()} will be listed as a stepchild only.)
-  % elif children[i].legal_parent == "other_party":
-  **Only the user's spouse**. 
-  
-  (${children[i].familiar()} will be listed as a stepchild only.)
-  % endif
-
-  origin code: ${children[i].origin}
-  
-  timing code: ${children[i].timing}
----
 ######## start children qualification/address/home state questions #######
 # LHI "(Marital) Minor Children Information" (first part)
 ---
@@ -1673,9 +1648,7 @@ question: |
 subquestion: |
   Earlier, you said that you did not want to keep your address and telephone number confidential. 
   
-  If the health or safety of your children will be put at risk by having your address on court papers, you should go back and change your previous answer. 
-
-  **Need to decide what to say here. Give direct link or send to review/edit screen?**
+  If the health or safety of your children will be put at risk by having your address on court papers, tap **Review / Edit** to change your previous answer. 
 ---
 id: children's previous addresses
 question: Children's previous addresses
@@ -2221,8 +2194,7 @@ edit:
   - status
   - involved_custody_pt_support
   - separate_maintenance_pending_kickout
-  - included_custody_PT_order
-  - custody_order_in_another_state_warning       
+  - included_custody_PT_order  
 delete buttons: True
 confirm: True
 ---
@@ -2236,7 +2208,6 @@ columns:
 edit:
   - status
   - has_current_custody_PT_order
-  - custody_order_in_another_state_warning 
       
 delete buttons: True
 confirm: True
@@ -2276,7 +2247,7 @@ fields:
 id: pending child support requests out of state
 question: Active out-of-state child support requests
 fields:
-  - Is a request for child support **currently pending** in another state?: child_support_request_pending
+  - Is a request for child support **currently pending** in another state?: child_support_pending_elsewhere
     datatype: yesnoradio
 ---
 # LHI Prior Court Cases Part 1 #asked for divorce and custody complaints
@@ -2387,10 +2358,6 @@ code: |
   if tool_ID == "JOD_only" and there_are_marital_children:
     prior_family_cases[i].status
   
-    if prior_family_cases[i].state != "MI" and prior_family_cases[i].has_current_custody_PT_order:
-      if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [str(state_name(users[0].address.state)), str(state_name(other_parties[0].address.state))]) or not MI_has_jurisdiction_all_kids:
-        prior_family_cases[i].custody_order_in_another_state_warning 
-  
   elif tool_ID != "JOD_only":
     prior_family_cases[i].status
     if there_are_marital_children:
@@ -2407,36 +2374,8 @@ code: |
   
       elif prior_family_cases[i].type != "separate_maintenance":
         prior_family_cases[i].included_custody_PT_order
-  
-      if prior_family_cases[i].state != "MI":
-        if (prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and (prior_family_cases[i].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order)):
-          if (MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [str(state_name(users[0].address.state)), str(state_name(other_parties[0].address.state))]) or not MI_has_jurisdiction_all_kids:
-            prior_family_cases[i].custody_order_in_another_state_warning 
 
   prior_family_cases[i].complete = True
----
-id: custody_order_in_another_state_warning
-if: there_are_marital_children and prior_family_cases[i].state != "MI" and ((tool_ID == "divorce_complaint" and ((prior_family_cases[i].type == "divorce" and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order) or (prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and (prior_family_cases[i].status in ["ended_with_order", "stayed", "pending"] and prior_family_cases[i].included_custody_PT_order and prior_family_cases[i].has_current_custody_PT_order))) and ((MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [str(state_name(users[0].address.state)), str(state_name(other_parties[0].address.state))]) or not MI_has_jurisdiction_all_kids)) or (tool_ID == "JOD_only" and prior_family_cases[i].has_current_custody_PT_order)) and ((MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [str(state_name(users[0].address.state)), str(state_name(other_parties[0].address.state))]) or not MI_has_jurisdiction_all_kids)
-continue button field: prior_family_cases[i].custody_order_in_another_state_warning
-question: Warning! Custody order in another state
-subquestion: |
-  % if MI_has_jurisdiction_all_kids and prior_family_cases[i].state in [str(state_name(users[0].address.state)), str(state_name(other_parties[0].address.state))]:
-  ${ prior_custody_warning }
-  % elif not MI_has_jurisdiction_all_kids:
-  ${ prior_custody_warning_home_state }
-  % endif
----
-template: prior_custody_warning_home_state
-content: |
-  **WARNING:** If Michigan is not the ${ children.filter(legal_parent='both').as_noun() }'s home state, a Michigan court may not be able to make decisions about custody and parenting time of your ${ children.filter(legal_parent='both').as_noun() }.
-      
-  You can still use this tool to prepare your divorce forms, but your Judgment of Divorce will not include custody and parenting time arrangements. It will be up to the court to decide whether it has jurisdiction to include custody and parenting time orders in your divorce judgment. ${MLH_GUIDE_FULL}
----
-template: prior_custody_warning
-content: |
-  **WARNING:** If there is a prior custody order from another state and either you, your child, or the other parent resides in that state, a Michigan court may not be able to make decisions about custody and parenting time of your child.
-
-  You can still use this tool to prepare your divorce forms, but your Judgment of Divorce will not include custody and parenting time arrangements. It will be up to the court to decide whether it has jurisdiction to include custody and parenting time orders in your divorce judgment. ${MLH_GUIDE_FULL}
 ---
 # LHI "Prior Family Cases DLG"
 # JOD_only version: only ask if there are marital children
@@ -4020,90 +3959,3 @@ fields:
       - I will: users[0]
       - My spouse will: other_parties[0]
 ---
-event: test_end_screen
-question: Thank you for testing!
-subquestion: You have finished the initial child questions test interview.
----
-#### documentation of child-dependent question logic
-#### as of 9/23/25 EKM believed this logic to be accurate for the child-dependent questions (though it has not been extensively tested), at least for the Divorce complaint and JOD-only.  Divorce Answer and Custody logic should be rechecked when we get to those. Saving a spare copy of this logic here before I start weaving it into the main interview orders. 
-#id: child questions
-#mandatory: True # remove later
-#code: |
-#  children_intro
-#  children.gather()
-#  set_marital_children_or_not
-#  
-#  if there_are_marital_children:
-#
-#    guidepost_marital_children
-#    if tool_ID in ["divorce_complaint", "divorce_answer"]:
-#      if kids_had_other_custodian:
-#        other_custodian_kickout
-#      if third_party_custody_claim:
-#        third_party_custody_kickout
-#      if need_temporary_order_kids:
-#        if temporary_order_kids_exit:
-#          exit_general
-#
-#    interview_order_home_state              
-#
-#    if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
-#      if not children_live_with_parent:
-#        children_live_with_third_party_kickout
-#      if children_now_live_with_which_parent == "depends_on_child":
-#        for child in children:
-#          if child.legal_parent == "both":
-#            child.lives_with
-#              
-#
-#    if tool_ID in ["divorce_complaint", "divorce_answer"]:
-#      if not confidential_contact_info_yn and (children_now_live_with_which_parent in ["depends_on_child", "users[0]"]):
-#        child_address_not_confidential_warning
-#      children_lived_with_which_parent_past
-#      children_previous_address.gather()
-#
-#    legal_custody_who
-#    if PT_type in ["specific", "supervised"]:
-#      if county_choice == "Muskegon":
-#        Muskegon_specific_PT_info
-#      if county_choice != "Muskegon":
-#        specific_PT_how
-#      if county_choice == "Muskegon" or (county_choice != "Muskegon" and specific_PT_how == "custom"):
-#        custom_PT_details
-#    hague_convention_info
-#    child_domicile_info
-#    if legal_custody_who != "both":
-#      hundred_mile_rule
-#    child_support_basic
-#    if tool_ID != "JOD_only":
-#      allow_child_support_overpayment_correction
-#
-#    if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0:
-#      guidepost_stepchildren
-#      interview_order_stepchild_address
-#  
-#    users[0].insurance.gather()
-#    other_parties[0].insurance.gather()
-#    if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
-#      marriage.cobra_coverage
-#    interview_order_user_employment
-#    if tool_ID != "JOD_only":
-#      interview_order_user_income
-#    interview_order_user_identifying_info
-#    interview_order_other_party_employment
-#    if tool_ID != "JOD_only":
-#      interview_order_other_party_income
-#    interview_order_other_party_identifying_info
-#    interview_order_income_tax
-#    interview_order_prior_cases
-#
-#  else:
-#    if tool_ID in ["JOD_only", "divorce_complaint", "divorce_answer"]:
-#      marriage.cobra_coverage
-#    if tool_ID == "divorce_complaint":
-#      interview_order_user_income
-#    if tool_ID in ["divorce_complaint", "divorce_answer"]:
-#      interview_order_prior_cases
-#    
-#  test_end_screen
-#---
