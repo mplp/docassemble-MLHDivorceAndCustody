@@ -44,7 +44,7 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
     return out
 
 setup(name='docassemble.MLHDivorceAndCustody',
-      version='0.0.12',
+      version='0.0.13',
       description=('Michigan divorce and child support tools'),
       long_description='# docassemble.MLHDivorceAndCustody\r\n\r\nMichigan divorce and custody tools\r\n\r\n## Authors:\r\n\r\n\r\n## Changelog:\r\n',
       long_description_content_type='text/markdown',

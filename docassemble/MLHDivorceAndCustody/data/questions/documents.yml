@@ -4,12 +4,12 @@
 ---
 if: tool_ID == "JOD_only"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, judgment_and_addenda_bundle, filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, JOD_only doesn't have instructions anyway]
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, except without the instructions, testimony, flowchart]
 ---
 # ====================================================================
@@ -17,45 +17,6 @@ objects:
 # ====================================================================
 ---
 ### List of enabling logic that is TBD
----
-# enabling logic for judgment with or without kids
-code: |
-  judgment_ccmlh413.enabled = there_are_marital_children
-  judgment_ccmlh412.enabled = not there_are_marital_children
----
-# enabling logic for judgment addenda bundle 
-code: |
-  judgment_addendum_personal_property_and_debt.enabled = debts_in_addendum(marriage) or personal_property_in_addendum(marriage)
-
-  judgment_addendum_vehicles_1_to_4.enabled = has_vehicle_addendum(marriage)
-  judgment_addendum_vehicles_5_to_8.enabled = has_vehicle_addendum(marriage) and len(marriage.vehicles) > 4
-  judgment_addendum_vehicles_9_to_12.enabled = has_vehicle_addendum(marriage) and len(marriage.vehicles) > 8
-  
-  judgment_addendum_real_property_1_to_2.enabled = bool(marriage.real_property)
-  judgment_addendum_real_property_3_to_4.enabled = bool(marriage.real_property) and len(marriage.real_property) > 2
-  judgment_addendum_real_property_5_to_6.enabled = bool(marriage.real_property) and len(marriage.real_property) > 4
-  judgment_addendum_real_property_7_to_8.enabled = bool(marriage.real_property) and len(marriage.real_property) > 6
-  judgment_addendum_real_property_9_to_10.enabled = bool(marriage.real_property) and len(marriage.real_property) > 8
-
-  judgment_addendum_income_tax.enabled = there_are_marital_children
-  
-  judgment_addendum_pensions.enabled = (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own)
----
-# enabling logic for JOD_only addenda overflow fields (personal property and debts, real property legal description, and other provisions)
-# add parenting time to regular addenda overflow? Waiting on Amy's opinion
-code: |
-  judgment_overflow_addendum.enabled = False
-  
-  if send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum:
-    judgment_overflow_addendum.enabled = True
-  
-  elif marriage.real_property:
-    for property in marriage.real_property:
-      if len(property.desc) > 123:
-        judgment_overflow_addendum.enabled = True
-  
-  elif marriage.other_provisions_any and len(marriage.other_provisions) > 240:
-    judgment_overflow_addendum.enabled = True
 ---
 # only in divorce_complaint and custody_complaint bundles
 code: |
@@ -152,6 +113,54 @@ code: |
     foc_10_main.enabled = True
     foc_10_attachment.enabled = len(children.filter(legal_parent="both")) > 5
 ---
+code: |
+  noh_divorce.enabled = (tool_ID == "divorce_complaint") or (tool_ID == "JOD_only" and user_ask_role == "plaintiff")
+---
+code: |
+  noh_motion_default.enabled = (tool_ID == "divorce_complaint") or (tool_ID == "JOD_only" and user_ask_role == "plaintiff")
+---
+code: |
+  noh_motion_consent.enabled = (tool_ID == "divorce_complaint") or (tool_ID == "JOD_only")
+---
+# enabling logic for judgment with or without kids
+code: |
+  judgment_ccmlh413.enabled = there_are_marital_children
+  judgment_ccmlh412.enabled = not there_are_marital_children
+---
+# enabling logic for judgment addenda bundle 
+code: |
+  judgment_addendum_personal_property_and_debt.enabled = debts_in_addendum(marriage) or personal_property_in_addendum(marriage)
+
+  judgment_addendum_vehicles_1_to_4.enabled = has_vehicle_addendum(marriage)
+  judgment_addendum_vehicles_5_to_8.enabled = has_vehicle_addendum(marriage) and len(marriage.vehicles) > 4
+  judgment_addendum_vehicles_9_to_12.enabled = has_vehicle_addendum(marriage) and len(marriage.vehicles) > 8
+  
+  judgment_addendum_real_property_1_to_2.enabled = bool(marriage.real_property)
+  judgment_addendum_real_property_3_to_4.enabled = bool(marriage.real_property) and len(marriage.real_property) > 2
+  judgment_addendum_real_property_5_to_6.enabled = bool(marriage.real_property) and len(marriage.real_property) > 4
+  judgment_addendum_real_property_7_to_8.enabled = bool(marriage.real_property) and len(marriage.real_property) > 6
+  judgment_addendum_real_property_9_to_10.enabled = bool(marriage.real_property) and len(marriage.real_property) > 8
+
+  judgment_addendum_income_tax.enabled = there_are_marital_children
+  
+  judgment_addendum_pensions.enabled = (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own)
+---
+# enabling logic for JOD_only addenda overflow fields (personal property and debts, real property legal description, and other provisions)
+# add parenting time to regular addenda overflow? Waiting on Amy's opinion
+code: |
+  judgment_overflow_addendum.enabled = False
+  
+  if send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum:
+    judgment_overflow_addendum.enabled = True
+  
+  elif marriage.real_property:
+    for property in marriage.real_property:
+      if len(property.desc) > 123:
+        judgment_overflow_addendum.enabled = True
+  
+  elif marriage.other_provisions_any and len(marriage.other_provisions) > 240:
+    judgment_overflow_addendum.enabled = True
+---
 # ====================================================================
 ## specific form objects and attachment blocks
 # ====================================================================
@@ -159,7 +168,6 @@ code: |
 # --------------------------------------------------------------------
 ## Example form title or category here
 # --------------------------------------------------------------------
----
 ---
 # --------------------------------------------------------------------
 ## Confidential Case Inventory, MC 21
@@ -2264,6 +2272,58 @@ attachment:
           % else:
           ${ '' }
           % endif
+---
+# --------------------------------------------------------------------
+## Notice of Hearing
+# --------------------------------------------------------------------
+---
+attachment:
+    name: noh_divorce
+    filename: Notice of Hearing
+    docx template file: noh_divorce.docx
+    variable name: noh_divorce[i]
+    skip undefined: True
+    valid formats:
+        - pdf 
+---
+attachment:
+    name: Notice of Hearing and Motion to Enter Consent Judgment 
+    filename: Notice of Hearing and Motion to Enter Consent Judgment 
+    docx template file: noh_motion_consent.docx
+    variable name: noh_motion_consent[i]
+    skip undefined: True
+    valid formats:
+        - pdf 
+---
+attachment:
+    name: Notice of Hearing and Motion to Enter Default Judgment 
+    filename: Notice of Hearing and Motion to Enter Default Judgment 
+    docx template file: noh_motion_default.docx
+    variable name: noh_motion_default[i]
+    skip undefined: True
+    valid formats:
+        - pdf 
+---
+objects:
+  - noh_divorce: ALDocument.using(title="Notice of Hearing", filename="Notice of Hearing", has_addendum=False)
+  - noh_motion_consent: ALDocument.using(title="Notice of Hearing and Motion to Enter Consent Judgment", filename="Notice of Hearing and Motion to Enter Consent Judgment", has_addendum=False)
+  - noh_motion_default: ALDocument.using(title="Notice of Hearing and Motion to Enter Default Judgment", filename="Notice of Hearing and Motion to Enter Default Judgment", has_addendum=False)
+---
+# --------------------------------------------------------------------
+## Proof of Service
+# --------------------------------------------------------------------
+---
+attachment:
+    name: Proof of Service
+    filename: Proof of Service
+    docx template file: proof_of_service.docx
+    variable name: proof_of_service[i]
+    skip undefined: True
+    valid formats:
+        - pdf 
+---
+objects:
+  - proof_of_service: ALDocument.using(title="Proof of Service", filename="Proof of Service", enabled=True, has_addendum=False)
 ---
 # --------------------------------------------------------------------
 ## Judgment CC-MLH-412/413 and Attachments
