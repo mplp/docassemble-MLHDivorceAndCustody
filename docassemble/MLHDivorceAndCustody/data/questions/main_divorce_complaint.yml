@@ -230,6 +230,8 @@ code: |
   the_foc 
   docket_number
   stepchildren_for_addendum
+  plaintiffs
+  defendants
 
   nav.set_section("signpost_done")
   MLH_download

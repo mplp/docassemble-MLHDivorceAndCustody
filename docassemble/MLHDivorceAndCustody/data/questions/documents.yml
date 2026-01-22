@@ -2287,7 +2287,7 @@ attachment:
         - pdf 
 ---
 attachment:
-    name: noh_motion_consent
+    name: Notice of Hearing and Motion to Enter Consent Judgment 
     filename: Notice of Hearing and Motion to Enter Consent Judgment 
     docx template file: noh_motion_consent.docx
     variable name: noh_motion_consent[i]
@@ -2296,7 +2296,7 @@ attachment:
         - pdf 
 ---
 attachment:
-    name: noh_motion_default
+    name: Notice of Hearing and Motion to Enter Default Judgment 
     filename: Notice of Hearing and Motion to Enter Default Judgment 
     docx template file: noh_motion_default.docx
     variable name: noh_motion_default[i]
@@ -2305,16 +2305,16 @@ attachment:
         - pdf 
 ---
 objects:
-  - noh_divorce: ALDocument.using(title="Notice of Hearing", filename="noh_divorce", has_addendum=False)
-  - noh_motion_consent: ALDocument.using(title="Notice of Hearing and Motion to Enter Consent Judgment", filename="noh_motion_consent", has_addendum=False)
-  - noh_motion_default: ALDocument.using(title="Notice of Hearing and Motion to Enter Default Judgment", filename="noh_motion_default", has_addendum=False)
+  - noh_divorce: ALDocument.using(title="Notice of Hearing", filename="Notice of Hearing", has_addendum=False)
+  - noh_motion_consent: ALDocument.using(title="Notice of Hearing and Motion to Enter Consent Judgment", filename="Notice of Hearing and Motion to Enter Consent Judgment", has_addendum=False)
+  - noh_motion_default: ALDocument.using(title="Notice of Hearing and Motion to Enter Default Judgment", filename="Notice of Hearing and Motion to Enter Default Judgment", has_addendum=False)
 ---
 # --------------------------------------------------------------------
 ## Proof of Service
 # --------------------------------------------------------------------
 ---
 attachment:
-    name: proof_of_service
+    name: Proof of Service
     filename: Proof of Service
     docx template file: proof_of_service.docx
     variable name: proof_of_service[i]
@@ -2323,7 +2323,7 @@ attachment:
         - pdf 
 ---
 objects:
-  - proof_of_service: ALDocument.using(title="Proof of Service", filename="proof_of_service", enabled=True, has_addendum=False)
+  - proof_of_service: ALDocument.using(title="Proof of Service", filename="Proof of Service", enabled=True, has_addendum=False)
 ---
 # --------------------------------------------------------------------
 ## Judgment CC-MLH-412/413 and Attachments
