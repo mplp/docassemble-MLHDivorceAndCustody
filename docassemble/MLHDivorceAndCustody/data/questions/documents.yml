@@ -2362,8 +2362,8 @@ objects:
   - judgment_addendum_real_property_7_to_8: ALDocument.using(title="Real property addendum 4", filename="Real property addendum.pdf")
   - judgment_addendum_real_property_9_to_10: ALDocument.using(title="Real property addendum 5", filename="Real property addendum.pdf")
   - judgment_addendum_pensions: ALDocument.using(title="Pensions addendum", filename="Pensions addendum.pdf")
-  - judgment_addendum_income_tax: ALDocument.using(title="Income tax addendum", filename="Parenting time addendum.pdf")
-  - judgment_addendum_parenting_time: ALDocument.using(title="Parenting time addendum", filename="Income tax addendum.pdf")
+  - judgment_addendum_income_tax: ALDocument.using(title="Income tax addendum", filename="Income tax addendum.pdf")
+  - judgment_addendum_parenting_time: ALDocument.using(title="Parenting time addendum", filename="Parenting time addendum.pdf")
   - judgment_overflow_addendum: ALDocument.using(title="Judgment overflow addendum", filename="Judgment overflow addendum.pdf")
 ---
 attachment:
@@ -2588,7 +2588,7 @@ attachment:
                 % else:
           Both parties will have specific parenting time with the minor ${"child" if len(children.filter(legal_parent="both")) else "children"} according to the ${the_court.address.county} County Friend of the Court parenting time schedule.
                 % endif
-                % if PT_type == "supervised":
+                % if PT_type == "supervised" and not (specific_PT_how == "custom" and len(custom_PT_details) > 240):
                   % if physical_custody_who == "user":
       
           Parenting time for ${OP_party_label.lower()} will be supervised by ${PT_supervisor if PT_supervisor != "" else "________________________"}.
