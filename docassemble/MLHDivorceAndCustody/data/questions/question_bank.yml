@@ -269,8 +269,9 @@ fields:
     show if:
       variable: user_ask_role
       is: defendant
-validation code: |
-  op_ask_role = "defendant" if user_ask_role == "plaintiff" else "plaintiff"
+# TODO: commented out the below on 2/2/26. I think it's unnecessary. Delete if no problems seen in JOD_only tool.
+#validation code: |
+#  op_ask_role = "defendant" if user_ask_role == "plaintiff" else "plaintiff"
 ---
 id: marriage.breakdown
 question: |
