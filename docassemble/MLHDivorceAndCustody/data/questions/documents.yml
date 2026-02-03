@@ -2347,7 +2347,7 @@ objects:
       judgment_addendum_income_tax,
       judgment_addendum_parenting_time,
       judgment_overflow_addendum
-      ], filename="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", title="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", enabled=True)
+      ], filename="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", title="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", enabled=True, add_page_numbers=True, page_number_area="BOTTOM_LEFT", page_number_digits=2, page_number_font_size=10, page_number_horizontal_offset=45, page_number_vertical_offset=27, page_number_prefix="Page ")
 ---
 objects:
   - judgment_ccmlh412: ALDocument.using(title="Judgment", filename="Judgment.pdf")
