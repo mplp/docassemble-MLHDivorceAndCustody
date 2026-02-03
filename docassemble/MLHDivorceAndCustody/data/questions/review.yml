@@ -1556,7 +1556,7 @@ review:
           - **Model:** ${item.model}
           - **VIN:** ${item.vin}
           - **Award this vehicle to:** ${item.owner}
-          - **Do you and the ${op_ask_role.capitalize()} agree on what should happen with this vehicle?** ${word(yesno(item.agree))}
+          - **Do you and ${other_parties[0]} agree on what should happen with this vehicle?** ${word(yesno(item.agree))}
           - **Is there a debt related to this vehicle?:** ${word(yesno(item.debt))}
       % endfor
       % else:
