@@ -174,7 +174,7 @@ code: |
 # --------------------------------------------------------------------
 ---
 objects:
-  - summons_mc01: ALDocument.using(title="Summons MC 01", filename="Summons MC 01", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE, enabled=True)
+  - summons_mc01: ALDocument.using(title="Summons - MC 01", filename="Summons - MC 01", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE, enabled=True)
 ---
 attachment:
   - name: Summons - MC 01
@@ -184,34 +184,43 @@ attachment:
     skip undefined: True
     editable: False
     fields:
-      - trial_court_circuit: ${the_court.number}
-      - trial_court_address_county: ${the_court.address.county.upper()}
-      - docket_number: ${docket_number}
-      - docket_number__1: ${docket_number}
-      - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
-      - trial_court_phone_number: ${ the_court.phone }
-      - plaintiff_block: |
-          ${ plaintiffs[0].name_full() }
-          ${ plaintiffs[0].address.line_one() }
-          ${ plaintiffs[0].address.line_two() }
-          ${ word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
-      - defendant_block: |
-          ${ defendants[0].name_full() }
-          ${ defendants[0].address.line_one() }
-          ${ defendants[0].address.line_two() }
-          ${ word("Unkonwn phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
-    - plaintiffs_attorney_block: |
-          % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not other_parties[0].has_attorney):
-          Self-represented
-          % elif other_parties[0].has_attorney:
-          ${ plaintiffs[0].attorney.name_full() }
-          ${ plaintiffs[0].attorney.address.line_one() }
-          ${ plaintiffs[0].attorney.address.line_two() }
-          ${ word("Unknown phone") if plaintiffs[0].attorney.no_phone_number else phone_number_formatted(plaintiffs[0].attorney.phone_number) }
-          % endif
-    - no_pending_cases: ${ not prior_family_cases.there_are_any }
-    - pending_cases: ${ prior_family_cases.there_are_any }
-    - unknown_pending_cases: ${ not defined("prior_family_cases.there_are_any") }
+        - trial_court_circuit: ${the_court.number}
+        - trial_court_address_county: ${the_court.address.county.upper()}
+        - docket_number: ${docket_number}
+        - docket_number__1: ${docket_number}
+        - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+        - trial_court_phone_number: ${ the_court.phone }
+        - plaintiff_block: |
+            ${ plaintiffs[0].name_full() }
+            ${ plaintiffs[0].address.line_one() }
+            ${ plaintiffs[0].address.line_two() }
+            ${ word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
+        - defendant_block: |
+            ${ defendants[0].name_full() }
+            ${ defendants[0].address.line_one() }
+            ${ defendants[0].address.line_two() }
+            ${ word("Unkonwn phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
+        - plaintiffs_attorney_block: |
+            % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not other_parties[0].has_attorney):
+            Self-represented
+            % elif other_parties[0].has_attorney:
+            ${ plaintiffs[0].attorney.name_full() }
+            ${ plaintiffs[0].attorney.address.line_one() }
+            ${ plaintiffs[0].attorney.address.line_two() }
+            ${ word("Unknown phone") if plaintiffs[0].attorney.no_phone_number else phone_number_formatted(plaintiffs[0].attorney.phone_number) }
+            % endif
+        - no_pending_cases: ${ not prior_family_cases.there_are_any }
+        - pending_cases: ${ prior_family_cases.there_are_any }
+        - unknown_pending_cases: ${ not defined("prior_family_cases.there_are_any") }
+        - no_other_action: ${ not has_prior_civil_cases }
+        - other_action: ${ has_prior_civil_cases }
+        # - other_action_this_court:
+        # - other_action_other_court:
+        # - other_action_court_name:
+        - other_action_case_number: ${ prior_civil_case_number }
+        - other_action_judge: ${ prior_civil_case_judge }
+        - other_action_pending: ${ prior_civil_case_is_pending }
+        - other_action_not_pending: ${ not prior_civil_case_is_pending } 
 ---
 # --------------------------------------------------------------------
 ## Confidential Case Inventory, MC 21
