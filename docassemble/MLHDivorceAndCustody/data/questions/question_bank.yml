@@ -1212,9 +1212,7 @@ id: venue (single option)
 question: Where to file your divorce
 continue button field: venue
 subquestion: |
-  % if len(all_potential_venue_options) == 0:  #TODO delete after testing.
-  If you're reading this, no venue has been selected. This means there's an **error** in the code. Please report an issue with as much detail as you can about the parties' Michigan-status, counties, time in Michigan, etc. Please close out this test and start a new one.
-  % elif len(all_potential_venue_options) == 1:
+  % if len(all_potential_venue_options) == 1:
   You only meet the requirements to file your divorce in ${ county_choice } County. Your divorce forms will be prepared using ${ county_choice } as the filing county.  
   % elif len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case:
   Because of your earlier separate maintenance case, you must file in ${ prior_family_cases[separate_maintenance_case_index].county } County. Your divorce forms will be prepared using ${ county_choice } as the filing county.  
