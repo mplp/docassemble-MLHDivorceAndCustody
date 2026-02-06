@@ -228,6 +228,24 @@ attachment:
         - other_action_pending: ${ prior_civil_case_is_pending }
         - other_action_not_pending: ${ not prior_civil_case_is_pending } 
 ---
+code: |
+    if not has_prior_civil_cases:
+        undefine("prior_civil_case_is_pending")
+        undefine("prior_civil_case_county")
+        undefine("prior_civil_case_filed_outside_MI")
+        undefine("MI_court_type")
+        undefine("prior_civil_case_non_MI_court")
+        undefine("prior_civil_case_number")
+        undefine("prior_civil_case_judge")
+    else:
+        if prior_civil_case_filed_outside_MI:
+            undefine("prior_civil_case_county")
+            undefine("MI_court_type")
+        else:
+            undefine("prior_civil_case_non_MI_court")
+
+    reset_civil_action_info = True
+---
 # --------------------------------------------------------------------
 ## Confidential Case Inventory, MC 21
 # --------------------------------------------------------------------

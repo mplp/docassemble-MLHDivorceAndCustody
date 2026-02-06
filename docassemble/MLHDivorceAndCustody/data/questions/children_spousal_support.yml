@@ -2267,7 +2267,7 @@ fields:
     required: False
     js show if: |
       val("has_prior_civil_cases") === true
-  - If the case was filed in Michigan, select the county:: prior_civil_case_county
+  - If the case was filed in Michigan, select the county: prior_civil_case_county
     required: False
     code: court_list._load_courts()["address_county"].unique()
     js show if: |

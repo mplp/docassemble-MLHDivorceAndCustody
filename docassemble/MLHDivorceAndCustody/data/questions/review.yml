@@ -1039,6 +1039,8 @@ review:
         - ${word(yesno(child_support_pending_elsewhere))}
   - Edit:
       - has_prior_civil_cases
+      - recompute:
+        - reset_civil_action_info
     button: |
       ##### Active or resolved civil (not family court) action
       % if has_prior_civil_cases:
