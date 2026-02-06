@@ -4,7 +4,7 @@
 ---
 if: tool_ID == "JOD_only"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, judgment_and_addenda_bundle, summons_mc01], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, JOD_only doesn't have instructions anyway]
 ---
 if: tool_ID == "divorce_complaint"
@@ -211,12 +211,18 @@ attachment:
             % endif
         - no_pending_cases: ${ not prior_family_cases.there_are_any }
         - pending_cases: ${ prior_family_cases.there_are_any }
-        - unknown_pending_cases: ${ not defined("prior_family_cases.there_are_any") }
         - no_other_action: ${ not has_prior_civil_cases }
         - other_action: ${ has_prior_civil_cases }
-        # - other_action_this_court:
-        # - other_action_other_court:
-        # - other_action_court_name:
+        - other_action_this_court: ${ True if not prior_civil_case_filed_outside_MI and the_court.address.county == prior_civil_case_county and MI_court_type == "Circuit" else False }
+        - other_action_other_court: ${ False if not prior_civil_case_filed_outside_MI and the_court.address.county == prior_civil_case_county and MI_court_type == "Circuit" else True }
+        - other_action_court_name: |
+            % if defined("prior_civil_case_filed_outside_MI"):
+            % if prior_civil_case_filed_outside_MI:
+            ${ prior_civil_case_non_MI_court }
+            % else:
+            ${prior_civil_case_county} County ${MI_court_type}
+            % endif
+            % endif
         - other_action_case_number: ${ prior_civil_case_number }
         - other_action_judge: ${ prior_civil_case_judge }
         - other_action_pending: ${ prior_civil_case_is_pending }
