@@ -550,7 +550,7 @@ fields:
     field: users[0].new_last_name_yn
     datatype: yesnoradio
   - note: |
-      Michigan law says that a woman may ask the court to change her last name as part of a divorce case. If you're not a woman and you want to ask the court to change your last name, you may want to talk to a lawyer.
+      Michigan law specifically says that **a woman** may ask the court to change her last name as part of a divorce case. If you're not a woman and you want to ask the court to change your last name, you may want to talk to a lawyer.
     show if:
       variable: users[0].new_last_name_yn
       is: True
