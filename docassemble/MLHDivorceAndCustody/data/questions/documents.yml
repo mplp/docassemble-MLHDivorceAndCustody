@@ -4,39 +4,12 @@
 ---
 if: tool_ID == "JOD_only"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[
-    foc_100_full, 
-    foc_10_full, 
-    uniform_spousal_support_order_foc10b, 
-    noh_motion_consent, 
-    noh_motion_default, 
-    noh_divorce, 
-    proof_of_service, 
-    judgment_and_addenda_bundle
-    ], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, JOD_only doesn't have instructions anyway]
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[
-    confidential_case_inventory_mc21_full, 
-    UCCJEA_affidavit_mc416, 
-    verified_statement_foc_23_full, 
-    domestic_relations_verified_financial_cc_320, 
-    child_support_services_dhs_1201d, 
-    foc_100_full, 
-    foc_10_full, 
-    uniform_spousal_support_order_foc10b, 
-    fee_waiver_attachment, 
-    protected_pii_mc_97a_attachment, 
-    noh_motion_consent, 
-    noh_motion_default, 
-    noh_divorce, 
-    proof_of_service, 
-    judgment_and_addenda_bundle, 
-    summons_mc01, 
-    default_request_mc07
-    ], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, judgment_and_addenda_bundle, summons_mc01, default_request_mc07], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, except without the instructions, testimony, flowchart]
 ---
 # ====================================================================
@@ -189,7 +162,10 @@ code: |
     judgment_overflow_addendum.enabled = True
 ---
 code: |
-    default_request_mc07.enabled = (tool_ID in ["divorce_complaint"]) and (not spouse_is_in_military)
+  summons_mc01.enabled = tool_ID in ["divorce_complaint"]
+---
+code: |
+  default_request_mc07.enabled = (tool_ID in ["divorce_complaint"]) and (not spouse_is_in_military)
 ---
 # ====================================================================
 ## specific form objects and attachment blocks
@@ -281,7 +257,7 @@ code: |
 # --------------------------------------------------------------------
 ---
 objects:
-  - summons_mc01: ALDocument.using(title="Default Request and Entry - MC 07", filename="Default Request and Entry - MC 07", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE, enabled=True)
+  - default_request_mc07: ALDocument.using(title="Default Request and Entry - MC 07", filename="Default Request and Entry - MC 07", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
 ---
 attachment:
   - name: Default Request and Entry - MC 07
