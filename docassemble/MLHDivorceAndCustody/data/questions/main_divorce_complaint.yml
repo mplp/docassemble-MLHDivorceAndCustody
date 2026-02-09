@@ -96,18 +96,6 @@ code: |
     if not marriage.pension_retirement_accounts_continue:
       exit_general
 
-  if marriage.have_financial_instruments:
-    if marriage.financial_instruments_held_together:
-      marriage.financial_instruments_held_together_agree_about_division
-      if not marriage.financial_instruments_held_together_continue:
-        exit_general
-    else:
-      if marriage.financial_instruments_keep_or_divide == "divide":
-        exit_general
-      elif marriage.financial_instruments_keep_or_divide == "keep":
-        if not marriage.financial_instruments_keep_own_continue:
-          exit_general
-
   if marriage.have_business:
     exit_general
 
@@ -198,10 +186,11 @@ code: |
 
   nav.set_section("signpost_property")
 
+  marriage.marital_property_info
   interview_order_personal_property
   interview_order_vehicles
-  interview_order_debts
   marriage.real_property.gather()
+  interview_order_debts
   if there_are_marital_children:
     interview_order_income_tax
 
