@@ -1379,29 +1379,59 @@ continue button field: marriage.cobra_coverage
 id: marital property explanation
 question: Dividing Property
 subquestion : |
-  In a divorce, **marital property** must be divided fairly. In general, marital property is property acquired or accumulated during the marriage. 
+  In a divorce, **marital property** must be divided fairly. Marital property can include both {real property} and {personal property}. In general, something is marital property if:
 
+  * You got it during the marriage, or 
+  * Your spouse got it during the marriage, or
+  * Both of you got it during the marriage.   
+  
+  ${ collapse_template(other_marital_property_info) }
+
+  Usually **{separate property}** does not get divided in a divorce. But sometimes it is possible to divide it.
+
+  ${ collapse_template(separate_property_more_info) }
+
+  ${ collapse_template(separate_property_treated_marital) }
+
+  The next questions will ask you about **marital property**.
+continue button field: marriage.marital_property_info
+---
+template: other_marital_property_info
+subject: |
+  What else can be marital property?
+content: |
   Marital property also includes:
   
   * An increase in the value of marital property
-  * An increase in the value of separate property during the marriage, but **only if** one of the spouses caused the increase through active efforts. A passive increase in value doesn't count.
-
-  Typically, **separate property** does not get divided in a divorce.
-
-  Separate property includes:
-
+  * An increase in the value of separate property during the marriage, but **only if** one of the spouses caused the increase through **active efforts**. A passive increase in value doesn't count.
+---
+template: separate_property_more_info
+subject: |
+  More info on separate property
+content: |
+ Separate property includes:
+  
   * Property owned before the marriage
-  * Passive appreciation of separate property
+  * A passive increase in the value of separate property
   * A gift to one party during the marriage
   * Property that one party inherits during the marriage.
 
-  Usually the owner of the separate property keeps it. But, under special circumstances, a court might divide separate property between the spouses in a divorce. If you want to ask the court to divide separate property, you may want to talk to a lawyer. ${ MLH_GUIDE_FULL }
-
-  The next questions will ask you about **marital property** acquired during the marriage.There are two types of marital property: 
-
-  * Real property (also called real estate, such as houses and land), and
-  * Personal property (everything that is not real property).
-continue button field: marriage.marital_property_info
+  Usually the owner of the separate property keeps it.
+  
+  Under special circumstances, a judge might divide separate property. For example, if you want the judge to award you some of your spouse's separate property, you have to prove either:
+  
+  * The division of marital property is not enough to provide suitable support for you and the children, if any, or
+  * You helped to get the separate property or to increase its value.
+  
+  This can be hard to prove. You may want to talk to a lawyer. ${ MLH_GUIDE_FULL }
+---
+template: separate_property_treated_marital
+subject: |
+  What about property that belonged to just one spouse but was treated like marital property?
+content: |
+  Sometimes a judge will divide property that used to be **separate property but was treated like marital property during the marriage.** This can happen when separate property was used for joint purposes, placed in both names, or separate funds were mixed together with marital funds in the same account. 
+  
+  If you want to ask the judge to divide this kind of property, **consider talking to a lawyer.** ${ MLH_GUIDE_FULL }
 ---
 id: marriage.personal_property_info
 question: |
