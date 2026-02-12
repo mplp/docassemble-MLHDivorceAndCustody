@@ -4,7 +4,7 @@
 ---
 if: tool_ID == "JOD_only"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, JOD_only doesn't have instructions anyway]
 ---
 if: tool_ID == "divorce_complaint"
@@ -141,12 +141,13 @@ code: |
   judgment_addendum_real_property_7_to_8.enabled = bool(marriage.real_property) and len(marriage.real_property) > 6
   judgment_addendum_real_property_9_to_10.enabled = bool(marriage.real_property) and len(marriage.real_property) > 8
 
-  judgment_addendum_income_tax.enabled = there_are_marital_children
-  
   judgment_addendum_pensions.enabled = (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own)
+
+  judgment_addendum_income_tax.enabled = there_are_marital_children
+
+  judgment_addendum_parenting_time.enabled = there_are_marital_children and MI_has_jurisdiction_all_kids and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 240
 ---
 # enabling logic for JOD_only addenda overflow fields (personal property and debts, real property legal description, and other provisions)
-# add parenting time to regular addenda overflow? Waiting on Amy's opinion
 code: |
   judgment_overflow_addendum.enabled = False
   
@@ -2476,8 +2477,9 @@ objects:
       judgment_addendum_real_property_5_to_6,
       judgment_addendum_real_property_7_to_8,
       judgment_addendum_real_property_9_to_10,
-      judgment_addendum_income_tax,
       judgment_addendum_pensions,
+      judgment_addendum_income_tax,
+      judgment_addendum_parenting_time,
       judgment_overflow_addendum
       ], filename="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", title="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", enabled=True)
 ---
@@ -2493,8 +2495,9 @@ objects:
   - judgment_addendum_real_property_5_to_6: ALDocument.using(title="Real property addendum 3", filename="Real property addendum.pdf")
   - judgment_addendum_real_property_7_to_8: ALDocument.using(title="Real property addendum 4", filename="Real property addendum.pdf")
   - judgment_addendum_real_property_9_to_10: ALDocument.using(title="Real property addendum 5", filename="Real property addendum.pdf")
-  - judgment_addendum_income_tax: ALDocument.using(title="Income tax addendum 3.5", filename="Income tax addendum.pdf")
   - judgment_addendum_pensions: ALDocument.using(title="Pensions addendum", filename="Pensions addendum.pdf")
+  - judgment_addendum_income_tax: ALDocument.using(title="Income tax addendum", filename="Income tax addendum.pdf")
+  - judgment_addendum_parenting_time: ALDocument.using(title="Parenting time addendum", filename="Parenting time addendum.pdf")
   - judgment_overflow_addendum: ALDocument.using(title="Judgment overflow addendum", filename="Judgment overflow addendum.pdf")
 ---
 attachment:
@@ -2719,7 +2722,7 @@ attachment:
                 % else:
           Both parties will have specific parenting time with the minor ${"child" if len(children.filter(legal_parent="both")) else "children"} according to the ${the_court.address.county} County Friend of the Court parenting time schedule.
                 % endif
-                % if PT_type == "supervised":
+                % if PT_type == "supervised" and not (specific_PT_how == "custom" and len(custom_PT_details) > 240):
                   % if physical_custody_who == "user":
       
           Parenting time for ${OP_party_label.lower()} will be supervised by ${PT_supervisor if PT_supervisor != "" else "________________________"}.
@@ -4582,6 +4585,13 @@ attachment:
       - docket_number1: ${docket_number}
 ---
 attachment:
+  - name: Judgment addendum 4 (pensions)
+    filename: Judgment addendum 4 (pensions)
+    variable name: judgment_addendum_pensions[i]
+    docx template file: judgment_addendum_4_pensions.docx
+    skip undefined: True
+---
+attachment:
   - name: Judgment addendum 3.5 (income tax)
     filename: Judgment addendum 3.5 (income tax)
     variable name: judgment_addendum_income_tax[i]
@@ -4651,10 +4661,10 @@ code: |
   tax_start_year_is_even = (tax_start_year % 2 == 0)
 ---
 attachment:
-  - name: Judgment addendum 4 (pensions)
-    filename: Judgment addendum 4 (pensions)
-    variable name: judgment_addendum_pensions[i]
-    docx template file: judgment_addendum_4_pensions.docx
+  - name: Judgment addendum (parenting time)
+    filename: Judgment addendum (parenting time)
+    variable name: judgment_addendum_parenting_time[i]
+    docx template file: judgment_addendum_parenting_time.docx
     skip undefined: True
 ---
 attachment:

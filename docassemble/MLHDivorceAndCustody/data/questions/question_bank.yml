@@ -67,6 +67,12 @@ validation code: |
   if x.instanceName == "marriage.debts":
     if x.number_gathered() == 0:
       validation_error("You must add at least one debt based on your previous answers.")
+  if x.instanceName == "marriage.vehicles":
+    if x.number_gathered() > 12:
+      validation_error("This tool can only create forms for up to 12 vehicles.")
+  if x.instanceName == "marriage.real_property":
+    if x.number_gathered() > 10:
+      validation_error("This tool can only create forms for up to 10 properties.")  
 ---
 generic object: DAList
 id: x.there_are_any
@@ -263,8 +269,9 @@ fields:
     show if:
       variable: user_ask_role
       is: defendant
-validation code: |
-  op_ask_role = "defendant" if user_ask_role == "plaintiff" else "plaintiff"
+# TODO: commented out the below on 2/2/26. I think it's unnecessary. Delete if no problems seen in JOD_only tool.
+#validation code: |
+#  op_ask_role = "defendant" if user_ask_role == "plaintiff" else "plaintiff"
 ---
 id: marriage.breakdown
 question: |
@@ -543,7 +550,7 @@ fields:
     field: users[0].new_last_name_yn
     datatype: yesnoradio
   - note: |
-      Michigan law says that a woman may ask the court to change her last name as part of a divorce case. If you're not a woman and you want to ask the court to change your last name, you may want to talk to a lawyer.
+      Michigan law specifically says that **a woman** may ask the court to change her last name as part of a divorce case. If you're not a woman and you want to ask the court to change your last name, you may want to talk to a lawyer.
     show if:
       variable: users[0].new_last_name_yn
       is: True
@@ -1205,9 +1212,7 @@ id: venue (single option)
 question: Where to file your divorce
 continue button field: venue
 subquestion: |
-  % if len(all_potential_venue_options) == 0:  #TODO delete after testing.
-  If you're reading this, no venue has been selected. This means there's an **error** in the code. Please report an issue with as much detail as you can about the parties' Michigan-status, counties, time in Michigan, etc. Please close out this test and start a new one.
-  % elif len(all_potential_venue_options) == 1:
+  % if len(all_potential_venue_options) == 1:
   You only meet the requirements to file your divorce in ${ county_choice } County. Your divorce forms will be prepared using ${ county_choice } as the filing county.  
   % elif len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case:
   Because of your earlier separate maintenance case, you must file in ${ prior_family_cases[separate_maintenance_case_index].county } County. Your divorce forms will be prepared using ${ county_choice } as the filing county.  
@@ -1824,6 +1829,10 @@ code: |
   marriage.vehicles.there_are_any = True
 ---
 code: |
+  if marriage.vehicles.number() >= 12: 
+    marriage.vehicles.there_is_another = False
+---
+code: |
   marriage.vehicles[i].year
   marriage.vehicles[i].make
   marriage.vehicles[i].model
@@ -1939,6 +1948,10 @@ objects:
       noun_pl="properties",
       complete_attribute="complete",
       )
+---
+code: |
+  if marriage.real_property() >= 10: 
+    marriage.real_property.there_is_another = False
 ---
 code: |
   marriage.real_property[i].initializeAttribute("address", ALAddress)
