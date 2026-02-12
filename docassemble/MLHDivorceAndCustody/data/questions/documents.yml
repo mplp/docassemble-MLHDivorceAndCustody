@@ -9,7 +9,7 @@ objects:
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, except without the instructions, testimony, flowchart]
 ---
 # ====================================================================
@@ -31,9 +31,28 @@ code: |
 code: |
   if tool_ID == "divorce_complaint":
     UCCJEA_affidavit_mc416.enabled = there_are_marital_children
-  if tool_ID == "custody_complaint":
+  elif tool_ID == "custody_complaint":
     UCCJEA_affidavit_mc416.enabled = True
+  else:
+    UCCJEA_affidavit_mc416.enabled = False
 
+  if UCCJEA_affidavit_mc416.enabled:
+    UCCJEA_affidavit_mc416_full.enabled = True
+  else:
+    UCCJEA_affidavit_mc416_full.enabled = False
+---
+code: |
+  UCCJEA_affidavit_mc416_addendum.enabled = False
+
+  if UCCJEA_affidavit_mc416.enabled:
+    if (
+        len(children_previous_address) > 4
+        or len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=True)) > 5
+        or len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)) > 2
+        or (not MI_home_state_all_kids and len(children.filter(legal_parent='both')) > 1)
+       ):
+      UCCJEA_affidavit_mc416_addendum.enabled = True
+  
 # if UCCJEA_affidavit_mc416.enabled:
 #   addendum will be enabled if any of the below:
 #     - not MI_home_state_all_kids and len(children.filter(legal_parent='both')) > 1 (or if you think it's worth coming up with a way to turn this into a proper "overflow" calculus, I'm open to that)
@@ -604,7 +623,18 @@ attachment:
 # --------------------------------------------------------------------
 ---
 objects:
+  - UCCJEA_affidavit_mc416_full: ALDocumentBundle.using(elements=[UCCJEA_affidavit_mc416, UCCJEA_affidavit_mc416_addendum], filename="UCCJEA Affidavit - MC 416", title="UCCJEA Affidavit - MC 416")
+---
+objects:
   - UCCJEA_affidavit_mc416: ALDocument.using(title="UCCJEA Affidavit - MC 416", filename="UCCJEA Affidavit - MC 416")
+  - UCCJEA_affidavit_mc416_addendum: ALDocument.using(title="UCCJEA Affidavit - MC 416 Addendum", filename="UCCJEA Affidavit - MC 416 Addendum")
+---
+attachment:
+  name: UCCJEA Affidavit - MC 416 (Addendum)
+  filename: UCCJEA Affidavit - MC 416 (Addendum)
+  variable name: UCCJEA_affidavit_mc416_addendum[i]
+  docx template file: UCCJEA_affidavit_mc416_addendum.docx
+  skip undefined: True
 ---
 attachment:
   - name: UCCJEA Affidavit - MC 416
@@ -634,9 +664,13 @@ attachment:
           % endif
       - marital_children_past_addresses: |
           % if children_previous_address.there_are_any:
-          % for address in children_previous_address:
+            % if len(children_previous_address) > 4:
+          See addendum.
+            % else:
+              % for address in children_previous_address:
           ${address.on_one_line()} -- from ${address.start_date} to ${address.end_date}; 
-          % endfor
+              % endfor
+            % endif
           % else:
           N/A
           % endif
@@ -657,19 +691,27 @@ attachment:
           ${ other_parties[0].address.line_two() }
           % endif
       - court_cases_concerning_custody_parenting_time: |
-          % for case in prior_family_cases:
-          % if case.add_to_MC416_4:
+          % if len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=True)) > 5:
+          See addendum.
+          % else:
+            % for case in prior_family_cases:
+              % if case.add_to_MC416_4:
           ${case.title}; Case #: ${case.docket_number}; ${case.court if case.state != "MI" else court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}; ${case.address if case.state != "MI" else word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_address')) + word(" ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_unit')) + word(", ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='CSZ'))}; Order date: ${format_date(case.final_order_date, format='M/d/yyyy') if case.type not in ["divorce", "separate_maintenance"] and case.status == "ended_with_order" else format_date(case.custody_PT_order_date, format='M/d/yyyy')} ${word("; This proceeding is continuing.") if case.status == "pending" else word("; This proceeding has been stayed by the court.") if case.status == "stayed" else word("; This proceeding was later dismissed.") if case.status == "dismissed" else word("")}
+              % endif
+            % endfor
           % endif
-          % endfor
       - pending_cases_affecting_custody: |
-          % for case in prior_family_cases:
-          % if case.add_to_MC416_4:
-          % if case.status in ["pending", "stayed"]:
+          % if len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)) > 2:
+          See addendum.
+          % else:
+            % for case in prior_family_cases:
+              % if case.add_to_MC416_4:
+                % if case.status in ["pending", "stayed"]:
           ${case.title}; Case #: ${case.docket_number}; ${case.court if case.state != "MI" else court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}; ${case.address if case.state != "MI" else word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_address')) + word(" ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_unit')) + word(", ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='CSZ'))}; Nature: ${prior_family_case_types_ordered[case.type]}; Order date: ${format_date(case.final_order_date, format='M/d/yyyy') if case.type not in ["divorce", "separate_maintenance"] and case.status == "ended_with_order" else format_date(case.custody_PT_order_date, format='M/d/yyyy')} ${word("; This proceeding is continuing.") if case.status == "pending" else word("; This proceeding has been stayed by the court.")}
+                % endif
+              % endif
+            % endfor
           % endif
-          % endif
-          % endfor
       - pending_proceeding_continuing: |
           % if len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)) == 1:
           % if prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)[0].status == "pending":
