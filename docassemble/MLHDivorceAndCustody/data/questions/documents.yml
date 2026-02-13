@@ -171,6 +171,20 @@ code: |
 # --------------------------------------------------------------------
 ---
 # --------------------------------------------------------------------
+## Attachment to Divorce Complaint/Answer
+# --------------------------------------------------------------------
+---
+objects:
+  - complaint_answer_attachment: ALDocument.using(title="Attachment to Divorce Complaint/Answer", filename="VAttachment to Divorce Complaint/Answer")
+---
+attachment:
+  - name: Attachment to Divorce Complaint/Answer
+    filename: Attachment to Divorce Complaint/Answer
+    variable name: complaint_answer_attachment[i]
+    docx template file: complaint_answer_attachment.docx
+    skip undefined: True
+---
+# --------------------------------------------------------------------
 ## Confidential Case Inventory, MC 21
 # --------------------------------------------------------------------
 ---
