@@ -48,7 +48,7 @@ code: |
     if (
         len(children_previous_address) > 4
         or len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=True)) > 5
-        or len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)) > 2
+        or len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)) > 1
         or (not MI_home_state_all_kids and len(children.filter(legal_parent='both')) > 1)
        ):
       UCCJEA_affidavit_mc416_addendum.enabled = True
@@ -668,7 +668,7 @@ attachment:
           See addendum.
             % else:
               % for address in children_previous_address:
-          ${address.on_one_line()} -- from ${address.start_date} to ${address.end_date}; 
+          ${address.on_one_line()} -- from ${address.start_date} to ${address.end_date} 
               % endfor
             % endif
           % else:
@@ -701,7 +701,7 @@ attachment:
             % endfor
           % endif
       - pending_cases_affecting_custody: |
-          % if len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)) > 2:
+          % if len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)) > 1:
           See addendum.
           % else:
             % for case in prior_family_cases:
@@ -738,21 +738,13 @@ attachment:
           % elif len(children.filter(legal_parent='both')) > 1:
           See addendum. 
           % endif
-# If it goes to addendum (last option above), we would basically run a for loop for children.filter(legal_parent='both') and print same as in the elif above, except formatted something like: 
-# The home states of the children are:
-#  - Michigan for kljlkjkljk jkljkljlk and Child4 Child
-#  - Louisiana for chiuld on
-#  - Iowa for Child Child3
-#  - Kentucky for Child5 fiver
-#  - Kentucky for Sextus Sixty
-#  - None for Child Seven
-#  - None for Child Eight. Michigan has jurisdiction because the child lived 6 months in MI within the last 6 months. MCL 722.1201(1)(b)
-# (the above is just an example, anything similar would be fine (for example if you want to just print "- Name: <home state text>". It's not important to group kids with the same home state, unless it feels very easy, fine by me to list them separately. )
       - risk_if_disclose_identifying_information: ${ confidential_contact_info_yn }
       - users0_name_full: ${users[0].name_full()}
       - users0_address_block: |
           % if confidential_contact_info_yn:
-          Confidential- Mailing: 
+          Confidential- Mailing:
+          % else:
+          ${""}
           % endif
           ${ users[0].address.line_one() }
           ${ users[0].address.line_two() }      
