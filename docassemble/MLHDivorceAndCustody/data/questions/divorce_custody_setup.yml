@@ -113,5 +113,34 @@ terms:
       
       * Sometimes when a party files an appeal, a judge may grant a motion for a stay. When this happens, it stops the effect of the lower court order while the appeal is going on. 
       * Sometimes a stay happens without an appeal. For example, a bankruptcy case usually stays the division of marital property in a divorce case.
+  - phrases:
+      - separate property
+      - separate
+    definition: |
+      Separate property **belongs to only one spouse.** It can include:
+      
+      * real property (also called real estate, such as houses and land) and 
+      * personal property (everything that is not real property).
+  - phrases:
+      - marital property
+      - marital
+    definition: |
+      Something is marital property if:
+
+      * You got it during the marriage, or 
+      * Your spouse got it during the marriage, or
+      * Both of you got it together during the marriage.  
+      
+      This can include both real property (also called real estate, such as houses and land) and personal property (everything that is not real property).
+  - phrases:
+      - real property
+      - real
+    definition: |
+      Real property is also called real estate, such as houses and land. It can be either marital or separate property.
+  - phrases:
+      - personal property
+      - personal
+    definition: |
+      Personal property includes everything that is **not** real property. Some examples are bank accounts, books, clothes, furniture, jewelry, cars, and mobile homes. It can be either marital or separate property.
 ---
 
