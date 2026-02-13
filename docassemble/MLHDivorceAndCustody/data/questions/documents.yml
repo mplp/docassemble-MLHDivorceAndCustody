@@ -168,6 +168,9 @@ code: |
 code: |
   default_request_mc07.enabled = (tool_ID in ["divorce_complaint"]) and (not spouse_is_in_military)
 ---
+code: |
+    complaint_answer_attachment.enabled = (tool_ID in ["divorce_complaint"]) and (user_wants_post_divorce_support)
+---
 # ====================================================================
 ## specific form objects and attachment blocks
 # ====================================================================
