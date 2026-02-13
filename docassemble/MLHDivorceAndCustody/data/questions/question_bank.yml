@@ -1387,13 +1387,11 @@ subquestion : |
   
   ${ collapse_template(other_marital_property_info) }
 
-  Usually **{separate property}** does not get divided in a divorce. But sometimes it is possible to divide it.
+  Usually **separate property** (property that belongs to only one spouse) does not get divided in a divorce. But sometimes it is possible to divide it.
 
   ${ collapse_template(separate_property_more_info) }
 
   ${ collapse_template(separate_property_treated_marital) }
-
-  The next questions will ask you about **marital property**.
 continue button field: marriage.marital_property_info
 ---
 template: other_marital_property_info
@@ -1409,21 +1407,19 @@ template: separate_property_more_info
 subject: |
   More info on separate property
 content: |
- Separate property includes:
+  Separate property includes both {real property} and {personal property} that is:
   
   * Property owned before the marriage
-  * A passive increase in the value of separate property
   * A gift to one party during the marriage
-  * Property that one party inherits during the marriage.
-
-  Usually the owner of the separate property keeps it.
+  * Property that one party inherits during the marriage
+  * A passive increase in the value of separate property.
   
-  Under special circumstances, a judge might divide separate property. For example, if you want the judge to award you some of your spouse's separate property, you have to prove either:
+  **Usually the owner of the separate property keeps it.** But, in special circumstances, a judge might divide separate property. If you want the judge to award you some of your spouse's separate property, you have to prove either:
   
   * The division of marital property is not enough to provide suitable support for you and the children, if any, or
   * You helped to get the separate property or to increase its value.
   
-  This can be hard to prove. You may want to talk to a lawyer. ${ MLH_GUIDE_FULL }
+  This can be hard to prove. If you want to ask the judge to divide separate property, consider talking to a lawyer. ${ MLH_GUIDE_FULL }
 ---
 template: separate_property_treated_marital
 subject: |
