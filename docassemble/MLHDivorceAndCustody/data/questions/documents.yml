@@ -9,7 +9,7 @@ objects:
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[summons_mc01, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, default_request_mc07, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, except without the instructions, testimony, flowchart]
 ---
 # ====================================================================
@@ -181,6 +181,12 @@ code: |
   elif marriage.other_provisions_any and len(marriage.other_provisions) > 240:
     judgment_overflow_addendum.enabled = True
 ---
+code: |
+  summons_mc01.enabled = tool_ID in ["divorce_complaint"]
+---
+code: |
+  default_request_mc07.enabled = (tool_ID in ["divorce_complaint"]) and (not spouse_is_in_military)
+---
 # ====================================================================
 ## specific form objects and attachment blocks
 # ====================================================================
@@ -188,6 +194,60 @@ code: |
 # --------------------------------------------------------------------
 ## Example form title or category here
 # --------------------------------------------------------------------
+---
+# --------------------------------------------------------------------
+## Summons, MC 01
+# --------------------------------------------------------------------
+---
+objects:
+  - summons_mc01: ALDocument.using(title="Summons - MC 01", filename="Summons - MC 01", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
+attachment:
+  - name: Summons - MC 01
+    filename: Summons - MC 01
+    variable name: summons_mc01[i]
+    pdf template file: summons_mc01.pdf
+    skip undefined: True
+    editable: False
+    fields:
+        - trial_court: ${ the_court.number }
+        - trial_court_county: ${ the_court.address.county.upper() }
+        - case_number_1: ${ docket_number }
+        - case_number_2: ${ docket_number }
+        - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+        - trial_court_phone_number: ${ the_court.phone }
+        - plaintiff_block: |
+            ${ plaintiffs[0].name_full() }
+            ${ plaintiffs[0].address.line_one() }
+            ${ plaintiffs[0].address.line_two() }
+            ${ word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
+        - defendant_block: |
+            ${ defendants[0].name_full() }
+            ${ defendants[0].address.line_one() }
+            ${ defendants[0].address.line_two() }
+            ${ word("Unkonwn phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
+        - plaintiffs_attorney_block: |
+            Self-represented
+        - no_pending_cases: ${ not prior_family_cases.there_are_any }
+        - pending_cases: ${ prior_family_cases.there_are_any }
+        - no_other_action: ${ not has_prior_civil_cases }
+        - other_action: ${ has_prior_civil_cases }
+        - other_action_this_court: ${ True if has_prior_civil_cases and not prior_civil_case_filed_outside_MI and the_court.address.county == prior_civil_case_county and MI_court_type == "Circuit" else False }
+        - other_action_other_court: ${ False if not has_prior_civil_cases or (not prior_civil_case_filed_outside_MI and the_court.address.county == prior_civil_case_county and MI_court_type == "Circuit") else True }
+        - other_action_court_name: |
+            % if has_prior_civil_cases:
+            % if prior_civil_case_filed_outside_MI:
+            ${ prior_civil_case_non_MI_court }
+            % elif the_court.address.county == prior_civil_case_county and MI_court_type == "Circuit":
+            
+            % else:
+            ${prior_civil_case_county} County ${MI_court_type}
+            % endif
+            % endif
+        - other_action_case_number: ${ prior_civil_case_number if has_prior_civil_cases else "" }
+        - other_action_judge: ${ prior_civil_case_judge if has_prior_civil_cases else "" }
+        - other_action_pending: ${ has_prior_civil_cases and prior_civil_case_is_pending }
+        - other_action_not_pending: ${ has_prior_civil_cases and not prior_civil_case_is_pending } 
 ---
 # --------------------------------------------------------------------
 ## Confidential Case Inventory, MC 21
@@ -2061,6 +2121,42 @@ attachment:
         % endif
 ---
 # --------------------------------------------------------------------
+## Default Request and Entry, MC 07
+# --------------------------------------------------------------------
+---
+objects:
+  - default_request_mc07: ALDocument.using(title="Default Request and Entry - MC 07", filename="Default Request and Entry - MC 07", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
+attachment:
+  - name: Default Request and Entry - MC 07
+    filename: Default Request and Entry - MC 07
+    variable name: default_request_mc07[i]
+    pdf template file: default_request_mc07.pdf
+    skip undefined: True
+    editable: False
+    fields:
+        - trial_court: ${ the_court.number }
+        - trial_court_county: ${ the_court.address.county.upper() }
+        - case_number_1: ${ docket_number }
+        - case_number_2: ${ docket_number }
+        - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+        - trial_court_phone_number: ${ the_court.phone }
+        - plaintiff_block: |
+            ${ plaintiffs[0].name_full() }
+            ${ plaintiffs[0].address.line_one() }
+            ${ plaintiffs[0].address.line_two() }
+            ${ word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
+        - defendant_block: |
+            ${ defendants[0].name_full() }
+            ${ defendants[0].address.line_one() }
+            ${ defendants[0].address.line_two() }
+            ${ word("Unkonwn phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
+        - plaintiffs_attorney_block: |
+            Self-represented
+        - defendants_attorney_block: 
+        - defendant_name: ${ other_parties[0].name_full() }
+---
+# --------------------------------------------------------------------
 ## Uniform Child Support Order FOC 10 and Attachments
 # --------------------------------------------------------------------
 ---
@@ -2381,7 +2477,7 @@ objects:
       judgment_addendum_income_tax,
       judgment_addendum_parenting_time,
       judgment_overflow_addendum
-      ], filename="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", title="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", enabled=True)
+      ], filename="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", title="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", enabled=True, add_page_numbers=True, page_number_area="BOTTOM_LEFT", page_number_digits=2, page_number_font_size=10, page_number_horizontal_offset=45, page_number_vertical_offset=27, page_number_prefix="Page ")
 ---
 objects:
   - judgment_ccmlh412: ALDocument.using(title="Judgment", filename="Judgment.pdf")
