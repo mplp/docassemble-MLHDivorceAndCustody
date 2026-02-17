@@ -751,7 +751,7 @@ attachment:
           ${ other_parties[0].address.line_two() }
           % endif
       - court_cases_concerning_custody_parenting_time: |
-          % if len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=True)) > 5:
+          % if len(prior_family_cases.filter(add_to_MC416_4=True)) > 5:
           See addendum.
           % else:
             % for case in prior_family_cases:

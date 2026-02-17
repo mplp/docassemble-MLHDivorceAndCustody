@@ -2522,7 +2522,7 @@ id: prior family divorce case or order additional info
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type == "divorce"
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }", the divorce case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
+  These questions are about "${ prior_family_cases[i].title }", the Divorce case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
   - label: |
       % if prior_family_cases[i].status == "dismissed":
@@ -2545,7 +2545,7 @@ id: prior family separate maintenance case additional info
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].status in ["ended_with_order", "dismissed"]
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }", the separate maintenance case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
+  These questions are about "${ prior_family_cases[i].title }", the Separate Maintenance case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
   - Did the separate maintenance case involve custody, parenting time, or child support?: prior_family_cases[i].involved_custody_pt_support
     datatype: yesnoradio
@@ -2604,7 +2604,7 @@ id: other prior family case or order additional info (completed case)
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status == "ended_with_order"
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
+  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
   - What is the date of the final judgment or order?: prior_family_cases[i].final_order_date
     datatype: ThreePartsDate
@@ -2631,7 +2631,7 @@ id: other prior family case or order additional info (stayed, pending)
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status in ["stayed", "pending"]
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
+  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
   - Is there a **custody or parenting time** order in this case?: prior_family_cases[i].included_custody_PT_order
     datatype: yesnoradio
@@ -2657,7 +2657,7 @@ id: other prior family case or order additional info (dismissed)
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status == "dismissed"
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_cases[i].type } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
+  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
   - "Was a temporary custody or parenting time order entered in that case when the case was pending?": prior_family_cases[i].included_custody_PT_order
     datatype: yesnoradio
