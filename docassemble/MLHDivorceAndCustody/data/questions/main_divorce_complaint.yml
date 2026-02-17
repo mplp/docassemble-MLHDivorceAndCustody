@@ -55,10 +55,21 @@ code: |
   MLH_form_type = "forms"
   MLH_time_min = 20
   MLH_time_max = 60
+---
+code: |
+  #resource_page_url_only = "https://michiganlegalhelp.org/node/xxxx"
+  #resource_page_name = "Judgment of Divorce"
 
-  # TODO need resource url & confirm page name
-  resource_page_url_only = "https://michiganlegalhelp.org/node/xxxx"
-  resource_page_name = "Judgment of Divorce"
+  if tool_ID == "divorce_complaint" and there_are_minor_children:
+    resource_page_url_only = "https://michiganlegalhelp.org/resources/family/filing-divorce-children"
+    resource_page_name = "Filing for Divorce with Children"
+  elif tool_ID == "divorce_complaint": # and not there_are_minor_children:
+    resource_page_url_only = "https://michiganlegalhelp.org/resources/family/filing-divorce-without-children"
+    resource_page_name = "Filing for Divorce without Children"
+  # TODO - add divorce answer, custody tools, and JOD
+  else:
+    resource_page_url_only = "https://michiganlegalhelp.org/node/xxxx"
+    resource_page_name = "Judgment of Divorce"
 
 ---
 template: MLH_welcome_message
@@ -72,7 +83,7 @@ content: |
 # ====================================================================
 ---
 id: interview_order_michigan_judgment_of_divorce
-mandatory: True
+mandatory: False
 scan for variables: False
 code: |
   set_persistent_interview_specific_logic
@@ -236,3 +247,50 @@ code: |
   nav.set_section("signpost_done")
   MLH_download
 ---
+
+
+# ====================================================================
+## interview_order - for testing divorce instructions
+# ====================================================================
+---
+id: interview_order_instructions_text
+mandatory: True
+scan for variables: True
+code: |
+  tool_ID = "divorce_instructions"
+  divorce_instructions_test
+  there_are_marital_children
+  instructions_test_download
+---
+if: tool_ID == "divorce_instructions"
+id: Choose a court
+question: |
+  Select test parameters.
+subquestion: |
+fields:
+  - County: county_choice
+    code: court_list._load_courts()["address_county"].unique()
+  - With or without children: there_are_marital_children
+    input type: radio
+    code: |
+      [ { False : 'Without' }, { True : 'With' } ]  
+continue button field: divorce_instructions_test
+
+---
+if: tool_ID == "divorce_instructions"
+id: TestDownloadScreen
+event: instructions_test_download
+question: |
+  Get your instructions!
+subquestion: |
+  You can **view**, **download**, or **e-mail** your ${ MLH_form_type } to yourself below.
+
+  ${ al_user_bundle.download_list_html(format="docx") }
+
+  ${ al_user_bundle.send_button_html(show_editable_checkbox=True) }
+---
+if: tool_ID == "divorce_instructions"
+objects:
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions], enabled=True)
+
+progress: 100
