@@ -47,20 +47,11 @@ code: |
   if UCCJEA_affidavit_mc416.enabled:
     if (
         len(children_previous_address) > 4
-        or len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=True)) > 5
-        or len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)) > 1
+        or len(prior_family_cases.filter(add_to_MC416_4=True)) > 5
+        or len(prior_family_cases.filter(not_name_change).filter(resolved=False)) > 1
         or (not MI_home_state_all_kids and len(children.filter(legal_parent='both')) > 1)
        ):
       UCCJEA_affidavit_mc416_addendum.enabled = True
-  
-# if UCCJEA_affidavit_mc416.enabled:
-#   addendum will be enabled if any of the below:
-#     - not MI_home_state_all_kids and len(children.filter(legal_parent='both')) > 1 (or if you think it's worth coming up with a way to turn this into a proper "overflow" calculus, I'm open to that)
-#     - there is overflow in:
-#       - court_cases_concerning_custody_parenting_time
-#       - pending_cases_affecting_custody
-#       - marital_children_past_addresses
-#       - marital_children_names_current_addresses (maybe overflow is unlikely here, can see how many fit safely and consider using auto sizing instead)
 ---
 # not in JOD_only bundle
 code: |
@@ -756,25 +747,23 @@ attachment:
           % else:
             % for case in prior_family_cases:
               % if case.add_to_MC416_4:
-          ${case.title}; Case #: ${case.docket_number}; ${case.court if case.state != "MI" else court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}; ${case.address if case.state != "MI" else word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_address')) + word(" ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_unit')) + word(", ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='CSZ'))}; Order date: ${format_date(case.final_order_date, format='M/d/yyyy') if case.type not in ["divorce", "separate_maintenance"] and case.status == "ended_with_order" else format_date(case.custody_PT_order_date, format='M/d/yyyy')} ${word("; This proceeding is continuing.") if case.status == "pending" else word("; This proceeding has been stayed by the court.") if case.status == "stayed" else word("; This proceeding was later dismissed.") if case.status == "dismissed" else word("")}
+          ${case.title}; Case #: ${case.docket_number}; ${case.court if case.state != "MI" else court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}; ${case.address if case.state != "MI" else word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_address')) + word(" ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_unit')) + word(", ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='CSZ'))}; Nature: ${prior_family_case_types_ordered[case.type]}; Order date: ${format_date(case.final_order_date, format='M/d/yyyy') if case.type not in ["divorce", "separate_maintenance"] and case.status == "ended_with_order" else format_date(case.custody_PT_order_date, format='M/d/yyyy')} ${word("; This proceeding is continuing.") if case.status == "pending" else word("; This proceeding has been stayed by the court.") if case.status == "stayed" else word("; This proceeding was later dismissed.") if case.status == "dismissed" else word("")}
               % endif
             % endfor
           % endif
       - pending_cases_affecting_custody: |
-          % if len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)) > 1:
+          % if len(prior_family_cases.filter(not_name_change).filter(resolved=False)) > 1:
           See addendum.
           % else:
             % for case in prior_family_cases:
-              % if case.add_to_MC416_4:
-                % if case.status in ["pending", "stayed"]:
+              % if case.type != "name_change" and case.status in ["pending", "stayed"]:
           ${case.title}; Case #: ${case.docket_number}; ${case.court if case.state != "MI" else court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}; ${case.address if case.state != "MI" else word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_address')) + word(" ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_unit')) + word(", ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='CSZ'))}; Nature: ${prior_family_case_types_ordered[case.type]}; Order date: ${format_date(case.final_order_date, format='M/d/yyyy') if case.type not in ["divorce", "separate_maintenance"] and case.status == "ended_with_order" else format_date(case.custody_PT_order_date, format='M/d/yyyy')} ${word("; This proceeding is continuing.") if case.status == "pending" else word("; This proceeding has been stayed by the court.")}
-                % endif
               % endif
             % endfor
           % endif
       - pending_proceeding_continuing: |
-          % if len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)) == 1:
-          % if prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)[0].status == "pending":
+          % if len(prior_family_cases.filter(not_name_change).filter(resolved=False)) == 1:
+          % if prior_family_cases.filter(not_name_change).filter(resolved=False)[0].status == "pending":
           True
           % else:
           False
@@ -782,8 +771,8 @@ attachment:
           % endif
         # if there's only one pending or stayed (resolved=False) case affecting custody, this checks if that one case is pending. If there's multiple unresolved cases affecting custody, leave blank.
       - pending_proceeding_stayed: |
-          % if len(prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)) == 1:
-          % if prior_family_cases.filter(add_to_MC416_4=True).filter(resolved=False)[0].status == "stayed":
+          % if len(prior_family_cases.filter(not_name_change).filter(resolved=False)) == 1:
+          % if prior_family_cases.filter(not_name_change).filter(resolved=False)[0].status == "stayed":
           True
           % else:
           False

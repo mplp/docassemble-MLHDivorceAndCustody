@@ -10,3 +10,6 @@ def validate_us_state(address: Address) -> None:
             address.state = states_abbr[users_state]
         else:
             validation_error("You must enter the state's two-letter abbreviation.", f"""{address.attr_name("state")}""")
+
+def not_name_change(case):
+    return case.type != "name_change"
