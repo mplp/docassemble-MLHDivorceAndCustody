@@ -1533,8 +1533,8 @@ fields:
     field: marriage.accounts[i].source
   - label: Amount
     field: marriage.accounts[i].balance
-#    datatype: currency
-#    min: 0
+    datatype: currency
+    min: 0
   - label: Award to
     field: marriage.accounts[i].owner
     datatype: object_radio
