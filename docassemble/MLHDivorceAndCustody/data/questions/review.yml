@@ -14,12 +14,12 @@ review:
       - returning_to_finalize
     button: |
       % if not returning_to_finalize:
-      <h2 class="h5">You are **preparing to file** for divorce.</h2>
+      <h2 class="h4">You are <b>preparing to file</b> for divorce.</h2>
       
       **Important:** if you already filed, please tap **Edit** to update your case status.
       % else:
       
-      <h2 class="h5">You **already filed** your divorce complaint.</h2>
+      <h2 class="h4">You <b>already filed</b> your divorce complaint.</h2>
       % if marriage.temporary_order:
         - A **temporary order was entered** in your case for custody, parenting time, child support, or spousal support.  
       % if marriage.temporary_order_changed:
@@ -41,7 +41,7 @@ review:
 # ---------- marriage ----------
 #
   - raw html: |
-      ${ start_accordion("""<h2 class="h5">Marriage Information</h2>""") }
+      ${ start_accordion("""<h2 class="h4">Marriage Information</h2>""") }
     show if: marriage.attribute_defined("have_experienced_domestic_violence")
   - Edit:
       - marriage.date
@@ -89,7 +89,7 @@ review:
 # ---------- users[0] ----------
 #
   - raw html: |
-      ${ next_accordion("""<h2 class="h5">Your Basic Information</h2>""") }
+      ${ next_accordion("""<h2 class="h4">Your Basic Information</h2>""") }
     show if: users[0].name.attribute_defined("first")
   - Edit:
       - users[0].name.first
@@ -294,7 +294,7 @@ review:
 
 # -----------User occupation, income, insurance ---------
   - raw html: |
-      ${ next_accordion("""<h2 class="h5">Your Income, Job, Insurance, etc.</h2>""") }
+      ${ next_accordion("""<h2 class="h4">Your Income, Job, Insurance, etc.</h2>""") }
     show if: defined('users[0].has_job')
     # if it's a simple case with very little of this info collected, the public assistance question should just go under the accordion above
   - Edit:
@@ -424,7 +424,7 @@ review:
 # ---------- other_parties[0] ----------
 #
   - raw html: |
-      ${ next_accordion("""<h2 class="h5">Spouse's Basic Information</h2>""") }
+      ${ next_accordion("""<h2 class="h4">Spouse's Basic Information</h2>""") }
     show if: other_parties[0].name.attribute_defined("first")
   - Edit:
       - other_parties[0].name.first
@@ -627,7 +627,7 @@ review:
 
 # ---------- OP occupation, income, insurance ----------
   - raw html: |
-      ${ next_accordion("""<h2 class="h5">Spouse's Income, Job, Insurance, etc.</h2>""") }
+      ${ next_accordion("""<h2 class="h4">Spouse's Income, Job, Insurance, etc.</h2>""") }
     show if: defined('other_parties[0].has_job')
     # if it's a simple case with very little of this info collected, the public assistance question should just go under the accordion above
   - Edit:
@@ -756,14 +756,14 @@ review:
 # ---------- spousal support ----------
 #
   - raw html: |
-      ${ next_accordion('<h2 class="h5">Spousal Support</h2>') }
+      ${ next_accordion('<h2 class="h4">Spousal Support</h2>') }
     show if: defined("user_wants_post_divorce_support") or defined("user_wants_temporary_spousal_support")
   - Edit:
       - user_wants_temporary_spousal_support
       - follow up:
         - temp_spousal_support_info
     button: |
-      <h3 class="h5"> Need spousal support **before** divorce is final?</h3>
+      <h3 class="h5"> Need spousal support <b>before</b> divorce is final?</h3>
         - ${word(yesno(user_wants_temporary_spousal_support))}
   - Edit:
       - user_wants_post_divorce_support
@@ -773,7 +773,7 @@ review:
         - interview_order_user_employment
       # Note validation logic on user_wants_post_divorce_support question
     button: |
-      <h3 class="h5"> Need spousal support **after** divorce is final?</h3>
+      <h3 class="h5"> Need spousal support <b>after</b> divorce is final?</h3>
         - ${word(yesno(user_wants_post_divorce_support))}  
   - Edit:
       - spousal_support_provisions
@@ -897,12 +897,12 @@ review:
 # ---------- children and pregnancy ----------
 #
   - raw html: |
-      ${ next_accordion("""<h2 class="h5">Children and Pregnancy</h2>""") }
+      ${ next_accordion("""<h2 class="h4">Children and Pregnancy</h2>""") }
     show if: defined('children.there_are_any')
   - note: |
       <h3 class="h5"> Children</h3>
       % for child in children.filter(legal_parent="both"):
-        <h4 class="h6">**${ child }** (DOB: ${format_date(child.birthdate, format='M/d/yyyy')})</h4>
+        <h4 class="h6"><b>${ child }</b> (DOB: ${format_date(child.birthdate, format='M/d/yyyy')})</h4>
 
         - Gender: ${ child.gender }
         - SSN: ${ child.ssn_last_four }
@@ -975,7 +975,7 @@ review:
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
       % if children.there_are_any:
-      <h3 class="h5">**Add or remove** a child</h3>
+      <h3 class="h5"><b>Add or remove</b> a child</h3>
       % else:
       <h3 class="h5">Any minor children?</h3>
         - ${word(yesno(children.there_are_any))}
@@ -983,7 +983,7 @@ review:
   - Edit:
       - child_demographics_review_screen
     button: |
-      <h3 class="h5">Edit a child's **name and basic info**</h3>
+      <h3 class="h5">Edit a child's <b>name and basic info</b></h3>
     show if: children.there_are_any
   - Edit:
       - child_legal_parent_review_screen
@@ -1027,7 +1027,7 @@ review:
         - prior_family_cases.gathered_deep_reset
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
-      <h3 class="h5">Edit a child's **legal parent** info</h3>
+      <h3 class="h5">Edit a child's <b>legal parent</b> info</h3>
     show if: children.there_are_any
   - note: |
       <hr>
@@ -1231,7 +1231,7 @@ review:
 #
 # ---------- prior cases ----------
   - raw html: |
-      ${ next_accordion("""<h2 class="h5">Other Court Cases</h2>""") }
+      ${ next_accordion("""<h2 class="h4">Other Court Cases</h2>""") }
     show if: defined('prior_family_cases.there_are_any')
   - Edit:
       - prior_family_cases.there_are_any
@@ -1364,7 +1364,7 @@ review:
       % endif    
 
   - raw html: |
-      ${ next_accordion("""<h2 class="h5">Marital Property and Debts</h2>""") }
+      ${ next_accordion("""<h2 class="h4">Marital Property and Debts</h2>""") }
     show if: defined("marriage.have_pension_retirement")
   - Edit:
       - marriage.marital_property_info
@@ -1407,7 +1407,7 @@ review:
         - ${word(yesno(marriage.personal_property_division_agreement))}
 
       % if marriage.personal_property_division_agreement:
-      <h3 class="h5"> Have you and your spouse **actually divided** all the personal property based on your agreement?</h3>
+      <h3 class="h5"> Have you and your spouse <b>actually divided</b> all the personal property based on your agreement?</h3>
         - ${word(yesno(marriage.personal_property_division_actual))}
       % endif
       % endif
@@ -1537,7 +1537,7 @@ review:
         - ${word(yesno(marriage.debts.any))}
 
       % if marriage.debts.any:
-      <h3 class="h5"> Do you and your spouse each plan to pay the debts **in your own names?**</h3>
+      <h3 class="h5"> Do you and your spouse each plan to pay the debts <b>in your own names?</b></h3>
         - ${word(yesno(marriage.debts.pay_debts_in_own_names))}
 
       % if not marriage.debts.pay_debts_in_own_names:
@@ -1545,7 +1545,7 @@ review:
         - ${word(yesno(marriage.debts.agree_responsibility_debts_own_name))}
       % endif
 
-      <h3 class="h5"> Do you and your spouse have any debts that are in **both** of your names?</h3>
+      <h3 class="h5"> Do you and your spouse have any debts that are in <b>both</b> of your names?</h3>
         - ${word(yesno(marriage.debts.any_in_both_names))}
 
       % if marriage.debts.any_in_both_names:
@@ -1610,7 +1610,7 @@ review:
       % endif
 # ---------- case information ----------
   - raw html: |
-      ${ next_accordion("""<h2 class="h5">Your Divorce Case</h2>""") }
+      ${ next_accordion("""<h2 class="h4">Your Divorce Case</h2>""") }
     show if: defined("county_choice") or defined ("venue")
   - Edit:
       - county_choice
@@ -1703,7 +1703,7 @@ review:
   - Edit:
       - marriage.temporary_order
     button: |
-      <h3 class="h5"> Was a **temporary order** entered in your case for custody, parenting time, child support, or spousal support?</h3>
+      <h3 class="h5"> Was a <b>temporary order</b> entered in your case for custody, parenting time, child support, or spousal support?</h3>
         - ${word(yesno(marriage.temporary_order))}
       % if marriage.temporary_order:
       <h3 class="h5"> Has any of the information that goes on the *Domestic Relations Judgment Information* form (FOC 100) changed since the last time it was filed?</h3>

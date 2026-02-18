@@ -91,6 +91,10 @@ code: |
   if spouse_is_in_military and military_spouse_agrees_consent_judgment != "yes":
     exit_general
 
+  if marriage.have_experienced_domestic_violence:
+    if not marriage.have_experienced_domestic_violence_continue:
+      exit_general
+
   if marriage.have_pension_retirement:
     marriage.pension_retirement_accounts_keep_own
     if not marriage.pension_retirement_accounts_continue:
@@ -110,10 +114,6 @@ code: |
 
   if marriage.have_business:
     exit_general
-
-  if marriage.have_experienced_domestic_violence:
-    if not marriage.have_experienced_domestic_violence_continue:
-      exit_general
 
   if need_temporary_order:
     if not temporary_order_continue:
