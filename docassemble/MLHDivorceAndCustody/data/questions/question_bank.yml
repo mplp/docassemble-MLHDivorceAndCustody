@@ -1510,6 +1510,8 @@ subquestion: |
   ${marriage.accounts.question_text_table_template}
 
   Do **NOT** include account numbers.
+
+  ${collapse_template(stocks_mutual_funds_info)}
 fields:
   - label: Type
     field: marriage.accounts[i].kind
@@ -1519,22 +1521,32 @@ fields:
       - CD
       - Cash
       - Money Market
-      - Brokerage Account
-      - Stock
-      - Bonds
-      - Mutual Fund
+      - Brokerage
       - Other Investment
-  - label: "Other investment type:"
+  - label: "Describe the other investment:"
     field: marriage.accounts[i].describe_other
     show if:
       variable: marriage.accounts[i].kind
       is: "Other Investment"
   - label: Location (e.g., Fifth Third Bank)
     field: marriage.accounts[i].source
+  - note: |
+      **Note:** Investment value can be complicated. You may need a financial advisor or other professional to determine an accurate value.
+    show if:
+      variable: marriage.accounts[i].kind
+      is: "Other Investment"
   - label: Amount
     field: marriage.accounts[i].balance
     datatype: currency
     min: 0
+    js show if: |
+      val("marriage.accounts[i].kind") !== "Other Investment"
+  - label: Value
+    field: marriage.accounts[i].balance
+    datatype: currency
+    min: 0
+    js show if: |
+      val("marriage.accounts[i].kind") === "Other Investment"
   - label: Award to
     field: marriage.accounts[i].owner
     datatype: object_radio
@@ -1546,6 +1558,16 @@ fields:
 template: marriage.accounts.there_is_another_template
 content: |
   Please list each bank account and investment that has not been {divided}, and select how it should be awarded.
+---
+template: stocks_mutual_funds_info
+subject: |
+  What about stocks, bonds, or mutual funds?
+content: |
+  Some people buy and manage investments like stock, bonds, or mutual funds using an investment account called a **Brokerage** account. You can list a brokerage account below.
+  
+  Choose **Other Investment** if you own specific stock, bonds, or mutual funds **directly,** or if you wish to list specific investments separately. *Example:* if you bought savings bonds directly from the US government, choose "Other Investment."
+
+  **Warning:** Do **not** include investments located in retirement accounts. If you need to divide retirement accounts, you may want to contact a lawyer.          
 ---
 # --------------------------------------------------------------------
 ## marriage.other_pp
