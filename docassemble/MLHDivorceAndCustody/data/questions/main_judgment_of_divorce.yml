@@ -106,6 +106,13 @@ code: |
   if not marriage.pending_divorce:
     exit_no_pending_divorce
 
+  if not marriage.breakdown:
+    exit_no_marriage_breakdown
+
+  if marriage.have_experienced_domestic_violence:
+    if not marriage.have_experienced_domestic_violence_continue:
+      exit_general
+
   county_choice # TODO custom? "In what county was the divorce filed?"
   court_index
   the_court
@@ -113,9 +120,6 @@ code: |
   docket_number
   user_ask_role
   set_JOD_party_labels
-
-  if not marriage.breakdown:
-    exit_no_marriage_breakdown
 
   if marriage.have_pension_retirement:
     marriage.pension_retirement_accounts_keep_own
@@ -136,10 +140,6 @@ code: |
 
   if marriage.have_business:
     exit_general
-
-  if marriage.have_experienced_domestic_violence:
-    if not marriage.have_experienced_domestic_violence_continue:
-      exit_general
 
   if marriage.temporary_order:
     marriage.temporary_order_changed
