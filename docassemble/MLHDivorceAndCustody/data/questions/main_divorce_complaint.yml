@@ -60,10 +60,10 @@ code: |
   #resource_page_url_only = "https://michiganlegalhelp.org/node/xxxx"
   #resource_page_name = "Judgment of Divorce"
 
-  if tool_ID == "divorce_complaint" and there_are_minor_children:
+  if tool_ID == "divorce_complaint" and there_are_marital_children:
     resource_page_url_only = "https://michiganlegalhelp.org/resources/family/filing-divorce-children"
     resource_page_name = "Filing for Divorce with Children"
-  elif tool_ID == "divorce_complaint": # and not there_are_minor_children:
+  elif tool_ID == "divorce_complaint" and not there_are_marital_children:
     resource_page_url_only = "https://michiganlegalhelp.org/resources/family/filing-divorce-without-children"
     resource_page_name = "Filing for Divorce without Children"
   # TODO - add divorce answer, custody tools, and JOD
@@ -83,7 +83,7 @@ content: |
 # ====================================================================
 ---
 id: interview_order_michigan_judgment_of_divorce
-mandatory: False
+mandatory: True
 scan for variables: False
 code: |
   set_persistent_interview_specific_logic
@@ -253,13 +253,12 @@ code: |
 ## interview_order - for testing divorce instructions
 # ====================================================================
 ---
-id: interview_order_instructions_text
-mandatory: True
-scan for variables: True
+id: interview_order_instructions_test
+mandatory: False
+scan for variables: False
 code: |
   tool_ID = "divorce_instructions"
   divorce_instructions_test
-  there_are_marital_children
   instructions_test_download
 ---
 if: tool_ID == "divorce_instructions"
@@ -285,7 +284,7 @@ question: |
 subquestion: |
   You can **view**, **download**, or **e-mail** your ${ MLH_form_type } to yourself below.
 
-  ${ al_user_bundle.download_list_html(format="docx") }
+  ${ al_user_bundle.download_list_html() }
 
   ${ al_user_bundle.send_button_html(show_editable_checkbox=True) }
 ---
