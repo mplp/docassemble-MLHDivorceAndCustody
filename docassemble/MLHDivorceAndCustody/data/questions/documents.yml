@@ -2555,8 +2555,6 @@ attachment:
       - vehicles_none: ${not marriage.vehicles.any}
       - vehicles_keep_same: ${marriage.vehicles.any and marriage.vehicles.keep_own}
       - vehicles_in_addendum: ${marriage.vehicles.any and not marriage.vehicles.keep_own}
-      - page_number_second:
-      - total_pages:
       - docket_number__1: ${docket_number}
       - real_property_none: ${not bool(marriage.real_property)}
       - real_property_in_addendum: ${bool(marriage.real_property)}
@@ -2924,7 +2922,6 @@ attachment:
           % else:
           ${"412"}
           % endif
-      - page_number: ${""}
 ---
 attachment:
   - name: Judgment addendum 2 (vehicles 1 to 4)
@@ -2949,7 +2946,6 @@ attachment:
           % else:
           ${"412"}
           % endif
-      - page_number_first: ${""}
       # Vehicle 1
       - vehicles1_awarded_plaintiff: |
           % if marriage.vehicles[0].owner == plaintiffs[0]:
@@ -3079,8 +3075,7 @@ attachment:
           % else:
           False
           % endif
-      - vehicle_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, VEHICLE ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, VEHICLE ADDENDUM"}
-      - page_number_second: ${""}
+      - vehicle_addendum_title_page_2: ${"Judgment of Divorce, With Children, Vehicle Addendum" if there_are_marital_children else "Judgment of Divorce, No Children, Vehicle Addendum"}
       # Vehicle 4
       - vehicles4_awarded_plaintiff: |
           % if len(marriage.vehicles) > 3 and marriage.vehicles[3].owner == plaintiffs[0]:
@@ -3148,7 +3143,6 @@ attachment:
           % else:
           ${"412"}
           % endif
-      - page_number_first: ${""}
       # Vehicle 5
       - vehicles5_awarded_plaintiff: |
           % if len(marriage.vehicles) > 4 and marriage.vehicles[4].owner == plaintiffs[0]:
@@ -3278,8 +3272,7 @@ attachment:
           % else:
           False
           % endif
-      - vehicle_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, VEHICLE ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, VEHICLE ADDENDUM"}
-      - page_number_second: ${""}
+      - vehicle_addendum_title_page_2: ${"Judgment of Divorce, With Children, Vehicle Addendum" if there_are_marital_children else "Judgment of Divorce, No Children, Vehicle Addendum"}
       # Vehicle 8
       - vehicles8_awarded_plaintiff: |
           % if len(marriage.vehicles) > 7 and marriage.vehicles[7].owner == plaintiffs[0]:
@@ -3347,7 +3340,6 @@ attachment:
           % else:
           ${"412"}
           % endif
-      - page_number_first: ${""}
       # Vehicle 9
       - vehicles9_awarded_plaintiff: |
           % if len(marriage.vehicles) > 8 and marriage.vehicles[8].owner == plaintiffs[0]:
@@ -3477,8 +3469,7 @@ attachment:
           % else:
           False
           % endif
-      - vehicle_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, VEHICLE ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, VEHICLE ADDENDUM"}
-      - page_number_second: ${""}
+      - vehicle_addendum_title_page_2: ${"Judgment of Divorce, With Children, Vehicle Addendum" if there_are_marital_children else "Judgment of Divorce, No Children, Vehicle Addendum"}
       # Vehicle 12
       - vehicles12_awarded_plaintiff: |
           % if len(marriage.vehicles) > 11 and marriage.vehicles[11].owner == plaintiffs[0]:
@@ -3724,9 +3715,7 @@ attachment:
           % else:
           ${"412"}
           % endif
-      - page_number_first: ${""}
-      - page_number_second: ${""}
-      - real_property_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, REAL PROPERTY ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, REAL PROPERTY ADDENDUM"}
+      - real_property_addendum_title_page_2: ${"Judgment of Divorce, With Children, Real Property Addendum" if there_are_marital_children else "Judgment of Divorce, No Children, Real Property Addendum"}
       - docket_number1: ${docket_number}
 ---
 attachment:
@@ -3934,9 +3923,7 @@ attachment:
           % else:
           ${"412"}
           % endif
-      - page_number_first: ${""}
-      - page_number_second: ${""}
-      - real_property_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, REAL PROPERTY ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, REAL PROPERTY ADDENDUM"}
+      - real_property_addendum_title_page_2: ${"Judgment of Divorce, With Children, Real Property Addendum" if there_are_marital_children else "Judgment of Divorce, No Children, Real Property Addendum"}
       - docket_number1: ${docket_number}
 ---
 attachment:
@@ -4144,9 +4131,7 @@ attachment:
           % else:
           ${"412"}
           % endif
-      - page_number_first: ${""}
-      - page_number_second: ${""}
-      - real_property_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, REAL PROPERTY ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, REAL PROPERTY ADDENDUM"}
+      - real_property_addendum_title_page_2: ${"Judgment of Divorce, With Children, Real Property Addendum" if there_are_marital_children else "Judgment of Divorce, No Children, Real Property Addendum"}
       - docket_number1: ${docket_number}
 ---
 attachment:
@@ -4354,9 +4339,7 @@ attachment:
           % else:
           ${"412"}
           % endif
-      - page_number_first: ${""}
-      - page_number_second: ${""}
-      - real_property_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, REAL PROPERTY ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, REAL PROPERTY ADDENDUM"}
+      - real_property_addendum_title_page_2: ${"Judgment of Divorce, With Children, Real Property Addendum" if there_are_marital_children else "Judgment of Divorce, No Children, Real Property Addendum"}
       - docket_number1: ${docket_number}
 ---
 attachment:
@@ -4564,9 +4547,7 @@ attachment:
           % else:
           ${"412"}
           % endif
-      - page_number_first: ${""}
-      - page_number_second: ${""}
-      - real_property_addendum_title_page_2: ${"JUDGMENT OF DIVORCE, WITH CHILDREN, REAL PROPERTY ADDENDUM" if there_are_marital_children else "JUDGMENT OF DIVORCE, NO CHILDREN, REAL PROPERTY ADDENDUM"}
+      - real_property_addendum_title_page_2: ${"Judgment of Divorce, With Children, Real Property Addendum" if there_are_marital_children else "Judgment of Divorce, No Children, Real Property Addendum"}
       - docket_number1: ${docket_number}
 ---
 attachment:
@@ -4638,8 +4619,6 @@ attachment:
       - alternate_years_even_defendant: ${income_tax_method == "alternate_years" and ((tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "defendant") or (tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "plaintiff") or (not tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "plaintiff") or (not tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "defendant"))}
       - alternate_years_odd_plaintiff: ${income_tax_method == "alternate_years" and ((not tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "plaintiff") or (not tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "defendant") or (tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "defendant") or (tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "plaintiff"))}
       - alternate_years_odd_defendant: ${income_tax_method == "alternate_years" and ((not tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "defendant") or (not tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "plaintiff") or (tax_start_year_is_even and tax_deductions_who_first == "users[0]" and user_ask_role == "plaintiff") or (tax_start_year_is_even and tax_deductions_who_first == "other_parties[0]" and user_ask_role == "defendant"))}
-      - page_number_first: 
-      - page_number_second: 
 ---
 # determine whether the tax_start_year is even
 code: |
