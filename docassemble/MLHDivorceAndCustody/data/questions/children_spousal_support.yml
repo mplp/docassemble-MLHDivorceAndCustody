@@ -2093,20 +2093,15 @@ code: |
 ---
 id: pregnancy logic
 code: |
-  if users[0].pregnant:
+  if users[0].pregnant or other_parties[0].pregnant:
     if there_are_marital_children:
-      users[0].pregnant_notice
+      pregnant_notice
     else:
-      users[0].pregnant_exit
-  if other_parties[0].pregnant:
-    if there_are_marital_children:
-      other_parties[0].pregnant_notice
-    else:
-      other_parties[0].pregnant_exit
+      pregnant_exit
 
   interview_order_pregnancy = True
 ---
-id: users[0].pregnant
+id: either party pregnant
 question: |
   Pregnancy
 subquestion: |
@@ -2115,13 +2110,6 @@ fields:
   - label: Are you pregnant?
     field: users[0].pregnant
     datatype: yesnoradio
----
-id: other_parties[0].pregnant
-question: |
-  Pregnancy
-subquestion: |
-  ${collapse_template(other_parties[0].pregnant_explanation_template)}
-fields:
   - label: Is your spouse pregnant?
     field: other_parties[0].pregnant
     datatype: yesnoradio
@@ -2138,18 +2126,18 @@ content: |
   % endif
 ---
 generic object: ALIndividual
-if: x.pregnant and there_are_marital_children
+if: (users[0].pregnant or other_parties[0].pregnant) and there_are_marital_children
 question: You may have to update your forms later
-continue button field: x.pregnant_notice
+continue button field: pregnant_notice
 subquestion: |
   You can use this tool to prepare your divorce forms, but you may have to wait until the birth or end of the pregnancy to schedule your final hearing and enter your Judgment of Divorce, so that provisions for custody, parenting time, and support are complete.
 
   Children conceived during a marriage are also considered children of the marriage. If a new child is born who was conceived during the marriage, you will need to log back in to your saved answers so you can add that child and include their name and other information. This will allow you to get an updated Judgment of Divorce and other updated forms.
 ---
 generic object: ALIndividual
-if: x.pregnant and not there_are_marital_children
+if: (users[0].pregnant or other_parties[0].pregnant) and not there_are_marital_children
 question: You must wait until the pregnancy has ended to use this tool
-event: x.pregnant_exit
+event: pregnant_exit
 subquestion: |
   Sorry, if either spouse is currently pregnant, you may not use this tool to prepare your divorce forms. Michigan law requires you to include all children born or conceived during your marriage in the custody, parenting time, and support provisions of your Judgment of Divorce. 
   

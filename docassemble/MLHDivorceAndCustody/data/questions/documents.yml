@@ -2835,7 +2835,13 @@ attachment:
               % if marriage.accounts:
                 % for account in marriage.accounts:
                   % if account.owner == plaintiffs[0] or account.owner == joint:
-          Cash valued at $${thousands(account.balance, 2) if account.owner == defendants[0] else thousands(account.balance / 2, 2)} in a ${account.kind} account at ${account.source}
+                    % if account.kind == "Cash":
+          Cash valued at $${thousands(account.balance, 2) if account.owner == plaintiffs[0] else thousands(account.balance / 2, 2)} in cash. Location: ${account.source}.
+                    % elif account.kind == "Other Investment":
+          ${"" if account.owner == plaintiffs[0] else word("Half of ")}${account.describe_other} at ${account.source}. ${word("Valued at: $") + thousands(account.balance, 2) if account.owner == plaintiffs[0] else word("This half valued at: $") + thousands(account.balance / 2, 2)}.
+                    % else:
+          Cash valued at $${thousands(account.balance, 2) if account.owner == plaintiffs[0] else thousands(account.balance / 2, 2)} in a ${account.kind} at ${account.source}.
+                    % endif
                   % endif
                 % endfor
               % endif
@@ -2866,7 +2872,13 @@ attachment:
               % if marriage.accounts:
                 % for account in marriage.accounts:
                   % if account.owner == defendants[0] or account.owner == joint:
-          Cash valued at $${thousands(account.balance, 2) if account.owner == defendants[0] else thousands(account.balance / 2, 2)} in a ${account.kind} account at ${account.source}
+                    % if account.kind == "Cash":
+          Cash valued at $${thousands(account.balance, 2) if account.owner == defendants[0] else thousands(account.balance / 2, 2)} in cash. Location: ${account.source}.
+                    % elif account.kind == "Other Investment":
+          ${"" if account.owner == defendants[0] else word("Half of ")}${account.describe_other} at ${account.source}. ${word("Valued at: $") + thousands(account.balance, 2) if account.owner == defendants[0] else word("This half valued at: $") + thousands(account.balance / 2, 2)}.
+                    % else:
+          Cash valued at $${thousands(account.balance, 2) if account.owner == defendants[0] else thousands(account.balance / 2, 2)} in a ${account.kind} at ${account.source}.
+                    % endif
                   % endif
                 % endfor
               % endif

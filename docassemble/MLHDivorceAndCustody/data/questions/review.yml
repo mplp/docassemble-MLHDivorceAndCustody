@@ -1222,12 +1222,12 @@ review:
     show if: children.there_are_any and len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0
   - Edit:
       - users[0].pregnant
-      - other_parties[0].pregnant
+      - recompute: 
+        - interview_order_pregnancy
     button: |
-      <h3 class="h5"> Are you pregnant?</h3>
-        - ${word(yesno(users[0].pregnant))}
-      <h3 class="h5"> Is spouse pregnant?</h3>
-        - ${word(yesno(other_parties[0].pregnant))}  
+      <h3 class="h5">Pregnancy</h3>
+        - You **${word("are") if users[0].pregnant else word("are not")}** pregnant.
+        - Your spouse **${word("is") if other_parties[0].pregnant else word("is not")}** pregnant.
 #
 # ---------- prior cases ----------
   - raw html: |
@@ -1425,10 +1425,10 @@ review:
 
       % if marriage.accounts:
       % for idx, item in enumerate(marriage.accounts):
-        - **${ordinal(idx, capitalize=True)} account**
-          - **Type:** ${item.kind}
+        - **${ordinal(idx, capitalize=True)} account or investment**
+          - **Type:** ${item.kind}${word(": ") + item.describe_other if item.kind == "Other Investment" else ""}
           - **Location:** ${item.source}
-          - **Amount:** ${currency(item.balance)}
+          - **Amount or Value:** ${currency(item.balance)}
           - **Award:** ${item.owner}
       % endfor
       % else:
