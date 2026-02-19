@@ -1222,12 +1222,12 @@ review:
     show if: children.there_are_any and len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0
   - Edit:
       - users[0].pregnant
-      - other_parties[0].pregnant
+      - recompute: 
+        - interview_order_pregnancy
     button: |
-      <h3 class="h5"> Are you pregnant?</h3>
-        - ${word(yesno(users[0].pregnant))}
-      <h3 class="h5"> Is spouse pregnant?</h3>
-        - ${word(yesno(other_parties[0].pregnant))}  
+      <h3 class="h5">Pregnancy</h3>
+        - You **${word("are") if users[0].pregnant else word("are not")}** pregnant.
+        - Your spouse **${word("is") if other_parties[0].pregnant else word("is not")}** pregnant.
 #
 # ---------- prior cases ----------
   - raw html: |

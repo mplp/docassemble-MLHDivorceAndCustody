@@ -1516,15 +1516,16 @@ fields:
   - label: Type
     field: marriage.accounts[i].kind
     choices:
-      - Savings
-      - Checking
-      - CD
+      - Savings Account
+      - Checking Account
+      - CD Account
+      - Money Market Account
+      - Brokerage Account
       - Cash
-      - Money Market
-      - Brokerage
       - Other Investment
   - label: "Describe the other investment:"
     field: marriage.accounts[i].describe_other
+    maxlength: 20
     show if:
       variable: marriage.accounts[i].kind
       is: "Other Investment"
@@ -1563,7 +1564,7 @@ template: stocks_mutual_funds_info
 subject: |
   What about stocks, bonds, or mutual funds?
 content: |
-  Some people buy and manage investments like stock, bonds, or mutual funds using an investment account called a **Brokerage** account. You can list a brokerage account below.
+  Some people buy and manage investments like stock, bonds, or mutual funds using an investment account called a **Brokerage Account.** You can list a brokerage account below.
   
   Choose **Other Investment** if you own specific stock, bonds, or mutual funds **directly,** or if you wish to list specific investments separately. *Example:* if you bought savings bonds directly from the US government, choose "Other Investment."
 
