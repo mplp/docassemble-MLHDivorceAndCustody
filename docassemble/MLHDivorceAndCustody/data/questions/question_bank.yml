@@ -1525,7 +1525,7 @@ fields:
       - Other Investment
   - label: "Describe the other investment:"
     field: marriage.accounts[i].describe_other
-    maxlength: 20
+    maxlength: 30
     show if:
       variable: marriage.accounts[i].kind
       is: "Other Investment"
