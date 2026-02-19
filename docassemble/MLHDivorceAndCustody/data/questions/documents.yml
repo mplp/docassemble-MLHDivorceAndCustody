@@ -10,7 +10,7 @@ objects:
 if: tool_ID == "divorce_complaint"
 objects:
   - al_user_bundle: ALDocumentBundle.using(elements=[summons_mc01, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, default_request_mc07, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
-  # - al_court_bundle: [will be same as above, except without the instructions, testimony, flowchart]
+  # - al_court_bundle: [will be same as above, except without the instructions, testimony]
 ---
 # ====================================================================
 ## Enabling logic
