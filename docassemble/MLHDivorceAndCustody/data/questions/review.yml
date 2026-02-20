@@ -972,6 +972,7 @@ review:
         - children_previous_address.gathered_reset
         - interview_order_children
         - prior_family_cases.gathered_deep_reset
+        - set_dynamic_instructions_variables
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
       % if children.there_are_any:
@@ -1025,6 +1026,7 @@ review:
         - children_previous_address.gathered_reset
         - interview_order_children
         - prior_family_cases.gathered_deep_reset
+        - set_dynamic_instructions_variables
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
       <h3 class="h5">Edit a child's <b>legal parent</b> info</h3>
