@@ -397,74 +397,6 @@ fields:
     field: marriage.pension_retirement_accounts_continue
     datatype: yesnoradio
 ---
-id: marriage.have_financial_instruments
-question: |
-  Financial investments
-subquestion: |
-   Do not consider pensions or retirement accounts here.
-fields:
-  - label: Do you or your spouse own any stocks, bonds, Certificates of Deposit (CDs), mutual funds, Money Market Accounts, or other investments?
-    field: marriage.have_financial_instruments
-    datatype: yesnoradio
----
-if: marriage.have_financial_instruments
-id: marriage.financial_instruments_held_together
-question: |
-  Financial investments
-fields:
-  - label: Are any of these {investments} held in both of your names?
-    field: marriage.financial_instruments_held_together
-    datatype: yesnoradio
----
-if: marriage.have_financial_instruments and marriage.financial_instruments_held_together
-id: marriage.financial_instruments_held_together_agree_about_division
-question: |
-  Financial investments
-fields:
-  - label: Do you and your spouse agree on how these {investments} will be divided?
-    field: marriage.financial_instruments_held_together_agree_about_division
-    datatype: yesnoradio
----
-if: marriage.have_financial_instruments and marriage.financial_instruments_held_together
-id: marriage.financial_instruments_held_together_continue
-question: |
-  Financial investments
-subquestion: |
-  WARNING! This tool may not be right for you. Investments held in both spouses' names must be divided as part of your Judgment of Divorce. There may also be problems actually dividing these assets up after the Judgment is final. Dividing investments is not simple. You cannot use this tool or the Michigan Legal Help website to do this.
-
-  You may want to consider hiring a lawyer to help you divide your investments. Consider asking a financial planner for advice on how to transfer investments and about tax issues that come with transferring investments. You can still complete this tool to prepare your Judgment of Divorce. You will be allowed to divide your investments in your Judgment of Divorce. However, the Judgment of Divorce will not include any information about how the investments will be transferred or about tax liability. Your investments will not be transferred automatically to the person they are awarded to in the Judgment of Divorce. There are more steps that need to be followed after the Judgment of Divorce is final.
-
-  If you want to hire a lawyer to help you divide your investments and finish your case, you can find referral information in the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
-fields:
-  - label: Do you want to continue?
-    field: marriage.financial_instruments_held_together_continue
-    datatype: yesnoradio
----
-if: marriage.have_financial_instruments and not marriage.financial_instruments_held_together
-id: marriage.financial_instruments_keep_or_divide
-question: |
-  Financial investments
-fields:
-  - label: Do you each plan to keep your own accounts or do you want to ask the judge to divide your accounts?
-    field: marriage.financial_instruments_keep_or_divide
-    input type: radio
-    choices:
-      - label: We will each keep our own account(s)
-        value: keep
-      - label: I want the judge to divide our account(s)
-        value: divide
----
-if: marriage.have_financial_instruments and not marriage.financial_instruments_held_together and marriage.financial_instruments_keep_or_divide == "keep"
-id: marriage.financial_instruments_keep_own_continue
-question: |
-  Financial investments
-subquestion: |
-  You may have a right to part of the investments that are only in your spouse's name, and your spouse may have a right to part of the investments that are only in your name. This is an important decision that can impact your future. Sometimes it is hard to know the full value of an investment. If you don't know all the details of your marital investments, you may want to consider talking to a lawyer before you decide how you want to divide your investments. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) on Michigan Legal Help to find a lawyer or a legal services office near you.
-fields:
-  - label: Do you want to continue with the tool, knowing that you will not be awarded a share in investments that are in your spouse's name and will not be able to return to court in the future and ask for a change?
-    field: marriage.financial_instruments_keep_own_continue
-    datatype: yesnoradio
----
 id: marriage.have_business
 question: |
   Business ownership
@@ -550,7 +482,7 @@ fields:
     field: users[0].new_last_name_yn
     datatype: yesnoradio
   - note: |
-      Michigan law says that a woman may ask the court to change her last name as part of a divorce case. If you're not a woman and you want to ask the court to change your last name, you may want to talk to a lawyer.
+      Michigan law specifically says that **a woman** may ask the court to change her last name as part of a divorce case. If you're not a woman and you want to ask the court to change your last name, you may want to talk to a lawyer.
     show if:
       variable: users[0].new_last_name_yn
       is: True
@@ -1212,9 +1144,7 @@ id: venue (single option)
 question: Where to file your divorce
 continue button field: venue
 subquestion: |
-  % if len(all_potential_venue_options) == 0:  #TODO delete after testing.
-  If you're reading this, no venue has been selected. This means there's an **error** in the code. Please report an issue with as much detail as you can about the parties' Michigan-status, counties, time in Michigan, etc. Please close out this test and start a new one.
-  % elif len(all_potential_venue_options) == 1:
+  % if len(all_potential_venue_options) == 1:
   You only meet the requirements to file your divorce in ${ county_choice } County. Your divorce forms will be prepared using ${ county_choice } as the filing county.  
   % elif len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case:
   Because of your earlier separate maintenance case, you must file in ${ prior_family_cases[separate_maintenance_case_index].county } County. Your divorce forms will be prepared using ${ county_choice } as the filing county.  
@@ -1446,6 +1376,59 @@ continue button field: marriage.cobra_coverage
 ## marriage.personal_property_
 # --------------------------------------------------------------------
 ---
+id: marital property explanation
+question: Dividing Property
+subquestion : |
+  In a divorce, **marital property** must be divided fairly. Marital property can include both {real property} and {personal property}. In general, something is marital property if:
+
+  * You got it during the marriage, or 
+  * Your spouse got it during the marriage, or
+  * Both of you got it during the marriage.   
+  
+  ${ collapse_template(other_marital_property_info) }
+
+  Usually **separate property** (property that belongs to only one spouse) does not get divided in a divorce. But sometimes it is possible to divide it.
+
+  ${ collapse_template(separate_property_more_info) }
+
+  ${ collapse_template(separate_property_treated_marital) }
+continue button field: marriage.marital_property_info
+---
+template: other_marital_property_info
+subject: |
+  What else can be marital property?
+content: |
+  Marital property also includes:
+  
+  * An increase in the value of marital property
+  * An increase in the value of separate property during the marriage, but **only if** one of the spouses caused the increase through **active efforts**. A passive increase in value doesn't count.
+---
+template: separate_property_more_info
+subject: |
+  More info on separate property
+content: |
+  Separate property includes both {real property} and {personal property} that is:
+  
+  * Property owned before the marriage
+  * A gift to one party during the marriage
+  * Property that one party inherits during the marriage
+  * A passive increase in the value of separate property.
+  
+  **Usually the owner of the separate property keeps it.** But, in special circumstances, a judge might divide separate property. If you want the judge to award you some of your spouse's separate property, you have to prove either:
+  
+  * The division of marital property is not enough to provide suitable support for you and the children, if any, or
+  * You helped to get the separate property or to increase its value.
+  
+  This can be hard to prove. If you want to ask the judge to divide separate property, consider talking to a lawyer. ${ MLH_GUIDE_FULL }
+---
+template: separate_property_treated_marital
+subject: |
+  What about property that belonged to just one spouse but was treated like marital property?
+content: |
+  Sometimes a judge will divide property that used to be **separate property but was treated like marital property during the marriage.** This can happen when separate property was used for joint purposes, placed in both names, or separate funds were mixed together with marital funds in the same account. 
+  
+  If you want to ask the judge to divide this kind of property, **consider talking to a lawyer.** ${ MLH_GUIDE_FULL }
+---
 id: marriage.personal_property_info
 question: |
   Personal property
@@ -1527,21 +1510,44 @@ subquestion: |
   ${marriage.accounts.question_text_table_template}
 
   Do **NOT** include account numbers.
+
+  ${collapse_template(stocks_mutual_funds_info)}
 fields:
   - label: Type
     field: marriage.accounts[i].kind
     choices:
-      - Savings
-      - Checking
-      - CD
+      - Savings Account
+      - Checking Account
+      - CD Account
+      - Money Market Account
+      - Brokerage Account
       - Cash
-      - Money Market
+      - Other Investment
+  - label: "Describe the other investment:"
+    field: marriage.accounts[i].describe_other
+    maxlength: 30
+    show if:
+      variable: marriage.accounts[i].kind
+      is: "Other Investment"
   - label: Location (e.g., Fifth Third Bank)
     field: marriage.accounts[i].source
+  - note: |
+      **Note:** Investment value can be complicated. You may need a financial advisor or other professional to determine an accurate value.
+    show if:
+      variable: marriage.accounts[i].kind
+      is: "Other Investment"
   - label: Amount
     field: marriage.accounts[i].balance
     datatype: currency
     min: 0
+    js show if: |
+      val("marriage.accounts[i].kind") !== "Other Investment"
+  - label: Value
+    field: marriage.accounts[i].balance
+    datatype: currency
+    min: 0
+    js show if: |
+      val("marriage.accounts[i].kind") === "Other Investment"
   - label: Award to
     field: marriage.accounts[i].owner
     datatype: object_radio
@@ -1553,6 +1559,16 @@ fields:
 template: marriage.accounts.there_is_another_template
 content: |
   Please list each bank account and investment that has not been {divided}, and select how it should be awarded.
+---
+template: stocks_mutual_funds_info
+subject: |
+  What about stocks, bonds, or mutual funds?
+content: |
+  Some people buy and manage investments like stock, bonds, or mutual funds using an investment account called a **Brokerage Account.** You can list a brokerage account below.
+  
+  Choose **Other Investment** if you own specific stock, bonds, or mutual funds **directly,** or if you wish to list specific investments separately. *Example:* if you bought savings bonds directly from the US government, choose "Other Investment."
+
+  **Warning:** Do **not** include investments located in retirement accounts. If you need to divide retirement accounts, you may want to contact a lawyer.          
 ---
 # --------------------------------------------------------------------
 ## marriage.other_pp
