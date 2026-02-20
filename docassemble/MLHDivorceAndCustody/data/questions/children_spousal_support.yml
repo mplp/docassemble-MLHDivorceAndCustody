@@ -781,6 +781,7 @@ fields:
       is: False
   # TODO? need help text saying don't include children who were born to or adopted by either spouse prior to marriage
 validation code: |
+  children[i].revoke_paternity_reminder = False
   if children[i].adopted_during_marriage:
     children[i].timing = "marital"
     children[i].origin = "marital_adoption"
@@ -1135,6 +1136,9 @@ fields:
     js show if: |
       val("children[i].legal_parent") == "both" && ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer"] and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" }  
 # NOTE: see above for another way to to do js show if logic without json.dumps!
+validation code: |
+  if children[i].parentage_plan_to_revoke:
+    children[i].revoke_paternity_reminder = True
 ---
 id: parentage revocation questions, spouse is bio parent
 if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived")) and children[i].bio_parent == "other_party"
@@ -1155,7 +1159,10 @@ fields:
   - note: |
       If you answer **Yes,** your ${ filing_name } will state that you plan to file a motion asking to revoke your parentage.
     js show if: |
-      val("children[i].legal_parent") == "both" && ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer"] and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" }  
+      val("children[i].legal_parent") == "both" && ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer"] and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" } 
+validation code: |
+  if children[i].parentage_plan_to_revoke:
+    children[i].revoke_paternity_reminder = True
 ---
 id: info about revoking parentage
 if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived" and children[i].legal_parent == "both")) and children[i].parentage_plan_to_revoke
@@ -1342,6 +1349,7 @@ subquestion: |
   You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
 ---
 id: kickout if children lived with someone else in last 5 years
+if: kids_had_other_custodian
 event: other_custodian_kickout
 question: This tool is not right for you
 subquestion: |
@@ -1350,6 +1358,7 @@ subquestion: |
   You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
 ---
 id: kickout if children don't live with parents
+if: third_party_custody_claim
 event: third_party_custody_kickout
 question: This tool is not right for you
 subquestion: |
