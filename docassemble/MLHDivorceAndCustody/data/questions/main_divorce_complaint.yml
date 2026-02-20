@@ -30,6 +30,9 @@ sections:
   - review_full: "✎ <u>Review / Edit</u>"
 ---
 code: |
+  cover_sheet_complete_1 += f" The following pages have the instructions and other helpful information."
+---
+code: |
   if there_are_marital_children:
     resource_page_url_only = "https://michiganlegalhelp.org/node/1078"
     resource_page_name = "Filing for Divorce with Children"
