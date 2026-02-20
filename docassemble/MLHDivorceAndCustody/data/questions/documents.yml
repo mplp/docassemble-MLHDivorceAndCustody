@@ -171,6 +171,22 @@ code: |
 # --------------------------------------------------------------------
 ---
 # --------------------------------------------------------------------
+## Cover Sheet with dynamic instructions inclusion
+# --------------------------------------------------------------------
+---
+objects:
+  - instructions: ALDocument.using(title="Instructions", filename=f"{county_choice} County Instructions - Do not file this", enabled=True)
+---
+attachments:
+  - name: instructions
+    filename: instructions
+    docx template file: instructions.docx
+    variable name: instructions[i]
+    tagged pdf: True
+    valid formats:
+      - pdf
+---
+# --------------------------------------------------------------------
 ## Confidential Case Inventory, MC 21
 # --------------------------------------------------------------------
 ---
@@ -4676,42 +4692,3 @@ code: |
       not marriage.vehicles.keep_own
     )
 ---
-
-# --------------------------------------------------------------------
-## Instructions - Divorce With or Without Children
-# --------------------------------------------------------------------
----
-objects:
-  - instructions_divorce_without_children: ALDocument.using(title="Instructions - Divorce Without Children", filename=f"Instructions - Divorce Without Children - {county_choice}", has_addendum=False, enabled=True)
----
-attachments:
-  - name: Instructions - Divorce Without Children
-    filename: Instructions - Divorce Without Children
-    docx template file: instructions_divorce_without_children.docx
-    variable name: instructions_divorce_without_children[i]
-    skip undefined: True
----
-objects:
-  - instructions_divorce_with_children: ALDocument.using(title="Instructions - Divorce With Children", filename=f"Instructions - Divorce With Children - {county_choice}", has_addendum=False, enabled=True)
----
-attachments:
-  - name: Instructions - Divorce With Children
-    filename: Instructions - Divorce With Children
-    docx template file: instructions_divorce_with_children.docx
-    variable name: instructions_divorce_with_children[i]
-    skip undefined: True
-# --------------------------------------------------------------------
-## Cover Sheet with dynamic instructions inclusion
-# --------------------------------------------------------------------
----
-objects:
-  - instructions: ALDocument.using(title="Instructions", filename=f"{county_choice} County Instructions - Do not file this", has_addendum=False, enabled=True)
----
-attachments:
-  - name: instructions
-    filename: instructions
-    docx template file: instructions.docx
-    variable name: instructions[i]
-    tagged pdf: True
-    valid formats:
-      - pdf
