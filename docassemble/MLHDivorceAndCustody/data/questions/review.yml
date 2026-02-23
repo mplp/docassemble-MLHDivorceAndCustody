@@ -972,6 +972,7 @@ review:
         - children_previous_address.gathered_reset
         - interview_order_children
         - prior_family_cases.gathered_deep_reset
+        - set_dynamic_instructions_variables
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
       % if children.there_are_any:
@@ -1025,6 +1026,7 @@ review:
         - children_previous_address.gathered_reset
         - interview_order_children
         - prior_family_cases.gathered_deep_reset
+        - set_dynamic_instructions_variables
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
       <h3 class="h5">Edit a child's <b>legal parent</b> info</h3>
@@ -1032,6 +1034,15 @@ review:
   - note: |
       <hr>
     show if: children.there_are_any and child_legal_parent_review_screen
+  - Edit:
+      - need_temporary_order_kids
+      - invalidate:
+        - temporary_order_kids_exit
+      - recompute:
+        - interview_order_children
+    button: |
+      <h3 class="h5"> Do you believe that a temporary custody order is needed to protect the children because they have been abused, mistreated, threatened, or neglected?</h3>
+        - ${word(yesno(need_temporary_order_kids))}
   - Edit:
       - home_state_review_screen
       - invalidate:
@@ -1383,6 +1394,11 @@ review:
       <h3 class="h5"> Do you each plan to keep your own accounts?</h3>
         - ${word(yesno(marriage.pension_retirement_accounts_keep_own))}
       % endif
+  - Edit:
+      - need_temporary_order
+    button: |
+      <h3 class="h5"> Do you need a temporary order to keep your spouse from transferring, hiding, selling, or getting rid of marital property or assets?</h3>
+        - ${word(yesno(need_temporary_order))}
 #
 # ---------- personal property ----------
 #
