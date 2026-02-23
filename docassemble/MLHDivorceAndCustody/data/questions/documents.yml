@@ -1003,8 +1003,9 @@ attachment:
           % if other_parties[0].has_foreign_citizenship:
           ${ other_parties[0].foreign_identity_documents }
           % endif
+      - NB_note: ${ "NB = Nonbinary" if there_are_marital_children and len(children.filter(gender="nonbinary")) > 0 else "" }
       - children0_name: ${ children.filter(legal_parent="both")[0].name.full() }
-      - children0_sex: ${ "f" if children.filter(legal_parent="both")[0].gender == "female" else "m" }
+      - children0_sex: ${ "F" if children.filter(legal_parent="both")[0].gender == "female" else "M" if children.filter(legal_parent="both")[0].gender == "male" else "NB"}
       - children0_birthdate: ${ format_date(children.filter(legal_parent="both")[0].birthdate, format='M/d/yyyy') }
       - children0_age: |
           % if children.filter(legal_parent="both")[0].age_in_years() < 1:
@@ -1030,7 +1031,7 @@ attachment:
           % endif
           % endif
       - children1_name: ${ children.filter(legal_parent="both")[1].name.full() }
-      - children1_sex: ${ "f" if children.filter(legal_parent="both")[1].gender == "female" else "m" }
+      - children1_sex: ${ "F" if children.filter(legal_parent="both")[1].gender == "female" else "M" if children.filter(legal_parent="both")[1].gender == "male" else "NB"}
       - children1_birthdate: ${ format_date(children.filter(legal_parent="both")[1].birthdate, format='M/d/yyyy') }
       - children1_age: |
           % if children.filter(legal_parent="both")[1].age_in_years() < 1:
@@ -1056,7 +1057,7 @@ attachment:
           % endif
           % endif
       - children2_name: ${ children.filter(legal_parent="both")[2].name.full() }
-      - children2_sex: ${ "f" if children.filter(legal_parent="both")[2].gender == "female" else "m" }
+      - children2_sex: ${ "F" if children.filter(legal_parent="both")[2].gender == "female" else "M" if children.filter(legal_parent="both")[2].gender == "male" else "NB"}
       - children2_birthdate: ${ format_date(children.filter(legal_parent="both")[2].birthdate, format='M/d/yyyy') }
       - children2_age: |
           % if children.filter(legal_parent="both")[2].age_in_years() < 1:
@@ -1082,7 +1083,7 @@ attachment:
           % endif
           % endif
       - children3_name: ${ children.filter(legal_parent="both")[3].name.full() }
-      - children3_sex: ${ "f" if children.filter(legal_parent="both")[3].gender == "female" else "m" }
+      - children3_sex: ${ "F" if children.filter(legal_parent="both")[3].gender == "female" else "M" if children.filter(legal_parent="both")[3].gender == "male" else "NB"}
       - children3_birthdate: ${ format_date(children.filter(legal_parent="both")[3].birthdate, format='M/d/yyyy') }
       - children3_age: |
           % if children.filter(legal_parent="both")[3].age_in_years() < 1:
@@ -1115,7 +1116,7 @@ attachment:
           % endif
       - children4_sex: |
           % if len(children.filter(legal_parent="both")) == 5:
-          ${ "f" if children.filter(legal_parent="both")[4].gender == "female" else "m" }
+          ${ "F" if children.filter(legal_parent="both")[4].gender == "female" else "M" if children.filter(legal_parent="both")[4].gender == "male" else "NB"}
           % endif
       - children4_birthdate: |
           % if len(children.filter(legal_parent="both")) == 5:
@@ -1153,9 +1154,11 @@ attachment:
       - stepchildren0_sex: |
           % if there_are_marital_children:
           % if stepchildren_for_addendum[0].gender == "female":
-          f
+          F
           % elif stepchildren_for_addendum[0].gender == "male":
-          m
+          M
+          % elif stepchildren_for_addendum[0].gender == "nonbinary":
+          NB
           % endif
           % endif
       - stepchildren0_birthdate: |
@@ -1203,9 +1206,11 @@ attachment:
           % if there_are_marital_children:
           % if len(stepchildren_for_addendum) == 2:
           % if stepchildren_for_addendum[1].gender == "female":
-          f
+          F
           % elif stepchildren_for_addendum[1].gender == "male":
-          m
+          M
+          % elif stepchildren_for_addendum[1].gender == "nonbinary":
+          NB
           % endif
           % endif
           % endif
@@ -1328,19 +1333,23 @@ attachment:
     editable: False
     fields:
       - docket_number: ${docket_number}
-      - relationship_mother: ${ True if users[0].gender == "female" and other_parties[0].gender == "male" else False }
-      - relationship_father: ${ True if users[0].gender == "male" and other_parties[0].gender == "female" else False }
-      - kids_live_with_mother: |
+      - relationship_mother: ${ False if users[0].gender == "male" and other_parties[0].gender == "female" else True } # Parent A if not heterosexual couple
+      - relationship_father: ${ True if users[0].gender == "male" and other_parties[0].gender == "female" else False } # Parent B if not heterosexual couple
+      - kids_live_with_mother: | # or Parent A if not heterosexual couple
           % if users[0].gender == "male" and other_parties[0].gender == "female":
-          ${ True if children_now_live_with_which_parent == other_parties[0] else False }
+          ${ True if children_now_live_with_which_parent == "other_parties[0]" else False }
           % elif users[0].gender == "female" and other_parties[0].gender == "male":
-          ${ True if children_now_live_with_which_parent == users[0] else False }
+          ${ True if children_now_live_with_which_parent == "users[0]" else False }
+          % else:
+          ${ True if children_now_live_with_which_parent == "users[0]" else False }
           % endif
-      - kids_live_with_father: |
+      - kids_live_with_father: | # or Parent B if not heterosexual couple
           % if users[0].gender == "female" and other_parties[0].gender == "male":
-          ${ True if children_now_live_with_which_parent == other_parties[0] else False }
+          ${ True if children_now_live_with_which_parent == "other_parties[0]" else False }
           % elif users[0].gender == "male" and other_parties[0].gender == "female":
-          ${ True if children_now_live_with_which_parent == users[0] else False }
+          ${ True if children_now_live_with_which_parent == "users[0]" else False }
+          % else:
+          ${ True if children_now_live_with_which_parent == "other_parties[0]" else False }
           % endif     
       - kids_live_with_both: |
           ${ True if children_now_live_with_which_parent == "both" else False }
@@ -1442,6 +1451,26 @@ attachment:
           % else:
           ${ '' }
           % endif
+      - cross_out_mother: ${ "xxxxxxxxxx" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - cross_out_mother__1: ${ "xxxxxxxxxx" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - cross_out_mother__2: ${ "xxxxxxxxxx" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - cross_out_mother__3: ${ "xxxxxxxxxx" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - cross_out_mother__4: ${ "xxxxxxxxxx" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - cross_out_mother__5: ${ "xxxxxxxxxx" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - cross_out_mother__6: ${ "xxxxxxxxxx" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - cross_out_father: ${ "xxxxxxxxxx" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - cross_out_father__1: ${ "xxxxxxxxxx" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - cross_out_father__2: ${ "xxxxxxxxxx" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - cross_out_father__3: ${ "xxxxxxxxxx" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - cross_out_father__4: ${ "xxxxxxxxxx" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - cross_out_father__5: ${ "xxxxxxxxxx" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - cross_out_father__6: ${ "xxxxxxxxxx" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - parent_a: ${ "Parent A" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - parent_a__1: ${ "Parent A" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - parent_a__2: ${ "for Parent A" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - parent_b: ${ "Parent B" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - parent_b__1: ${ "Parent B" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
+      - parent_b__2: ${ "for Parent B" if not ((users[0].gender == "female" and other_parties[0].gender == "male") or (users[0].gender == "male" and other_parties[0].gender == "female")) else ""}
 # --------------------------------------------------------------------
 ## Judgment Information FOC 100 and Attachments
 # --------------------------------------------------------------------

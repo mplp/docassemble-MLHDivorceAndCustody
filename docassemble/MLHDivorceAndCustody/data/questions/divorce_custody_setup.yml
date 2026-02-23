@@ -86,6 +86,10 @@ terms:
       * Intracytoplasmic sperm injection
       * Assisted reproductive technology
   - phrases:
+      - marital children
+    definition: |
+      Children who have both you and your spouse as their legal parents.
+  - phrases:
       - parenting time
     definition: |
       Sometimes called "visitation".
