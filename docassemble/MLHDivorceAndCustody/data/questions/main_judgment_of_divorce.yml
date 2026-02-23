@@ -31,6 +31,10 @@ sections:
 code: |
   survey_link_url_only = "https://www.surveymonkey.com/r/xxxxxx"
 ---
+# there are currently no JOD_only instructions, but this variable is referenced on review screen
+code: |
+  set_dynamic_instructions_variables = True
+---
 code: |
   tool_ID = "JOD_only"
 ---
