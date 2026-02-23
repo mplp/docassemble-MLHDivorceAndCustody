@@ -31,6 +31,7 @@ objects:
       complete_attribute="complete",
       object_type = ALAddress
       )
+  - stepchildren_for_addendum: ALPeopleList
   - users[0].job: ALJob
   - users[0].income: ALIncome
   - other_parties[0].job: ALJob
@@ -672,13 +673,6 @@ code: |
 
   set_marital_children_or_not = True
 ---
-id: other_parties_0_gender
-question: |
-  What is your spouse's gender?
-fields:
-  - code: |
-      other_parties[0].gender_fields(show_help=True)
----
 id: children intro
 continue button field: children_intro
 question: Children
@@ -795,6 +789,7 @@ subquestion: |
   % if children[i].legal_parent != "both":
   Leave blank if unknown.
   % endif
+  ${collapse_template(children[i].gender_explanation)}
 fields:
   - Date of birth: children[i].birthdate
     datatype: BirthDate
@@ -807,6 +802,7 @@ fields:
     choices:
       - Female: female
       - Male: male
+      - Nonbinary: nonbinary
     required: True if children[i].legal_parent == "both" else False
   - Social security number: children[i].ssn
     datatype: ssn
@@ -814,7 +810,6 @@ fields:
     show if:
       code: |
         children[i].legal_parent == "both"
-  # TODO? need help text apologizing for gender question
 validation code: |
   if defined("children[i].ssn"):
     if children[i].ssn != "":
@@ -822,7 +817,17 @@ validation code: |
     else:
       children[i].ssn_last_four = "Not given"
 ---
-# think this is unneeded, can delete after running without it for a while
+template: children[i].gender_explanation
+subject: |
+  How will this information be used?
+content: |
+  Children's sex, date of birth, and (for {marital children}) social security number are used on the *Verified Statement* form (FOC 23) and *Domestic Relations Judgment Information* form (FOC 100). These forms will **not** be publicly available. The Friend of the Court office and your spouse will have access to these forms.
+
+  Gender: FOC 23 only gives options of "F" for female or "M" for male. If you select "Nonbinary", we will put "NB", and a note that this stands for Nonbinary.
+
+  Age: {Marital children}'s age, but not their date of birth, will be included on other court forms.
+---
+# TODO: think this is unneeded, can delete after running without it for a while
 #code: |
 #  if children[i].adopted_during_marriage:
 #    children[i].timing = "marital"

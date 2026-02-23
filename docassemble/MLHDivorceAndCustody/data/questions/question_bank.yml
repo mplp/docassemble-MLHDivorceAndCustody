@@ -115,11 +115,9 @@ content: |
 generic object: ALIndividual
 template: x.gender_explanation_template
 subject: |
-  Why are you asking this? What if ${"I'm" if x is users[0] else "they're"} nonbinary?
+  Why are you asking this?
 content: |
-  The DCH-0838 Record of Divorce or Annulment form needed to finalize a divorce in Michigan makes you select "male" or "female" for each party. Unfortunately it does not have a nonbinary option. Please select which option you want checked on the form.
-
-  In marriages with children, there is another Michigan state form (DHS-1201D) that uses the terms Mother and Father. If you indicate you and your spouse have different genders, we will use the selected genders to fill out the form.
+  Several forms that may be needed in a Michigan divorce ask for gender. We will use your response to fill in these forms.
 ---
 # ====================================================================
 ## questions
@@ -522,6 +520,7 @@ fields:
     choices:
       - Female: female
       - Male: male
+      - Nonbinary: nonbinary
 ---
 id: users[0].marriage_number
 question: |
@@ -879,6 +878,7 @@ fields:
     choices:
       - Female: female
       - Male: male
+      - Nonbinary: nonbinary
 ---
 id: other_parties[0].marriage_number
 question: |
@@ -1555,6 +1555,11 @@ fields:
       - users[0]
       - other_parties[0]
       - joint
+validation code: |
+  if marriage.accounts[i].kind in ["Cash", "Savings Account", "Checking Account"]:
+    marriage.accounts[i].trigger_investment_reminder = False
+  else:
+    marriage.accounts[i].trigger_investment_reminder = True
 ---
 template: marriage.accounts.there_is_another_template
 content: |
