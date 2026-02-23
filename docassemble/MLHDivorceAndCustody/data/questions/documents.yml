@@ -1333,8 +1333,8 @@ attachment:
     editable: False
     fields:
       - docket_number: ${docket_number}
-      - relationship_mother: ${ True if users[0].gender == "female" and other_parties[0].gender == "male" else True }
-      - relationship_father: ${ True if users[0].gender == "male" and other_parties[0].gender == "female" else False }
+      - relationship_mother: ${ False if users[0].gender == "male" and other_parties[0].gender == "female" else True } # Parent A if not heterosexual couple
+      - relationship_father: ${ True if users[0].gender == "male" and other_parties[0].gender == "female" else False } # Parent B if not heterosexual couple
       - kids_live_with_mother: | # or Parent A if not heterosexual couple
           % if users[0].gender == "male" and other_parties[0].gender == "female":
           ${ True if children_now_live_with_which_parent == "other_parties[0]" else False }
