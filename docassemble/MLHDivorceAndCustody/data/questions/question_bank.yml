@@ -1968,7 +1968,7 @@ objects:
       )
 ---
 code: |
-  if marriage.real_property == 10: 
+  if marriage.real_property.number() >= 10: 
     marriage.real_property.there_is_another = False
 ---
 code: |
