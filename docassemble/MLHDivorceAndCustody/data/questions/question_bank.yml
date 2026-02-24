@@ -617,6 +617,8 @@ validation code: |
   users[0].address.invalidate_attr("county")
   users[0].delattr("lives_in_Michigan", "ten_days_in_county")
   users[0].invalidate_attr("village_or_township_yn", "village_or_township")
+  if users[0].address.state in ["Michigan", "MI"] and users[0].address.country != "US":
+    validation_error('If you live in Michigan in the USA, choose "United States" for the country. If you live in a different country, the state name cannot be "MI" or "Michigan."')
 ---
 if: not confidential_contact_info_yn and tool_ID == "divorce_complaint"
 id: user jurisdiction/venue questions address no confidential
@@ -939,6 +941,8 @@ validation code: |
   other_parties[0].delattr("lives_in_Michigan", "ten_days_in_county")
   other_parties[0].address.invalidate_attr("county")
   other_parties[0].invalidate_attr("village_or_township_yn", "village_or_township")
+  if other_parties[0].address.state in ["Michigan", "MI"] and other_parties[0].address.country != "US":
+    validation_error('If they live in Michigan in the USA, choose "United States" for the country. If they live in a different country, the state name cannot be "MI" or "Michigan."')
 ---
 if: tool_ID == "divorce_complaint"
 id: OP jurisdiction/venue questions
@@ -2304,6 +2308,18 @@ code: |
       other_parties[0].ten_days_in_county
 
   interview_order_other_parties_address_info = True
+---
+id: international_service_warning
+question: "**Warning:** international service"
+subquestion: |
+  You said your spouse lives outside the United States. 
+  
+  An important step in a divorce is to have your spouse **served** with the divorce papers. This is how your spouse is officially notified of the divorce case.
+  
+  Other countries have different rules and procedures for how to serve someone. The instructions on serving the divorce papers that are produced by this tool **will not apply to you.**
+  
+  You will need to **talk to a lawyer** when it's time to have your spouse served with the divorce papers.
+continue button field: international_service_warning
 ---
 code: |
   if other_parties[0].has_attorney:
