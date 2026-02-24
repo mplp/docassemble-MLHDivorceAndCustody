@@ -327,7 +327,7 @@ subject: What if I'm not sure?
 content: |
   If your spouse is or may be on active military duty, you may only use this tool to prepare your divorce forms if your spouse agrees to the divorce, agrees to all of the terms of the divorce, and will sign a Consent Judgment of Divorce. 
   
-  Please return to use this tool when you have determined whether your spouse is currently on active military duty. 
+  Please return to use this tool when you have determined if your spouse is currently on active military duty. 
 ---
 id: need temp order
 question: Do you need a temporary order?
@@ -387,9 +387,9 @@ id: pension_retirement_accounts_divide
 question: |
   Pension and/or retirement accounts
 subquestion: |
-  WARNING! This tool may not be right for you. Dividing pensions or retirement accounts is not simple. Neither this tool nor the Michigan Legal Help website will divide your pensions or retirement accounts. You can still complete this tool to prepare your Judgment of Divorce. The Judgment of Divorce produced after this tool will state that you have pensions or retirement accounts to divide, but the Judgment of Divorce will not divide them. You may want to consider hiring a lawyer to ask the judge to divide your pensions or retirement accounts. A lawyer can also draft the special order that is required.
-
-  If you want to hire a lawyer to help you divide your pensions or retirement accounts and finish your case, you can find referral information in the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
+  **WARNING!** Dividing pensions or retirement accounts is not easy. You will likely need a special order called a QDRO or EDRO that this tool does not provide. You can still use this tool to get your other divorce forms. But the Pension/Retirement Account Addendum to the Judgment of Divorce will be **incomplete.**
+  
+  You will need to find a lawyer to help you complete the Judgment of Divorce and prepare a QDRO or EDRO. ${MLH_GUIDE_FULL}
 fields:
   - label: Do you want to continue?
     field: marriage.pension_retirement_accounts_continue
@@ -498,7 +498,7 @@ content: |
   As part of the divorce, a woman can ask the judge to change her name to any of the following:
 
   - Her last name at birth,
-  - Her last before marriage to the spouse she is divorcing, or
+  - Her last name before marriage to the spouse she is divorcing, or
   - Any other last name if she isn’t trying to change her name to commit fraud or for some other harmful reason.
 ---
 template: users[0].can_i_change_my_name_later_template
@@ -617,6 +617,8 @@ validation code: |
   users[0].address.invalidate_attr("county")
   users[0].delattr("lives_in_Michigan", "ten_days_in_county")
   users[0].invalidate_attr("village_or_township_yn", "village_or_township")
+  if users[0].address.state in ["Michigan", "MI"] and users[0].address.country != "US":
+    validation_error('If you live in Michigan in the USA, choose "United States" for the country. If you live in a different country, the state name cannot be "MI" or "Michigan."')
 ---
 if: not confidential_contact_info_yn and tool_ID == "divorce_complaint"
 id: user jurisdiction/venue questions address no confidential
@@ -939,6 +941,8 @@ validation code: |
   other_parties[0].delattr("lives_in_Michigan", "ten_days_in_county")
   other_parties[0].address.invalidate_attr("county")
   other_parties[0].invalidate_attr("village_or_township_yn", "village_or_township")
+  if other_parties[0].address.state in ["Michigan", "MI"] and other_parties[0].address.country != "US":
+    validation_error('If they live in Michigan in the USA, choose "United States" for the country. If they live in a different country, the state name cannot be "MI" or "Michigan."')
 ---
 if: tool_ID == "divorce_complaint"
 id: OP jurisdiction/venue questions
@@ -1145,7 +1149,7 @@ question: Where to file your divorce
 continue button field: venue
 subquestion: |
   % if len(all_potential_venue_options) == 1:
-  You only meet the requirements to file your divorce in ${ county_choice } County. Your divorce forms will be prepared using ${ county_choice } as the filing county.  
+  You only meet the requirements to file your divorce in **${ county_choice } County.** Your divorce forms will be prepared using ${ county_choice } as the filing county.  
   % elif len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case:
   Because of your earlier separate maintenance case, you must file in ${ prior_family_cases[separate_maintenance_case_index].county } County. Your divorce forms will be prepared using ${ county_choice } as the filing county.  
   % endif
@@ -2304,6 +2308,18 @@ code: |
       other_parties[0].ten_days_in_county
 
   interview_order_other_parties_address_info = True
+---
+id: international_service_warning
+question: "**Warning:** international service"
+subquestion: |
+  You said your spouse lives outside the United States. 
+  
+  An important step in a divorce is to have your spouse **served** with the divorce papers. This is how your spouse is officially notified of the divorce case.
+  
+  Other countries have different rules and procedures for how to serve someone. The instructions on serving the divorce papers that are produced by this tool **will not apply to you.**
+  
+  You will need to **talk to a lawyer** when it's time to have your spouse served with the divorce papers.
+continue button field: international_service_warning
 ---
 code: |
   if other_parties[0].has_attorney:

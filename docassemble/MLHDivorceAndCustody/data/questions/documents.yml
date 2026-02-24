@@ -194,7 +194,7 @@ code: |
 # --------------------------------------------------------------------
 ---
 objects:
-  - instructions: ALDocument.using(title="Instructions", filename=f"{county_choice} County Instructions - Do not file this", enabled=True)
+  - instructions: ALDocument.using(title="Instructions", filename=Instructions - Do not file this", enabled=True)
 ---
 attachments:
   - name: instructions

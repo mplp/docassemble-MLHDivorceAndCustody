@@ -31,9 +31,9 @@ sections:
 code: |
   survey_link_url_only = "https://www.surveymonkey.com/r/xxxxxx"
 ---
-# there are currently no JOD_only instructions, but this variable is referenced on review screen
-code: |
-  set_dynamic_instructions_variables = True
+template: optional_download_message
+content: |
+  To learn what to do next in your court case, go to [${ resource_page_name }](${ resource_page_url_only }) and read the step-by-step instructions.
 ---
 code: |
   tool_ID = "JOD_only"
@@ -49,10 +49,6 @@ code: |
   MLH_form_type = "forms"
   MLH_time_min = 15
   MLH_time_max = 45
-
-  # TODO need resource url & confirm page name
-  resource_page_url_only = "https://michiganlegalhelp.org/node/xxxx"
-  resource_page_name = "Judgment of Divorce"
 
   # for JOD_only, there are no specific instructions
   MLH_instructions_included = False
