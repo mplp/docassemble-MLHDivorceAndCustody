@@ -327,7 +327,7 @@ subject: What if I'm not sure?
 content: |
   If your spouse is or may be on active military duty, you may only use this tool to prepare your divorce forms if your spouse agrees to the divorce, agrees to all of the terms of the divorce, and will sign a Consent Judgment of Divorce. 
   
-  Please return to use this tool when you have determined whether your spouse is currently on active military duty. 
+  Please return to use this tool when you have determined if your spouse is currently on active military duty. 
 ---
 id: need temp order
 question: Do you need a temporary order?
@@ -387,9 +387,9 @@ id: pension_retirement_accounts_divide
 question: |
   Pension and/or retirement accounts
 subquestion: |
-  WARNING! This tool may not be right for you. Dividing pensions or retirement accounts is not simple. Neither this tool nor the Michigan Legal Help website will divide your pensions or retirement accounts. You can still complete this tool to prepare your Judgment of Divorce. The Judgment of Divorce produced after this tool will state that you have pensions or retirement accounts to divide, but the Judgment of Divorce will not divide them. You may want to consider hiring a lawyer to ask the judge to divide your pensions or retirement accounts. A lawyer can also draft the special order that is required.
-
-  If you want to hire a lawyer to help you divide your pensions or retirement accounts and finish your case, you can find referral information in the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) section of the Michigan Legal Help website.
+  **WARNING!** Dividing pensions or retirement accounts is not easy. You will likely need a special order called a QDRO or EDRO that this tool does not provide. You can still use this tool to get your other divorce forms. But the Pension/Retirement Account Addendum to the Judgment of Divorce will be **incomplete.**
+  
+  You will need to find a lawyer to help you complete the Judgment of Divorce and prepare a QDRO or EDRO. ${MLH_GUIDE_FULL}
 fields:
   - label: Do you want to continue?
     field: marriage.pension_retirement_accounts_continue
@@ -498,7 +498,7 @@ content: |
   As part of the divorce, a woman can ask the judge to change her name to any of the following:
 
   - Her last name at birth,
-  - Her last before marriage to the spouse she is divorcing, or
+  - Her last name before marriage to the spouse she is divorcing, or
   - Any other last name if she isn’t trying to change her name to commit fraud or for some other harmful reason.
 ---
 template: users[0].can_i_change_my_name_later_template
