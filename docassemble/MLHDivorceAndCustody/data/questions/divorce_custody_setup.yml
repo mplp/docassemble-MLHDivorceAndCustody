@@ -70,6 +70,23 @@ code: |
   
   set_JOD_party_labels = True
 ---
+### divorce instructions variables
+# note: currently no JOD_only instructions, but using some of this in optional_download_message
+code: |
+  if there_are_marital_children:
+    resource_page_url_only = "https://michiganlegalhelp.org/node/1078"
+    resource_page_name = "Filing for Divorce with Children"
+    has_whats_next_text = False
+  else:
+    resource_page_url_only = "https://michiganlegalhelp.org/node/1077"
+    resource_page_name = "Filing for Divorce without Children"
+    has_whats_next_text = True
+    whats_next_text_message = "Text 1400 to (734) 275-2201 to get automated text messages about the next steps in a divorce case."
+
+  undefine("resource_page_link")
+
+  set_dynamic_instructions_variables = True
+---
 code:  |
   github_repo_name = 'docassemble-MLHDivorceAndCustody' if get_config('debug') else 'docassemble-UserFeedback'
 ---
