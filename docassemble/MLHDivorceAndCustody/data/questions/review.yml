@@ -874,7 +874,7 @@ review:
         - Standard of living: ${ "*no response*" if ss_factor_ten_standards == "" else ss_factor_ten_standards}
         - People you support: ${ "*no response*" if ss_factor_ten_responsibilities == "" else ss_factor_ten_responsibilities}
   - Edit:
-      - ss_factor_ten_standards
+      - ss_factor_eleven_contributions
     button: |
       <h3 class="h5"> Spousal Support Factor Eleven</h3>
         - Contributions during marriage: ${ "*no response*" if ss_factor_eleven_contributions == "" else ss_factor_eleven_contributions}
@@ -889,7 +889,7 @@ review:
       <h3 class="h5"> Spousal Support Factor Thirteen</h3>
         - Are you living/sharing expenses with an unrelated adult?: ${ "*no response*" if ss_factor_thirteen_cohabitation == "" else ss_factor_thirteen_cohabitation}
   - Edit:
-      - ss_factor_thirteen_cohabitation
+      - ss_factor_fourteen_equity
     button: |
       <h3 class="h5"> Spousal Support Factor Fourteen</h3>
         - Any other reasons it is fair for you to get spousal support: ${ "*no response*" if ss_factor_fourteen_equity == "" else ss_factor_fourteen_equity}
