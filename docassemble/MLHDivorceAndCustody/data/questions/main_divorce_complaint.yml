@@ -29,13 +29,9 @@ sections:
   - signpost_done: "Get Your Forms"
   - review_full: "✎ <u>Review / Edit</u>"
 ---
-code: |
-  cover_sheet_complete_1 += f" The following pages have the instructions and other helpful information."
----
 # set static instructions variables
 # TODO need survey url
 code: |
-  cover_sheet_header = "Your divorce forms are ready. Well done!"
   survey_link_url_only = "https://www.surveymonkey.com/r/xxxxxx"
 ---
 code: |
