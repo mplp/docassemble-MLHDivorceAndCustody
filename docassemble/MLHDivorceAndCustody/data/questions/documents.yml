@@ -181,6 +181,12 @@ code: |
 code: |
   complaint_answer_attachment.enabled = (tool_ID in ["divorce_complaint"]) and (user_wants_post_divorce_support)
 ---
+code: |
+  complaint_no_children_cc_407.enabled = (tool_ID in ["divorce_complaint"]) and (children.there_are_any == False)
+---
+code: |
+  complaint_with_children_cc_408.enabled = (tool_ID in ["divorce_complaint"]) and (children.there_are_any == True)
+---
 # ====================================================================
 ## specific form objects and attachment blocks
 # ====================================================================
@@ -188,6 +194,191 @@ code: |
 # --------------------------------------------------------------------
 ## Example form title or category here
 # --------------------------------------------------------------------
+---
+# --------------------------------------------------------------------
+## Complaint for Divorce, CC 407
+# --------------------------------------------------------------------
+---
+objects:
+  - complaint_no_children_cc_407: ALDocument.using(title="Complaint for Divorce - CC 407", filename="Complaint for Divorce - CC 407", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
+attachment:
+  - name: Complaint for Divorce - CC 407
+    filename: Complaint for Divorce - CC 407
+    variable name: complaint_no_children_cc_407[i]
+    pdf template file: complaint_no_children_cc_407.pdf
+    skip undefined: True
+    editable: False
+    fields:
+        - trial_court: ${ the_court.number }
+        - trial_court_county: ${ the_court.address.county.upper() }
+        - case_number__1: ${ docket_number }
+        - case_number__2: ${ docket_number }
+        - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+        - trial_court_phone_number: ${ the_court.phone }
+        - plaintiff: ${ plaintiffs[0].name_full() }
+        - defendant: ${ defendants[0].name_full() }
+        - plaintiff_previous_name: ${users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name}
+        - defendant_previous_name: ${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}
+        - marriage_date: ${ marriage.date }
+        - marriage_location: ${ marriage.address.on_one_line() }
+        - parties_separated: ${ not marriage.living_together_yn }
+        - separation_date: ${ marriage.living_together_stopped_date }
+        - parties_live_together: ${ marriage.living_together_yn }
+        - no_marriage_debts_or_property: ${ (not marriage.personal_property_need_items) and (not marriage.debts.any) }
+        - marriage_debts_or_property_equitable: ${ (marriage.personal_property_need_items and (not marriage.personal_property_division_agreement)) or (marriage.debts.any and (not marriage.debts.agree_responsibility_debts_own_name) and (not marriage.debts.agree_responsibility_debts_both_names)) }
+        - marriage_debts_or_property_agreement: ${ marriage.personal_property_division_agreement or marriage.debts.agree_responsibility_debts_own_name or marriage.debts.agree_responsibility_debts_both_names }
+        - no_spousal_support_needed: ${ (not user_wants_temporary_spousal_support) and (not user_wants_post_divorce_support) }
+        - spousal_support_needed: ${ user_wants_temporary_spousal_support or user_wants_post_divorce_support }
+        - request_equitable_division:
+        - request_last_name_change: ${ users[0].new_last_name_yn }
+        - new_last_name: ${ users[0].new_last_name }
+        - signature_date: ${ signature_date if MLH_esign else "" }
+        - plaintiff_signature: |
+            % if MLH_esign:
+            /s/ ${ users[0].name_full() }
+            % else:
+            ${ '' }
+            % endif
+---
+# --------------------------------------------------------------------
+## Complaint for Divorce, CC 408
+# --------------------------------------------------------------------
+---
+objects:
+  - complaint_with_children_cc_408: ALDocument.using(title="Complaint for Divorce - CC 408", filename="Complaint for Divorce - CC 408", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
+attachment:
+  - name: Complaint for Divorce - CC 408
+    filename: Complaint for Divorce - CC 408
+    variable name: complaint_with_children_cc_408[i]
+    pdf template file: complaint_with_children_cc_408.pdf
+    skip undefined: True
+    editable: False
+    fields:
+        - trial_court: ${ the_court.number }
+        - trial_court_county: ${ the_court.address.county.upper() }
+        - case_number: ${ docket_number }
+        - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+        - trial_court_phone_number: ${ the_court.phone }
+        - plaintiff: ${ plaintiffs[0].name_full() }
+        - defendant: ${ defendants[0].name_full() }
+        - plaintiff_previous_name: ${users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name}
+        - defendant_previous_name: ${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}
+        - marriage_date: ${ marriage.date }
+        - marriage_location: ${ marriage.address.on_one_line() }
+        - parties_separated: ${ not marriage.living_together_yn }
+        - separation_date: ${ marriage.living_together_stopped_date }
+        - parties_live_together: ${ marriage.living_together_yn }
+        - plaintiff_pregnant: ${ users[0].pregnant }
+        - defendant_pregnant: ${ other_parties[0].pregnant }
+        - no_party_pregnant: ${ (not users[0].pregnant) and (not other_parties[0].pregnant) }
+        - marital_children_names_ages: |
+            ${ comma_and_list([child.name.full() + ", age " + str(child.age_in_years()) for child in children if child.legal_parent == "both"]) + "." if any(child.legal_parent == "both" for child in children) else "" }
+            ${ "I intend to file a Motion to Determine Child Born Out of Wedlock with regard to " + comma_and_list([child.name.full() for child in children if child.legal_parent == "both" and child.revoke_paternity_reminder]) + "." if any(child.legal_parent == "both" and child.revoke_paternity_reminder for child in children) else "" }
+        - parties_with_legal_custody__1: |
+            % if legal_custody_who == "user":
+            The Plaintiff
+            % elif legal_custody_who == "other_party":
+            The Defendant
+            % elif legal_custody_who == "both":
+            The Plaintiff and Defendant
+            % endif
+        - parties_with_legal_custody__2: |
+            % if legal_custody_who == "user":
+            the Plaintiff
+            % elif legal_custody_who == "other_party":
+            the Defendant
+            % elif legal_custody_who == "both":
+            the Plaintiff and Defendant
+            % endif
+        - legal_custody_type__1: |
+            % if legal_custody_who == "both":
+            joint
+            % else:
+            sole
+            % endif
+        - parties_with_physical_custody__1: |
+            % if physical_custody_who == "user":
+            The Plaintiff
+            % elif physical_custody_who == "other_party":
+            The Defendant
+            % elif physical_custody_who == "both":
+            The Plaintiff and Defendant
+            % endif
+        - parties_with_physical_custody__2: |
+            % if physical_custody_who == "user":
+            the Plaintiff
+            % elif physical_custody_who == "other_party":
+            the Defendant
+            % elif physical_custody_who == "both":
+            the Plaintiff and Defendant
+            % endif
+        - physical_custody_type__1: |
+            % if physical_custody_who == "both":
+            joint
+            % else:
+            sole
+            % endif
+        - parties_with_parenting_time: |
+            % if PT_who == "user":
+            the Plaintiff
+            % elif PT_who == "other_party":
+            the Defendant
+            % elif PT_who == "both":
+            the Plaintiff and Defendant
+            % endif
+        - parenting_time_request: |
+            % if PT_type == "reasonable":
+            Reasonable parenting time.
+            % elif PT_type == "specific":
+            Specific parenting time.
+            % elif PT_type == "supervised":
+            Specific and supervised parenting time.
+            % endif
+        - parties_with_legal_custody__3: |
+            % if legal_custody_who == "user":
+            The Plaintiff
+            % elif legal_custody_who == "other_party":
+            The Defendant
+            % elif legal_custody_who == "both":
+            The Plaintiff and Defendant
+            % endif
+        - legal_custody_type__2: |
+            % if legal_custody_who == "both":
+            joint
+            % else:
+            sole
+            % endif
+        - parties_with_physical_custody__3: |
+            % if physical_custody_who == "user":
+            The Plaintiff
+            % elif physical_custody_who == "other_party":
+            The Defendant
+            % elif physical_custody_who == "both":
+            The Plaintiff and Defendant
+            % endif
+        - physical_custody_type__3: |
+            % if physical_custody_who == "both":
+            joint
+            % else:
+            sole
+            % endif
+        - no_marriage_debts_or_property: ${ (not marriage.personal_property_need_items) and (not marriage.debts.any) }
+        - marriage_debts_or_property_equitable: ${ (marriage.personal_property_need_items and (not marriage.personal_property_division_agreement)) or (marriage.debts.any and (not marriage.debts.agree_responsibility_debts_own_name) and (not marriage.debts.agree_responsibility_debts_both_names)) }
+        - marriage_debts_or_property_agreement: ${ marriage.personal_property_division_agreement or marriage.debts.agree_responsibility_debts_own_name or marriage.debts.agree_responsibility_debts_both_names }
+        - no_spousal_support_needed: ${ (not user_wants_temporary_spousal_support) and (not user_wants_post_divorce_support) }
+        - spousal_support_needed: ${ user_wants_temporary_spousal_support or user_wants_post_divorce_support }
+        # - request_equitable_division:
+        - request_last_name_change: ${ users[0].new_last_name_yn }
+        - new_last_name: ${ users[0].new_last_name }
+        - signature_date: ${ signature_date if MLH_esign else "" }
+        - plaintiff_signature: |
+            % if MLH_esign:
+            /s/ ${ users[0].name_full() }
+            % else:
+            ${ '' }
+            % endif
 ---
 # --------------------------------------------------------------------
 ## Cover Sheet with dynamic instructions inclusion
@@ -205,7 +396,7 @@ attachments:
     valid formats:
       - pdf
 ---
-#
+# --------------------------------------------------------------------
 ## Summons, MC 01
 # --------------------------------------------------------------------
 ---
