@@ -182,10 +182,10 @@ code: |
   complaint_answer_attachment.enabled = (tool_ID in ["divorce_complaint"]) and (user_wants_post_divorce_support)
 ---
 code: |
-  complaint_no_children_cc_407.enabled = (tool_ID in ["divorce_complaint"]) and (children.there_are_any == False)
+  complaint_no_children_cc_407.enabled = (tool_ID in ["divorce_complaint"]) and (not there_are_marital_children)
 ---
 code: |
-  complaint_with_children_cc_408.enabled = (tool_ID in ["divorce_complaint"]) and (children.there_are_any == True)
+  complaint_with_children_cc_408.enabled = (tool_ID in ["divorce_complaint"]) and there_are_marital_children
 ---
 # ====================================================================
 ## specific form objects and attachment blocks
@@ -284,7 +284,7 @@ attachment:
             % elif legal_custody_who == "other_party":
             The Defendant
             % elif legal_custody_who == "both":
-            The Plaintiff and Defendant
+            Both Parties
             % endif
         - parties_with_legal_custody__2: |
             % if legal_custody_who == "user":
@@ -292,7 +292,7 @@ attachment:
             % elif legal_custody_who == "other_party":
             the Defendant
             % elif legal_custody_who == "both":
-            the Plaintiff and Defendant
+            both parties
             % endif
         - legal_custody_type__1: |
             % if legal_custody_who == "both":
@@ -306,7 +306,7 @@ attachment:
             % elif physical_custody_who == "other_party":
             The Defendant
             % elif physical_custody_who == "both":
-            The Plaintiff and Defendant
+            Both parties
             % endif
         - parties_with_physical_custody__2: |
             % if physical_custody_who == "user":
@@ -314,7 +314,7 @@ attachment:
             % elif physical_custody_who == "other_party":
             the Defendant
             % elif physical_custody_who == "both":
-            the Plaintiff and Defendant
+            both parties
             % endif
         - physical_custody_type__1: |
             % if physical_custody_who == "both":
@@ -328,7 +328,7 @@ attachment:
             % elif PT_who == "other_party":
             the Defendant
             % elif PT_who == "both":
-            the Plaintiff and Defendant
+            both parties
             % endif
         - parenting_time_request: |
             % if PT_type == "reasonable":
@@ -355,7 +355,7 @@ attachment:
             % elif legal_custody_who == "other_party":
             The Defendant
             % elif legal_custody_who == "both":
-            The Plaintiff and Defendant
+            Both parties
             % endif
         - legal_custody_type__2: |
             % if legal_custody_who == "both":
@@ -369,7 +369,7 @@ attachment:
             % elif physical_custody_who == "other_party":
             The Defendant
             % elif physical_custody_who == "both":
-            The Plaintiff and Defendant
+            Both parties
             % endif
         - physical_custody_type__2: |
             % if physical_custody_who == "both":
