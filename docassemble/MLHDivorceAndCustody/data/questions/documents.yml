@@ -9,7 +9,7 @@ objects:
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, default_request_mc07, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle, complaint_answer_attachment], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, default_request_mc07, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle, complaint_answer_attachment, complaint_no_children_cc_407, complaint_with_children_cc_408], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, except without the instructions]
 ---
 # ====================================================================
@@ -221,7 +221,8 @@ attachment:
         - plaintiff_previous_name: ${users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name}
         - defendant_previous_name: ${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}
         - marriage_date: ${ marriage.date }
-        - marriage_location: ${ marriage.address.on_one_line() }
+        - marriage_location: |
+            ${ marriage.address.city + ", " + (marriage.address.county + " County, " if hasattr(marriage.address, "county") and marriage.address.county else "") + marriage.address.state }
         - parties_separated: ${ not marriage.living_together_yn }
         - separation_date: ${ marriage.living_together_stopped_date }
         - parties_live_together: ${ marriage.living_together_yn }
@@ -230,7 +231,7 @@ attachment:
         - marriage_debts_or_property_agreement: ${ marriage.personal_property_division_agreement or marriage.debts.agree_responsibility_debts_own_name or marriage.debts.agree_responsibility_debts_both_names }
         - no_spousal_support_needed: ${ (not user_wants_temporary_spousal_support) and (not user_wants_post_divorce_support) }
         - spousal_support_needed: ${ user_wants_temporary_spousal_support or user_wants_post_divorce_support }
-        - request_equitable_division:
+        # - request_equitable_division:
         - request_last_name_change: ${ users[0].new_last_name_yn }
         - new_last_name: ${ users[0].new_last_name }
         - signature_date: ${ signature_date if MLH_esign else "" }
@@ -266,7 +267,8 @@ attachment:
         - plaintiff_previous_name: ${users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name}
         - defendant_previous_name: ${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}
         - marriage_date: ${ marriage.date }
-        - marriage_location: ${ marriage.address.on_one_line() }
+        - marriage_location: |
+            ${ marriage.address.city + ", " + (marriage.address.county + " County, " if hasattr(marriage.address, "county") and marriage.address.county else "") + marriage.address.state }
         - parties_separated: ${ not marriage.living_together_yn }
         - separation_date: ${ marriage.living_together_stopped_date }
         - parties_live_together: ${ marriage.living_together_yn }
@@ -332,9 +334,20 @@ attachment:
             % if PT_type == "reasonable":
             Reasonable parenting time.
             % elif PT_type == "specific":
-            Specific parenting time.
+            % if specific_PT_how == "custom":
+            ${ custom_PT_details }
+            % elif specific_PT_how == "FOC_sample":
+            See attachment.
+            % endif
             % elif PT_type == "supervised":
-            Specific and supervised parenting time.
+            % if PT_supervisor != "":
+            Parenting time will be supervised by ${ PT_supervisor }.
+            % endif
+            % if specific_PT_how == "custom":
+            ${ custom_PT_details }
+            % elif specific_PT_how == "FOC_sample":
+            See attachment.
+            % endif
             % endif
         - parties_with_legal_custody__3: |
             % if legal_custody_who == "user":
@@ -358,7 +371,7 @@ attachment:
             % elif physical_custody_who == "both":
             The Plaintiff and Defendant
             % endif
-        - physical_custody_type__3: |
+        - physical_custody_type__2: |
             % if physical_custody_who == "both":
             joint
             % else:
