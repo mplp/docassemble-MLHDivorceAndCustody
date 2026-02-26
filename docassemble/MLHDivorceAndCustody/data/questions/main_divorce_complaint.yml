@@ -29,26 +29,9 @@ sections:
   - signpost_done: "Get Your Forms"
   - review_full: "✎ <u>Review / Edit</u>"
 ---
-code: |
-  cover_sheet_complete_1 += f" The following pages have the instructions and other helpful information."
----
-code: |
-  if there_are_marital_children:
-    resource_page_url_only = "https://michiganlegalhelp.org/node/1078"
-    resource_page_name = "Filing for Divorce with Children"
-    has_whats_next_text = False
-  else:
-    resource_page_url_only = "https://michiganlegalhelp.org/node/1077"
-    resource_page_name = "Filing for Divorce without Children"
-    has_whats_next_text = True
-    whats_next_text_message = "Text 1400 to (734) 275-2201 to get automated text messages about the next steps in a divorce case."
-
-  set_dynamic_instructions_variables = True
----
 # set static instructions variables
 # TODO need survey url
 code: |
-  cover_sheet_header = "Your divorce forms are ready. Well done!"
   survey_link_url_only = "https://www.surveymonkey.com/r/xxxxxx"
 ---
 code: |
@@ -149,6 +132,9 @@ code: |
 
   if not ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI) or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI)):
      exit_jurisdiction
+
+  if other_parties[0].address.country != "US":
+    international_service_warning
 
   other_parties[0].village_or_township_yn  
   other_parties[0].address.county # skipped if already asked on lives_in_Michigan screen

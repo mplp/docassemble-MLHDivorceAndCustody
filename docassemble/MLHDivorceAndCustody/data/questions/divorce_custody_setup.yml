@@ -70,6 +70,35 @@ code: |
   
   set_JOD_party_labels = True
 ---
+### divorce instructions variables
+# note: currently no JOD_only instructions, but using some of this in optional_download_message
+code: |
+  if there_are_marital_children:
+    resource_page_url_only = "https://michiganlegalhelp.org/node/1078"
+    resource_page_name = "Filing for Divorce with Children"
+    has_whats_next_text = False
+  else:
+    resource_page_url_only = "https://michiganlegalhelp.org/node/1077"
+    resource_page_name = "Filing for Divorce without Children"
+    has_whats_next_text = True
+    whats_next_text_message = "Text 1400 to (734) 275-2201 to get automated text messages about the next steps in a divorce case."
+
+  undefine("resource_page_link")
+
+  set_dynamic_instructions_variables = True
+---
+code: |
+  if tool_ID in ["divorce_complaint", "JOD_only", "divorce_answer"]:
+    cover_sheet_header = "Your divorce forms are ready. Well done!"
+  
+  if tool_ID == "divorce_complaint":
+    cover_sheet_complete_1 = f"Now that you have your { MLH_form_type }, use our instructions to learn about next steps. The following pages have instructions and other helpful information."
+  elif tool_ID == "JOD_only":
+    if user_ask_role == "plaintiff" or ((marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own) or (marriage.personal_property_need_items and len(marriage.accounts.filter(trigger_investment_reminder=True)) > 0) or (there_are_marital_children and len(children.filter(legal_parent="both").filter(revoke_paternity_reminder=True)) > 0) or (there_are_marital_children and not MI_has_jurisdiction_all_kids)):
+      cover_sheet_complete_1 = f"Now that you have your { MLH_form_type }, use our instructions to learn about next steps. Online instructions are linked below, and the following pages have other helpful information."
+    else:
+      cover_sheet_complete_1 = f"Now that you have your { MLH_form_type }, use our instructions to learn about next steps."
+---
 code:  |
   github_repo_name = 'docassemble-MLHDivorceAndCustody' if get_config('debug') else 'docassemble-UserFeedback'
 ---
