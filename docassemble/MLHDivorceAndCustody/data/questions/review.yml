@@ -1629,23 +1629,6 @@ review:
       ${ next_accordion("""<h2 class="h4">Your Divorce Case</h2>""") }
     show if: defined("county_choice") or defined ("venue")
   - Edit:
-      - county_choice
-      - court_index
-      - recompute:
-        - the_court
-        - the_foc
-    button: |
-      <h3 class="h5"> County where your divorce case is filed</h3>
-        - ${county_choice}
-      <h3 class="h5"> Court</h3>
-        - ${the_court}
-    show if: tool_ID == "JOD_only"
-  - Edit: docket_number
-    button: |
-      <h3 class="h5"> Case number</h3>
-        - ${docket_number}
-    show if: tool_ID == "JOD_only"
-  - Edit:
       - user_ask_role
       - recompute:
         - plaintiffs
@@ -1654,6 +1637,38 @@ review:
     button: |
       <h3 class="h5"> Are you the Plaintiff or the Defendant in this case?</h3>
         - ${user_ask_role.capitalize()}
+    show if: tool_ID == "JOD_only"
+  - Edit:
+      - county_choice
+      - court_index
+      - recompute:
+        - the_court
+        - the_foc
+      - invalidate:
+        - party_lived_6_months_MI
+        - party_ten_days_in_county
+        - jurisdiction_warning
+    button: |
+      <h3 class="h5"> County where your divorce case is filed</h3>
+        - ${county_choice}
+      <h3 class="h5"> Court</h3>
+        - ${the_court}
+    show if: tool_ID == "JOD_only"
+  - Edit:
+      - party_lived_6_months_MI
+      - invalidate:
+        - jurisdiction_warning
+    button: |
+      <h3 class="h5"> Time in Michigan and in ${county_choice} County</h3>
+        - You did ${word("not") if not party_lived_6_months_MI['user'] else ""} live in Michigan for 180 days before filing for divorce. You did ${word("not") if not party_ten_days_in_county['user'] else ""} live in ${county_choice} County for 10 days before filing for divorce.
+        - Your spouse did ${word("not") if not party_lived_6_months_MI['other_party'] else ""} live in Michigan for 180 days before filing for divorce. Your spouse did ${word("not") if not party_ten_days_in_county['other_party'] else ""} live in ${county_choice} County for 10 days before filing for divorce.
+      <h3 class="h5"> Court</h3>
+        - ${the_court}
+    show if: tool_ID == "JOD_only" and user_ask_role == "plaintiff"
+  - Edit: docket_number
+    button: |
+      <h3 class="h5"> Case number</h3>
+        - ${docket_number}
     show if: tool_ID == "JOD_only"
   - Edit:
       - venue
