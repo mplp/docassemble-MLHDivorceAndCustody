@@ -247,17 +247,15 @@ fields:
     choices:
       - Me: user
       - My spouse: other_party
-    none of the above: False
-    all of the above: |
-      Both of us
+    none of the above: |
+      Neither of us
   - Who lived in **${ county_choice } County for 10 days before you filed** for divorce?: party_ten_days_in_county
     datatype: checkboxes
     choices:
       - Me: user
       - My spouse: other_party
-    none of the above: False
-    all of the above: |
-      Both of us
+    none of the above: |
+      Neither of us
     js show if: |
       val("party_lived_6_months_MI['user']") || val("party_lived_6_months_MI['other_party']")
 ---
@@ -1222,6 +1220,31 @@ fields:
     show if:
       code: |
         len(current_venue_options) == 0
+validation code: |
+  if not (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI):
+    jurisdiction_party = other_parties[0] #OP logically must be the jurisdictional basis
+  elif not (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI):
+    jurisdiction_party = users[0] #user logically must be the jurisdictional basis
+  
+  elif users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI:
+  
+    # if parties don't share county, only one party can live in filing county
+    if users[0].address.county != other_parties[0].address.county:
+      if users[0].address.county == county_choice:
+        jurisdiction_party = users[0]
+      elif other_parties[0].address.county == county_choice:
+        jurisdiction_party = other_parties[0]
+      else: ## error state
+        jurisdiction_party = "unknown"
+  
+    #if both users live in the filing county
+    elif users[0].address.county == other_parties[0].address.county:
+      if users[0].ten_days_in_county: ## following LHI, choose user if they qualify
+        jurisdiction_party = users[0]
+      elif other_parties[0].ten_days_in_county:
+        jurisdiction_party = other_parties[0]
+      else: ## neither inititally met 10 day rule; unknown who met it by time of filing
+        jurisdiction_party = "unknown"
 ---
 if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 2 and not (there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case)
 id: venue (normal choice)
@@ -1251,6 +1274,13 @@ fields:
     datatype: yesno
     js show if: |
         val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && ${ json.dumps(other_parties[0].ten_days_in_county) } === false 
+validation code: |
+  if county_choice == users[0].address.county:
+    jurisdiction_party = users[0]
+  elif county_choice == other_parties[0].address.county:
+    jurisdiction_party = other_parties[0]
+  else: ## error state
+    jurisdiction_party = "unknown"
 ---
 if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options
 id: venue (weird separate maintenance choice)
@@ -1310,6 +1340,13 @@ fields:
     datatype: yesno
     js show if: |
         val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && ${ json.dumps(users[0].ten_days_in_county) } === false 
+validation code: |
+  if county_choice == users[0].address.county:
+    jurisdiction_party = users[0]
+  elif county_choice == other_parties[0].address.county:
+    jurisdiction_party = other_parties[0]
+  else: ## error state
+    jurisdiction_party = "unknown"
 ---
 if: tool_ID == "divorce_complaint"
 code: |
@@ -1346,29 +1383,8 @@ code: |
     #choice with warnings for any options that aren't already at 10 days
 
   check_for_required_venue = True
-# commented out lines above are there to help show full list of options for determining venue. They are accomplished via "Venue" question screens above.
+# commented out lines above are there to help show full list of options for determining venue. They are accomplished via "Venue" question screens above.  
 ---
-#code: |
-#  if only one party lives in Michigan or only one part 180 days in MI:
-#    choose them
-#  elif users users[0].lives_in_Michigan and 180 and other_parties[0].lives_in_Michigan and 180:
-#    # only one party lives in filing county
-#    if users[0].address.county != other_parties[0].address.county:
-#      if users[0].address.county == county_choice:
-#        jurisdiction_party = users[0]
-#      else:
-#        jurisdiction_party = other_parties[0]
-#    # both users live in the filing county
-#    elif users[0].address.county == other_parties[0].address.county:
-#      if users[0].ten_days_in_county:
-#        jurisdiction_party = users[0]
-#      elif other_parties[0].ten_days_in_county:
-#        jurisdiction_party = other_parties[0]
-#      else:
-#        jurisdiction_party = "unknown"
-#
-#  
-#---
 if: tool_ID == "divorce_complaint"
 id: separate maintenance case check logic
 code: |
