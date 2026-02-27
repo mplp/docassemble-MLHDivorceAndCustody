@@ -113,13 +113,17 @@ code: |
     if not marriage.have_experienced_domestic_violence_continue:
       exit_general
 
-  county_choice # TODO custom? "In what county was the divorce filed?"
+  user_ask_role
+  set_JOD_party_labels
+  county_choice
   court_index
   the_court
   the_foc
+  if user_ask_role == "plaintiff":
+    party_lived_6_months_MI
+    if not (party_lived_6_months_MI['user'] and party_ten_days_in_county['user']) and not (party_lived_6_months_MI['other_party'] and party_ten_days_in_county['other_party']):
+      jurisdiction_warning
   docket_number
-  user_ask_role
-  set_JOD_party_labels
 
   if marriage.have_pension_retirement:
     marriage.pension_retirement_accounts_keep_own
