@@ -4,12 +4,12 @@
 ---
 if: tool_ID == "JOD_only"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, foc_100_full, foc_10_full, uniform_spousal_support_order_foc10b, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle, record_of_divorce], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, except without the instructions]
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, default_request_mc07, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle, complaint_answer_attachment], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, default_request_mc07, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle, complaint_answer_attachment, record_of_divorce], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, except without the instructions]
 ---
 # ====================================================================
@@ -4741,6 +4741,130 @@ attachment:
     variable name: judgment_overflow_addendum[i]
     docx template file: judgment_overflow_addendum.docx
     skip undefined: True
+---
+# --------------------------------------------------------------------
+## Record of Divorce
+# --------------------------------------------------------------------
+---
+attachment:
+  - name: Record of Divorce or Annulment - DCH 0838
+    filename: Record of Divorce or Annulment - DCH 0838
+    variable name: record_of_divorce_dch0838[i]
+    pdf template file: record_of_divorce_dch_0838.pdf
+    skip undefined: True
+    editable: False
+    fields:
+      - docket_number: ${docket_number}
+      - trial_court_county: ${the_court.address.county}
+      - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
+      - plaintiffs0_birthdate: ${format_date(plaintiffs[0].birthdate, format='M/d/yyyy')}
+      - plaintiffs0_gender_male: ${plaintiffs[0].gender == "male"}
+      - plaintiffs0_gender_female: ${plaintiffs[0].gender == "female"}
+      - plaintiffs0_previous_last_name: ${plaintiffs[0].previous_last_name if plaintiffs[0].has_previous_name else ""}
+      - plaintiffs0_address_city: |
+          % if user_ask_role == "plaintiff" and confidential_contact_info_yn:
+          Confidential 
+          % else:
+          ${plaintiffs[0].address.city}
+          % endif
+      - plaintiffs0_county: |
+          % if user_ask_role == "plaintiff" and confidential_contact_info_yn:
+          ${""}
+          % else:
+          ${plaintiffs[0].address.county}
+          % endif
+      - plaintiffs0_state: |
+          % if user_ask_role == "plaintiff" and confidential_contact_info_yn:
+          ${""}
+          % else:
+          ${plaintiffs[0].address.state}
+          % endif
+      - plaintiffs0_birthplace: ${plaintiffs[0].birthplace}
+      - plaintiffs0_marriage_number: ${plaintiffs[0].marriage_number.capitalize()}
+      - defendants0_name_full: ${defendants[0].name_full()}
+      - defendants0_birthdate: ${format_date(defendants[0].birthdate, format='M/d/yyyy')}
+      - defendants0_gender_male: ${defendants[0].gender == "male"}
+      - defendants0_gender_female: ${defendants[0].gender == "female"}
+      - defendants0_previous_last_name: ${defendants[0].previous_last_name if defendants[0].has_previous_name else ""}
+      - defendants0_address_city: |
+          % if user_ask_role == "defendant" and confidential_contact_info_yn:
+          Confidential 
+          % else:
+          ${defendants[0].address.city}
+          % endif
+      - defendants0_county: |
+          % if user_ask_role == "defendant" and confidential_contact_info_yn:
+          ${""}
+          % else:
+          ${defendants[0].address.county}
+          % endif
+      - defendants0_state: |
+          % if user_ask_role == "defendant" and confidential_contact_info_yn:
+          ${""}
+          % else:
+          ${defendants[0].address.state}
+          % endif
+      - defendants0_birthplace: ${defendants[0].birthplace}
+      - defendants0_marriage_number: ${defendants[0].marriage_number.capitalize()}
+      - marriage_place_city: ${marriage.address.city}
+      - marriage_place_county: ${marriage.address.county}
+      - marriage_place_state: ${marriage.address.state}
+      - marriage_date: ${format_date(marriage.date, format='M/d/yyyy')}
+      - not_separated: ${marriage.living_together_yn}
+      - last_date_living_together: ${format_date(marriage.living_together_stopped_date, format='M/d/yyyy') if not marriage.living_together_yn else ""}
+      - has_no_minor_children0: ${not there_are_marital_children}
+      - number_of_children_in_home_when_separated: ${marriage.number_children_in_home_when_separated if there_are_marital_children else ""}
+      - plaintiffs0_attorney_name: |
+          % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not other_parties[0].has_attorney):
+          Self-represented
+          % elif other_parties[0].has_attorney:
+          ${other_parties[0].attorney.name_full()}
+          % endif
+      - plaintiffs0_attorney_bar_number: |
+          % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not other_parties[0].has_attorney):
+          ${""}
+          % elif other_parties[0].has_attorney:
+          ${other_parties[0].attorney.bar_number}
+          % endif
+      - plaintiffs0_attorney_address: |
+          % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not other_parties[0].has_attorney):
+          ${""}
+          % elif other_parties[0].has_attorney:
+          ${other_parties[0].attorney.address.address}
+          % endif
+      - plaintiffs0_attorney_city: |
+          % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not other_parties[0].has_attorney):
+          ${""}
+          % elif other_parties[0].has_attorney:
+          ${other_parties[0].attorney.address.city}
+          % endif
+      - plaintiffs0_attorney_state: |
+          % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not other_parties[0].has_attorney):
+          ${""}
+          % elif other_parties[0].has_attorney:
+          ${other_parties[0].attorney.address.state}
+          % endif
+      - plaintiffs0_attorney_zip: |
+          % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not other_parties[0].has_attorney):
+          ${""}
+          % elif other_parties[0].has_attorney:
+          ${other_parties[0].attorney.address.zip}
+          % endif
+      - is_divorce_or_annulment: |
+          Divorce
+      - has_no_minor_children1: ${not there_are_marital_children}
+---
+code: |
+  record_of_divorce_dch0838.enabled = tool_ID == "divorce_complaint" or tool_ID == "JOD_only"
+---
+code: |
+  record_of_divorce.enabled = record_of_divorce_dch0838.enabled
+---
+objects:
+  - record_of_divorce: ALDocumentBundle.using(elements=[record_of_divorce_dch0838], filename="Record of Divorce or Annulment - DCH 0838", title="Record of Divorce or Annulment - DCH 0838")
+---
+objects:
+  - record_of_divorce_dch0838: ALDocument.using(title="Record of Divorce or Annulment", filename="Record of Divorce or Annulment", has_addendum=False)
 ---
 ## judgment_ccmlh413 (with kids) ##
 # add commas and the word "and" plus split children names to two lines when over character count
