@@ -217,7 +217,7 @@ id: spousal support factors intro
 question: Asking for spousal support for after your divorce
 continue button field: spousal_support_factors_intro
 subquestion: |
-  The next pages will go through each of the 14 spousal support factors that the judge in your case will consider before making a spousal support decision. 
+  The next pages will go through each of the 14 spousal support factors that the judge in your case may consider before making a spousal support decision. 
   
   Read about each factor, including the help text, and consider if each factor applies to your need for spousal support or your spouse’s ability to pay. If it applies, include the facts in your case that relate to that factor. 
   
@@ -248,7 +248,7 @@ fields:
     required: False
     input type: area
   - note: ${ collapse_template(ss_factor_one_division_labor_help) }
-  - If it is relevant, describe your spouses's (${ OP_party_label }'s) wrongful behavior or actions that contributed to the breakdown of the marriage. If their actions impacted your ability to keep a job or advance in your career, include this.: ss_factor_one_fault
+  - If it is relevant, describe your spouse's (${ OP_party_label }'s) wrongful behavior or actions that contributed to the breakdown of the marriage. If their actions impacted your ability to keep a job or advance in your career, include this.: ss_factor_one_fault
     required: False
     input type: area
   - note: ${ collapse_template(ss_factor_one_fault_help) }

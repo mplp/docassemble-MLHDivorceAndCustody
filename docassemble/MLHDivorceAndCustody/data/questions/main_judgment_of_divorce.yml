@@ -200,6 +200,7 @@ code: |
   nav.set_section("signpost_property")
 
   marriage.marital_property_info
+  reiterate_marital_property
   interview_order_personal_property
   interview_order_vehicles
   marriage.real_property.gather()
