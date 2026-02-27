@@ -2290,8 +2290,9 @@ code: |
     if tool_ID == "divorce_complaint":
       if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
         users[0].ten_days_in_county
-    users[0].village_or_township_yn
-    users[0].address.county # skipped if answered on lives_in_Michigan screen
+    if users[0].address.country == "US":
+      users[0].village_or_township_yn
+      users[0].address.county # skipped if answered on lives_in_Michigan screen
     if users[0].mailing_address.yesno:
       users[0].mailing_address.address
   
