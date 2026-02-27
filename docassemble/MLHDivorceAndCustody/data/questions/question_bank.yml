@@ -1527,6 +1527,12 @@ content: |
   
   If you want to ask the judge to divide this kind of property, **consider talking to a lawyer.** ${ MLH_GUIDE_FULL }
 ---
+id: reiterate marital property
+question: "Next up: marital property"
+continue button field: reiterate_marital_property
+subquestion : |
+  The following questions are about {marital property}.
+---
 id: marriage.personal_property_info
 question: |
   Personal property
