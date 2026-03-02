@@ -1864,9 +1864,9 @@ id: marriage.debts.info
 question: |
   ${marriage.debts.question_text}
 subquestion: |
-  The judge assigned to your divorce case will not have any authority over your creditors (those whom you owe money). Your Judgment of Divorce may divide your marital debt, assigning you or your spouse responsibility for paying each debt. However, creditors may continue to treat debts in both of your names as joint debt. 
+  The judge assigned to your divorce case will not have any authority over your {creditors}. Your Judgment of Divorce may divide your marital debt, assigning you or your spouse responsibility for paying each debt. However, creditors may continue to treat debts in both of your names as joint debt. 
   
-  If your spouse defaults on a debt that the Judgment of Divorce requires them to pay, you can return to the family court to seek repayment from them. For that reason, it's **important for all debts that are in both of your names to be included** in your Judgment of Divorce.
+  If your spouse defaults on a debt that the Judgment of Divorce requires them to pay, you can return to the family court to seek repayment from them. For that reason, it's **important to include all debts that are in both of your names** in your Judgment of Divorce.
   
 continue button field: marriage.debts.info
 ---
