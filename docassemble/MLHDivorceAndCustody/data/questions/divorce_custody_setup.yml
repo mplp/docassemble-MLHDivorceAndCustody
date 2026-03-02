@@ -158,7 +158,7 @@ terms:
   - stayed: |
       Most cases are not stayed. A stay is a court ruling to stop or pause a court case. A court can lift the stay later and continue the case. Examples: 
       
-      * Sometimes when a party files an appeal, a judge may grant a motion for a stay. When this happens, it stops the effect of the lower court order while the appeal is going on. 
+      * Sometimes when someone files an appeal, a judge may grant a motion for a stay. When this happens, it stops the effect of the lower court order while the appeal is going on. 
       * Sometimes a stay happens without an appeal. For example, a bankruptcy case usually stays the division of marital property in a divorce case.
   - phrases:
       - separate property
@@ -192,6 +192,7 @@ terms:
   - phrases:
       - party
       - party's
+      - parties
     definition: |
       In a legal case, a "party" means one of the "sides" in the case. In a divorce, you and your spouse are each a "party".
 ---

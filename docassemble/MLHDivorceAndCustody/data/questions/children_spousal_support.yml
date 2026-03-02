@@ -166,7 +166,7 @@ id: spousal support intro
 continue button field: spousal_support_intro
 question: What is spousal support?
 subquestion: |
-  Spousal support (also called alimony) is money that one spouse pays to the other spouse during or after a divorce case. Spousal support can be short-term or long-term. It can be agreed on by the parties or a judge can order it. 
+  Spousal support (also called alimony) is money that one {spouse} pays to the other spouse during or after a divorce case. Spousal support can be short-term or long-term. It can be agreed on by the spouses or a judge can order it. 
 
   Spousal support is not a part of every divorce case. If you or your spouse asks the judge for spousal support and the other spouse does not agree, the judge will base their decision on many different factors. 
   
@@ -219,7 +219,7 @@ continue button field: spousal_support_factors_intro
 subquestion: |
   The next pages will go through each of the 14 spousal support factors that the judge in your case may consider before making a spousal support decision. 
   
-  Read about each factor, including the help text, and consider if each factor applies to your need for spousal support or your spouse’s ability to pay. If it applies, include the facts in your case that relate to that factor. 
+  Read about each factor, including the help text, and consider if each factor applies to your need for spousal support or your {spouse}’s ability to pay. If it applies, include the facts in your case that relate to that factor. 
   
   **It is ok if you don't have an answer for each factor. Not every factor applies in every case.** Some factors are similar to each other and will overlap. Note that the examples in the help text do not cover every possible situation.
 
@@ -231,11 +231,11 @@ template: ss_factor_tips
 subject: Tips for answering
 content: |
   * Type in complete sentences with capitalization and punctuation. 
-  * Call yourself "${ user_party_label }" and call your spouse “${ OP_party_label }.” Avoid using “I” and “my.” 
+  * Call yourself "${ user_party_label }" and call your {spouse} “${ OP_party_label }.” Avoid using “I” and “my.” 
   * If a question does not apply to you, leave it blank.
 ---
 id: spousal support factor 1
-question: "Factor 1: The past relations and conduct of the parties"
+question: "Factor 1: The past relations and conduct of the {parties}"
 subquestion: |
   This factor has two parts:
   
@@ -258,7 +258,7 @@ subject: What do you mean by "divided work inside and outside the home"?
 content: |
   This includes who worked outside the house and contributed financially versus who did the unpaid work of maintaining the home (and children, if you have them). 
   
-  If you both expected that ${ OP_party_label } would work and pay for everything or most things while you contributed in other ways (for example: cooking meals and cleaning, being the primary caregiver of the children), then include and explain this. For example: “During the marriage, the parties both expected that ${ user_party_label } would manage the home and be the primary caregiver for the children while ${ OP_party_label } provided for the family financially.”
+  If you both expected that ${ OP_party_label } would work and pay for everything or most things while you contributed in other ways (for example: cooking meals and cleaning, being the primary caregiver of the children), then include and explain this. For example: “During the marriage, the {parties} both expected that ${ user_party_label } would manage the home and be the primary caregiver for the children while ${ OP_party_label } provided for the family financially.”
 
   If your work taking care of your home and family helped enable your spouse to pursue their education or advance in their career, you can mention that.
 
@@ -335,7 +335,7 @@ content: |
   **Do not** include if ${ OP_party_label } has an illness, injury, or disability that limits their ability to work. Save that information for Factor 9 (the parties’ health).
 ---
 id: spousal support factor 4
-question: "Factor 4: The source and amount of property awarded to the parties"
+question: "Factor 4: The source and amount of property awarded to the {parties}"
 continue button field: ss_factor_four_property
 subquestion: |
   The judge will consider the division of property in the divorce in determining whether spousal support should also be ordered. You are not expected to include anything about this factor now since it is unlikely you have reached a property settlement before filing for divorce. 
@@ -343,7 +343,7 @@ subquestion: |
   But if you go to trial on the issue of spousal support, be aware that you should consider if this factor is relevant at that time.
 ---
 id: spousal support factor 5
-question: "Factor 5: The parties' ages"
+question: "Factor 5: The {parties}' ages"
 continue button field: ss_factor_five_ages
 subquestion: |
   This tool will pull your age and your spouse’s age from the birthdates you entered before.
@@ -372,7 +372,7 @@ content: |
   * In some cases the judge may also consider a person's other sources of income besides their wages or salary in deciding if they are able to pay spousal support. If your spouse's income from their job is not significant, but they have other sources of income, you can include that.
 ---
 id: spousal support factor 7
-question: "Factor 7: The parties' present situation"
+question: "Factor 7: The {parties}' present situation"
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -387,7 +387,7 @@ content: |
   In some cases a person may be awarded spousal support so they can continue caring for an adult child of the spouses who is disabled.
 ---
 id: spousal support factor 8
-question: "Factor 8: The needs of the parties"
+question: "Factor 8: The needs of the {parties}"
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -404,7 +404,7 @@ content: |
   If you are nearing typical retirement age and you didn’t work enough to qualify for Social Security retirement, and you are unlikely to find a job to get sufficient retirement benefits or to support yourself, you may need spousal support.
 ---
 id: spousal support factor 9
-question: "Factor 9: The parties' health"
+question: "Factor 9: The {parties}' health"
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -420,7 +420,7 @@ content: |
   * Is your health condition due to mistreatment or abuse by your spouse?
 ---
 id: spousal support factor 10
-question: "Factor 10: The prior standard of living of the parties and whether either is responsible for the support of others."
+question: "Factor 10: The prior standard of living of the {parties} and whether either is responsible for the support of others."
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -447,7 +447,7 @@ content: |
   If you are responsible for supporting someone else, such as your adult child with a disability, include that.
 ---
 id: spousal support factor 11
-question: "Factor 11: The contributions of the parties to the joint estate."
+question: "Factor 11: The contributions of the {parties} to the joint estate."
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -462,7 +462,7 @@ content: |
   If you were a homemaker and cooked, cleaned, paid bills, and cared for the children, include that. If you saved your family the cost of daycare because you were the full-time caregiver, you can include that. 
 ---
 id: spousal support factor 12
-question: "Factor 12: A {party’s} fault in causing the divorce."
+question: "Factor 12: A {party}’s fault in causing the divorce."
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -477,7 +477,7 @@ content: |
   For example, if your spouse told you they wanted a divorce and it came as a surprise to you, you may need spousal support to help navigate the unexpected change.
 ---
 id: spousal support factor 13
-question: "Factor 13: The effect of cohabitation on a party’s financial status."
+question: "Factor 13: The effect of cohabitation on a {party}’s financial status."
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -511,7 +511,7 @@ fields:
 template: ss_factor_fourteen_equity_help
 subject: What is an example of fairness in this context?
 content: |
-  In one Michigan Court of Appeals case, the Court emphasized that the parties had agreed the wife would stay at home during the 27-year marriage. The Court determined that spousal support was a fair way of repaying her for the lost opportunity of learning marketable skills.
+  In one Michigan Court of Appeals case, the Court emphasized that the {parties} had agreed the wife would stay at home during the 27-year marriage. The Court determined that spousal support was a fair way of repaying her for the lost opportunity of learning marketable skills.
 ---
 id: spousal support options if user does not want post-divorce spousal support
 if: not user_wants_post_divorce_support
@@ -576,7 +576,7 @@ subquestion: |
   But if you want to, you and ${ other_parties[0] } can agree that:
 
   * The spousal support order will be the final spousal support order, and
-  * Both parties will give up their right to ask the judge to change the spousal support order in the future.
+  * Both spouses will give up their right to ask the judge to change the spousal support order in the future.
 fields:
   - Have you and ${ other_parties[0] } agreed to both of those things?: spousal_support_is_immutable
     datatype: yesnoradio
@@ -690,7 +690,7 @@ template: minor_children_info
 subject: |
   More info about minor children and divorce
 content: |
-  If you and your spouse have any **minor children together**, your divorce must address custody, parenting time, and child support. 
+  If you and your {spouse} have any **minor children together**, your divorce must address custody, parenting time, and child support. 
 
   % if tool_ID in ["divorce_complaint", "divorce_answer"]:
   If you have any children together, **minor children of just one spouse** must also be listed in the divorce paperwork. However, the divorce will not cover their custody, parenting time, or child support.
@@ -730,7 +730,7 @@ question: |
   Any more children?
 subquestion: |
   % if tool_ID == "divorce_complaint":
-  Please list **all minor children** that you or your spouse have, either separately or together.
+  Please list **all minor children** that you or your {spouse} have, either separately or together.
   % elif tool_ID == "JOD_only":
   Please include:
 
@@ -821,7 +821,7 @@ template: children[i].gender_explanation
 subject: |
   How will this information be used?
 content: |
-  Children's sex, date of birth, and (for {marital children}) social security number are used on the *Verified Statement* form (FOC 23) and *Domestic Relations Judgment Information* form (FOC 100). These forms will **not** be publicly available. The Friend of the Court office and your spouse will have access to these forms.
+  Children's sex, date of birth, and (for {marital children}) social security number are used on the *Verified Statement* form (FOC 23) and *Domestic Relations Judgment Information* form (FOC 100). These forms will **not** be publicly available. The Friend of the Court office and your {spouse} will have access to these forms.
 
   Gender: FOC 23 only gives options of "F" for female or "M" for male. If you select "Nonbinary", we will put "NB", and a note that this stands for Nonbinary.
 
@@ -2076,7 +2076,7 @@ subquestion: |
   Use the buttons below to add or remove a child. 
   
   % if tool_ID == "divorce_complaint":
-  Please list **all minor children** that you or your spouse have, either separately or together.
+  Please list **all minor children** that you or your {spouse} have, either separately or together.
   % elif tool_ID == "JOD_only":
   Please include:
 
@@ -2580,7 +2580,7 @@ id: separate maintenance conversion notice
 continue button field: prior_family_cases[i].convert_separate_maintenance_notice
 question: You **might** be able to convert your separate maintenance to a divorce instead of filing a new divorce
 subquestion: |
-  If you have a prior judgment of separate maintenance, some courts allow the parties to sign an order converting the separate maintenance judgment to a judgment of divorce. 
+  If you have a prior judgment of separate maintenance, some courts allow the {parties} to sign an order converting the separate maintenance judgment to a judgment of divorce. 
   
   Not all courts allow this. Some courts require you to file a separate divorce case instead.
   
@@ -3950,7 +3950,7 @@ subject: |
 content: |
   Choosing this option can have a  different effect than specifically giving the tax deductions, credits, and exemptions to the parent who has the greater number of parenting time overnights based on the Judgment of Divorce. 
   
-  If the parties do not follow their Judgment of Divorce, and the parent who was supposed to have more overnights ends up having less than 50% of the overnights in one year, then this provision would allow the parent who **actually had over 50% of the overnights** to claim the tax credits, etc., **instead of the parent who was awarded more overnights.**)
+  If the {parties} do not follow their Judgment of Divorce, and the parent who was supposed to have more overnights ends up having less than 50% of the overnights in one year, then this provision would allow the parent who **actually had over 50% of the overnights** to claim the tax credits, etc., **instead of the parent who was awarded more overnights.**)
 ---
 id: specific child tax election
 question: Tax deductions, exemptions, and credits for ${ children[i] }

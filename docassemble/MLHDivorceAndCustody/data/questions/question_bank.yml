@@ -1468,7 +1468,7 @@ id: marriage.cobra_coverage
 question: |
   Health coverage
 subquestion: |
-  **COBRA**: After your divorce is final, one spouse may continue getting coverage under the other spouse's insurance through COBRA. Your Judgment of Divorce will include language about this. Typically, the spouse who gets continuing medical insurance through COBRA must pay for it. Insurance through COBRA may cost more than when that person was covered as a spouse. If the parties agree to something else, like having the other spouse pay for the COBRA coverage, that must be specifically added to the Judgment of Divorce. You can add this in the Other Provisions section. The Other Provisions section will be available at the end of this tool.
+  **COBRA**: After your divorce is final, one spouse may continue getting coverage under the other spouse's insurance through COBRA. Your Judgment of Divorce will include language about this. Typically, the spouse who gets continuing medical insurance through COBRA must pay for it. Insurance through COBRA may cost more than when that person was covered as a spouse. If the spouses agree to something else, like having the other spouse pay for the COBRA coverage, that must be specifically added to the Judgment of Divorce. You can add this in the Other Provisions section. The Other Provisions section will be available at the end of this tool.
 continue button field: marriage.cobra_coverage
 # --------------------------------------------------------------------
 ## marriage.personal_property_
