@@ -179,7 +179,7 @@ code: |
   default_request_mc07.enabled = (tool_ID in ["divorce_complaint"]) and (not spouse_is_in_military)
 ---
 code: |
-  complaint_answer_attachment.enabled = (tool_ID in ["divorce_complaint"]) and (user_wants_post_divorce_support)
+  complaint_answer_attachment.enabled = (tool_ID in ["divorce_complaint"]) and (user_wants_post_divorce_support or (PT_type != "reasonable" and specific_PT_how == "custom"))
 ---
 code: |
   complaint_no_children_cc_407.enabled = (tool_ID in ["divorce_complaint"]) and (not there_are_marital_children)
@@ -335,17 +335,17 @@ attachment:
             Reasonable parenting time.
             % elif PT_type == "specific":
             % if specific_PT_how == "custom":
-            ${ custom_PT_details }
+            See Attachment to Divorce Complaint.
             % elif specific_PT_how == "FOC_sample":
             Parenting time according to the ${ county_choice } County Friend of the Court parenting time schedule.
             % endif
             % elif PT_type == "supervised":
-            % if PT_supervisor != "":
-            Parenting time will be supervised by ${ PT_supervisor }.
-            % endif
             % if specific_PT_how == "custom":
-            ${ custom_PT_details }
+            See Attachment to Divorce Complaint.
             % elif specific_PT_how == "FOC_sample":
+            % if PT_supervisor != "":
+            Parenting time supervised by ${ PT_supervisor }.
+            % endif
             Parenting time according to the ${ county_choice } County Friend of the Court parenting time schedule.
             % endif
             % endif
