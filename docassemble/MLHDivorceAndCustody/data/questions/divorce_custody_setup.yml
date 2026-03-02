@@ -119,9 +119,9 @@ terms:
     definition: |
       This includes if: 
 
-      * you **or** your spouse **earned** it during the marriage (like a paycheck) 
-      * you **or** your spouse **bought** it during the marriage
-      * you **and** your spouse received it as a **gift** to **both of you**
+      * either spouse **earned** it during the marriage (like a paycheck),
+      * either spouse **bought** it during the marriage, or
+      * you and your spouse received it as a **gift to both of you.**
 
       You also got marital property if you or your spouse had separate property, and one of you actively worked during the marriage to **increase its value.**
   - phrases:
@@ -138,9 +138,13 @@ terms:
       A child is a minor if they are 17 years old or younger.
   - investments: |
       Stocks, bonds, Certificates of Deposit (CDs), mutual funds, Money Market Accounts, or other investments, not including pensions or retirement accounts.
-  - vehicles_make: |
+  - phrases:
+      - Make
+    definition: |
       Make refers to the name of the company that manufactured the vehicle. Examples of vehicle "makes" are Ford, General Motors, Chrysler, and Toyota.
-  - vehicles_model: |
+  - phrases:
+      - Model
+    definition: |
       Model refers to the type of car. Examples of "models" are Focus, Cutlass, Town and Country, and Highlander.
   - spouse: |
       Spouse is another word for "wife", "husband", or "person you're married to".
@@ -185,5 +189,10 @@ terms:
       - personal
     definition: |
       Personal property includes everything that is **not** real property. Some examples are bank accounts, books, clothes, furniture, jewelry, and mobile homes.
+  - phrases:
+      - party
+      - party's
+    definition: |
+      In a legal case, a "party" means one of the "sides" in the case. In a divorce, you and your spouse are each a "party".
 ---
 

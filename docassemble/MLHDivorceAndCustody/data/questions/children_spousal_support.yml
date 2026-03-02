@@ -187,7 +187,7 @@ subquestion: |
       * find a lawyer to help you, or 
       * file a motion for temporary spousal support on your own, after you file the forms to start the divorce case. ${ MLH_GUIDE_FULL }
       
-      To file a motion for temporary spousal support on your own, you can use the generic [Notice of Hearing and Motion](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf) form. In your motion, you will need to include facts showing that you need spousal support, and that the other party is able to pay. To learn more, read [Spousal Support (Alimony)](https://michiganlegalhelp.org/resources/family/spousal-support-alimony-nutshell). Also read [How to Fill Out, Serve, and File Court Forms](https://michiganlegalhelp.org/resources/going-court/how-fill-out-serve-and-file-court-forms). 
+      To file a motion for temporary spousal support on your own, you can use the generic [Notice of Hearing and Motion](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf) form. In your motion, you will need to include facts showing that you need spousal support, and that your spouse is able to pay. To learn more, read [Spousal Support (Alimony)](https://michiganlegalhelp.org/resources/family/spousal-support-alimony-nutshell). Also read [How to Fill Out, Serve, and File Court Forms](https://michiganlegalhelp.org/resources/going-court/how-fill-out-serve-and-file-court-forms). 
       
       You will need the generic [order form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc327.pdf) after the judge makes a decision on your motion. If the judge grants your request, you will also need the [Uniform Spousal Support Order](https://www.courts.michigan.gov/siteassets/forms/scao-approved/foc10b.pdf).
 ---
@@ -296,7 +296,7 @@ content: |
   But a spousal support award is most likely if one spouse in a **long-term marriage** does not have a career and will likely have a lower standard of living because of the divorce.
 ---
 id: spousal support factor 3
-question: "Factor 3: The ability of each party to work"
+question: "Factor 3: The ability of each {party} to work"
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -451,7 +451,7 @@ question: "Factor 11: The contributions of the parties to the joint estate."
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
-  - Explain what you and your spouse contributed to the marriage. Contributing is not just about earning money. The judge will consider what each party contributed in money, time, and energy to the home and the family.: ss_factor_eleven_contributions
+  - Explain what you and your spouse contributed to the marriage. Contributing is not just about earning money. The judge will consider what each spouse contributed in money, time, and energy to the home and the family.: ss_factor_eleven_contributions
     input type: area
     required: False
   - note: ${ collapse_template(ss_factor_eleven_contributions_help) }
@@ -462,7 +462,7 @@ content: |
   If you were a homemaker and cooked, cleaned, paid bills, and cared for the children, include that. If you saved your family the cost of daycare because you were the full-time caregiver, you can include that. 
 ---
 id: spousal support factor 12
-question: "Factor 12: A party’s fault in causing the divorce."
+question: "Factor 12: A {party’s} fault in causing the divorce."
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -2018,7 +2018,7 @@ fields:
   - note: |
       According to your answers, the minor child will have a legal residence with each parent, (meaning you and your spouse will be granted joint legal custody), and **the 100-mile rule will apply in your case.** 
       
-      Your Judgment of Divorce will state that “neither party shall move more than 100 miles away from where he or she lived at the beginning of this case, and the child has a legal residence with each parent. For more information, read [Moving with Children After Separation or Divorce](https://michiganlegalhelp.org/resources/family/moving-children-after-separation-or-divorce).
+      Your Judgment of Divorce will state that “neither {party} shall move more than 100 miles away from where he or she lived at the beginning of this case, and the child has a legal residence with each parent. For more information, read [Moving with Children After Separation or Divorce](https://michiganlegalhelp.org/resources/family/moving-children-after-separation-or-divorce).
     show if:
       variable: allow_over_100_miles
       is: False

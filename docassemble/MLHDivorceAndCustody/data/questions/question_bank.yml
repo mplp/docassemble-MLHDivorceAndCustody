@@ -1479,9 +1479,9 @@ question: Dividing Property
 subquestion : |
   In a divorce, **marital property** must be divided fairly. Marital property can include both {real property} and {personal property}. In general, something is marital property if:
 
-  * You got it during the marriage, or 
-  * Your spouse got it during the marriage, or
-  * Both of you got it during the marriage.   
+    * either spouse **earned** it during the marriage (like a paycheck),
+    * either spouse **bought** it during the marriage, or
+    * you and your spouse received it as a **gift to both of you.**
 
   ${ collapse_template(property_in_one_name) }
   
@@ -1516,8 +1516,8 @@ content: |
   Separate property includes both {real property} and {personal property} that is:
   
   * Property owned before the marriage
-  * A gift to one party during the marriage
-  * Property that one party inherits during the marriage
+  * A gift to one spouse during the marriage
+  * Property that one spouse inherits during the marriage
   * A passive increase in the value of separate property.
   
   **Usually the owner of the separate property keeps it.** But, in special circumstances, a judge might divide separate property. If you want the judge to award you some of your spouse's separate property, you have to prove either:
@@ -1552,13 +1552,12 @@ question: |
 subquestion: |
   You are now going to be asked about {marital} personal property. Personal property means all of the things you own other than {real property}. Personal property includes things like a mobile home, furniture, jewelry, household goods, and collectibles, as well as cash, stocks, and Certificates of Deposit (CDs). 
   
-  **Do not include vehicles** (such as cars, boats, trailers, motorcycles, or snowmobiles) in this section. You will be asked about vehicles in the next section of this tool.
+  **Do not include vehicles** (such as cars, boats, trailers, motorcycles, or snowmobiles) in this section. You will be asked about vehicles in the next section.
 
-  - If you and your spouse agree about how all of your property and debt should be divided, use those terms.
-  - If you and your spouse don't agree about how your property and debt should be divided, use the division of property and debt terms that you want the judge to order.
-  - If you and your spouse agree on how to divide some, but not all, of your property and debt, use the terms you do agree on, along with the terms that you want the judge to order for things you don't agree on.
+  When answering these questions:
 
-  Normally the party who is awarded specific property, such as a car or home, is responsible for paying the debt related to that property. If you or your spouse need to sign any documents to transfer property, such as car title transfers or quitclaim deeds, your Judgment of Divorce will require you to do this within 30 days of when the judgment is final.
+  * If you and your spouse **agree** on how something should be divided, use your agreed answer.
+  * If you and your spouse **don't agree** on something, use the division of property terms that you want the judge to order.
 continue button field: marriage.personal_property_info
 ---
 id: marriage.personal_property
@@ -1738,11 +1737,9 @@ fields:
   - label: Type of property
     field: marriage.other_pp[i].kind
     choices:
-      - Furniture/Furnishings
-      - Art Work
-      - Antiques
-      - Coin and Other Collections
+      - Furniture
       - Household Items
+      - Artwork or Photos
       - Other Personal Property
   - label: Describe the item
     field: marriage.other_pp[i].desc
@@ -2007,11 +2004,9 @@ id: marriage.vehicles.info
 question: |
   ${marriage.vehicles.question_text}
 subquestion: |
-  Next you will be asked about vehicles. Vehicles include cars, boats, trailers, motorcycles, snowmobiles, and other motorized equipment titled to the owner. Please do not include mobile homes here &mdash; to add a mobile home tap the **Review / Edit** link or use the ${MLH_back_button_label} button.
+  Next you will be asked about vehicles. Vehicles include cars, boats, trailers, motorcycles, snowmobiles, and other motorized equipment titled to the owner. Please do not include mobile homes here &mdash; to add a mobile home, tap **Review / Edit** or **${MLH_back_button_label}.**
 
-  You will be asked for the Make and Model of each vehicle you own. Make refers to the name of the company that manufactured the vehicle. Examples of vehicle "makes" are Ford, General Motors, Chrysler, and Toyota. Model refers to the type of vehicle. Examples of "models" are Focus, Cutlass, Town and Country, and Highlander. 
-  
-  If you are describing a vehicle other than a car, do your best to identify the vehicle using the Make and Model entries. For example, if you are listing a boat, you might say "Starcraft" for Make and "Starfish 226" for Model.
+  You will be asked for the {Make} and {Model} of each vehicle you own. If you are describing a vehicle other than a car, do your best to identify the vehicle using the Make and Model entries. For example, if you are listing a boat, you might say "Starcraft" for Make and "Starfish 226" for Model.
 continue button field: marriage.vehicles.info
 ---
 id: marriage.vehicles.any
@@ -2025,7 +2020,7 @@ fields:
     field: marriage.vehicles.keep_own
     input type: radio
     choices:
-      - label: Each party will keep the vehicle(s) now in his or her possession and titled in **only** his or her name. The party keeping the vehicle(s) is fully responsible to pay any debt related to the vehicle(s). The other party will have no claim to any vehicle(s) in the other's name and possession.
+      - label: Each spouse will keep the vehicle(s) now in their possession and titled in **only** their name. The spouse keeping the vehicle(s) is fully responsible to pay any debt related to the vehicle(s). The other spouse will have no claim to any vehicle(s) in the other's name and possession.
         value: True
       - label: We need to transfer title to one or more vehicles.
         value: False
@@ -2050,12 +2045,10 @@ fields:
     field: marriage.vehicles[i].year
     minlength: 4
     maxlength: 4
-  - label: |
-      {vehicles_make|Make}
+  - label: "{Make}"
     label above field: False
     field: marriage.vehicles[i].make
-  - label: |
-      {vehicles_model|Model}
+  - label: "{Model}"
     label above field: False
     field: marriage.vehicles[i].model
   - label: VIN
@@ -2141,16 +2134,30 @@ subquestion: |
   If you use this tool:
   
   * The person who is awarded a piece of real property (home, condo, or land) will also be made responsible for paying the mortgage, insurance, taxes, liens, and any other costs on the property. 
-  * Or if you and the other party are going to sell the property and share equally in the profit or loss from the sale, both of you will be responsible for the mortgage, insurance, taxes, liens, and any other costs on the property until it is sold. 
+  * Or if you and the other spouse are going to sell the property and share equally in the profit or loss from the sale, both of you will be responsible for the mortgage, insurance, taxes, liens, and any other costs on the property until it is sold. 
 
+  ${collapse_template(real_prop_other_options_info)}
+
+  ${collapse_template(refinancing_info)}
+
+  ${collapse_template(quitclaim_info)}
+---
+template: real_prop_other_options_info
+subject: What if I want something different?
+content: |
   These are common ways of assigning the rights and responsibilities of real property in a divorce—but not the only ways. If you don't agree with any of these terms for dividing the real property and the related debt, you should talk to a lawyer before finalizing your divorce. You may want to talk to a lawyer anyway to ensure the best possible outcome. ${ MLH_GUIDE_FULL }
   
-  Please review the articles [Divorce Basics: Dividing Your Property and Debt](https://michiganlegalhelp.org/resources/family/divorce-basics-dividing-your-property-and-debt) and [Real Estate and Divorce](https://michiganlegalhelp.org/resources/family/real-estate-and-divorce) for more information.
-
+  For more information, please read [Divorce Basics: Dividing Your Property and Debt](https://michiganlegalhelp.org/resources/family/divorce-basics-dividing-your-property-and-debt) and [Real Estate and Divorce](https://michiganlegalhelp.org/resources/family/real-estate-and-divorce).
+---
+template: refinancing_info
+subject: Refinancing
+content: |
   As part of the Judgment of Divorce, the person who is awarded the property may be ordered to refinance the home in his or her name alone. However, refinancing might not be possible if the property is worth less than the amount of the mortgage, if the person required to refinance has poor credit, or for other reasons.
-
-  The person who is not awarded the property may be required to complete a quitclaim deed giving the other spouse their share of the property.
-
+---
+template: quitclaim_info
+subject: Quitclaim deed
+content: |
+  You will need a new deed if both of your names are on the current deed or if the current deed is not in the name of the person keeping the property. To learn more, read [Quitclaim Deeds and Divorce](https://michiganlegalhelp.org/resources/family/quitclaim-deeds-and-divorce).
 ---
 id: marriage.real_property
 sets:
@@ -2349,7 +2356,7 @@ content: |
     - Driver's license number and state
     - Occupational license number(s), type(s), issuing state(s), and date(s)
 
-  INFORMATION ABOUT THE OTHER PARTY
+  INFORMATION ABOUT THE OTHER SPOUSE
 
     - All of the above information
 
@@ -2362,7 +2369,7 @@ content: |
     - Current primary residence address
     - Who has legal custody
 
-  INFORMATION ABOUT MEDICAL INSURANCE HELD BY EITHER PARTY
+  INFORMATION ABOUT MEDICAL INSURANCE HELD BY EITHER SPOUSE
 
     - Provider name and address
     - Policy / group number

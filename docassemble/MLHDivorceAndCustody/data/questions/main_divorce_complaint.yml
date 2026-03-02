@@ -54,8 +54,8 @@ content: |
 # set intro landing screen variables
 code: |
   MLH_form_type = "forms"
-  MLH_time_min = 20
-  MLH_time_max = 60
+  MLH_time_min = 40
+  MLH_time_max = 90
 ---
 template: MLH_welcome_message
 content: |
