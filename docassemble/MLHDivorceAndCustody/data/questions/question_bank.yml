@@ -79,7 +79,7 @@ id: x.there_are_any
 question: |
   ${x.question_text}
 fields:
-  - label: Do you have any ${x.noun_pl} that have **not** already been {divided}?
+  - label: Do you have any {marital} ${x.noun_pl} that have **not** already been {divided}?
     field: x.there_are_any
     datatype: yesnoradio
 ---
@@ -1482,6 +1482,8 @@ subquestion : |
   * You got it during the marriage, or 
   * Your spouse got it during the marriage, or
   * Both of you got it during the marriage.   
+
+  ${ collapse_template(property_in_one_name) }
   
   ${ collapse_template(other_marital_property_info) }
 
@@ -1491,6 +1493,12 @@ subquestion : |
 
   ${ collapse_template(separate_property_treated_marital) }
 continue button field: marriage.marital_property_info
+---
+template: property_in_one_name
+subject: |
+  What if the property is only in one spouse's name?
+content: |
+  Even if only one spouse's name is on a title or an account, the property is still marital property if it was bought, earned, or acquired during the marriage.
 ---
 template: other_marital_property_info
 subject: |
@@ -1531,16 +1539,23 @@ id: reiterate marital property
 question: "Next up: marital property"
 continue button field: reiterate_marital_property
 subquestion : |
-  The following questions are about {marital property}.
+  The following questions are about {marital property}. Marital property can include both:
+      
+  * real property (real estate: houses and land), and 
+  * personal property (everything else).
+
+  We'll ask about marital personal property first.
 ---
 id: marriage.personal_property_info
 question: |
   Personal property
 subquestion: |
-  You are now going to be asked about your personal property. Personal property means all of the things you own other than real property (real property is real estate such as a house, condo, or land). Personal property includes things like a mobile home, furniture, jewelry, household goods, and collectibles, as well as cash, stocks, and Certificates of Deposit (CDs). Do not include vehicles (such as cars, boats, trailers, motorcycles, or snowmobiles) in this section. You will be asked about vehicles in the next section of this tool.
+  You are now going to be asked about {marital} personal property. Personal property means all of the things you own other than {real property}. Personal property includes things like a mobile home, furniture, jewelry, household goods, and collectibles, as well as cash, stocks, and Certificates of Deposit (CDs). 
+  
+  **Do not include vehicles** (such as cars, boats, trailers, motorcycles, or snowmobiles) in this section. You will be asked about vehicles in the next section of this tool.
 
-  - If you and your spouse agree about how all of your property and debt should be divided, use those terms throughout this part of the tool.
-  - If you and your spouse don't agree about how your property and debt should be divided, complete this part of the tool using the division of property and debt terms that you want the judge to order.
+  - If you and your spouse agree about how all of your property and debt should be divided, use those terms.
+  - If you and your spouse don't agree about how your property and debt should be divided, use the division of property and debt terms that you want the judge to order.
   - If you and your spouse agree on how to divide some, but not all, of your property and debt, use the terms you do agree on, along with the terms that you want the judge to order for things you don't agree on.
 
   Normally the party who is awarded specific property, such as a car or home, is responsible for paying the debt related to that property. If you or your spouse need to sign any documents to transfer property, such as car title transfers or quitclaim deeds, your Judgment of Divorce will require you to do this within 30 days of when the judgment is final.
@@ -1549,8 +1564,10 @@ continue button field: marriage.personal_property_info
 id: marriage.personal_property
 question: |
   Personal property
+subquestion: |
+  **Please do not include vehicles.** You will be asked about vehicles on a separate page.
 fields:
-  - label: Did you and your spouse acquire personal property during the marriage?
+  - label: Did you and your spouse {get} any {personal property} during the marriage?
     field: marriage.personal_property_acquired
     datatype: yesnoradio
   - label: Have you and your spouse reached an agreement about how all personal property will be divided?
@@ -1667,7 +1684,7 @@ validation code: |
 ---
 template: marriage.accounts.there_is_another_template
 content: |
-  Please list each bank account and investment that has not been {divided}, and select how it should be awarded.
+  Please list each {marital} bank account and investment that has not been {divided}, and select how it should be awarded.
 ---
 template: stocks_mutual_funds_info
 subject: |
@@ -1742,17 +1759,17 @@ subquestion: |
 question: |
   ${marriage.other_pp.question_text}
 fields:
-  - label: Do you have any ${marriage.other_pp.noun_pl} that have **not** already been {divided}?
+  - label: Do you have any {marital} ${marriage.other_pp.noun_pl} that have **not** already been {divided}?
     field: marriage.other_pp.there_are_any
     datatype: yesnoradio
 ---
 template: marriage.other_pp.there_are_any_template
 content: |
-  Examples include furniture, household items, or artwork.
+  Examples include furniture, household items, or artwork. **Do not include vehicles** like cars or boats. We'll ask about them later.
 ---
 template: marriage.other_pp.there_is_another_template
 content: |
-  Please list each other item of personal property that has not been {divided} and indicate whether you or your spouse will keep it.
+  Please list each other item of {marital} personal property that has not been {divided} and indicate whether you or your spouse will keep it.
 ---
 # --------------------------------------------------------------------
 ## marriage.mobile_home
@@ -1804,7 +1821,7 @@ fields:
 ---
 template: marriage.mobile_home.there_is_another_template
 content: |
-  Please list each mobile home that has not been {divided}.
+  Please list each {marital} mobile home that has not been {divided}.
 ---
 # --------------------------------------------------------------------
 ## marriage.debts

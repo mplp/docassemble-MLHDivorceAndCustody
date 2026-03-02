@@ -115,6 +115,16 @@ terms:
       * Intracytoplasmic sperm injection
       * Assisted reproductive technology
   - phrases:
+      - get
+    definition: |
+      This includes if: 
+
+      * you **or** your spouse **earned** it during the marriage (like a paycheck) 
+      * you **or** your spouse **bought** it during the marriage
+      * you **and** your spouse received it as a **gift** to **both of you**
+
+      You also got marital property if you or your spouse had separate property, and one of you actively worked during the marriage to **increase its value.**
+  - phrases:
       - marital children
     definition: |
       Children who have both you and your spouse as their legal parents.
@@ -164,21 +174,16 @@ terms:
       * Your spouse got it during the marriage, or
       * Both of you got it together during the marriage.
       
-      Marital property includes both:
-      
-      * real property (real estate: houses and land), and 
-      * personal property (everything else).
-      
       If you or your spouse had separate property, and one of you actively worked during the marriage to increase its value, the **added value** is also marital property.
   - phrases:
       - real property
       - real
     definition: |
-      Real property is also called real estate, such as houses and land. It can be either marital or separate property.
+      Real property is also called real estate, such as houses and land.
   - phrases:
       - personal property
       - personal
     definition: |
-      Personal property includes everything that is **not** real property. Some examples are bank accounts, books, clothes, furniture, jewelry, cars, and mobile homes. It can be either marital or separate property.
+      Personal property includes everything that is **not** real property. Some examples are bank accounts, books, clothes, furniture, jewelry, and mobile homes.
 ---
 
