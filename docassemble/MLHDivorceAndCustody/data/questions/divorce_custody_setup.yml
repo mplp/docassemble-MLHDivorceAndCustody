@@ -115,6 +115,20 @@ terms:
       * Intracytoplasmic sperm injection
       * Assisted reproductive technology
   - phrases:
+      - creditors
+    definition: |
+      A person, business, or entity that you owe money to.
+  - phrases:
+      - get
+    definition: |
+      This includes if: 
+
+      * either spouse **earned** it during the marriage (like a paycheck),
+      * either spouse **bought** it during the marriage, or
+      * you and your spouse received it as a **gift to both of you.**
+
+      You also got marital property if you or your spouse had separate property, and one of you actively worked during the marriage to **increase its value.**
+  - phrases:
       - marital children
     definition: |
       Children who have both you and your spouse as their legal parents.
@@ -128,9 +142,13 @@ terms:
       A child is a minor if they are 17 years old or younger.
   - investments: |
       Stocks, bonds, Certificates of Deposit (CDs), mutual funds, Money Market Accounts, or other investments, not including pensions or retirement accounts.
-  - vehicles_make: |
+  - phrases:
+      - Make
+    definition: |
       Make refers to the name of the company that manufactured the vehicle. Examples of vehicle "makes" are Ford, General Motors, Chrysler, and Toyota.
-  - vehicles_model: |
+  - phrases:
+      - Model
+    definition: |
       Model refers to the type of car. Examples of "models" are Focus, Cutlass, Town and Country, and Highlander.
   - spouse: |
       Spouse is another word for "wife", "husband", or "person you're married to".
@@ -144,7 +162,7 @@ terms:
   - stayed: |
       Most cases are not stayed. A stay is a court ruling to stop or pause a court case. A court can lift the stay later and continue the case. Examples: 
       
-      * Sometimes when a party files an appeal, a judge may grant a motion for a stay. When this happens, it stops the effect of the lower court order while the appeal is going on. 
+      * Sometimes when someone files an appeal, a judge may grant a motion for a stay. When this happens, it stops the effect of the lower court order while the appeal is going on. 
       * Sometimes a stay happens without an appeal. For example, a bankruptcy case usually stays the division of marital property in a divorce case.
   - phrases:
       - separate property
@@ -162,18 +180,24 @@ terms:
 
       * You got it during the marriage, or 
       * Your spouse got it during the marriage, or
-      * Both of you got it together during the marriage.  
+      * Both of you got it together during the marriage.
       
-      This can include both real property (also called real estate, such as houses and land) and personal property (everything that is not real property).
+      If you or your spouse had separate property, and one of you actively worked during the marriage to increase its value, the **added value** is also marital property.
   - phrases:
       - real property
       - real
     definition: |
-      Real property is also called real estate, such as houses and land. It can be either marital or separate property.
+      Real property is also called real estate, such as houses and land.
   - phrases:
       - personal property
       - personal
     definition: |
-      Personal property includes everything that is **not** real property. Some examples are bank accounts, books, clothes, furniture, jewelry, cars, and mobile homes. It can be either marital or separate property.
+      Personal property includes everything that is **not** real property. Some examples are bank accounts, books, clothes, furniture, jewelry, and mobile homes.
+  - phrases:
+      - party
+      - party's
+      - parties
+    definition: |
+      In a legal case, a "party" means one of the "sides" in the case. In a divorce, you and your spouse are each a "party".
 ---
 
