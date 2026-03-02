@@ -160,8 +160,9 @@ code: |
   other_parties[0].birthplace
 
   interview_order_other_parties_address_info
-  other_parties[0].village_or_township_yn  
-  other_parties[0].address.county # skipped if already asked on lives_in_Michigan screen
+  if other_parties[0].address.country == "US":
+    other_parties[0].village_or_township_yn  
+    other_parties[0].address.county # skipped if already asked on lives_in_Michigan screen
   if other_parties[0].mailing_address.yesno:
     other_parties[0].mailing_address.address
   other_parties[0].no_phone_number
