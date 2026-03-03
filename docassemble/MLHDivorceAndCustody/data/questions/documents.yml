@@ -195,13 +195,13 @@ objects:
     - complaint_408_full: ALDocumentBundle.using(elements=[complaint_with_children_cc_408, complaint_answer_attachment], filename="Complaint for Divorce - CC 408", title="Complaint for Divorce - CC 408")
 ---
 code: |
-    complaint_407_full.enabled = (tool_ID in ["divorce_complaint"]) and (not there_are_marital_children)
+    complaint_407_full.enabled = tool_ID in ["divorce_complaint"] and (not there_are_marital_children)
     if complaint_407_full.enabled:
         complaint_no_children_cc_407.enabled = True
-        complaint_answer_attachment.enabled = tool_ID in ["divorce_complaint"] and user_wants_post_divorce_support
+        complaint_answer_attachment.enabled = user_wants_post_divorce_support
 ---
 code: |
-    complaint_408_full.enabled = (tool_ID in ["divorce_complaint"]) and there_are_marital_children
+    complaint_408_full.enabled = tool_ID in ["divorce_complaint"] and there_are_marital_children
     if complaint_408_full.enabled:
         complaint_with_children_cc_408.enabled = True
         complaint_answer_attachment.enabled = user_wants_post_divorce_support or ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom")
