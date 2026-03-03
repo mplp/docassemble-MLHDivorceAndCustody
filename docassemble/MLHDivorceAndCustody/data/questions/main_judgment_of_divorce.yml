@@ -29,7 +29,7 @@ sections:
 ---
 # TODO need survey url
 code: |
-  survey_link_url_only = "https://www.surveymonkey.com/r/xxxxxx"
+  survey_link_url_only = "https://www.surveymonkey.com/r/VSBQNT3"
 ---
 template: optional_download_message
 content: |
@@ -42,13 +42,14 @@ code: |
 template: survey_embed_script
 content: |
   <script>
+  (function(t,e,s,n){var o,a,c;t.SMCX=t.SMCX||[],e.getElementById(n)||(o=e.getElementsByTagName(s),a=o[o.length-1],c=e.createElement(s),c.type="text/javascript",c.async=!0,c.id=n,c.src="https://widget.surveymonkey.com/collect/website/js/tRaiETqnLgj758hTBazgd3klEhgaKMHlXfvlsGbv5FaYfLmgWJ2K2UosZbMxcMcu.js",a.parentNode.insertBefore(c,a))})(window,document,"script","smcx-sdk");
   </script>
 ---
 # set intro landing screen variables
 code: |
   MLH_form_type = "forms"
-  MLH_time_min = 15
-  MLH_time_max = 45
+  MLH_time_min = 30
+  MLH_time_max = 90
 
   # for JOD_only, there are no specific instructions
   MLH_instructions_included = False

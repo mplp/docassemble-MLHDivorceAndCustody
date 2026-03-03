@@ -2191,6 +2191,7 @@ attachment:
       - plaintiffs0_birthdate: ${format_date(plaintiffs[0].birthdate, format='M/d/yyyy')}
       - plaintiffs0_gender_male: ${plaintiffs[0].gender == "male"}
       - plaintiffs0_gender_female: ${plaintiffs[0].gender == "female"}
+      - plaintiffs0_gender_other: ${plaintiffs[0].gender == "nonbinary"}
       - plaintiffs0_previous_last_name: ${plaintiffs[0].previous_last_name if plaintiffs[0].has_previous_name else ""}
       - plaintiffs0_address_city: |
           % if user_ask_role == "plaintiff" and confidential_contact_info_yn:
@@ -2224,6 +2225,7 @@ attachment:
       - defendants0_birthdate: ${format_date(defendants[0].birthdate, format='M/d/yyyy')}
       - defendants0_gender_male: ${defendants[0].gender == "male"}
       - defendants0_gender_female: ${defendants[0].gender == "female"}
+      - defendants0_gender_other: ${defendants[0].gender == "nonbinary"}
       - defendants0_previous_last_name: ${defendants[0].previous_last_name if defendants[0].has_previous_name else ""}
       - defendants0_address_city: |
           % if user_ask_role == "defendant" and confidential_contact_info_yn:
@@ -2269,8 +2271,9 @@ attachment:
       - marriage_date: ${format_date(marriage.date, format='M/d/yyyy')}
       - not_separated: ${marriage.living_together_yn}
       - last_date_living_together: ${format_date(marriage.living_together_stopped_date, format='M/d/yyyy') if not marriage.living_together_yn else ""}
-      - has_no_minor_children0: ${not there_are_marital_children}
-      - number_of_children_in_home_when_separated: ${marriage.number_children_in_home_when_separated if there_are_marital_children else ""}
+        # if there are kids, and they're still together, LHI just uses the number of marital kids
+      - has_no_minor_children0: ${not there_are_marital_children or (not marriage.living_together_yn and marriage.number_children_in_home_when_separated == 0)}
+      - number_of_children_in_home_when_separated: ${marriage.number_children_in_home_when_separated if there_are_marital_children and not marriage.living_together_yn else len(children.filter(legal_parent="both"))}
       - plaintiffs0_attorney_name: |
           % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not other_parties[0].has_attorney):
           Self-represented
