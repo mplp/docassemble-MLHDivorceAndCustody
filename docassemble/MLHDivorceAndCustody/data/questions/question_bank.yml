@@ -2216,7 +2216,7 @@ fields:
       val("marriage.real_property[i].owner") === "users[0]" || val("marriage.real_property[i].owner") === "other_parties[0]"
 
   - note: |
-      **The person who is not keeping the property will need to sign a quitclaim deed giving his or her share of the property to the other person.**
+      The person who is not keeping the property will need to **sign a quitclaim deed** giving their share of the property to the other person.  The Judgment of Divorce will require you to do this **within 30 days** of when the judgment is final.
     js show if: |
       val("marriage.real_property[i].titled_together") === true
 
@@ -2227,7 +2227,7 @@ fields:
       val("marriage.real_property[i].titled_together") === false
 
   - note: |
-      **The person who is not keeping the property will need to sign a quitclaim deed giving his or her share of the property to the other person.**
+      The person who is not keeping the property will need to **sign a quitclaim deed** giving their share of the property to the other person.  The Judgment of Divorce will require you to do this **within 30 days** of when the judgment is final.
     js show if: |
       val("marriage.real_property[i].title_award_to_named") === false
 
