@@ -228,7 +228,7 @@ attachment:
         - parties_live_together: ${ marriage.living_together_yn }
         - no_marriage_debts_or_property: ${ not (marriage.personal_property_acquired or marriage.debts.any or marriage.real_property.there_are_any or marriage.vehicles.any or marriage.have_pension_retirement) }
         - marriage_debts_or_property_equitable: ${ (marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names))) or (marriage.real_property.there_are_any and len(marriage.real_property.filter(agree=False)) > 0) or (marriage.vehicles.any and not marriage.vehicles.keep_own and len(marriage.vehicles.filter(agree=False)) > 0) or (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own) }
-        - marriage_debts_or_property_agreement: ${ (marriage.personal_property_acquired or marriage.debts.any or marriage.real_property.there_are_any or marriage.vehicles.any or marriage.have_pension_retirement) and not ((marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or ((marriage.debts.any and (not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names))) or (marriage.real_property.there_are_any and len(marriage.real_property.filter(agree=False)) > 0) or (marriage.vehicles.any and not marriage.vehicles.keep_own and len(marriage.vehicles.filter(agree=False)) > 0) or (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own)) }
+        - marriage_debts_or_property_agreement: ${ (marriage.personal_property_acquired or marriage.debts.any or marriage.real_property.there_are_any or marriage.vehicles.any or marriage.have_pension_retirement) and not ((marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names))) or (marriage.real_property.there_are_any and len(marriage.real_property.filter(agree=False)) > 0) or (marriage.vehicles.any and not marriage.vehicles.keep_own and len(marriage.vehicles.filter(agree=False)) > 0) or (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own)) }
         - no_spousal_support_needed: ${ (not user_wants_temporary_spousal_support) and (not user_wants_post_divorce_support) }
         - spousal_support_needed: ${ user_wants_temporary_spousal_support or user_wants_post_divorce_support }
         - request_equitable_division: ${ (marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names))) or (marriage.real_property.there_are_any and len(marriage.real_property.filter(agree=False)) > 0) or (marriage.vehicles.any and not marriage.vehicles.keep_own and len(marriage.vehicles.filter(agree=False)) > 0) or (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own) }
@@ -331,6 +331,14 @@ attachment:
             both parties
             % endif
         - parenting_time_request: |
+            % if physical_custody_who != "both":
+            % if PT_who == "user":
+            Defendant will not have parenting time.
+            % elif PT_who == "other_party":
+            Plaintiff will not have parenting time.
+            % endif
+            % endif
+            % if physical_custody_who == "both" or PT_who == "both":
             % if PT_type == "reasonable":
             Reasonable parenting time.
             % elif PT_type == "specific":
@@ -347,6 +355,7 @@ attachment:
             Parenting time supervised by ${ PT_supervisor }.
             % endif
             Parenting time according to the ${ county_choice } County Friend of the Court parenting time schedule.
+            % endif
             % endif
             % endif
         - parties_with_legal_custody__3: |
@@ -379,7 +388,7 @@ attachment:
             % endif
         - no_marriage_debts_or_property: ${ not (marriage.personal_property_acquired or marriage.debts.any or marriage.real_property.there_are_any or marriage.vehicles.any or marriage.have_pension_retirement) }
         - marriage_debts_or_property_equitable: ${ (marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names))) or (marriage.real_property.there_are_any and len(marriage.real_property.filter(agree=False)) > 0) or (marriage.vehicles.any and not marriage.vehicles.keep_own and len(marriage.vehicles.filter(agree=False)) > 0) or (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own) }
-        - marriage_debts_or_property_agreement: ${ (marriage.personal_property_acquired or marriage.debts.any or marriage.real_property.there_are_any or marriage.vehicles.any or marriage.have_pension_retirement) and not ((marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or ((marriage.debts.any and (not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names))) or (marriage.real_property.there_are_any and len(marriage.real_property.filter(agree=False)) > 0) or (marriage.vehicles.any and not marriage.vehicles.keep_own and len(marriage.vehicles.filter(agree=False)) > 0) or (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own)) }
+        - marriage_debts_or_property_agreement: ${ (marriage.personal_property_acquired or marriage.debts.any or marriage.real_property.there_are_any or marriage.vehicles.any or marriage.have_pension_retirement) and not ((marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names))) or (marriage.real_property.there_are_any and len(marriage.real_property.filter(agree=False)) > 0) or (marriage.vehicles.any and not marriage.vehicles.keep_own and len(marriage.vehicles.filter(agree=False)) > 0) or (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own)) }
         - no_spousal_support_needed: ${ (not user_wants_temporary_spousal_support) and (not user_wants_post_divorce_support) }
         - spousal_support_needed: ${ user_wants_temporary_spousal_support or user_wants_post_divorce_support }
         - request_equitable_division: ${ (marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names))) or (marriage.real_property.there_are_any and len(marriage.real_property.filter(agree=False)) > 0) or (marriage.vehicles.any and not marriage.vehicles.keep_own and len(marriage.vehicles.filter(agree=False)) > 0) or (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own) }
