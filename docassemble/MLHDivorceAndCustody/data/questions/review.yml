@@ -1113,6 +1113,7 @@ review:
         - Muskegon_specific_PT_info
         - specific_PT_how
         - hague_convention_info
+        - custom_PT_details
       - recompute:
         - interview_order_children
     button: |

@@ -9,7 +9,7 @@ objects:
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, record_of_divorce, default_request_mc07, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle, complaint_answer_attachment], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, complaint_407_full, complaint_408_full, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, record_of_divorce, default_request_mc07, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
   # - al_court_bundle: [will be same as above, except without the instructions]
 ---
 # ====================================================================
@@ -77,7 +77,7 @@ code: |
 # this gets triggered by the enabling logic because it's the first possible condition
 code: |
   insurance_in_addendum = False
-  
+
   if there_are_marital_children and (users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any):
     for policy in users[0].insurance:
       if policy.covers_child.any_true() == True:
@@ -85,7 +85,7 @@ code: |
     for policy in other_parties[0].insurance:
       if policy.covers_child.any_true() == True:
         insurance_in_addendum = True
-  
+
   check_for_insured_children = True
 ---
 # not in JOD_only bundle
@@ -137,14 +137,14 @@ code: |
   judgment_ccmlh413.enabled = there_are_marital_children
   judgment_ccmlh412.enabled = not there_are_marital_children
 ---
-# enabling logic for judgment addenda bundle 
+# enabling logic for judgment addenda bundle
 code: |
   judgment_addendum_personal_property_and_debt.enabled = debts_in_addendum(marriage) or personal_property_in_addendum(marriage)
 
   judgment_addendum_vehicles_1_to_4.enabled = has_vehicle_addendum(marriage)
   judgment_addendum_vehicles_5_to_8.enabled = has_vehicle_addendum(marriage) and len(marriage.vehicles) > 4
   judgment_addendum_vehicles_9_to_12.enabled = has_vehicle_addendum(marriage) and len(marriage.vehicles) > 8
-  
+
   judgment_addendum_real_property_1_to_2.enabled = bool(marriage.real_property)
   judgment_addendum_real_property_3_to_4.enabled = bool(marriage.real_property) and len(marriage.real_property) > 2
   judgment_addendum_real_property_5_to_6.enabled = bool(marriage.real_property) and len(marriage.real_property) > 4
@@ -160,15 +160,15 @@ code: |
 # enabling logic for JOD_only addenda overflow fields (personal property and debts, real property legal description, and other provisions)
 code: |
   judgment_overflow_addendum.enabled = False
-  
+
   if send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum:
     judgment_overflow_addendum.enabled = True
-  
+
   elif marriage.real_property:
     for property in marriage.real_property:
       if len(property.desc) > 123:
         judgment_overflow_addendum.enabled = True
-  
+
   elif marriage.other_provisions_any and len(marriage.other_provisions) > 240:
     judgment_overflow_addendum.enabled = True
 ---
@@ -178,9 +178,6 @@ code: |
 code: |
   default_request_mc07.enabled = (tool_ID in ["divorce_complaint"]) and (not spouse_is_in_military)
 ---
-code: |
-  complaint_answer_attachment.enabled = (tool_ID in ["divorce_complaint"]) and (user_wants_post_divorce_support)
----
 # ====================================================================
 ## specific form objects and attachment blocks
 # ====================================================================
@@ -188,6 +185,265 @@ code: |
 # --------------------------------------------------------------------
 ## Example form title or category here
 # --------------------------------------------------------------------
+---
+# --------------------------------------------------------------------
+## Complaint for Divorce, CC 407/408 and Attachments
+# --------------------------------------------------------------------
+---
+objects:
+    - complaint_407_full: ALDocumentBundle.using(elements=[complaint_no_children_cc_407, complaint_answer_attachment], filename="Complaint for Divorce - CC 407", title="Complaint for Divorce - CC 407")
+    - complaint_408_full: ALDocumentBundle.using(elements=[complaint_with_children_cc_408, complaint_answer_attachment], filename="Complaint for Divorce - CC 408", title="Complaint for Divorce - CC 408")
+---
+code: |
+    complaint_407_full.enabled = tool_ID in ["divorce_complaint"] and (not there_are_marital_children)
+    if complaint_407_full.enabled:
+        complaint_no_children_cc_407.enabled = True
+        complaint_answer_attachment.enabled = user_wants_post_divorce_support
+---
+code: |
+    complaint_408_full.enabled = tool_ID in ["divorce_complaint"] and there_are_marital_children
+    if complaint_408_full.enabled:
+        complaint_with_children_cc_408.enabled = True
+        complaint_answer_attachment.enabled = user_wants_post_divorce_support or ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom")
+---
+# --------------------------------------------------------------------
+## Complaint for Divorce, CC 407
+# --------------------------------------------------------------------
+---
+objects:
+  - complaint_no_children_cc_407: ALDocument.using(title="Complaint for Divorce - CC 407", filename="Complaint for Divorce - CC 407", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
+attachment:
+  - name: Complaint for Divorce - CC 407
+    filename: Complaint for Divorce - CC 407
+    variable name: complaint_no_children_cc_407[i]
+    pdf template file: complaint_no_children_cc_407.pdf
+    skip undefined: True
+    editable: False
+    fields:
+      - trial_court: ${ the_court.number }
+      - trial_court_county: ${ the_court.address.county.upper() }
+      - case_number: ${ docket_number }
+      - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+      - trial_court_phone_number: ${ the_court.phone }
+      - plaintiff: ${ plaintiffs[0].name_full() }
+      - defendant: ${ defendants[0].name_full() }
+      - plaintiff_previous_name: |
+          % if users[0].has_previous_name:
+          ${ users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name }
+          % else:
+          ${ users[0].name_full() }
+          % endif
+      - defendant_previous_name: |
+          % if other_parties[0].has_previous_name:
+          ${ other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name }
+          % else:
+          ${ other_parties[0].name_full() }
+          % endif
+      - marriage_date: ${ marriage.date }
+      - marriage_location: |
+          ${ marriage.address.city + ", " + (marriage.address.county + " County, " if marriage.address.country == "US" and hasattr(marriage.address, "county") and marriage.address.county else "") + (state_name(marriage.address.state) if marriage.address.country == "US" else country_name(marriage.address.country)) }
+      - parties_separated: ${ not marriage.living_together_yn }
+      - separation_date: ${ marriage.living_together_stopped_date if not marriage.living_together_yn else "" }
+      - parties_live_together: ${ marriage.living_together_yn }
+      - no_marriage_debts_or_property: ${ not (marriage.personal_property_acquired or marriage.debts.any or marriage.real_property.there_are_any or marriage.vehicles.any or marriage.have_pension_retirement) }
+      - marriage_debts_or_property_equitable: ${ (marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names))) or (marriage.real_property.there_are_any and len(marriage.real_property.filter(agree=False)) > 0) or (marriage.vehicles.any and not marriage.vehicles.keep_own and len(marriage.vehicles.filter(agree=False)) > 0) or (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own) }
+      - marriage_debts_or_property_agreement: ${ (marriage.personal_property_acquired or marriage.debts.any or marriage.real_property.there_are_any or marriage.vehicles.any or marriage.have_pension_retirement) and not ((marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names))) or (marriage.real_property.there_are_any and len(marriage.real_property.filter(agree=False)) > 0) or (marriage.vehicles.any and not marriage.vehicles.keep_own and len(marriage.vehicles.filter(agree=False)) > 0) or (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own)) }
+      - no_spousal_support_needed: ${ not user_wants_post_divorce_support }
+      - spousal_support_needed: ${ user_wants_post_divorce_support }
+      - request_equitable_division: ${ (marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names))) or (marriage.real_property.there_are_any and len(marriage.real_property.filter(agree=False)) > 0) or (marriage.vehicles.any and not marriage.vehicles.keep_own and len(marriage.vehicles.filter(agree=False)) > 0) or (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own) }
+      - request_last_name_change: ${ users[0].new_last_name_yn }
+      - new_last_name: ${ users[0].new_last_name }
+      - signature_date: ${ signature_date if MLH_esign and MLH_esign_supported else "" }
+      - plaintiff_signature: |
+          % if MLH_esign:
+          /s/ ${ users[0].name_full() }
+          % else:
+          ${ '' }
+          % endif
+      - pursuant_to: |
+          % if MLH_esign:
+          ${ MLH_esign_tag }
+          % else:
+          ${ '' }
+          % endif
+---
+# --------------------------------------------------------------------
+## Complaint for Divorce, CC 408
+# --------------------------------------------------------------------
+---
+objects:
+  - complaint_with_children_cc_408: ALDocument.using(title="Complaint for Divorce - CC 408", filename="Complaint for Divorce - CC 408", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
+attachment:
+  - name: Complaint for Divorce - CC 408
+    filename: Complaint for Divorce - CC 408
+    variable name: complaint_with_children_cc_408[i]
+    pdf template file: complaint_with_children_cc_408.pdf
+    skip undefined: True
+    editable: False
+    fields:
+      - trial_court: ${ the_court.number }
+      - trial_court_county: ${ the_court.address.county.upper() }
+      - case_number__1: ${ docket_number }
+      - case_number__2: ${ docket_number }
+      - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+      - trial_court_phone_number: ${ the_court.phone }
+      - plaintiff: ${ plaintiffs[0].name_full() }
+      - defendant: ${ defendants[0].name_full() }
+      - plaintiff_previous_name: |
+          % if users[0].has_previous_name:
+          ${ users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name }
+          % else:
+          ${ users[0].name_full() }
+          % endif
+      - defendant_previous_name: |
+          % if other_parties[0].has_previous_name:
+          ${ other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name }
+          % else:
+          ${ other_parties[0].name_full() }
+          % endif
+      - marriage_date: ${ marriage.date }
+      - marriage_location: |
+          ${ marriage.address.city + ", " + (marriage.address.county + " County, " if marriage.address.country == "US" and hasattr(marriage.address, "county") and marriage.address.county else "") + (state_name(marriage.address.state) if marriage.address.country == "US" else country_name(marriage.address.country)) }
+      - parties_separated: ${ not marriage.living_together_yn }
+      - separation_date: ${ marriage.living_together_stopped_date if not marriage.living_together_yn else "" }
+      - parties_live_together: ${ marriage.living_together_yn }
+      - plaintiff_pregnant: ${ users[0].pregnant }
+      - defendant_pregnant: ${ other_parties[0].pregnant }
+      - no_party_pregnant: ${ (not users[0].pregnant) and (not other_parties[0].pregnant) }
+      - marital_children_names_ages: |
+          ${ comma_and_list([child.name.full() + ", age " + str(child.age_in_years()) for child in children if child.legal_parent == "both"]) + "." if any(child.legal_parent == "both" for child in children) else "" }
+          ${ "I intend to file a Motion to Determine Child Born Out of Wedlock with regard to " + comma_and_list([child.name.full() for child in children if child.legal_parent == "both" and child.revoke_paternity_reminder]) + "." if any(child.legal_parent == "both" and child.revoke_paternity_reminder for child in children) else "" }
+      - parties_with_legal_custody__1: |
+          % if legal_custody_who == "user":
+          Plaintiff
+          % elif legal_custody_who == "other_party":
+          Defendant
+          % elif legal_custody_who == "both":
+          Both Parties
+          % endif
+      - parties_with_legal_custody__2: |
+          % if legal_custody_who == "user":
+          Plaintiff
+          % elif legal_custody_who == "other_party":
+          Defendant
+          % elif legal_custody_who == "both":
+          both parties
+          % endif
+      - legal_custody_type__1: |
+          % if legal_custody_who == "both":
+          joint
+          % else:
+          sole
+          % endif
+      - parties_with_physical_custody__1: |
+          % if physical_custody_who == "user":
+          Plaintiff
+          % elif physical_custody_who == "other_party":
+          Defendant
+          % elif physical_custody_who == "both":
+          Both parties
+          % endif
+      - parties_with_physical_custody__2: |
+          % if physical_custody_who == "user":
+          Plaintiff
+          % elif physical_custody_who == "other_party":
+          Defendant
+          % elif physical_custody_who == "both":
+          both parties
+          % endif
+      - physical_custody_type__1: |
+          % if physical_custody_who == "both":
+          joint
+          % else:
+          sole
+          % endif
+      - parties_with_parenting_time: |
+          % if PT_who == "user":
+          Plaintiff
+          % elif PT_who == "other_party":
+          Defendant
+          % elif PT_who == "both":
+          both parties
+          % endif
+      - parenting_time_request: |
+          % if physical_custody_who != "both":
+          % if PT_who == "user":
+          Defendant will not have parenting time.
+          % elif PT_who == "other_party":
+          Plaintiff will not have parenting time.
+          % endif
+          % endif
+          % if physical_custody_who == "both" or PT_who == "both":
+          % if PT_type == "reasonable":
+          Reasonable parenting time on dates and times agreed to by the parties.
+          % elif PT_type == "specific":
+          % if specific_PT_how == "custom":
+          See Attachment to Divorce Complaint.
+          % elif specific_PT_how == "FOC_sample":
+          Parenting time according to the ${ county_choice } County Friend of the Court parenting time schedule.
+          % endif
+          % elif PT_type == "supervised":
+          % if specific_PT_how == "custom":
+          See Attachment to Divorce Complaint.
+          % elif specific_PT_how == "FOC_sample":
+          % if PT_supervisor != "":
+          Parenting time supervised by ${ PT_supervisor }.
+          % endif
+          Parenting time according to the ${ county_choice } County Friend of the Court parenting time schedule.
+          % endif
+          % endif
+          % endif
+      - parties_with_legal_custody__3: |
+          % if legal_custody_who == "user":
+          Plaintiff
+          % elif legal_custody_who == "other_party":
+          Defendant
+          % elif legal_custody_who == "both":
+          Both parties
+          % endif
+      - legal_custody_type__2: |
+          % if legal_custody_who == "both":
+          joint
+          % else:
+          sole
+          % endif
+      - parties_with_physical_custody__3: |
+          % if physical_custody_who == "user":
+          Plaintiff
+          % elif physical_custody_who == "other_party":
+          Defendant
+          % elif physical_custody_who == "both":
+          Both parties
+          % endif
+      - physical_custody_type__2: |
+          % if physical_custody_who == "both":
+          joint
+          % else:
+          sole
+          % endif
+      - no_marriage_debts_or_property: ${ not (marriage.personal_property_acquired or marriage.debts.any or marriage.real_property.there_are_any or marriage.vehicles.any or marriage.have_pension_retirement) }
+      - marriage_debts_or_property_equitable: ${ (marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names))) or (marriage.real_property.there_are_any and len(marriage.real_property.filter(agree=False)) > 0) or (marriage.vehicles.any and not marriage.vehicles.keep_own and len(marriage.vehicles.filter(agree=False)) > 0) or (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own) }
+      - marriage_debts_or_property_agreement: ${ (marriage.personal_property_acquired or marriage.debts.any or marriage.real_property.there_are_any or marriage.vehicles.any or marriage.have_pension_retirement) and not ((marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names))) or (marriage.real_property.there_are_any and len(marriage.real_property.filter(agree=False)) > 0) or (marriage.vehicles.any and not marriage.vehicles.keep_own and len(marriage.vehicles.filter(agree=False)) > 0) or (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own)) }
+      - no_spousal_support_needed: ${ not user_wants_post_divorce_support }
+      - spousal_support_needed: ${ user_wants_post_divorce_support }
+      - request_equitable_division: ${ (marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names))) or (marriage.real_property.there_are_any and len(marriage.real_property.filter(agree=False)) > 0) or (marriage.vehicles.any and not marriage.vehicles.keep_own and len(marriage.vehicles.filter(agree=False)) > 0) or (marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own) }
+      - request_last_name_change: ${ users[0].new_last_name_yn }
+      - new_last_name: ${ users[0].new_last_name }
+      - signature_date: ${ signature_date if MLH_esign and MLH_esign_supported else "" }
+      - plaintiff_signature: |
+          % if MLH_esign:
+          /s/ ${ users[0].name_full() }
+          % else:
+          ${ '' }
+          % endif
+      - pursuant_to: |
+          % if MLH_esign:
+          ${ MLH_esign_tag }
+          % else:
+          ${ '' }
+          % endif
 ---
 # --------------------------------------------------------------------
 ## Cover Sheet with dynamic instructions inclusion
@@ -205,7 +461,7 @@ attachments:
     valid formats:
       - pdf
 ---
-#
+# --------------------------------------------------------------------
 ## Summons, MC 01
 # --------------------------------------------------------------------
 ---
@@ -220,44 +476,44 @@ attachment:
     skip undefined: True
     editable: False
     fields:
-        - trial_court: ${ the_court.number }
-        - trial_court_county: ${ the_court.address.county.upper() }
-        - case_number_1: ${ docket_number }
-        - case_number_2: ${ docket_number }
-        - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
-        - trial_court_phone_number: ${ the_court.phone }
-        - plaintiff_block: |
-            ${ plaintiffs[0].name_full() }
-            ${ plaintiffs[0].address.line_one() }
-            ${ plaintiffs[0].address.line_two() }
-            ${ word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
-        - defendant_block: |
-            ${ defendants[0].name_full() }
-            ${ defendants[0].address.line_one() }
-            ${ defendants[0].address.line_two() }
-            ${ word("Unkonwn phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
-        - plaintiffs_attorney_block: |
-            Self-represented
-        - no_pending_cases: ${ not prior_family_cases.there_are_any }
-        - pending_cases: ${ prior_family_cases.there_are_any }
-        - no_other_action: ${ not has_prior_civil_cases }
-        - other_action: ${ has_prior_civil_cases }
-        - other_action_this_court: ${ True if has_prior_civil_cases and not prior_civil_case_filed_outside_MI and the_court.address.county == prior_civil_case_county and MI_court_type == "Circuit" else False }
-        - other_action_other_court: ${ False if not has_prior_civil_cases or (not prior_civil_case_filed_outside_MI and the_court.address.county == prior_civil_case_county and MI_court_type == "Circuit") else True }
-        - other_action_court_name: |
-            % if has_prior_civil_cases:
-            % if prior_civil_case_filed_outside_MI:
-            ${ prior_civil_case_non_MI_court }
-            % elif the_court.address.county == prior_civil_case_county and MI_court_type == "Circuit":
-            
-            % else:
-            ${prior_civil_case_county} County ${MI_court_type}
-            % endif
-            % endif
-        - other_action_case_number: ${ prior_civil_case_number if has_prior_civil_cases else "" }
-        - other_action_judge: ${ prior_civil_case_judge if has_prior_civil_cases else "" }
-        - other_action_pending: ${ has_prior_civil_cases and prior_civil_case_is_pending }
-        - other_action_not_pending: ${ has_prior_civil_cases and not prior_civil_case_is_pending } 
+      - trial_court: ${ the_court.number }
+      - trial_court_county: ${ the_court.address.county.upper() }
+      - case_number_1: ${ docket_number }
+      - case_number_2: ${ docket_number }
+      - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+      - trial_court_phone_number: ${ the_court.phone }
+      - plaintiff_block: |
+          ${ plaintiffs[0].name_full() }
+          ${ plaintiffs[0].address.line_one() }
+          ${ plaintiffs[0].address.line_two() }
+          ${ word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
+      - defendant_block: |
+          ${ defendants[0].name_full() }
+          ${ defendants[0].address.line_one() }
+          ${ defendants[0].address.line_two() }
+          ${ word("Unkonwn phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
+      - plaintiffs_attorney_block: |
+          Self-represented
+      - no_pending_cases: ${ not prior_family_cases.there_are_any }
+      - pending_cases: ${ prior_family_cases.there_are_any }
+      - no_other_action: ${ not has_prior_civil_cases }
+      - other_action: ${ has_prior_civil_cases }
+      - other_action_this_court: ${ True if has_prior_civil_cases and not prior_civil_case_filed_outside_MI and the_court.address.county == prior_civil_case_county and MI_court_type == "Circuit" else False }
+      - other_action_other_court: ${ False if not has_prior_civil_cases or (not prior_civil_case_filed_outside_MI and the_court.address.county == prior_civil_case_county and MI_court_type == "Circuit") else True }
+      - other_action_court_name: |
+          % if has_prior_civil_cases:
+          % if prior_civil_case_filed_outside_MI:
+          ${ prior_civil_case_non_MI_court }
+          % elif the_court.address.county == prior_civil_case_county and MI_court_type == "Circuit":
+
+          % else:
+          ${prior_civil_case_county} County ${MI_court_type}
+          % endif
+          % endif
+      - other_action_case_number: ${ prior_civil_case_number if has_prior_civil_cases else "" }
+      - other_action_judge: ${ prior_civil_case_judge if has_prior_civil_cases else "" }
+      - other_action_pending: ${ has_prior_civil_cases and prior_civil_case_is_pending }
+      - other_action_not_pending: ${ has_prior_civil_cases and not prior_civil_case_is_pending }
 ---
 # --------------------------------------------------------------------
 ## Attachment to Divorce Complaint/Answer
@@ -298,7 +554,7 @@ attachment:
       - trial_court_circuit: ${the_court.number}
       - trial_court_address_county: ${the_court.address.county.upper()}
       - docket_number: ${docket_number}
-      #- judge_name: 	
+      #- judge_name:
       - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
       - defendants0_name_full: ${defendants[0].name_full()}
       - family_cases0_court_same: ${True if prior_family_cases[0].state == "MI" and the_court.address.county == prior_family_cases[0].county else False}
@@ -329,7 +585,7 @@ attachment:
           True         
           % else:
           False
-          % endif 	
+          % endif
       - family_cases1_court_same: ${True if prior_family_cases[1].state == "MI" and the_court.address.county == prior_family_cases[1].county else False}
       - family_cases1_court_other: ${False if prior_family_cases[1].state == "MI" and the_court.address.county == prior_family_cases[1].county else True}
       - family_cases1_court_name_number_county_state: |
@@ -358,7 +614,7 @@ attachment:
           True         
           % else:
           False
-          % endif 	
+          % endif
       - family_cases2_court_same: ${True if prior_family_cases[2].state == "MI" and the_court.address.county == prior_family_cases[2].county else False}
       - family_cases2_court_other: ${False if prior_family_cases[2].state == "MI" and the_court.address.county == prior_family_cases[2].county else True}
       - family_cases2_court_name_number_county_state: |
@@ -387,7 +643,7 @@ attachment:
           True         
           % else:
           False
-          % endif 	
+          % endif
       - family_cases3_court_same: ${True if prior_family_cases[3].state == "MI" and the_court.address.county == prior_family_cases[3].county else False}
       - family_cases3_court_other: ${False if prior_family_cases[3].state == "MI" and the_court.address.county == prior_family_cases[3].county else True}
       - family_cases3_court_name_number_county_state: |
@@ -416,7 +672,7 @@ attachment:
           True         
           % else:
           False
-          % endif 	
+          % endif
       - signature_date: ${ signature_date if MLH_esign else "" }
       - signature: |
           % if MLH_esign:
@@ -437,7 +693,7 @@ attachment:
       - trial_court_circuit: ${the_court.number}
       - trial_court_address_county: ${the_court.address.county.upper()}
       - docket_number: ${docket_number}
-      #- judge_name: 	
+      #- judge_name:
       - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
       - defendants0_name_full: ${defendants[0].name_full()}
       - family_cases0_court_same: ${True if prior_family_cases[4].state == "MI" and the_court.address.county == prior_family_cases[4].county else False}
@@ -468,7 +724,7 @@ attachment:
           True         
           % else:
           False
-          % endif 	
+          % endif
       - family_cases1_court_same: ${True if prior_family_cases[5].state == "MI" and the_court.address.county == prior_family_cases[5].county else False}
       - family_cases1_court_other: ${False if prior_family_cases[5].state == "MI" and the_court.address.county == prior_family_cases[5].county else True}
       - family_cases1_court_name_number_county_state: |
@@ -497,7 +753,7 @@ attachment:
           True         
           % else:
           False
-          % endif 	
+          % endif
       - family_cases2_court_same: ${True if prior_family_cases[6].state == "MI" and the_court.address.county == prior_family_cases[6].county else False}
       - family_cases2_court_other: ${False if prior_family_cases[6].state == "MI" and the_court.address.county == prior_family_cases[6].county else True}
       - family_cases2_court_name_number_county_state: |
@@ -526,7 +782,7 @@ attachment:
           True         
           % else:
           False
-          % endif 	
+          % endif
       - family_cases3_court_same: ${True if prior_family_cases[7].state == "MI" and the_court.address.county == prior_family_cases[7].county else False}
       - family_cases3_court_other: ${False if prior_family_cases[7].state == "MI" and the_court.address.county == prior_family_cases[7].county else True}
       - family_cases3_court_name_number_county_state: |
@@ -555,7 +811,7 @@ attachment:
           True         
           % else:
           False
-          % endif 	
+          % endif
       - signature_date: ${ signature_date if MLH_esign else "" }
       - signature: |
           % if MLH_esign:
@@ -576,7 +832,7 @@ attachment:
       - trial_court_circuit: ${the_court.number}
       - trial_court_address_county: ${the_court.address.county.upper()}
       - docket_number: ${docket_number}
-      #- judge_name: 	
+      #- judge_name:
       - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
       - defendants0_name_full: ${defendants[0].name_full()}
       - family_cases0_court_same: ${True if prior_family_cases[8].state == "MI" and the_court.address.county == prior_family_cases[8].county else False}
@@ -607,7 +863,7 @@ attachment:
           True         
           % else:
           False
-          % endif 	
+          % endif
       - family_cases1_court_same: ${True if prior_family_cases[9].state == "MI" and the_court.address.county == prior_family_cases[9].county else False}
       - family_cases1_court_other: ${False if prior_family_cases[9].state == "MI" and the_court.address.county == prior_family_cases[9].county else True}
       - family_cases1_court_name_number_county_state: |
@@ -636,7 +892,7 @@ attachment:
           True         
           % else:
           False
-          % endif 	
+          % endif
       - family_cases2_court_same: ${True if prior_family_cases[10].state == "MI" and the_court.address.county == prior_family_cases[10].county else False}
       - family_cases2_court_other: ${False if prior_family_cases[10].state == "MI" and the_court.address.county == prior_family_cases[10].county else True}
       - family_cases2_court_name_number_county_state: |
@@ -665,7 +921,7 @@ attachment:
           True         
           % else:
           False
-          % endif 	
+          % endif
       - family_cases3_court_same: ${True if prior_family_cases[11].state == "MI" and the_court.address.county == prior_family_cases[11].county else False}
       - family_cases3_court_other: ${False if prior_family_cases[11].state == "MI" and the_court.address.county == prior_family_cases[11].county else True}
       - family_cases3_court_name_number_county_state: |
@@ -694,7 +950,7 @@ attachment:
           True         
           % else:
           False
-          % endif 	
+          % endif
       - signature_date: ${ signature_date if MLH_esign else "" }
       - signature: |
           % if MLH_esign:
@@ -831,13 +1087,12 @@ attachment:
           ${""}
           % endif
           ${ users[0].address.line_one() }
-          ${ users[0].address.line_two() }      
+          ${ users[0].address.line_two() }
       # Unused fields (in addition to most of the the notary part)
-      #- judge_name: 	
+      #- judge_name:
       #- need_temporary_order_protect_kids:
       #- need_temporary_order_protect_kids_explanation:
       #- nonparties_with_custody_PT_claims:
-
 ---
 # --------------------------------------------------------------------
 ## Verified Statement, FOC 23
@@ -1279,7 +1534,7 @@ attachment:
       - insurance_child_name0: |
           % if there_are_marital_children and insurance_in_addendum:
           See (49) in addendum for Health Care Coverage information.
-          % endif     
+          % endif
       #- insurance_policy_holder0:
       #- insurance_company_name0:
       #- insurance_policy_cert_group_number0:
@@ -1369,7 +1624,7 @@ attachment:
           ${ True if children_now_live_with_which_parent == "users[0]" else False }
           % else:
           ${ True if children_now_live_with_which_parent == "other_parties[0]" else False }
-          % endif     
+          % endif
       - kids_live_with_both: |
           ${ True if children_now_live_with_which_parent == "both" else False }
       - mothers1_name: |
@@ -1399,7 +1654,7 @@ attachment:
           % else:
           ${ users[0].address.on_one_line() }
           % endif
-          % endif     
+          % endif
       - mothers1_phone_number: |
           % if users[0].gender == "male" and other_parties[0].gender == "female":
           ${ phone_number_formatted(other_parties[0].phone_number) }
@@ -1439,7 +1694,7 @@ attachment:
           ${ phone_number_formatted(users[0].phone_number) }
           % else:
           ${ phone_number_formatted(other_parties[0].phone_number) }
-          % endif   
+          % endif
       - confidential_contact_info_yes: ${ confidential_contact_info_yn }
       - confidential_contact_info_no: ${ True if not confidential_contact_info_yn else False }
       - permission_to_collect_overpayment_yes: ${ allow_child_support_overpayment_correction }
@@ -2341,26 +2596,26 @@ attachment:
     skip undefined: True
     editable: False
     fields:
-        - trial_court: ${ the_court.number }
-        - trial_court_county: ${ the_court.address.county.upper() }
-        - case_number_1: ${ docket_number }
-        - case_number_2: ${ docket_number }
-        - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
-        - trial_court_phone_number: ${ the_court.phone }
-        - plaintiff_block: |
-            ${ plaintiffs[0].name_full() }
-            ${ plaintiffs[0].address.line_one() }
-            ${ plaintiffs[0].address.line_two() }
-            ${ word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
-        - defendant_block: |
-            ${ defendants[0].name_full() }
-            ${ defendants[0].address.line_one() }
-            ${ defendants[0].address.line_two() }
-            ${ word("Unkonwn phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
-        - plaintiffs_attorney_block: |
-            Self-represented
-        - defendants_attorney_block: 
-        - defendant_name: ${ other_parties[0].name_full() }
+      - trial_court: ${ the_court.number }
+      - trial_court_county: ${ the_court.address.county.upper() }
+      - case_number_1: ${ docket_number }
+      - case_number_2: ${ docket_number }
+      - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+      - trial_court_phone_number: ${ the_court.phone }
+      - plaintiff_block: |
+          ${ plaintiffs[0].name_full() }
+          ${ plaintiffs[0].address.line_one() }
+          ${ plaintiffs[0].address.line_two() }
+          ${ word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
+      - defendant_block: |
+          ${ defendants[0].name_full() }
+          ${ defendants[0].address.line_one() }
+          ${ defendants[0].address.line_two() }
+          ${ word("Unkonwn phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
+      - plaintiffs_attorney_block: |
+          Self-represented
+      - defendants_attorney_block:
+      - defendant_name: ${ other_parties[0].name_full() }
 ---
 # --------------------------------------------------------------------
 ## Uniform Child Support Order FOC 10 and Attachments
@@ -2517,7 +2772,7 @@ attachment:
           ${ defendants[0].job.employer.address.line_two() }
           ${ word("Phone unknown.") if defendants[0].job.employer.phone == "" else defendants[0].job.employer.phone }
           % endif
-      # - order_entered_after_hearing: 
+      # - order_entered_after_hearing:
       # - order_entered_stipulation:
       # - standard_provisions_modified:
       - spousal_support_payer_name: |
@@ -2543,7 +2798,7 @@ attachment:
       - spousal_support_ends_on_date: |
           % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
           ${ True if spousal_support_end_type == "at_certain_date" else False }
-          % endif 
+          % endif
       - ending_date: |
           % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"] and spousal_support_end_type == "at_certain_date":
           ${ format_date(spousal_support_end_date, format='M/d/yyyy') }
@@ -2551,7 +2806,7 @@ attachment:
       - spousal_support_ends_on_amount: |
           % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
           ${ True if spousal_support_end_type == "at_certain_amount" else False }
-          % endif  
+          % endif
       - ending_amount: |
           % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"] and spousal_support_end_type == "at_certain_amount":
           ${ currency(spousal_support_end_amount, symbol="") }
@@ -2559,7 +2814,7 @@ attachment:
       - spousal_support_ends_on_remarriage: |
           % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
           ${ True if spousal_support_end_type == "at_recipient_marriage" else False }
-          % endif   
+          % endif
       - spousal_support_ends_on_payer_death: |
           % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
           ${ True if spousal_support_end_type == "at_death" else False }
@@ -2567,7 +2822,7 @@ attachment:
       - spousal_support_ends_on_other: |
           % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
           ${ True if spousal_support_end_type == "other" else False }
-          % endif 
+          % endif
       # - other_end_point_explanation_line_1:
       - other_end_point_explanation_line_2: |
           % if spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"] and spousal_support_end_type == "other":
@@ -2615,31 +2870,31 @@ attachment:
 # --------------------------------------------------------------------
 ---
 attachment:
-    name: noh_divorce
-    filename: Notice of Hearing
-    docx template file: noh_divorce.docx
-    variable name: noh_divorce[i]
-    skip undefined: True
-    valid formats:
-        - pdf 
+  name: noh_divorce
+  filename: Notice of Hearing
+  docx template file: noh_divorce.docx
+  variable name: noh_divorce[i]
+  skip undefined: True
+  valid formats:
+    - pdf
 ---
 attachment:
-    name: Notice of Hearing and Motion to Enter Consent Judgment 
-    filename: Notice of Hearing and Motion to Enter Consent Judgment 
-    docx template file: noh_motion_consent.docx
-    variable name: noh_motion_consent[i]
-    skip undefined: True
-    valid formats:
-        - pdf 
+  name: Notice of Hearing and Motion to Enter Consent Judgment
+  filename: Notice of Hearing and Motion to Enter Consent Judgment
+  docx template file: noh_motion_consent.docx
+  variable name: noh_motion_consent[i]
+  skip undefined: True
+  valid formats:
+    - pdf
 ---
 attachment:
-    name: Notice of Hearing and Motion to Enter Default Judgment 
-    filename: Notice of Hearing and Motion to Enter Default Judgment 
-    docx template file: noh_motion_default.docx
-    variable name: noh_motion_default[i]
-    skip undefined: True
-    valid formats:
-        - pdf 
+  name: Notice of Hearing and Motion to Enter Default Judgment
+  filename: Notice of Hearing and Motion to Enter Default Judgment
+  docx template file: noh_motion_default.docx
+  variable name: noh_motion_default[i]
+  skip undefined: True
+  valid formats:
+    - pdf
 ---
 objects:
   - noh_divorce: ALDocument.using(title="Notice of Hearing", filename="Notice of Hearing", has_addendum=False)
@@ -2651,13 +2906,13 @@ objects:
 # --------------------------------------------------------------------
 ---
 attachment:
-    name: Proof of Service
-    filename: Proof of Service
-    docx template file: proof_of_service.docx
-    variable name: proof_of_service[i]
-    skip undefined: True
-    valid formats:
-        - pdf 
+  name: Proof of Service
+  filename: Proof of Service
+  docx template file: proof_of_service.docx
+  variable name: proof_of_service[i]
+  skip undefined: True
+  valid formats:
+    - pdf
 ---
 objects:
   - proof_of_service: ALDocument.using(title="Proof of Service", filename="Proof of Service", enabled=True, has_addendum=False)
@@ -2938,17 +3193,17 @@ attachment:
                 % endif
                 % if PT_type == "supervised" and not (specific_PT_how == "custom" and len(custom_PT_details) > 240):
                   % if physical_custody_who == "user":
-      
+
           Parenting time for ${OP_party_label.lower()} will be supervised by ${PT_supervisor if PT_supervisor != "" else "________________________"}.
                   % elif physical_custody_who == "other_party":
-      
+
           Parenting time for ${user_party_label.lower()} will be supervised by ${PT_supervisor if PT_supervisor != "" else "________________________"}.
                   % endif
                 % endif
               % endif
             % endif
           % endif
-      - child_support_ordered:  |
+      - child_support_ordered: |
           % if MI_has_jurisdiction_all_kids and not other_case_controls_child_support:
           True
           % else:
@@ -3793,13 +4048,12 @@ attachment:
       - real_properties1_address_on_one_line: ${marriage.real_property[0].address.on_one_line()}
       - real_properties1_legal_description: |
           % if len(marriage.real_property[0].desc) > 123:
-          
+
           See addendum.
           % else:
           ${marriage.real_property[0].desc}
           % endif
       - real_properties1_parcel_ID: ${marriage.real_property[0].parcel_number}
-
       # Ownership and costs (property 1)
       - real_properties1_sale_awarded_plaintiff: ${marriage.real_property[0].owner == plaintiffs[0]}
       - real_properties1_sale_awarded_defendant: ${marriage.real_property[0].owner == defendants[0]}
@@ -3835,7 +4089,7 @@ attachment:
           True
           % else:
           False
-          % endif 
+          % endif
       - real_properties1_remove_defendant: |
           % if ((marriage.real_property[0].owner == plaintiffs[0]) and (marriage.real_property[0].titled_together == True) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == True)) or ((marriage.real_property[0].owner == plaintiffs[0]) and (marriage.real_property[0].titled_together == True) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == False) and (marriage.real_property[0].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[0].owner == plaintiffs[0]) and (marriage.real_property[0].titled_together == False) and (marriage.real_property[0].title_award_to_named == False) and (marriage.real_property[0].mortgage_or_loan == True) and (marriage.real_property[0].mortgage_or_loan_together == False) and (marriage.real_property[0].mortgage_or_loan_award_to_named == False)):
           True
@@ -3880,7 +4134,7 @@ attachment:
       - real_properties2_legal_description: |
           % if len(marriage.real_property) > 1:
             % if len(marriage.real_property[1].desc) > 123:
-          
+
           See addendum.
             % else:
             ${marriage.real_property[1].desc}
@@ -3889,7 +4143,6 @@ attachment:
           ${""}
           % endif
       - real_properties2_parcel_ID: ${marriage.real_property[1].parcel_number if len(marriage.real_property) > 1 else ""}
-
       # Ownership and costs (property 2)
       - real_properties2_sale_awarded_plaintiff: ${len(marriage.real_property) > 1 and marriage.real_property[1].owner == plaintiffs[0]}
       - real_properties2_sale_awarded_defendant: ${len(marriage.real_property) > 1 and marriage.real_property[1].owner == defendants[0]}
@@ -3925,7 +4178,7 @@ attachment:
           True
           % else:
           False
-          % endif 
+          % endif
       - real_properties2_remove_defendant: |
           % if len(marriage.real_property) > 1 and (((marriage.real_property[1].owner == plaintiffs[0]) and (marriage.real_property[1].titled_together == True) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == True)) or ((marriage.real_property[1].owner == plaintiffs[0]) and (marriage.real_property[1].titled_together == True) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == False) and (marriage.real_property[1].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[1].owner == plaintiffs[0]) and (marriage.real_property[1].titled_together == False) and (marriage.real_property[1].title_award_to_named == False) and (marriage.real_property[1].mortgage_or_loan == True) and (marriage.real_property[1].mortgage_or_loan_together == False) and (marriage.real_property[1].mortgage_or_loan_award_to_named == False))):
           True
@@ -3998,7 +4251,7 @@ attachment:
       - real_properties3_legal_description: |
           % if len(marriage.real_property) > 2:
             % if len(marriage.real_property[2].desc) > 123:
-          
+
           See addendum.
             % else:
             ${marriage.real_property[2].desc}
@@ -4007,7 +4260,6 @@ attachment:
           ${""}
           % endif
       - real_properties3_parcel_ID: ${marriage.real_property[2].parcel_number if len(marriage.real_property) > 2 else ""}
-
       # Ownership and costs (property 3)
       - real_properties3_sale_awarded_plaintiff: ${len(marriage.real_property) > 2 and marriage.real_property[2].owner == plaintiffs[0]}
       - real_properties3_sale_awarded_defendant: ${len(marriage.real_property) > 2 and marriage.real_property[2].owner == defendants[0]}
@@ -4043,7 +4295,7 @@ attachment:
           True
           % else:
           False
-          % endif 
+          % endif
       - real_properties3_remove_defendant: |
           % if len(marriage.real_property) > 2 and (((marriage.real_property[2].owner == plaintiffs[0]) and (marriage.real_property[2].titled_together == True) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == True)) or ((marriage.real_property[2].owner == plaintiffs[0]) and (marriage.real_property[2].titled_together == True) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == False) and (marriage.real_property[2].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[2].owner == plaintiffs[0]) and (marriage.real_property[2].titled_together == False) and (marriage.real_property[2].title_award_to_named == False) and (marriage.real_property[2].mortgage_or_loan == True) and (marriage.real_property[2].mortgage_or_loan_together == False) and (marriage.real_property[2].mortgage_or_loan_award_to_named == False))):
           True
@@ -4088,7 +4340,7 @@ attachment:
       - real_properties4_legal_description: |
           % if len(marriage.real_property) > 3:
             % if len(marriage.real_property[3].desc) > 123:
-          
+
           See addendum.
             % else:
             ${marriage.real_property[3].desc}
@@ -4097,7 +4349,6 @@ attachment:
           ${""}
           % endif
       - real_properties4_parcel_ID: ${marriage.real_property[3].parcel_number if len(marriage.real_property) > 3 else ""}
-
       # Ownership and costs (property 4)
       - real_properties4_sale_awarded_plaintiff: ${len(marriage.real_property) > 3 and marriage.real_property[3].owner == plaintiffs[0]}
       - real_properties4_sale_awarded_defendant: ${len(marriage.real_property) > 3 and marriage.real_property[3].owner == defendants[0]}
@@ -4133,7 +4384,7 @@ attachment:
           True
           % else:
           False
-          % endif 
+          % endif
       - real_properties4_remove_defendant: |
           % if len(marriage.real_property) > 3 and (((marriage.real_property[3].owner == plaintiffs[0]) and (marriage.real_property[3].titled_together == True) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == True)) or ((marriage.real_property[3].owner == plaintiffs[0]) and (marriage.real_property[3].titled_together == True) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == False) and (marriage.real_property[3].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[3].owner == plaintiffs[0]) and (marriage.real_property[3].titled_together == False) and (marriage.real_property[3].title_award_to_named == False) and (marriage.real_property[3].mortgage_or_loan == True) and (marriage.real_property[3].mortgage_or_loan_together == False) and (marriage.real_property[3].mortgage_or_loan_award_to_named == False))):
           True
@@ -4206,7 +4457,7 @@ attachment:
       - real_properties5_legal_description: |
           % if len(marriage.real_property) > 4:
             % if len(marriage.real_property[4].desc) > 123:
-          
+
           See addendum.
             % else:
             ${marriage.real_property[4].desc}
@@ -4215,7 +4466,6 @@ attachment:
           ${""}
           % endif
       - real_properties5_parcel_ID: ${marriage.real_property[4].parcel_number if len(marriage.real_property) > 4 else ""}
-
       # Ownership and costs (property 5)
       - real_properties5_sale_awarded_plaintiff: ${len(marriage.real_property) > 4 and marriage.real_property[4].owner == plaintiffs[0]}
       - real_properties5_sale_awarded_defendant: ${len(marriage.real_property) > 4 and marriage.real_property[4].owner == defendants[0]}
@@ -4251,7 +4501,7 @@ attachment:
           True
           % else:
           False
-          % endif 
+          % endif
       - real_properties5_remove_defendant: |
           % if len(marriage.real_property) > 4 and (((marriage.real_property[4].owner == plaintiffs[0]) and (marriage.real_property[4].titled_together == True) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == True)) or ((marriage.real_property[4].owner == plaintiffs[0]) and (marriage.real_property[4].titled_together == True) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == False) and (marriage.real_property[4].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[4].owner == plaintiffs[0]) and (marriage.real_property[4].titled_together == False) and (marriage.real_property[4].title_award_to_named == False) and (marriage.real_property[4].mortgage_or_loan == True) and (marriage.real_property[4].mortgage_or_loan_together == False) and (marriage.real_property[4].mortgage_or_loan_award_to_named == False))):
           True
@@ -4296,7 +4546,7 @@ attachment:
       - real_properties6_legal_description: |
           % if len(marriage.real_property) > 5:
             % if len(marriage.real_property[5].desc) > 123:
-          
+
           See addendum.
             % else:
             ${marriage.real_property[5].desc}
@@ -4305,7 +4555,6 @@ attachment:
           ${""}
           % endif
       - real_properties6_parcel_ID: ${marriage.real_property[5].parcel_number if len(marriage.real_property) > 5 else ""}
-
       # Ownership and costs (property 6)
       - real_properties6_sale_awarded_plaintiff: ${len(marriage.real_property) > 5 and marriage.real_property[5].owner == plaintiffs[0]}
       - real_properties6_sale_awarded_defendant: ${len(marriage.real_property) > 5 and marriage.real_property[5].owner == defendants[0]}
@@ -4341,7 +4590,7 @@ attachment:
           True
           % else:
           False
-          % endif 
+          % endif
       - real_properties6_remove_defendant: |
           % if len(marriage.real_property) > 5 and (((marriage.real_property[5].owner == plaintiffs[0]) and (marriage.real_property[5].titled_together == True) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == True)) or ((marriage.real_property[5].owner == plaintiffs[0]) and (marriage.real_property[5].titled_together == True) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == False) and (marriage.real_property[5].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[5].owner == plaintiffs[0]) and (marriage.real_property[5].titled_together == False) and (marriage.real_property[5].title_award_to_named == False) and (marriage.real_property[5].mortgage_or_loan == True) and (marriage.real_property[5].mortgage_or_loan_together == False) and (marriage.real_property[5].mortgage_or_loan_award_to_named == False))):
           True
@@ -4414,7 +4663,7 @@ attachment:
       - real_properties7_legal_description: |
           % if len(marriage.real_property) > 6:
             % if len(marriage.real_property[6].desc) > 123:
-          
+
           See addendum.
             % else:
             ${marriage.real_property[6].desc}
@@ -4423,7 +4672,6 @@ attachment:
           ${""}
           % endif
       - real_properties7_parcel_ID: ${marriage.real_property[6].parcel_number if len(marriage.real_property) > 6 else ""}
-
       # Ownership and costs (property 7)
       - real_properties7_sale_awarded_plaintiff: ${len(marriage.real_property) > 6 and marriage.real_property[6].owner == plaintiffs[0]}
       - real_properties7_sale_awarded_defendant: ${len(marriage.real_property) > 6 and marriage.real_property[6].owner == defendants[0]}
@@ -4459,7 +4707,7 @@ attachment:
           True
           % else:
           False
-          % endif 
+          % endif
       - real_properties7_remove_defendant: |
           % if len(marriage.real_property) > 6 and (((marriage.real_property[6].owner == plaintiffs[0]) and (marriage.real_property[6].titled_together == True) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == True)) or ((marriage.real_property[6].owner == plaintiffs[0]) and (marriage.real_property[6].titled_together == True) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == False) and (marriage.real_property[6].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[6].owner == plaintiffs[0]) and (marriage.real_property[6].titled_together == False) and (marriage.real_property[6].title_award_to_named == False) and (marriage.real_property[6].mortgage_or_loan == True) and (marriage.real_property[6].mortgage_or_loan_together == False) and (marriage.real_property[6].mortgage_or_loan_award_to_named == False))):
           True
@@ -4504,7 +4752,7 @@ attachment:
       - real_properties8_legal_description: |
           % if len(marriage.real_property) > 7:
             % if len(marriage.real_property[7].desc) > 123:
-          
+
           See addendum.
             % else:
             ${marriage.real_property[7].desc}
@@ -4513,7 +4761,6 @@ attachment:
           ${""}
           % endif
       - real_properties8_parcel_ID: ${marriage.real_property[7].parcel_number if len(marriage.real_property) > 7 else ""}
-
       # Ownership and costs (property 8)
       - real_properties8_sale_awarded_plaintiff: ${len(marriage.real_property) > 7 and marriage.real_property[7].owner == plaintiffs[0]}
       - real_properties8_sale_awarded_defendant: ${len(marriage.real_property) > 7 and marriage.real_property[7].owner == defendants[0]}
@@ -4549,7 +4796,7 @@ attachment:
           True
           % else:
           False
-          % endif 
+          % endif
       - real_properties8_remove_defendant: |
           % if len(marriage.real_property) > 7 and (((marriage.real_property[7].owner == plaintiffs[0]) and (marriage.real_property[7].titled_together == True) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == True)) or ((marriage.real_property[7].owner == plaintiffs[0]) and (marriage.real_property[7].titled_together == True) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == False) and (marriage.real_property[7].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[7].owner == plaintiffs[0]) and (marriage.real_property[7].titled_together == False) and (marriage.real_property[7].title_award_to_named == False) and (marriage.real_property[7].mortgage_or_loan == True) and (marriage.real_property[7].mortgage_or_loan_together == False) and (marriage.real_property[7].mortgage_or_loan_award_to_named == False))):
           True
@@ -4622,7 +4869,7 @@ attachment:
       - real_properties9_legal_description: |
           % if len(marriage.real_property) > 8:
             % if len(marriage.real_property[8].desc) > 123:
-          
+
           See addendum.
             % else:
             ${marriage.real_property[8].desc}
@@ -4631,7 +4878,6 @@ attachment:
           ${""}
           % endif
       - real_properties9_parcel_ID: ${marriage.real_property[8].parcel_number if len(marriage.real_property) > 8 else ""}
-
       # Ownership and costs (property 9)
       - real_properties9_sale_awarded_plaintiff: ${len(marriage.real_property) > 8 and marriage.real_property[8].owner == plaintiffs[0]}
       - real_properties9_sale_awarded_defendant: ${len(marriage.real_property) > 8 and marriage.real_property[8].owner == defendants[0]}
@@ -4667,7 +4913,7 @@ attachment:
           True
           % else:
           False
-          % endif 
+          % endif
       - real_properties9_remove_defendant: |
           % if len(marriage.real_property) > 8 and (((marriage.real_property[8].owner == plaintiffs[0]) and (marriage.real_property[8].titled_together == True) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == True)) or ((marriage.real_property[8].owner == plaintiffs[0]) and (marriage.real_property[8].titled_together == True) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == False) and (marriage.real_property[8].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[8].owner == plaintiffs[0]) and (marriage.real_property[8].titled_together == False) and (marriage.real_property[8].title_award_to_named == False) and (marriage.real_property[8].mortgage_or_loan == True) and (marriage.real_property[8].mortgage_or_loan_together == False) and (marriage.real_property[8].mortgage_or_loan_award_to_named == False))):
           True
@@ -4712,7 +4958,7 @@ attachment:
       - real_properties10_legal_description: |
           % if len(marriage.real_property) > 9:
             % if len(marriage.real_property[9].desc) > 123:
-          
+
           See addendum.
             % else:
             ${marriage.real_property[9].desc}
@@ -4721,7 +4967,6 @@ attachment:
           ${""}
           % endif
       - real_properties10_parcel_ID: ${marriage.real_property[9].parcel_number if len(marriage.real_property) > 9 else ""}
-
       # Ownership and costs (property 10)
       - real_properties10_sale_awarded_plaintiff: ${len(marriage.real_property) > 9 and marriage.real_property[9].owner == plaintiffs[0]}
       - real_properties10_sale_awarded_defendant: ${len(marriage.real_property) > 9 and marriage.real_property[9].owner == defendants[0]}
@@ -4757,7 +5002,7 @@ attachment:
           True
           % else:
           False
-          % endif 
+          % endif
       - real_properties10_remove_defendant: |
           % if len(marriage.real_property) > 9 and (((marriage.real_property[9].owner == plaintiffs[0]) and (marriage.real_property[9].titled_together == True) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == True)) or ((marriage.real_property[9].owner == plaintiffs[0]) and (marriage.real_property[9].titled_together == True) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == False) and (marriage.real_property[9].mortgage_or_loan_award_to_named == False)) or ((marriage.real_property[9].owner == plaintiffs[0]) and (marriage.real_property[9].titled_together == False) and (marriage.real_property[9].title_award_to_named == False) and (marriage.real_property[9].mortgage_or_loan == True) and (marriage.real_property[9].mortgage_or_loan_together == False) and (marriage.real_property[9].mortgage_or_loan_award_to_named == False))):
           True
@@ -4898,63 +5143,63 @@ attachment:
 ## judgment_ccmlh413 (with kids) ##
 # add commas and the word "and" plus split children names to two lines when over character count
 code: |
-    def format_children_names(children, max_len=90):
-            names = [child.name.full() for child in children.filter(legal_parent="both")]
-            if not names:
-                    return "", ""
-            if len(names) == 1:
-                    return names[0], ""
-            joined = ", ".join(names[:-1]) + " and " + names[-1]
-            if len(joined) <= max_len:
-                    return joined, ""
-            split_at = joined.rfind(",", 0, max_len)
-            if split_at == -1:
-                    return joined[:max_len].rstrip(), joined[max_len:].lstrip(", ").lstrip()
-            return joined[:split_at].rstrip(","), joined[split_at+1:].lstrip()
-    children_line_1, children_line_2 = format_children_names(children)
+  def format_children_names(children, max_len=90):
+          names = [child.name.full() for child in children.filter(legal_parent="both")]
+          if not names:
+                  return "", ""
+          if len(names) == 1:
+                  return names[0], ""
+          joined = ", ".join(names[:-1]) + " and " + names[-1]
+          if len(joined) <= max_len:
+                  return joined, ""
+          split_at = joined.rfind(",", 0, max_len)
+          if split_at == -1:
+                  return joined[:max_len].rstrip(), joined[max_len:].lstrip(", ").lstrip()
+          return joined[:split_at].rstrip(","), joined[split_at+1:].lstrip()
+  children_line_1, children_line_2 = format_children_names(children)
 ---
 ### income tax addendum code ###
 # add commas and the word "and" plus split specific plaintiff/defendant tax children names to two lines when over character count
 code: |
-    def tax_format_names(names, max_len=120):
-        if not names:
-            return "", ""
-        # Add commas and 'and'
-        if len(names) == 1:
-            joined = names[0]
-        else:
-            joined = ", ".join(names[:-1]) + " and " + names[-1]
-        # Split to two lines if needed
-        if len(joined) <= max_len:
-            return joined, ""
-        else:
-            # Try to split at last comma before max_len
-            split_at = joined.rfind(",", 0, max_len)
-            if split_at == -1:
-                # No comma, just split at max_len
-                return joined[:max_len].rstrip(), joined[max_len:].lstrip(", ").lstrip()
-            else:
-                return joined[:split_at].rstrip(","), joined[split_at+1:].lstrip()
+  def tax_format_names(names, max_len=120):
+      if not names:
+          return "", ""
+      # Add commas and 'and'
+      if len(names) == 1:
+          joined = names[0]
+      else:
+          joined = ", ".join(names[:-1]) + " and " + names[-1]
+      # Split to two lines if needed
+      if len(joined) <= max_len:
+          return joined, ""
+      else:
+          # Try to split at last comma before max_len
+          split_at = joined.rfind(",", 0, max_len)
+          if split_at == -1:
+              # No comma, just split at max_len
+              return joined[:max_len].rstrip(), joined[max_len:].lstrip(", ").lstrip()
+          else:
+              return joined[:split_at].rstrip(","), joined[split_at+1:].lstrip()
 ---
 code: |
-    tax_children_plaintiff = [
-        child.name.full()
-        for child in children.filter(legal_parent="both")
-        if (
-            (child.tax_parent == "users[0]" and user_ask_role == "plaintiff") or
-            (child.tax_parent == "other_parties[0]" and user_ask_role == "defendant")
-        )
-    ]
-    tax_children_defendant = [
-        child.name.full()
-        for child in children.filter(legal_parent="both")
-        if (
-            (child.tax_parent == "users[0]" and user_ask_role == "defendant") or
-            (child.tax_parent == "other_parties[0]" and user_ask_role == "plaintiff")
-        )
-    ]
-    income_tax_children_plaintiff_line_1, income_tax_children_plaintiff_line_2 = tax_format_names(tax_children_plaintiff)
-    income_tax_children_defendant_line_1, income_tax_children_defendant_line_2 = tax_format_names(tax_children_defendant)
+  tax_children_plaintiff = [
+      child.name.full()
+      for child in children.filter(legal_parent="both")
+      if (
+          (child.tax_parent == "users[0]" and user_ask_role == "plaintiff") or
+          (child.tax_parent == "other_parties[0]" and user_ask_role == "defendant")
+      )
+  ]
+  tax_children_defendant = [
+      child.name.full()
+      for child in children.filter(legal_parent="both")
+      if (
+          (child.tax_parent == "users[0]" and user_ask_role == "defendant") or
+          (child.tax_parent == "other_parties[0]" and user_ask_role == "plaintiff")
+      )
+  ]
+  income_tax_children_plaintiff_line_1, income_tax_children_plaintiff_line_2 = tax_format_names(tax_children_plaintiff)
+  income_tax_children_defendant_line_1, income_tax_children_defendant_line_2 = tax_format_names(tax_children_defendant)
 ---
 ### personal property and debts addendum overflow code ###
 ---
@@ -4966,7 +5211,7 @@ code: |
         len([pp for pp in marriage.other_pp if pp.owner == plaintiffs[0]]) +
         len([mh for mh in marriage.mobile_home if mh.owner == plaintiffs[0]])
     )
-  
+
     send_plaintiff_personal_property_to_addendum = plaintiff_personal_property_line_count > 9
   else: 
     send_plaintiff_personal_property_to_addendum = False
@@ -4979,7 +5224,7 @@ code: |
         len([pp for pp in marriage.other_pp if pp.owner == defendants[0]]) +
         len([mh for mh in marriage.mobile_home if mh.owner == defendants[0]])
     )
-  
+
     send_defendant_personal_property_to_addendum = defendant_personal_property_line_count > 9
   else: 
     send_defendant_personal_property_to_addendum = False
@@ -4991,7 +5236,7 @@ code: |
         debt for debt in marriage.debts
         if debt.owner == plaintiffs[0] or debt.owner == joint
     ])
-  
+
     send_plaintiff_debts_to_addendum = plaintiff_debt_line_count > 9
   else:
     send_plaintiff_debts_to_addendum = False
@@ -5003,7 +5248,7 @@ code: |
         debt for debt in marriage.debts
         if debt.owner == defendants[0] or debt.owner == joint
     ])
-  
+
     send_defendant_debts_to_addendum = defendant_debt_line_count > 4
   else:
     send_defendant_debts_to_addendum = False
