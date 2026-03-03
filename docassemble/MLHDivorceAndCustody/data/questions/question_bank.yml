@@ -79,7 +79,7 @@ id: x.there_are_any
 question: |
   ${x.question_text}
 fields:
-  - label: Do you have any ${x.noun_pl} that have **not** already been {divided}?
+  - label: Do you have any {marital} ${x.noun_pl} that have **not** already been {divided}?
     field: x.there_are_any
     datatype: yesnoradio
 ---
@@ -227,6 +227,62 @@ fields:
   - label: Do you have a pending divorce case with this spouse in any court?
     field: marriage.pending_divorce
     datatype: yesnoradio
+---
+id: Choose a court
+question: In what county was the divorce filed?
+subquestion: |
+  ${ collapse_template(help_user_choose_court_template) }
+fields:
+  - County: county_choice
+    code: court_list._load_courts()["address_county"].unique()
+---
+if: tool_ID == "JOD_only"
+id: JOD_only jurisdiction check
+question: Time in ${ county_choice } County and in Michigan before your divorce case
+subquestion: |
+  ${collapse_template(jurisdiction_check_help)}
+fields:
+  - Who lived in **Michigan for 180 days before you filed** for divorce?: party_lived_6_months_MI
+    datatype: checkboxes
+    choices:
+      - Me: user
+      - My spouse: other_party
+    none of the above: |
+      Neither of us
+  - Who lived in **${ county_choice } County for 10 days before you filed** for divorce?: party_ten_days_in_county
+    datatype: checkboxes
+    choices:
+      - Me: user
+      - My spouse: other_party
+    none of the above: |
+      Neither of us
+    js show if: |
+      val("party_lived_6_months_MI['user']") || val("party_lived_6_months_MI['other_party']")
+---
+template: jurisdiction_check_help
+subject: Why does this matter?
+content: |
+  At the end of your divorce, you may need to testify (tell the judge under oath) that you met the legal requirements to file in ${ county_choice } County. 
+  
+  Usually, **either you or your spouse** must have:
+
+  * lived in Michigan for 180 days before you filed for divorce, **and**
+  * lived in ${ county_choice } County for 10 days before you filed for divorce.
+
+  The same person must meet both of the requirements.
+---
+id: jurisdiction warning
+continue button field: jurisdiction_warning
+question: "**Warning!** There may be a jurisdiction issue."
+subquestion: |
+  To get a divorce in ${ county_choice } County, usually **one spouse** must **both**:
+
+  * have lived in Michigan for 180 days before you filed for divorce, **and**
+  * have lived in ${ county_choice } County for 10 days before you filed for divorce.
+
+  You said you and your spouse did **not** meet these requirements.
+  
+  You should **talk to a lawyer** about the potential jurisdiction issue. ${MLH_GUIDE_FULL}
 ---
 id: docket number
 question: |
@@ -663,7 +719,6 @@ validation code: |
     validation_error('If you live in Michigan, tap "Undo" and update your address.', field="users[0].lives_in_Michigan")
   if not users[0].lives_in_Michigan and users[0].address.state in ["Michigan", "MI"]:
     validation_error('If you do not live in Michigan, tap "Undo" and update your address.', field="users[0].lives_in_Michigan")
-## TODO: possibly add screener question earlier in interview "Have you or your spouse lived in Michigan for the last 180 days or more ${ today().minus(days=180) }?"
 ---
 if: confidential_contact_info_yn and tool_ID == "divorce_complaint"
 id: user jurisdiction/venue questions, address confidential
@@ -1165,6 +1220,31 @@ fields:
     show if:
       code: |
         len(current_venue_options) == 0
+validation code: |
+  if not (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI):
+    jurisdiction_party = other_parties[0] #OP logically must be the jurisdictional basis
+  elif not (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI):
+    jurisdiction_party = users[0] #user logically must be the jurisdictional basis
+  
+  elif users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI:
+  
+    # if parties don't share county, only one party can live in filing county
+    if users[0].address.county != other_parties[0].address.county:
+      if users[0].address.county == county_choice:
+        jurisdiction_party = users[0]
+      elif other_parties[0].address.county == county_choice:
+        jurisdiction_party = other_parties[0]
+      else: ## error state
+        jurisdiction_party = "unknown"
+  
+    #if both users live in the filing county
+    elif users[0].address.county == other_parties[0].address.county:
+      if users[0].ten_days_in_county: ## following LHI, choose user if they qualify
+        jurisdiction_party = users[0]
+      elif other_parties[0].ten_days_in_county:
+        jurisdiction_party = other_parties[0]
+      else: ## neither inititally met 10 day rule; unknown who met it by time of filing
+        jurisdiction_party = "unknown"
 ---
 if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 2 and not (there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case)
 id: venue (normal choice)
@@ -1194,6 +1274,13 @@ fields:
     datatype: yesno
     js show if: |
         val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && ${ json.dumps(other_parties[0].ten_days_in_county) } === false 
+validation code: |
+  if county_choice == users[0].address.county:
+    jurisdiction_party = users[0]
+  elif county_choice == other_parties[0].address.county:
+    jurisdiction_party = other_parties[0]
+  else: ## error state
+    jurisdiction_party = "unknown"
 ---
 if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options
 id: venue (weird separate maintenance choice)
@@ -1253,6 +1340,13 @@ fields:
     datatype: yesno
     js show if: |
         val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && ${ json.dumps(users[0].ten_days_in_county) } === false 
+validation code: |
+  if county_choice == users[0].address.county:
+    jurisdiction_party = users[0]
+  elif county_choice == other_parties[0].address.county:
+    jurisdiction_party = other_parties[0]
+  else: ## error state
+    jurisdiction_party = "unknown"
 ---
 if: tool_ID == "divorce_complaint"
 code: |
@@ -1281,15 +1375,15 @@ code: |
   elif len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case:
     if len(current_venue_options) in [2, 0]:
       county_choice = prior_family_cases[separate_maintenance_case_index].county
-    # elif len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options:
-      # show the special weird choice question
+    #elif len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options:
+      #show the special weird choice question
     elif len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county in current_venue_options:
       county_choice = prior_family_cases[separate_maintenance_case_index].county
-  # elif len(all_potential_venue_options) == 2 and not (there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case):
-    # choice with warnings for any options that aren't already at 10 days
+  #elif len(all_potential_venue_options) == 2 and not (there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case):
+    #choice with warnings for any options that aren't already at 10 days
 
   check_for_required_venue = True
-# commented out lines above are there to help show full list of options for determining venue
+# commented out lines above are there to help show full list of options for determining venue. They are accomplished via "Venue" question screens above.  
 ---
 if: tool_ID == "divorce_complaint"
 id: separate maintenance case check logic
@@ -1374,7 +1468,7 @@ id: marriage.cobra_coverage
 question: |
   Health coverage
 subquestion: |
-  **COBRA**: After your divorce is final, one spouse may continue getting coverage under the other spouse's insurance through COBRA. Your Judgment of Divorce will include language about this. Typically, the spouse who gets continuing medical insurance through COBRA must pay for it. Insurance through COBRA may cost more than when that person was covered as a spouse. If the parties agree to something else, like having the other spouse pay for the COBRA coverage, that must be specifically added to the Judgment of Divorce. You can add this in the Other Provisions section. The Other Provisions section will be available at the end of this tool.
+  **COBRA**: After your divorce is final, one spouse may continue getting coverage under the other spouse's insurance through COBRA. Your Judgment of Divorce will include language about this. Typically, the spouse who gets continuing medical insurance through COBRA must pay for it. Insurance through COBRA may cost more than when that person was covered as a spouse. If the spouses agree to something else, like having the other spouse pay for the COBRA coverage, that must be specifically added to the Judgment of Divorce. You can add this in the Other Provisions section. The Other Provisions section will be available at the end of this tool.
 continue button field: marriage.cobra_coverage
 # --------------------------------------------------------------------
 ## marriage.personal_property_
@@ -1385,9 +1479,11 @@ question: Dividing Property
 subquestion : |
   In a divorce, **marital property** must be divided fairly. Marital property can include both {real property} and {personal property}. In general, something is marital property if:
 
-  * You got it during the marriage, or 
-  * Your spouse got it during the marriage, or
-  * Both of you got it during the marriage.   
+    * either spouse **earned** it during the marriage (like a paycheck),
+    * either spouse **bought** it during the marriage, or
+    * you and your spouse received it as a **gift to both of you.**
+
+  ${ collapse_template(property_in_one_name) }
   
   ${ collapse_template(other_marital_property_info) }
 
@@ -1397,6 +1493,12 @@ subquestion : |
 
   ${ collapse_template(separate_property_treated_marital) }
 continue button field: marriage.marital_property_info
+---
+template: property_in_one_name
+subject: |
+  What if the property is only in one spouse's name?
+content: |
+  Even if only one spouse's name is on a title or an account, the property is still marital property if it was bought, earned, or acquired during the marriage.
 ---
 template: other_marital_property_info
 subject: |
@@ -1414,8 +1516,8 @@ content: |
   Separate property includes both {real property} and {personal property} that is:
   
   * Property owned before the marriage
-  * A gift to one party during the marriage
-  * Property that one party inherits during the marriage
+  * A gift to one spouse during the marriage
+  * Property that one spouse inherits during the marriage
   * A passive increase in the value of separate property.
   
   **Usually the owner of the separate property keeps it.** But, in special circumstances, a judge might divide separate property. If you want the judge to award you some of your spouse's separate property, you have to prove either:
@@ -1433,24 +1535,38 @@ content: |
   
   If you want to ask the judge to divide this kind of property, **consider talking to a lawyer.** ${ MLH_GUIDE_FULL }
 ---
+id: reiterate marital property
+question: "Next up: marital property"
+continue button field: reiterate_marital_property
+subquestion : |
+  The following questions are about {marital property}. Marital property can include both:
+      
+  * real property (real estate: houses and land), and 
+  * personal property (everything else).
+
+  We'll ask about marital personal property first.
+---
 id: marriage.personal_property_info
 question: |
   Personal property
 subquestion: |
-  You are now going to be asked about your personal property. Personal property means all of the things you own other than real property (real property is real estate such as a house, condo, or land). Personal property includes things like a mobile home, furniture, jewelry, household goods, and collectibles, as well as cash, stocks, and Certificates of Deposit (CDs). Do not include vehicles (such as cars, boats, trailers, motorcycles, or snowmobiles) in this section. You will be asked about vehicles in the next section of this tool.
+  You are now going to be asked about {marital} personal property. Personal property means all of the things you own other than {real property}. Personal property includes things like a mobile home, furniture, jewelry, household goods, and collectibles, as well as cash, stocks, and Certificates of Deposit (CDs). 
+  
+  **Do not include vehicles** (such as cars, boats, trailers, motorcycles, or snowmobiles) in this section. You will be asked about vehicles in the next section.
 
-  - If you and your spouse agree about how all of your property and debt should be divided, use those terms throughout this part of the tool.
-  - If you and your spouse don't agree about how your property and debt should be divided, complete this part of the tool using the division of property and debt terms that you want the judge to order.
-  - If you and your spouse agree on how to divide some, but not all, of your property and debt, use the terms you do agree on, along with the terms that you want the judge to order for things you don't agree on.
+  When answering these questions:
 
-  Normally the party who is awarded specific property, such as a car or home, is responsible for paying the debt related to that property. If you or your spouse need to sign any documents to transfer property, such as car title transfers or quitclaim deeds, your Judgment of Divorce will require you to do this within 30 days of when the judgment is final.
+  * If you and your spouse **agree** on how something should be divided, use your agreed answer.
+  * If you and your spouse **don't agree** on something, use the division of property terms that you want the judge to order.
 continue button field: marriage.personal_property_info
 ---
 id: marriage.personal_property
 question: |
   Personal property
+subquestion: |
+  **Please do not include vehicles.** You will be asked about vehicles on a separate page.
 fields:
-  - label: Did you and your spouse acquire personal property during the marriage?
+  - label: Did you and your spouse {get} any {personal property} during the marriage?
     field: marriage.personal_property_acquired
     datatype: yesnoradio
   - label: Have you and your spouse reached an agreement about how all personal property will be divided?
@@ -1567,7 +1683,7 @@ validation code: |
 ---
 template: marriage.accounts.there_is_another_template
 content: |
-  Please list each bank account and investment that has not been {divided}, and select how it should be awarded.
+  Please list each {marital} bank account and investment that has not been {divided}, and select how it should be awarded.
 ---
 template: stocks_mutual_funds_info
 subject: |
@@ -1621,11 +1737,9 @@ fields:
   - label: Type of property
     field: marriage.other_pp[i].kind
     choices:
-      - Furniture/Furnishings
-      - Art Work
-      - Antiques
-      - Coin and Other Collections
+      - Furniture
       - Household Items
+      - Artwork or Photos
       - Other Personal Property
   - label: Describe the item
     field: marriage.other_pp[i].desc
@@ -1642,17 +1756,17 @@ subquestion: |
 question: |
   ${marriage.other_pp.question_text}
 fields:
-  - label: Do you have any ${marriage.other_pp.noun_pl} that have **not** already been {divided}?
+  - label: Do you have any {marital} ${marriage.other_pp.noun_pl} that have **not** already been {divided}?
     field: marriage.other_pp.there_are_any
     datatype: yesnoradio
 ---
 template: marriage.other_pp.there_are_any_template
 content: |
-  Examples include furniture, household items, or artwork.
+  Examples include furniture, household items, or artwork. **Do not include vehicles** like cars or boats. We'll ask about them later.
 ---
 template: marriage.other_pp.there_is_another_template
 content: |
-  Please list each other item of personal property that has not been {divided} and indicate whether you or your spouse will keep it.
+  Please list each other item of {marital} personal property that has not been {divided} and indicate whether you or your spouse will keep it.
 ---
 # --------------------------------------------------------------------
 ## marriage.mobile_home
@@ -1704,7 +1818,7 @@ fields:
 ---
 template: marriage.mobile_home.there_is_another_template
 content: |
-  Please list each mobile home that has not been {divided}.
+  Please list each {marital} mobile home that has not been {divided}.
 ---
 # --------------------------------------------------------------------
 ## marriage.debts
@@ -1750,9 +1864,9 @@ id: marriage.debts.info
 question: |
   ${marriage.debts.question_text}
 subquestion: |
-  The judge assigned to your divorce case will not have any authority over your creditors (those whom you owe money). Your Judgment of Divorce may divide your marital debt, assigning you or your spouse responsibility for paying each debt. However, creditors may continue to treat debts in both of your names as joint debt. 
+  The judge assigned to your divorce case will not have any authority over your {creditors}. Your Judgment of Divorce may divide your marital debt, assigning you or your spouse responsibility for paying each debt. However, creditors may continue to treat debts in both of your names as joint debt. 
   
-  If your spouse defaults on a debt that the Judgment of Divorce requires them to pay, you can return to the family court to seek repayment from them. For that reason, it's **important for all debts that are in both of your names to be included** in your Judgment of Divorce.
+  If your spouse defaults on a debt that the Judgment of Divorce requires them to pay, you can return to the family court to seek repayment from them. For that reason, it's **important to include all debts that are in both of your names** in your Judgment of Divorce.
   
 continue button field: marriage.debts.info
 ---
@@ -1890,11 +2004,9 @@ id: marriage.vehicles.info
 question: |
   ${marriage.vehicles.question_text}
 subquestion: |
-  Next you will be asked about vehicles. Vehicles include cars, boats, trailers, motorcycles, snowmobiles, and other motorized equipment titled to the owner. Please do not include mobile homes here &mdash; to add a mobile home tap the **Review / Edit** link or use the ${MLH_back_button_label} button.
+  Next you will be asked about vehicles. Vehicles include cars, boats, trailers, motorcycles, snowmobiles, and other motorized equipment titled to the owner. Please do not include mobile homes here &mdash; to add a mobile home, tap **Review / Edit** or **${MLH_back_button_label}.**
 
-  You will be asked for the Make and Model of each vehicle you own. Make refers to the name of the company that manufactured the vehicle. Examples of vehicle "makes" are Ford, General Motors, Chrysler, and Toyota. Model refers to the type of vehicle. Examples of "models" are Focus, Cutlass, Town and Country, and Highlander. 
-  
-  If you are describing a vehicle other than a car, do your best to identify the vehicle using the Make and Model entries. For example, if you are listing a boat, you might say "Starcraft" for Make and "Starfish 226" for Model.
+  You will be asked for the {Make} and {Model} of each vehicle you own. If you are describing a vehicle other than a car, do your best to identify the vehicle using the Make and Model entries. For example, if you are listing a boat, you might say "Starcraft" for Make and "Starfish 226" for Model.
 continue button field: marriage.vehicles.info
 ---
 id: marriage.vehicles.any
@@ -1908,7 +2020,7 @@ fields:
     field: marriage.vehicles.keep_own
     input type: radio
     choices:
-      - label: Each party will keep the vehicle(s) now in his or her possession and titled in **only** his or her name. The party keeping the vehicle(s) is fully responsible to pay any debt related to the vehicle(s). The other party will have no claim to any vehicle(s) in the other's name and possession.
+      - label: Each spouse will keep the vehicle(s) now in their possession and titled in **only** their name. The spouse keeping the vehicle(s) is fully responsible to pay any debt related to the vehicle(s). The other spouse will have no claim to any vehicle(s) in the other's name and possession.
         value: True
       - label: We need to transfer title to one or more vehicles.
         value: False
@@ -1933,12 +2045,10 @@ fields:
     field: marriage.vehicles[i].year
     minlength: 4
     maxlength: 4
-  - label: |
-      {vehicles_make|Make}
+  - label: "{Make}"
     label above field: False
     field: marriage.vehicles[i].make
-  - label: |
-      {vehicles_model|Model}
+  - label: "{Model}"
     label above field: False
     field: marriage.vehicles[i].model
   - label: VIN
@@ -2024,16 +2134,30 @@ subquestion: |
   If you use this tool:
   
   * The person who is awarded a piece of real property (home, condo, or land) will also be made responsible for paying the mortgage, insurance, taxes, liens, and any other costs on the property. 
-  * Or if you and the other party are going to sell the property and share equally in the profit or loss from the sale, both of you will be responsible for the mortgage, insurance, taxes, liens, and any other costs on the property until it is sold. 
+  * Or if you and the other spouse are going to sell the property and share equally in the profit or loss from the sale, both of you will be responsible for the mortgage, insurance, taxes, liens, and any other costs on the property until it is sold. 
 
+  ${collapse_template(real_prop_other_options_info)}
+
+  ${collapse_template(refinancing_info)}
+
+  ${collapse_template(quitclaim_info)}
+---
+template: real_prop_other_options_info
+subject: What if I want something different?
+content: |
   These are common ways of assigning the rights and responsibilities of real property in a divorce—but not the only ways. If you don't agree with any of these terms for dividing the real property and the related debt, you should talk to a lawyer before finalizing your divorce. You may want to talk to a lawyer anyway to ensure the best possible outcome. ${ MLH_GUIDE_FULL }
   
-  Please review the articles [Divorce Basics: Dividing Your Property and Debt](https://michiganlegalhelp.org/resources/family/divorce-basics-dividing-your-property-and-debt) and [Real Estate and Divorce](https://michiganlegalhelp.org/resources/family/real-estate-and-divorce) for more information.
-
+  For more information, please read [Divorce Basics: Dividing Your Property and Debt](https://michiganlegalhelp.org/resources/family/divorce-basics-dividing-your-property-and-debt) and [Real Estate and Divorce](https://michiganlegalhelp.org/resources/family/real-estate-and-divorce).
+---
+template: refinancing_info
+subject: Refinancing
+content: |
   As part of the Judgment of Divorce, the person who is awarded the property may be ordered to refinance the home in his or her name alone. However, refinancing might not be possible if the property is worth less than the amount of the mortgage, if the person required to refinance has poor credit, or for other reasons.
-
-  The person who is not awarded the property may be required to complete a quitclaim deed giving the other spouse their share of the property.
-
+---
+template: quitclaim_info
+subject: Quitclaim deed
+content: |
+  You will need a new deed if both of your names are on the current deed or if the current deed is not in the name of the person keeping the property. To learn more, read [Quitclaim Deeds and Divorce](https://michiganlegalhelp.org/resources/family/quitclaim-deeds-and-divorce).
 ---
 id: marriage.real_property
 sets:
@@ -2092,7 +2216,7 @@ fields:
       val("marriage.real_property[i].owner") === "users[0]" || val("marriage.real_property[i].owner") === "other_parties[0]"
 
   - note: |
-      **The person who is not keeping the property will need to sign a quitclaim deed giving his or her share of the property to the other person.**
+      The person who is not keeping the property will need to **sign a quitclaim deed** giving their share of the property to the other person.  The Judgment of Divorce will require you to do this **within 30 days** of when the judgment is final.
     js show if: |
       val("marriage.real_property[i].titled_together") === true
 
@@ -2103,7 +2227,7 @@ fields:
       val("marriage.real_property[i].titled_together") === false
 
   - note: |
-      **The person who is not keeping the property will need to sign a quitclaim deed giving his or her share of the property to the other person.**
+      The person who is not keeping the property will need to **sign a quitclaim deed** giving their share of the property to the other person.  The Judgment of Divorce will require you to do this **within 30 days** of when the judgment is final.
     js show if: |
       val("marriage.real_property[i].title_award_to_named") === false
 
@@ -2232,7 +2356,7 @@ content: |
     - Driver's license number and state
     - Occupational license number(s), type(s), issuing state(s), and date(s)
 
-  INFORMATION ABOUT THE OTHER PARTY
+  INFORMATION ABOUT THE OTHER SPOUSE
 
     - All of the above information
 
@@ -2245,7 +2369,7 @@ content: |
     - Current primary residence address
     - Who has legal custody
 
-  INFORMATION ABOUT MEDICAL INSURANCE HELD BY EITHER PARTY
+  INFORMATION ABOUT MEDICAL INSURANCE HELD BY EITHER SPOUSE
 
     - Provider name and address
     - Policy / group number
@@ -2290,8 +2414,9 @@ code: |
     if tool_ID == "divorce_complaint":
       if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
         users[0].ten_days_in_county
-    users[0].village_or_township_yn
-    users[0].address.county # skipped if answered on lives_in_Michigan screen
+    if users[0].address.country == "US":
+      users[0].village_or_township_yn
+      users[0].address.county # skipped if answered on lives_in_Michigan screen
     if users[0].mailing_address.yesno:
       users[0].mailing_address.address
   

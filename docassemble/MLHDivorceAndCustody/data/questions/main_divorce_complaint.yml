@@ -54,8 +54,8 @@ content: |
 # set intro landing screen variables
 code: |
   MLH_form_type = "forms"
-  MLH_time_min = 20
-  MLH_time_max = 60
+  MLH_time_min = 40
+  MLH_time_max = 90
 ---
 template: MLH_welcome_message
 content: |
@@ -133,11 +133,12 @@ code: |
   if not ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI) or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI)):
      exit_jurisdiction
 
-  if other_parties[0].address.country != "US":
+  if other_parties[0].address.country == "US":
+    other_parties[0].village_or_township_yn  
+    other_parties[0].address.county # skipped if already asked on lives_in_Michigan screen
+  else:
     international_service_warning
 
-  other_parties[0].village_or_township_yn  
-  other_parties[0].address.county # skipped if already asked on lives_in_Michigan screen
   if other_parties[0].mailing_address.yesno:
     other_parties[0].mailing_address.address
   other_parties[0].no_phone_number
@@ -186,6 +187,7 @@ code: |
   nav.set_section("signpost_property")
 
   marriage.marital_property_info
+  reiterate_marital_property
   interview_order_personal_property
   interview_order_vehicles
   marriage.real_property.gather()

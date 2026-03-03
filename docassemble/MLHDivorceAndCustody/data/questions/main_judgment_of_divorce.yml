@@ -113,13 +113,17 @@ code: |
     if not marriage.have_experienced_domestic_violence_continue:
       exit_general
 
-  county_choice # TODO custom? "In what county was the divorce filed?"
+  user_ask_role
+  set_JOD_party_labels
+  county_choice
   court_index
   the_court
   the_foc
+  if user_ask_role == "plaintiff":
+    party_lived_6_months_MI
+    if not (party_lived_6_months_MI['user'] and party_ten_days_in_county['user']) and not (party_lived_6_months_MI['other_party'] and party_ten_days_in_county['other_party']):
+      jurisdiction_warning
   docket_number
-  user_ask_role
-  set_JOD_party_labels
 
   if marriage.have_pension_retirement:
     marriage.pension_retirement_accounts_keep_own
@@ -156,8 +160,9 @@ code: |
   other_parties[0].birthplace
 
   interview_order_other_parties_address_info
-  other_parties[0].village_or_township_yn  
-  other_parties[0].address.county # skipped if already asked on lives_in_Michigan screen
+  if other_parties[0].address.country == "US":
+    other_parties[0].village_or_township_yn  
+    other_parties[0].address.county # skipped if already asked on lives_in_Michigan screen
   if other_parties[0].mailing_address.yesno:
     other_parties[0].mailing_address.address
   other_parties[0].no_phone_number
@@ -196,6 +201,7 @@ code: |
   nav.set_section("signpost_property")
 
   marriage.marital_property_info
+  reiterate_marital_property
   interview_order_personal_property
   interview_order_vehicles
   marriage.real_property.gather()
