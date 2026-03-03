@@ -377,14 +377,14 @@ attachment:
           both parties
           % endif
       - parenting_time_request: |
-            % if physical_custody_who != "both":
-            % if PT_who == "user":
-            Defendant will not have parenting time.
-            % elif PT_who == "other_party":
-            Plaintiff will not have parenting time.
-            % endif
-            % endif
-            % if physical_custody_who == "both" or PT_who == "both":
+          % if physical_custody_who != "both":
+          % if PT_who == "user":
+          Defendant will not have parenting time.
+          % elif PT_who == "other_party":
+          Plaintiff will not have parenting time.
+          % endif
+          % endif
+          % if physical_custody_who == "both" or PT_who == "both":
           % if PT_type == "reasonable":
           Reasonable parenting time.
           % elif PT_type == "specific":
@@ -403,7 +403,7 @@ attachment:
           Parenting time according to the ${ county_choice } County Friend of the Court parenting time schedule.
           % endif
           % endif
-            % endif
+          % endif
       - parties_with_legal_custody__3: |
           % if legal_custody_who == "user":
           Plaintiff
