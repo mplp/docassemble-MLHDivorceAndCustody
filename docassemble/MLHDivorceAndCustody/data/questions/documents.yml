@@ -179,7 +179,7 @@ code: |
   default_request_mc07.enabled = (tool_ID in ["divorce_complaint"]) and (not spouse_is_in_military)
 ---
 code: |
-  complaint_answer_attachment.enabled = (tool_ID in ["divorce_complaint"]) and (user_wants_post_divorce_support or (there_are_marital_children and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom"))
+  complaint_answer_attachment.enabled = (tool_ID in ["divorce_complaint"]) and (user_wants_post_divorce_support or (PT_type != "reasonable" and specific_PT_how == "custom"))
 ---
 code: |
   complaint_no_children_cc_407.enabled = (tool_ID in ["divorce_complaint"]) and (not there_are_marital_children)
