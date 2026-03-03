@@ -9,7 +9,7 @@ objects:
 ---
 if: tool_ID == "divorce_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, complaint_no_children_cc_407, complaint_with_children_cc_408, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, default_request_mc07, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle, complaint_answer_attachment], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, complaint_407_full, complaint_408_full, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, default_request_mc07, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Divorce and Custody JOD", title="Divorce and Custody JOD", enabled=True)
   # - al_court_bundle: [will be same as above, except without the instructions]
 ---
 # ====================================================================
@@ -179,13 +179,13 @@ code: |
   default_request_mc07.enabled = (tool_ID in ["divorce_complaint"]) and (not spouse_is_in_military)
 ---
 code: |
-  complaint_answer_attachment.enabled = (tool_ID in ["divorce_complaint"]) and (user_wants_post_divorce_support or (PT_type != "reasonable" and specific_PT_how == "custom"))
+  complaint_answer_attachment.enabled = (tool_ID in ["divorce_complaint"]) and (user_wants_post_divorce_support or (there_are_marital_children and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom"))
 ---
-code: |
-  complaint_no_children_cc_407.enabled = (tool_ID in ["divorce_complaint"]) and (not there_are_marital_children)
+# code: |
+#   complaint_no_children_cc_407.enabled = (tool_ID in ["divorce_complaint"]) and (not there_are_marital_children)
 ---
-code: |
-  complaint_with_children_cc_408.enabled = (tool_ID in ["divorce_complaint"]) and there_are_marital_children
+# code: |
+#   complaint_with_children_cc_408.enabled = (tool_ID in ["divorce_complaint"]) and there_are_marital_children
 ---
 # ====================================================================
 ## specific form objects and attachment blocks
@@ -194,6 +194,26 @@ code: |
 # --------------------------------------------------------------------
 ## Example form title or category here
 # --------------------------------------------------------------------
+---
+# --------------------------------------------------------------------
+## Complaint for Divorce, CC 407/408 and Attachments
+# --------------------------------------------------------------------
+---
+objects:
+    - complaint_407_full: ALDocumentBundle.using(elements=[complaint_no_children_cc_407, complaint_answer_attachment], filename="Complaint for Divorce - CC 407", title="Complaint for Divorce - CC 407")
+    - complaint_408_full: ALDocumentBundle.using(elements=[complaint_with_children_cc_408, complaint_answer_attachment], filename="Complaint for Divorce - CC 408", title="Complaint for Divorce - CC 408")
+---
+code: |
+    complaint_407_full.enabled = (tool_ID in ["divorce_complaint"]) and (not there_are_marital_children)
+    if complaint_407_full.enabled:
+        complaint_no_children_cc_407.enabled = True
+        complaint_answer_attachment.enabled = (tool_ID in ["divorce_complaint"]) and (user_wants_post_divorce_support or (there_are_marital_children and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom"))
+---
+code: |
+    complaint_408_full.enabled = (tool_ID in ["divorce_complaint"]) and there_are_marital_children
+    if complaint_408_full.enabled:
+        complaint_with_children_cc_408.enabled = True
+        complaint_answer_attachment.enabled = (tool_ID in ["divorce_complaint"]) and (user_wants_post_divorce_support or (there_are_marital_children and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom"))
 ---
 # --------------------------------------------------------------------
 ## Complaint for Divorce, CC 407
