@@ -3307,9 +3307,14 @@ code: |
   if child_support_pending_elsewhere:
     other_case_controls_child_support = True
   if prior_family_cases.there_are_any:
-    for case in prior_family_cases:
-      if case.status != "dismissed" and case.type != "divorce" and case.has_child_support_order:
-        other_case_controls_child_support = True
+    if tool_ID == "divorce_complaint":
+      for case in prior_family_cases:
+        if case.status != "dismissed" and case.type != "divorce" and case.has_child_support_order:
+          other_case_controls_child_support = True
+    elif tool_ID == "JOD_only":
+      for case in prior_family_cases:
+        if case.status != "dismissed" and case.has_child_support_order:
+          other_case_controls_child_support = True
 ---
 attachment:
   - name: Judgment addendum 1 (personal property and debt)
