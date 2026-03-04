@@ -17,6 +17,9 @@ features:
   labels above fields: True
   css: mlh-divorce-and-custody.css
   # note css line copied from Jack's main judgment yml-- Ask Jack -- maybe just a placeholder?
+  # below is for testing with nondevs
+  debug: False
+  error notification variables: True
 ---
 # for framework court loader logic
 code: |
@@ -110,7 +113,9 @@ code: |
       cover_sheet_complete_1 = f"Now that you have your { MLH_form_type }, use our instructions to learn about next steps."
 ---
 code:  |
-  github_repo_name = 'docassemble-MLHDivorceAndCustody' if get_config('debug') else 'docassemble-UserFeedback'
+  github_repo_name = 'docassemble-MLHDivorceAndCustody' 
+# override during team testing since debug is off
+#  github_repo_name = 'docassemble-MLHDivorceAndCustody' if get_config('debug') else 'docassemble-UserFeedback'
 ---
 terms:
   - phrases:
