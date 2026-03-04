@@ -775,7 +775,7 @@ fields:
       is: False
   # TODO? need help text saying don't include children who were born to or adopted by either spouse prior to marriage
 validation code: |
-  children[i].revoke_paternity_reminder = False
+  children[i].revoke_paternity_reminder = False # sets for ALL kids, overridden on later screens as needed
   if children[i].adopted_during_marriage:
     children[i].timing = "marital"
     children[i].origin = "marital_adoption"
@@ -1142,7 +1142,7 @@ fields:
       val("children[i].legal_parent") == "both" && ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer"] and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" }  
 # NOTE: see above for another way to to do js show if logic without json.dumps!
 validation code: |
-  if children[i].parentage_plan_to_revoke:
+  if children[i].legal_parent == "both" and children[i].parentage_plan_to_revoke:
     children[i].revoke_paternity_reminder = True
 ---
 id: parentage revocation questions, spouse is bio parent
@@ -1166,7 +1166,7 @@ fields:
     js show if: |
       val("children[i].legal_parent") == "both" && ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer"] and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" } 
 validation code: |
-  if children[i].parentage_plan_to_revoke:
+  if children[i].legal_parent == "both" and children[i].parentage_plan_to_revoke:
     children[i].revoke_paternity_reminder = True
 ---
 id: info about revoking parentage
