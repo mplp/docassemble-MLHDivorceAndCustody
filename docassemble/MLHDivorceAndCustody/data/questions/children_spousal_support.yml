@@ -58,6 +58,7 @@ id: child questions
 # mandatory: True # remove later
 code: |
   children_intro
+  children_previous_address # calling now so that reset_gathered works even if no kids
   if children.there_are_any:
     children.gather()
     enable_child_demographics_review_screen
@@ -68,7 +69,6 @@ code: |
   
   set_marital_children_or_not
   set_child_home_choices
-  children_previous_address # calling now so that reset_gathered works even if no kids
   
   if there_are_marital_children:
 

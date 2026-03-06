@@ -2633,6 +2633,8 @@ attachment:
 ## Uniform Child Support Order FOC 10 and Attachments
 # --------------------------------------------------------------------
 ---
+### note foc_10_main template (uniform_child_support_order_foc_10.pdf) also used by child support motion tool
+---
 objects:
   - foc_10_full: ALDocumentBundle.using(elements=[foc_10_main, foc_10_attachment], filename="Uniform Child Support Order - FOC 10", title="Uniform Child Support Order - FOC 10")
 ---
