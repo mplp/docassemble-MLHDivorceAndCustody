@@ -2428,7 +2428,6 @@ code: |
   users[0].email
   
   interview_order_user_contact_info = True
-#LHI asks for township in divorce complaint even if not MI address. JOD seems to depend on whether they have MI address. But I see no reason this would be different for complaint vs. JOD_only. So collecting here for both no matter what. I think this only goes on Record of Divorce.
 ---
 code: |
   other_parties[0].address.address
