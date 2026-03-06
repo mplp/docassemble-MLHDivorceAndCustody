@@ -484,6 +484,9 @@ attachment:
       - trial_court_phone_number: ${ the_court.phone }
       - plaintiff_block: |
           ${ plaintiffs[0].name_full() }
+          % if user_ask_role == "plaintiff" and confidential_contact_info_yn:
+          Confidential/alternative address:
+          % endif
           ${ plaintiffs[0].address.line_one() }
           ${ plaintiffs[0].address.line_two() }
           ${ word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
@@ -1082,7 +1085,7 @@ attachment:
       - users0_name_full: ${users[0].name_full()}
       - users0_address_block: |
           % if confidential_contact_info_yn:
-          Confidential- Mailing:
+          Confidential/alternative address:
           % else:
           ${""}
           % endif
@@ -1136,7 +1139,7 @@ attachment:
       - users1_driver_license_and_state: ${ users[0].license_number + " " + users[0].license_state }
       - users1_address_on_one_line: |
           % if confidential_contact_info_yn:
-          Confidential- Mailing: ${ users[0].address.on_one_line() }
+          Confidential/alternative address: ${ users[0].address.on_one_line() }
           % else:
           % if users[0].mailing_address.yesno:
           Mailing: ${ users[0].mailing_address.on_one_line() + " "  }
@@ -1648,7 +1651,7 @@ attachment:
           % endif
           % else:
           % if confidential_contact_info_yn:
-          Confidential- Mailing Address: ${ users[0].address.on_one_line() }
+          Confidential/alternative address: ${ users[0].address.on_one_line() }
           % elif users[0].mailing_address.yesno:
           ${ users[0].mailing_address.on_one_line() }
           % else:
@@ -1676,7 +1679,7 @@ attachment:
       - fathers1_address_on_one_line: |
           % if users[0].gender == "male" and other_parties[0].gender == "female":
           % if confidential_contact_info_yn:
-          Confidential- Mailing Address: ${ users[0].address.on_one_line() }
+          Confidential/alternative address: ${ users[0].address.on_one_line() }
           % elif users[0].mailing_address.yesno:
           ${ users[0].mailing_address.on_one_line() }
           % else:
@@ -1811,10 +1814,16 @@ attachment:
         % endif
     - plaintiff_name: ${plaintiffs[0].name_full()}
     - plaintiff_address: |
+        % if user_ask_role == "plaintiff" and confidential_contact_info_yn:
+        Confidential/alternative address:
+        % endif
         ${ plaintiffs[0].address.line_one() }
         ${ plaintiffs[0].address.line_two() }
     - defendant_name: ${defendants[0].name_full()}
     - defendant_address: |
+        % if user_ask_role == "defendant" and confidential_contact_info_yn:
+        Confidential/alternative address:
+        % endif
         ${ defendants[0].address.line_one() }
         ${ defendants[0].address.line_two() }
     - plaintiff_ssn: ${plaintiffs[0].ssn}
@@ -2604,6 +2613,9 @@ attachment:
       - trial_court_phone_number: ${ the_court.phone }
       - plaintiff_block: |
           ${ plaintiffs[0].name_full() }
+          % if user_ask_role == "plaintiff" and confidential_contact_info_yn:
+          Confidential/alternative address:
+          % endif
           ${ plaintiffs[0].address.line_one() }
           ${ plaintiffs[0].address.line_two() }
           ${ word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
@@ -2656,11 +2668,17 @@ attachment:
     - trial_court_phone_number: ${ the_court.phone }
     - plaintiff_block: |
         ${ plaintiffs[0].name_full() }
+        % if user_ask_role == "plaintiff" and confidential_contact_info_yn:
+        Confidential/alternative address:
+        % endif
         ${ plaintiffs[0].address.line_one() }
         ${ plaintiffs[0].address.line_two() }
         ${ word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
     - defendant_block: |
         ${ defendants[0].name_full() }
+        % if user_ask_role == "defendant" and confidential_contact_info_yn:
+        Confidential/alternative address:
+        % endif
         ${ defendants[0].address.line_one() }
         ${ defendants[0].address.line_two() }
         ${ word("Unkonwn phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
@@ -2734,11 +2752,17 @@ attachment:
       - trial_court_phone_number: ${ the_court.phone }
       - plaintiff_block: |
           ${ plaintiffs[0].name_full() }
+          % if user_ask_role == "plaintiff" and confidential_contact_info_yn:
+          Confidential/alternative address:
+          % endif
           ${ plaintiffs[0].address.line_one() }
           ${ plaintiffs[0].address.line_two() }
           ${ word("Does not have phone") if plaintiffs[0].no_phone_number else plaintiffs[0].phone_numbers() }
       - defendant_block: |
           ${ defendants[0].name_full() }
+          % if user_ask_role == "defendant" and confidential_contact_info_yn:
+          Confidential/alternative address:
+          % endif
           ${ defendants[0].address.line_one() }
           ${ defendants[0].address.line_two() }
           ${ word("Does not have phone") if defendants[0].no_phone_number else defendants[0].phone_numbers() }
@@ -2978,10 +3002,16 @@ attachment:
       - trial_court_phone_number: ${ the_court.phone }
       - defendants_block: |
           ${defendants}
+          % if user_ask_role == "defendant" and confidential_contact_info_yn:
+          Confidential/alternative address:
+          % endif
           ${defendants[0].address.on_one_line()}
           ${word("Does not have phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
       - plaintiffs_block: |
           ${plaintiffs}
+          % if user_ask_role == "plaintiff" and confidential_contact_info_yn:
+          Confidential/alternative address:
+          % endif
           ${plaintiffs[0].address.on_one_line()}
           ${word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
       - plaintiffs1_name: ${plaintiffs}
@@ -3085,10 +3115,16 @@ attachment:
       - trial_court_phone_number: ${the_court.phone}
       - plaintiffs_block: |
           ${plaintiffs}
+          % if user_ask_role == "plaintiff" and confidential_contact_info_yn:
+          Confidential/alternative address:
+          % endif
           ${plaintiffs[0].address.on_one_line()}
           ${word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number)}
       - defendants_block: |
           ${defendants}
+          % if user_ask_role == "defendant" and confidential_contact_info_yn:
+          Confidential/alternative address:
+          % endif
           ${defendants[0].address.on_one_line()}
           ${word("Does not have phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number)}
       - plaintiffs1_name: ${plaintiffs}

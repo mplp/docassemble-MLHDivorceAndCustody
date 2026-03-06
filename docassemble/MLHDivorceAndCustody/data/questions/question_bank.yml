@@ -609,33 +609,36 @@ question: |
 subquestion: |
   All of the information that you enter in this tool, including your address and telephone information, will be included on forms that you file with the court and give to your spouse. If you fear for your safety if this information is known by your spouse or someone else, proceed with caution. **Do not use an address or telephone number that you want to keep confidential in this tool or on your court forms.**
 
-  Keep in mind that your divorce file is a public record and anyone could ask to look at it and see your address. To keep your address confidential, you need to have one of the following:
-
-  - A Personal Protection Order or other order which keeps your address confidential, OR
-
-  - You need to state that you and/or your children's safety would be at risk if you disclose your address. This is done by filing a Uniform Child Custody Jurisdiction Enforcement Act Affidavit with the court.
-
-  ${collapse_template(confidential_contact_info_yn_more_template)}
+  Keep in mind that your divorce file is a public record and anyone could ask to look at it and see your address. 
 fields:
-  - label: Do you want to keep your residential address and telephone number confidential because you have a Personal Protection Order or because disclosing it would place you and/or your children at risk?
+  - label: Do you need to keep your real address confidential because of safety concerns?
     field: confidential_contact_info_yn
     datatype: yesnoradio
+  - note: |
+      If you fear for the safety of you or your children, it is strongly recommended that you hire a lawyer and do not do your divorce on your own. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to look for a lawyer or legal services near you.
+
+      ${collapse_template(why_lawyer_address_safety)}
+
+      But if you need to file for divorce without a lawyer, you can continue with this tool. On the next page, you will need to give a mailing address where the court and your spouse can send you mail related to your case. You may want to use a P.O. Box or the address of a friend or relative, and a different telephone number (such as the telephone number of a friend or relative).
+    show if:
+      variable: confidential_contact_info_yn
+      is: True
+  - label: Do you want to continue?
+    field: continue_confidential_address
+    datatype: yesnoradio
+    show if:
+      variable: confidential_contact_info_yn
+      is: True
 validation code: | ## for review screen functionality ##
   users[0].address.invalidate_attr("address", "unit", "city", "state", "zip", "country", "county")
   users[0].mailing_address.invalidate_attr("yesno", "address", "unit", "city", "state", "zip", "country")
   users[0].invalidate_attr("village_or_township_yn", "village_or_township", "no_phone_number", "phone_number", "has_lived_6_months_MI")
   users[0].delattr("lives_in_Michigan", "ten_days_in_county")
 ---
-id: confidential_contact_info_yn_more_template
-template: confidential_contact_info_yn_more_template
-subject: |
-  Click here for more information.
+template: why_lawyer_address_safety
+subject: How can a lawyer help?
 content: |
-  If you want to keep your address confidential, give a different mailing address (such as a P.O. Box or the address of a friend or relative) and different telephone number (such as the telephone number of a friend or relative), where the court and your spouse can contact you regarding your case.
-
-  Note: if your address is included on the papers that your spouse already filed, it is not confidential. Also, please be aware that some of your divorce forms will be incomplete if you do not supply your home address and/or the home address of your children. The court may require you to provide this information during or after your case.
-
-  If you fear for the safety of you or your children if your address is known by your spouse or someone else, it is strongly recommended that you hire a lawyer and do not do your divorce on your own. Please read [Domestic Violence and Divorce](https://michiganlegalhelp.org/resources/family/domestic-violence-and-divorce). You can also use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to look for a lawyer or legal services near you.
+  If you are able to find a lawyer, they can help you take extra steps to keep your real address confidential. For example, they could help you get a court order for a confidential address, and/or ask the Friend of the Court to keep your address confidential in the Friend of the Court file.
 ---
 id: your address
 question: |
@@ -2402,10 +2405,13 @@ fields:
 ---
 code: |
   if confidential_contact_info_yn:
-    users[0].address.address
-    if tool_ID == "divorce_complaint":
-      if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
-        users[0].ten_days_in_county
+    if continue_confidential_address:
+      users[0].address.address
+      if tool_ID == "divorce_complaint":
+        if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
+          users[0].ten_days_in_county
+    else:
+      exit_general
   
   else:
     users[0].address.address
@@ -2422,7 +2428,6 @@ code: |
   users[0].email
   
   interview_order_user_contact_info = True
-#LHI asks for township in divorce complaint even if not MI address. JOD seems to depend on whether they have MI address. But I see no reason this would be different for complaint vs. JOD_only. So collecting here for both no matter what. I think this only goes on Record of Divorce.
 ---
 code: |
   other_parties[0].address.address
