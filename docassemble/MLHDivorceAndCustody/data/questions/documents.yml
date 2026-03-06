@@ -1085,7 +1085,7 @@ attachment:
       - users0_name_full: ${users[0].name_full()}
       - users0_address_block: |
           % if confidential_contact_info_yn:
-          Confidential- Mailing:
+          Confidential/alternative address:
           % else:
           ${""}
           % endif
@@ -1139,7 +1139,7 @@ attachment:
       - users1_driver_license_and_state: ${ users[0].license_number + " " + users[0].license_state }
       - users1_address_on_one_line: |
           % if confidential_contact_info_yn:
-          Confidential- Mailing: ${ users[0].address.on_one_line() }
+          Confidential/alternative address: ${ users[0].address.on_one_line() }
           % else:
           % if users[0].mailing_address.yesno:
           Mailing: ${ users[0].mailing_address.on_one_line() + " "  }
@@ -1651,7 +1651,7 @@ attachment:
           % endif
           % else:
           % if confidential_contact_info_yn:
-          Confidential- Mailing Address: ${ users[0].address.on_one_line() }
+          Confidential/alternative address: ${ users[0].address.on_one_line() }
           % elif users[0].mailing_address.yesno:
           ${ users[0].mailing_address.on_one_line() }
           % else:
@@ -1679,7 +1679,7 @@ attachment:
       - fathers1_address_on_one_line: |
           % if users[0].gender == "male" and other_parties[0].gender == "female":
           % if confidential_contact_info_yn:
-          Confidential- Mailing Address: ${ users[0].address.on_one_line() }
+          Confidential/alternative address: ${ users[0].address.on_one_line() }
           % elif users[0].mailing_address.yesno:
           ${ users[0].mailing_address.on_one_line() }
           % else:
