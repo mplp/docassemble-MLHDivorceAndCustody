@@ -1167,15 +1167,15 @@ attachment:
           % endif
       - users1_phone_number_mobile: |
           % if not users[0].no_phone_number and users[0].phone_type == "cell":
-          ${ users[0].phone_number}
+          ${phone_number_formatted(users[0].phone_number)}
           % endif
       - users1_phone_number_home: |
           % if not users[0].no_phone_number and users[0].phone_type == "home":
-          ${ users[0].phone_number}
+          ${phone_number_formatted(users[0].phone_number)}
           % endif
       - users1_phone_number_work: |
           % if users[0].has_job:
-          ${ users[0].job.employer.phone }
+          ${phone_number_formatted(users[0].job.employer.phone)}
           % endif
       - users1_occupation: ${ users[0].occupation }
       - users1_employer_name_address: |
@@ -1240,15 +1240,15 @@ attachment:
           % endif
       - other_parties1_phone_number_mobile: |
           % if not other_parties[0].no_phone_number and other_parties[0].phone_type == "cell":
-          ${ other_parties[0].phone_number}
+          ${phone_number_formatted(other_parties[0].phone_number)}
           % endif
       - other_parties1_phone_number_home: |
           % if not other_parties[0].no_phone_number and other_parties[0].phone_type == "home":
-          ${ other_parties[0].phone_number}
+          ${phone_number_formatted(other_parties[0].phone_number)}
           % endif
       - other_parties1_phone_number_work: |
           % if other_parties[0].has_job:
-          ${ other_parties[0].job.employer.phone }
+          ${phone_number_formatted(other_parties[0].job.employer.phone)}
           % endif
       - other_parties1_occupation: ${ other_parties[0].occupation }
       - other_parties1_employer_name_address: |
@@ -1586,7 +1586,7 @@ attachment:
       - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
       - defendants0_name_full: ${defendants[0].name_full()}
       - users0_name_full: ${users[0].name_full()}
-      - users0_phone_number: ${users[0].phone_number}
+      - users0_phone_number: ${phone_number_formatted(users[0].phone_number)}
       - users0_address_on_one_line: ${users[0].address.on_one_line() if not confidential_contact_info_yn else ""}
       - users0_birthdate: ${users[0].birthdate}
       - users0_ssn: ${users[0].ssn}
