@@ -3899,7 +3899,7 @@ fields:
     datatype: radio
     code: |
       tax_choices
-  - Beginning in what year?: tax_start_year
+  - Beginning with what tax year?: tax_start_year
     datatype: integer
     min: |
      ${ today().year - 10 }
