@@ -1595,6 +1595,8 @@ review:
 #
   - Edit:
       - marriage.real_property.revisit
+      - invalidate:
+        - send_rp_legal_description_to_addendum
     button: |
       <h3 class="h5"> ${marriage.real_property.question_text}</h3>
 

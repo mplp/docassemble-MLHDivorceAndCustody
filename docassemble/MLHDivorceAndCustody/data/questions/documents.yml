@@ -164,10 +164,8 @@ code: |
   if send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum:
     judgment_overflow_addendum.enabled = True
 
-  elif marriage.real_property:
-    for property in marriage.real_property:
-      if len(property.desc) > 123:
-        judgment_overflow_addendum.enabled = True
+  elif marriage.real_property and send_rp_legal_description_to_addendum:
+    judgment_overflow_addendum.enabled = True
 
   elif marriage.other_provisions_any and len(marriage.other_provisions) > 240:
     judgment_overflow_addendum.enabled = True
@@ -3073,27 +3071,14 @@ attachment:
       - has_vehicle_addendum: ${has_vehicle_addendum(marriage)}
       - has_real_property_addendum: ${bool(marriage.real_property)}
       - has_pension_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
-      - has_overflow_addendum: |
-          % if send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum:
-          True
-          % elif marriage.real_property:
-            % for property in marriage.real_property:
-              % if len(property.desc) > 123:
-          True
-              % endif
-            % endfor
-          % elif marriage.other_provisions_any and len(marriage.other_provisions) > 240:
-          True
-          % else:
-          False
-          % endif
+      - has_overflow_addendum: ${(send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum) or (marriage.real_property and send_rp_legal_description_to_addendum) or (marriage.other_provisions_any and len(marriage.other_provisions) > 240)}
       - has_other_provisions: ${marriage.other_provisions_any}
       - other_provisions: |
           % if marriage.other_provisions_any:
             % if len(marriage.other_provisions) > 240:
           See addendum.
             % else:
-            ${marriage.other_provisions}
+          ${marriage.other_provisions}
             % endif
           % else:
           ${""}
@@ -3312,27 +3297,14 @@ attachment:
       - pensions_in_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
       - has_income_tax_addendum: ${there_are_marital_children}
       - has_parenting_time_addendum: ${MI_has_jurisdiction_all_kids and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 240}
-      - has_overflow_addendum: |
-          % if send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum:
-          True
-          % elif marriage.real_property:
-            % for property in marriage.real_property:
-              % if len(property.desc) > 123:
-          True
-              % endif
-            % endfor
-          % elif marriage.other_provisions_any and len(marriage.other_provisions) > 240:
-          True
-          % else:
-          False
-          % endif
+      - has_overflow_addendum: ${(send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum) or (marriage.real_property and send_rp_legal_description_to_addendum) or (marriage.other_provisions_any and len(marriage.other_provisions) > 240)}
       - has_other_provisions: ${marriage.other_provisions_any}
       - other_provisions: |
           % if marriage.other_provisions_any:
             % if len(marriage.other_provisions) > 240:
           See addendum.
             % else:
-            ${marriage.other_provisions}
+          ${marriage.other_provisions}
             % endif
           % else:
           ${""}
@@ -5295,6 +5267,15 @@ code: |
     send_defendant_debts_to_addendum = defendant_debt_line_count > 4
   else:
     send_defendant_debts_to_addendum = False
+---
+# real property legal description overflow code
+code: |
+  send_rp_legal_description_to_addendum = False
+  
+  if marriage.real_property:
+    for property in marriage.real_property:
+      if len(property.desc) > 123:
+        send_rp_legal_description_to_addendum = True
 ---
 # The following functions are here so that the logic can be kept consistent,
 # since these logical checks are used in multiple fields of the Judgment.
