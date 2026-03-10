@@ -20,20 +20,6 @@ review:
       % else:
       
       <h2 class="h4">You <b>already filed</b> your divorce complaint.</h2>
-      % if marriage.temporary_order:
-        - A **temporary order was entered** in your case for custody, parenting time, child support, or spousal support.  
-      % if marriage.temporary_order_changed:
-        - Some information that goes on the *Domestic Relations Judgment Information* form (FOC 100) **has changed** since it was last filed.
-      
-      **Important!** Make sure all information below is correct and updated.
-      % else:
-        - The information that goes on the *Domestic Relations Judgment Information* form (FOC 100) has **not changed** since it was last filed.
-      % endif
-      % else:
-        - There has been **no temporary order** entered in your case for custody, parenting time, child support, or spousal support.
-
-      **Important:** if a temporary order has been entered, please tap **Edit** to update your case status.
-      % endif  
       % endif
     show if: tool_ID == "divorce_complaint"
     # This is a special question in the divorce complaint context, because we fully expect for some people the answers will change between their first pass through the tool and when they return. We really want to try to bring it to people's attention.
@@ -1630,7 +1616,7 @@ review:
 # ---------- case information ----------
   - raw html: |
       ${ next_accordion("""<h2 class="h4">Your Divorce Case</h2>""") }
-    show if: defined("county_choice") or defined ("venue")
+    show if: defined("county_choice") or defined ("venue") or defined ("marriage.temporary_order")
   - Edit:
       - user_ask_role
       - recompute:
@@ -1747,7 +1733,7 @@ review:
       **Important!** Make sure all information on this page is correct and updated.
       % endif
       % endif
-    show if: tool_ID == "JOD_only"
+    show if: tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and marriage.pending_divorce)
   - Edit:
       - marriage.true_statement
     button: |

@@ -161,6 +161,23 @@ action buttons:
     color: danger
     icon: right-from-bracket
 ---
+id: exit_second_divorce
+event: exit_second_divorce
+question: |
+  Sorry, this tool cannot help you.
+subquestion: |
+  Sorry, you can't file a complaint for divorce in Michigan while you have another pending divorce case in the United States or another country.
+
+  You may want to contact a lawyer for help. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) on Michigan Legal Help to find a lawyer or a legal services office near you.
+
+  If you think you made a mistake, tap **Undo** and change the answer to this question.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
 id: exit_no_marriage_breakdown
 event: exit_no_marriage_breakdown
 question: |
@@ -227,6 +244,10 @@ fields:
   - label: Do you have a pending divorce case with this spouse in any court?
     field: marriage.pending_divorce
     datatype: yesnoradio
+validation code: |
+  if not marriage.pending_divorce:
+    edit_existing_divorce = False
+    returning_to_finalize = False
 ---
 id: Choose a court
 question: In what county was the divorce filed?
@@ -386,9 +407,9 @@ content: |
   Please return to use this tool when you have determined if your spouse is currently on active military duty. 
 ---
 id: need temp order
-question: Do you need a temporary order?
+question: Need a temporary order to secure marital property?
 fields:
-  - Do you need a temporary order to keep your spouse from transferring, hiding, selling, or getting rid of marital property or assets?: need_temporary_order
+  - Do you **need a temporary order** to stop your spouse from transferring, hiding, selling, or getting rid of **marital property or assets?**: need_temporary_order
     datatype: yesnoradio
   - note: |
       **WARNING!** This tool may not be right for you. You cannot use this tool or the Michigan Legal Help website to get a temporary order. 
@@ -2294,12 +2315,12 @@ validation code: |
 ## marriage.temporary_order
 # --------------------------------------------------------------------
 ---
-if: tool_ID == "JOD_only"
-id: marriage.temporary_order jod_only
+if: tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and marriage.pending_divorce)
+id: marriage.temporary_order
 question: |
-  Temporary order
+  Temporary order on children or spousal support
 fields:
-  - label: Has a temporary order been entered in your case for custody, parenting time, child support, or spousal support?
+  - label: Did the judge already make a temporary order in your case for **custody, parenting time, child support, or spousal support?**
     field: marriage.temporary_order
     datatype: yesnoradio
   - note: |
@@ -2311,35 +2332,11 @@ fields:
     field: marriage.temporary_order_changed
     datatype: yesnoradio
     show if: marriage.temporary_order
----
-if: tool_ID == "divorce_complaint"
-id: marriage.temporary_order divorce complaint
-question: |
-  Updating your forms?
-fields:
-  - label: What stage of the divorce process are you in?
-    field: returning_to_finalize
-    datatype: radio
-    choices:
-      - I'm **getting ready to file** for divorce.: False
-      - The divorce was **already filed.** I'm back to update my forms.: True
-    # idea: maybe we could include this question on download page with a note specifically telling people to edit this on review screen?
-  - label: Has a temporary order been entered in your case for custody, parenting time, child support, or spousal support?
-    field: marriage.temporary_order
-    datatype: yesnoradio
-    show if: returning_to_finalize
-  - note: |
-      If a temporary order was entered previously, you should have already filed a [Domestic Relations Judgment Information form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/foc100.pdf). This tool will produce a second Domestic Relations Judgment Information form, which you will need to file with your Judgment of Divorce.
-
-      ${collapse_template(marriage.temporary_order_changed_template)}
-    show if: marriage.temporary_order
-  - label: Has any of the information that goes on this form changed since the last time it was filed?
-    field: marriage.temporary_order_changed
-    datatype: yesnoradio
-    show if: marriage.temporary_order
-  - note: |
-      **Important:** Make sure to use the **Review / Edit** screen to update this information on your forms.
-    show if: marriage.temporary_order_changed 
+# todo do we need this/flow if returning to a tool?
+#  - note: |
+#      **Important:** Make sure to use the **Review / Edit** screen to update this information on your forms.
+#    js show if: 
+# marriage.temporary_order_changed and it's the complaint tool?? not sure this really makes sense.
 ---
 template: marriage.temporary_order_changed_template
 subject: |
@@ -2377,6 +2374,64 @@ content: |
     - Cert. number
     - Children covered by the policy
     - Policy coverage (medical/dental/vision/other)
+---
+if: tool_ID == "divorce_complaint"
+id: marriage.temporary_order divorce complaint
+question: |
+  You and your spouse have an existing divorce case
+fields:
+  - label: Are you trying to start another divorce case or edit the exiting one?
+    field: edit_existing_divorce
+    datatype: radio
+    choices:
+      - I want to start another divorce case.: False
+      - I want to edit documents or fix something in my existing divorce case.: True
+validation code: |
+  if edit_existing_divorce:
+    returning_to_finalize = True
+---
+if: tool_ID == "divorce_complaint"
+id: edit existing divorce options
+question: |
+  Updating your forms
+subquestion: |
+  Please choose one of these options:
+  
+  1. 
+  % if not user_logged_in():
+  [Log in](https://da-dev.mplp.org/user/sign-in?next=https://forms.michiganlegalhelp.org/interviews) to **edit saved forms** if you already created an account and used this tool to create your divorce forms. (Forms are saved for 180 days from last access.)
+  % else:
+  Go to [My Forms](https://da-dev.mplp.org/interviews) to **edit saved forms** if you already created an account and used this tool to create your divorce forms. (Forms are saved for 180 days from last access.)
+  % endif
+
+  2. If you only need updated forms for the **end of your case,** you can use our [Judgment of Divorce tool](https://da-dev.mplp.org/start/divorce_judgment/) instead of this one. It is a little faster.
+
+  3. Continue using this tool if:
+  
+      * you don't have or can't find saved forms, and 
+      * you need to update forms filed at the **beginning of your case.** 
+continue button field: existing_divorce_options
+---
+# This question should only to be triggered on the review screen
+only sets: returning_to_finalize
+if: tool_ID == "divorce_complaint"
+id: returning to finalize
+question: |
+  Updating your forms?
+fields:
+  - label: What stage of the divorce process are you in?
+    field: returning_to_finalize
+    datatype: radio
+    choices:
+      - I'm **getting ready to file** for divorce.: False
+      - The divorce was **already filed.** I'm back to update my forms.: True
+validation code: |
+  if returning_to_finalize:
+    marriage.pending_divorce = True
+    edit_existing_divorce = True
+  else:
+    marriage.pending_divorce = False
+    edit_existing_divorce = False
 ---
 # --------------------------------------------------------------------
 ## marriage.true_statement
