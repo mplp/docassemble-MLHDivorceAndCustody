@@ -1470,7 +1470,15 @@ question: |
   Health coverage
 subquestion: |
   **COBRA**: After your divorce is final, one spouse may continue getting coverage under the other spouse's insurance through COBRA. Your Judgment of Divorce will include language about this. Typically, the spouse who gets continuing medical insurance through COBRA must pay for it. Insurance through COBRA may cost more than when that person was covered as a spouse. If the spouses agree to something else, like having the other spouse pay for the COBRA coverage, that must be specifically added to the Judgment of Divorce. You can add this in the Other Provisions section. The Other Provisions section will be available at the end of this tool.
+
+  ${ collapse_template(cobra_help_text) }
 continue button field: marriage.cobra_coverage
+---
+template: cobra_help_text
+subject: |
+  What is COBRA?
+content: |
+  COBRA is a law (the Consolidated Omnibus Budget Reconciliation Act) that provides a way to temporarily continue group health coverage under your spouse's plan after divorce.
 # --------------------------------------------------------------------
 ## marriage.personal_property_
 # --------------------------------------------------------------------
@@ -2146,14 +2154,14 @@ subquestion: |
 template: real_prop_other_options_info
 subject: What if I want something different?
 content: |
-  These are common ways of assigning the rights and responsibilities of real property in a divorce—but not the only ways. If you don't agree with any of these terms for dividing the real property and the related debt, you should talk to a lawyer before finalizing your divorce. You may want to talk to a lawyer anyway to ensure the best possible outcome. ${ MLH_GUIDE_FULL }
+  These are common ways of assigning the rights and responsibilities of real property in a divorce—but not the only ways. If you don't agree with any of these terms for dividing the real property and the related debt, you should talk to a lawyer before finalizing your divorce. ${ MLH_GUIDE_FULL }
   
   For more information, please read [Divorce Basics: Dividing Your Property and Debt](https://michiganlegalhelp.org/resources/family/divorce-basics-dividing-your-property-and-debt) and [Real Estate and Divorce](https://michiganlegalhelp.org/resources/family/real-estate-and-divorce).
 ---
 template: refinancing_info
 subject: Refinancing
 content: |
-  As part of the Judgment of Divorce, the person who is awarded the property may be ordered to refinance the home in his or her name alone. However, refinancing might not be possible if the property is worth less than the amount of the mortgage, if the person required to refinance has poor credit, or for other reasons.
+  As part of the Judgment of Divorce, the person who is awarded the property may be ordered to refinance the home in their name alone. However, refinancing might not be possible if the property is worth less than the amount of the mortgage, if the person required to refinance has poor credit, or for other reasons.
 ---
 template: quitclaim_info
 subject: Quitclaim deed
@@ -2181,7 +2189,8 @@ question: |
 subquestion: |
   Address: ${marriage.real_property[i].address.on_one_line()}
 fields:
-  - label: Legal description
+  - label: |
+      {Legal description}
     required: False
     field: marriage.real_property[i].desc
     input type: area
