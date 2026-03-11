@@ -1726,7 +1726,7 @@ review:
       <h3 class="h5"> Was a <b>temporary order</b> entered in your case for custody, parenting time, child support, or spousal support?</h3>
         - ${word(yesno(marriage.temporary_order))}
       % if marriage.temporary_order:
-      <h3 class="h5"> Has any of the information that goes on the *Domestic Relations Judgment Information* form (FOC 100) changed since the last time it was filed?</h3>
+      <h3 class="h5"> Has any of the information that goes on the <i>Domestic Relations Judgment Information</i> form (FOC 100) changed since the last time it was filed?</h3>
         - ${word(yesno(marriage.temporary_order_changed))}
       % if marriage.temporary_order_changed:
       

@@ -2326,17 +2326,21 @@ fields:
   - note: |
       If a temporary order was entered previously, you should have already filed a [Domestic Relations Judgment Information form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/foc100.pdf). This tool will produce a second Domestic Relations Judgment Information form, which you will need to file with your Judgment of Divorce.
 
+      % if defined("user_wants_post_divorce_support") and defined("there_are_marital_children") and defined("spousal_support_provisions") and not there_are_marital_children and not user_wants_post_divorce_support and  spousal_support_provisions != "user_agrees_to_pay_spousal_support":
+      After this screen, you may be asked followup questions about jobs and identifying information to fill out this form.
+      % endif
+
       ${collapse_template(marriage.temporary_order_changed_template)}
+    # followup questions happen due to interview order if FOC100 was NOT already prepped because of children or spousal support factors. But that will only happen if you've already basically fininshed the interview when you answer this--otherwise they'll just be asked as normal in course of interview.
     show if: marriage.temporary_order
-  - label: Has any of the information that goes on this form changed since the last time it was filed?
+  - label: Has any of the information that goes on this form **changed** since the last time it was filed?
     field: marriage.temporary_order_changed
     datatype: yesnoradio
-    show if: marriage.temporary_order
-# todo do we need this/flow if returning to a tool?
-#  - note: |
-#      **Important:** Make sure to use the **Review / Edit** screen to update this information on your forms.
-#    js show if: 
-# marriage.temporary_order_changed and it's the complaint tool?? not sure this really makes sense.
+    show if: marriage.temporary_order 
+  - note: |
+      **Tip:** Use the **Review / Edit** screen to update information if needed.
+    js show if: |
+      val("marriage.temporary_order_changed") === true && ${ "true" if tool_ID == "divorce_complaint" else "false" }
 ---
 template: marriage.temporary_order_changed_template
 subject: |
@@ -2344,7 +2348,7 @@ subject: |
 content: |
   The Domestic Relations Judgment Information form contains the following information:
 
-  INFORMATION ABOUT YOU
+  INFORMATION ABOUT YOU 
 
     - Full name and address
     - Social Security Number
@@ -2412,7 +2416,7 @@ subquestion: |
       * you need to update forms filed at the **beginning of your case.** 
 continue button field: existing_divorce_options
 ---
-# This question should only to be triggered on the review screen
+# This question should only to be triggered on the review screen. It is presented instead of re-asking the pending_divorce and edit_existing_divorce questions. If someone is returning, we already screened to make sure they're not trying to file a second divorce, and I think this framing is simpler once that issue is out of the way.
 only sets: returning_to_finalize
 if: tool_ID == "divorce_complaint"
 id: returning to finalize
@@ -2424,14 +2428,16 @@ fields:
     datatype: radio
     choices:
       - I'm **getting ready to file** for divorce.: False
-      - The divorce was **already filed.** I'm back to update my forms.: True
+      - The divorce complaint was **already filed.** I'm back to update my forms.: True
 validation code: |
   if returning_to_finalize:
     marriage.pending_divorce = True
     edit_existing_divorce = True
+    existing_divorce_options = True # Don't want to trigger this screen. Won't make sense if returning to saved answers.
   else:
     marriage.pending_divorce = False
     edit_existing_divorce = False
+  
 ---
 # --------------------------------------------------------------------
 ## marriage.true_statement
