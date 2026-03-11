@@ -79,7 +79,10 @@ code: |
 
   nav.set_section("signpost_qualify")
   if marriage.pending_divorce:
-    exit_general
+      if edit_existing_divorce:
+        existing_divorce_options
+      else:
+        exit_second_divorce
 
   if not marriage.breakdown:
     exit_no_marriage_breakdown
@@ -100,11 +103,13 @@ code: |
   if marriage.have_business:
     exit_general
 
+  if marriage.pending_divorce:
+    if marriage.temporary_order:
+      marriage.temporary_order_changed
+  
   if need_temporary_order:
     if not temporary_order_continue:
       exit_general
-  
-  returning_to_finalize #TODO can we ask need_temporary_order only if not returning_to_finalize?
 
   nav.set_section("signpost_user")
 
@@ -131,8 +136,15 @@ code: |
 
   interview_order_other_parties_address_info
 
-  if not ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI) or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI)):
-     exit_jurisdiction
+  if not returning_to_finalize:
+    if not ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI) or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI)):
+       exit_jurisdiction
+  else:
+    county_where_filed
+    court_index
+    party_lived_6_months_MI
+    if not (party_lived_6_months_MI['user'] and party_ten_days_in_county['user']) and not (party_lived_6_months_MI['other_party'] and party_ten_days_in_county['other_party']):
+      jurisdiction_warning
 
   if other_parties[0].address.country == "US":
     other_parties[0].village_or_township_yn  
@@ -205,8 +217,9 @@ code: |
     if there_are_marital_children:
       marriage.number_children_in_home_when_separated
 
-  check_for_required_venue
-  venue 
+  if not returning_to_finalize:
+    check_for_required_venue
+    venue 
 
   if marriage.other_provisions_any:
     marriage.other_provisions

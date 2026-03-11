@@ -12,6 +12,12 @@ review:
       % endif
   - Edit:
       - returning_to_finalize
+      - invalidate:
+        - venue
+        - the_court
+        - court_index
+        - the_foc
+        - county_choice
     button: |
       % if not returning_to_finalize:
       <h2 class="h4">You are <b>preparing to file</b> for divorce.</h2>
@@ -20,20 +26,6 @@ review:
       % else:
       
       <h2 class="h4">You <b>already filed</b> your divorce complaint.</h2>
-      % if marriage.temporary_order:
-        - A **temporary order was entered** in your case for custody, parenting time, child support, or spousal support.  
-      % if marriage.temporary_order_changed:
-        - Some information that goes on the *Domestic Relations Judgment Information* form (FOC 100) **has changed** since it was last filed.
-      
-      **Important!** Make sure all information below is correct and updated.
-      % else:
-        - The information that goes on the *Domestic Relations Judgment Information* form (FOC 100) has **not changed** since it was last filed.
-      % endif
-      % else:
-        - There has been **no temporary order** entered in your case for custody, parenting time, child support, or spousal support.
-
-      **Important:** if a temporary order has been entered, please tap **Edit** to update your case status.
-      % endif  
       % endif
     show if: tool_ID == "divorce_complaint"
     # This is a special question in the divorce complaint context, because we fully expect for some people the answers will change between their first pass through the tool and when they return. We really want to try to bring it to people's attention.
@@ -1630,7 +1622,7 @@ review:
 # ---------- case information ----------
   - raw html: |
       ${ next_accordion("""<h2 class="h4">Your Divorce Case</h2>""") }
-    show if: defined("county_choice") or defined ("venue")
+    show if: defined("county_choice") or defined ("venue") or defined ("marriage.temporary_order")
   - Edit:
       - user_ask_role
       - recompute:
@@ -1656,7 +1648,7 @@ review:
         - ${county_choice}
       <h3 class="h5"> Court</h3>
         - ${the_court}
-    show if: tool_ID == "JOD_only"
+    show if: tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and returning_to_finalize)
   - Edit:
       - party_lived_6_months_MI
       - invalidate:
@@ -1667,7 +1659,7 @@ review:
         - Your spouse did ${word("not") if not party_lived_6_months_MI['other_party'] else ""} live in Michigan for 180 days before filing for divorce. Your spouse did ${word("not") if not party_ten_days_in_county['other_party'] else ""} live in ${county_choice} County for 10 days before filing for divorce.
       <h3 class="h5"> Court</h3>
         - ${the_court}
-    show if: tool_ID == "JOD_only" and user_ask_role == "plaintiff"
+    show if: (tool_ID == "JOD_only" and user_ask_role == "plaintiff") or (tool_ID == "divorce_complaint" and returning_to_finalize)
   - Edit: docket_number
     button: |
       <h3 class="h5"> Case number</h3>
@@ -1689,7 +1681,7 @@ review:
       
       You **must wait** to file in ${ other_parties[0].address.county } County until your spouse has lived there for the last ten days or more.
       % endif
-    show if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 2 and not (there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case)
+    show if: tool_ID == "divorce_complaint" and not returning_to_finalize and len(all_potential_venue_options) == 2 and not (there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case)
     # conditions under which there is a basic choice of venue, matching id: "venue (normal choice)"
   - Edit:
       - venue
@@ -1714,7 +1706,7 @@ review:
       
       *If you miss that deadline, you must update this tool and get new forms to file instead in ${ users[0].address.county } County. This is because of your past separate maintenance case in that county.*
       % endif    
-    show if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options
+    show if: tool_ID == "divorce_complaint" and not returning_to_finalize and len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options
     # conditions under which there is a choice of venue but with special prior separate maintenance case logic, matching id: "venue: (weird separate maintenance choice)" 
   - note: |
       <h3 class="h5"> Where you will file</h3>
@@ -1727,7 +1719,7 @@ review:
       
       You **must wait** to file until you or your spouse have lived in ${ county_choice } County for the last ten days or more.
       % endif
-    show if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 1 or (len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and (len(current_venue_options) in [2, 0] or (len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county in current_venue_options)))
+    show if: tool_ID == "divorce_complaint" and not returning_to_finalize and len(all_potential_venue_options) == 1 or (len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and (len(current_venue_options) in [2, 0] or (len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county in current_venue_options)))
     # conditions under which there is only one option for venue, matching id: "venue (single option)"
   - Edit:
       - marriage.other_provisions_any
@@ -1740,14 +1732,14 @@ review:
       <h3 class="h5"> Was a <b>temporary order</b> entered in your case for custody, parenting time, child support, or spousal support?</h3>
         - ${word(yesno(marriage.temporary_order))}
       % if marriage.temporary_order:
-      <h3 class="h5"> Has any of the information that goes on the *Domestic Relations Judgment Information* form (FOC 100) changed since the last time it was filed?</h3>
+      <h3 class="h5"> Has any of the information that goes on the <i>Domestic Relations Judgment Information</i> form (FOC 100) changed since the last time it was filed?</h3>
         - ${word(yesno(marriage.temporary_order_changed))}
       % if marriage.temporary_order_changed:
       
       **Important!** Make sure all information on this page is correct and updated.
       % endif
       % endif
-    show if: tool_ID == "JOD_only"
+    show if: tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and marriage.pending_divorce)
   - Edit:
       - marriage.true_statement
     button: |
