@@ -54,14 +54,16 @@ code: |
   # for JOD_only, there are no specific instructions
   MLH_instructions_included = False
 ---
-# it seems like there's nothing to sign unless there was previously a temp order
+# nothing to sign unless there was a temporary order or FOC10b (spousal support order) is produced
 code: |
-  if marriage.temporary_order:
+  if marriage.temporary_order or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support":
     MLH_esign_supported = True
   else:
     MLH_esign_supported = False
 depends on:
   - marriage.temporary_order
+  - user_wants_post_divorce_support
+  - spousal_support_provisions
 ---
 template: MLH_welcome_message
 content: |
