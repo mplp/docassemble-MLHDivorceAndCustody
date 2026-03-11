@@ -249,15 +249,19 @@ validation code: |
     edit_existing_divorce = False
     returning_to_finalize = False
 ---
+if: tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and returning_to_finalize)
 id: Choose a court
 question: In what county was the divorce filed?
+continue button field: county_where_filed
 subquestion: |
   ${ collapse_template(help_user_choose_court_template) }
 fields:
   - County: county_choice
     code: court_list._load_courts()["address_county"].unique()
+validation code: |
+  undefine("court_index", "the_court", "the_foc", "party_lived_6_months_MI", "party_ten_days_in_county", "jurisdiction_warning")
 ---
-if: tool_ID == "JOD_only"
+if: tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and returning_to_finalize)
 id: JOD_only jurisdiction check
 question: Time in ${ county_choice } County and in Michigan before your divorce case
 subquestion: |
@@ -1220,7 +1224,7 @@ fields:
 ## venue
 # --------------------------------------------------------------------
 ---
-if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 1 or (len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and (len(current_venue_options) in [2, 0] or (len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county in current_venue_options)))
+if: tool_ID == "divorce_complaint" and not returning_to_finalize and len(all_potential_venue_options) == 1 or (len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and (len(current_venue_options) in [2, 0] or (len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county in current_venue_options)))
 id: venue (single option)
 question: Where to file your divorce
 continue button field: venue
@@ -1243,6 +1247,7 @@ fields:
       code: |
         len(current_venue_options) == 0
 validation code: |
+  # "jurisdiction_party" is used on Testimony page
   if not (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI):
     jurisdiction_party = other_parties[0] #OP logically must be the jurisdictional basis
   elif not (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI):
@@ -1268,7 +1273,7 @@ validation code: |
       else: ## neither inititally met 10 day rule; unknown who met it by time of filing
         jurisdiction_party = "unknown"
 ---
-if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 2 and not (there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case)
+if: tool_ID == "divorce_complaint" and not returning_to_finalize and len(all_potential_venue_options) == 2 and not (there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case)
 id: venue (normal choice)
 question: Where to file your divorce
 continue button field: venue
@@ -1297,6 +1302,7 @@ fields:
     js show if: |
         val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && ${ json.dumps(other_parties[0].ten_days_in_county) } === false 
 validation code: |
+  # "jurisdiction_party" is used on Testimony page
   if county_choice == users[0].address.county:
     jurisdiction_party = users[0]
   elif county_choice == other_parties[0].address.county:
@@ -1304,7 +1310,7 @@ validation code: |
   else: ## error state
     jurisdiction_party = "unknown"
 ---
-if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options
+if: tool_ID == "divorce_complaint" and not returning_to_finalize and len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options
 id: venue (weird separate maintenance choice)
 question: Where to file your divorce
 continue button field: venue
@@ -1363,6 +1369,7 @@ fields:
     js show if: |
         val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && ${ json.dumps(users[0].ten_days_in_county) } === false 
 validation code: |
+  # "jurisdiction_party" is used on Testimony page
   if county_choice == users[0].address.county:
     jurisdiction_party = users[0]
   elif county_choice == other_parties[0].address.county:
@@ -1370,7 +1377,7 @@ validation code: |
   else: ## error state
     jurisdiction_party = "unknown"
 ---
-if: tool_ID == "divorce_complaint"
+if: tool_ID == "divorce_complaint" and not returning_to_finalize
 code: |
   current_venue_options = []
   all_potential_venue_options = []
@@ -1387,7 +1394,7 @@ code: |
 
   set_venue_lists = True
 ---
-if: tool_ID == "divorce_complaint"
+if: tool_ID == "divorce_complaint" and not returning_to_finalize
 id: divorce complaint venue logic
 code: |
   undefine("county_choice")
@@ -2468,7 +2475,7 @@ code: |
   if confidential_contact_info_yn:
     if continue_confidential_address:
       users[0].address.address
-      if tool_ID == "divorce_complaint":
+      if tool_ID == "divorce_complaint" and not returning_to_finalize:
         if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
           users[0].ten_days_in_county
     else:
@@ -2476,7 +2483,7 @@ code: |
   
   else:
     users[0].address.address
-    if tool_ID == "divorce_complaint":
+    if tool_ID == "divorce_complaint" and not returning_to_finalize:
       if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
         users[0].ten_days_in_county
     if users[0].address.country == "US":

@@ -12,6 +12,12 @@ review:
       % endif
   - Edit:
       - returning_to_finalize
+      - invalidate:
+        - venue
+        - the_court
+        - court_index
+        - the_foc
+        - county_choice
     button: |
       % if not returning_to_finalize:
       <h2 class="h4">You are <b>preparing to file</b> for divorce.</h2>
@@ -1642,7 +1648,7 @@ review:
         - ${county_choice}
       <h3 class="h5"> Court</h3>
         - ${the_court}
-    show if: tool_ID == "JOD_only"
+    show if: tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and returning_to_finalize)
   - Edit:
       - party_lived_6_months_MI
       - invalidate:
@@ -1653,7 +1659,7 @@ review:
         - Your spouse did ${word("not") if not party_lived_6_months_MI['other_party'] else ""} live in Michigan for 180 days before filing for divorce. Your spouse did ${word("not") if not party_ten_days_in_county['other_party'] else ""} live in ${county_choice} County for 10 days before filing for divorce.
       <h3 class="h5"> Court</h3>
         - ${the_court}
-    show if: tool_ID == "JOD_only" and user_ask_role == "plaintiff"
+    show if: (tool_ID == "JOD_only" and user_ask_role == "plaintiff") or (tool_ID == "divorce_complaint" and returning_to_finalize)
   - Edit: docket_number
     button: |
       <h3 class="h5"> Case number</h3>
@@ -1675,7 +1681,7 @@ review:
       
       You **must wait** to file in ${ other_parties[0].address.county } County until your spouse has lived there for the last ten days or more.
       % endif
-    show if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 2 and not (there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case)
+    show if: tool_ID == "divorce_complaint" and not returning_to_finalize and len(all_potential_venue_options) == 2 and not (there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case)
     # conditions under which there is a basic choice of venue, matching id: "venue (normal choice)"
   - Edit:
       - venue
@@ -1700,7 +1706,7 @@ review:
       
       *If you miss that deadline, you must update this tool and get new forms to file instead in ${ users[0].address.county } County. This is because of your past separate maintenance case in that county.*
       % endif    
-    show if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options
+    show if: tool_ID == "divorce_complaint" and not returning_to_finalize and len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options
     # conditions under which there is a choice of venue but with special prior separate maintenance case logic, matching id: "venue: (weird separate maintenance choice)" 
   - note: |
       <h3 class="h5"> Where you will file</h3>
@@ -1713,7 +1719,7 @@ review:
       
       You **must wait** to file until you or your spouse have lived in ${ county_choice } County for the last ten days or more.
       % endif
-    show if: tool_ID == "divorce_complaint" and len(all_potential_venue_options) == 1 or (len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and (len(current_venue_options) in [2, 0] or (len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county in current_venue_options)))
+    show if: tool_ID == "divorce_complaint" and not returning_to_finalize and len(all_potential_venue_options) == 1 or (len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and (len(current_venue_options) in [2, 0] or (len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county in current_venue_options)))
     # conditions under which there is only one option for venue, matching id: "venue (single option)"
   - Edit:
       - marriage.other_provisions_any
