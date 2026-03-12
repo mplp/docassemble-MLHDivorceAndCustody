@@ -2786,16 +2786,24 @@ attachment:
       - plaintiff_employer_block: |
           % if plaintiffs[0].has_job:
           ${ plaintiffs[0].job.employer.name.first }
+          % if plaintiffs[0].job.employer.address.address != "" or plaintiffs[0].job.employer.address.city != "":
           ${ plaintiffs[0].job.employer.address.line_one() }
           ${ plaintiffs[0].job.employer.address.line_two() }
+          % endif
+          % if plaintiffs[0].job.employer.name.first != "" or plaintiffs[0].job.employer.address.address != "" or plaintiffs[0].job.employer.address.city != "":
           ${ word("Phone unknown.") if plaintiffs[0].job.employer.phone == "" else plaintiffs[0].job.employer.phone }
+          % endif
           % endif
       - defendant_employer_block: |
           % if defendants[0].has_job:
           ${ defendants[0].job.employer.name.first }
+          % if defendants[0].job.employer.address.address != "" or defendants[0].job.employer.address.city != "":
           ${ defendants[0].job.employer.address.line_one() }
           ${ defendants[0].job.employer.address.line_two() }
+          % endif
+          % if defendants[0].job.employer.name.first != "" or defendants[0].job.employer.address.address != "" or defendants[0].job.employer.address.city != "":
           ${ word("Phone unknown.") if defendants[0].job.employer.phone == "" else defendants[0].job.employer.phone }
+          % endif
           % endif
       # - order_entered_after_hearing:
       # - order_entered_stipulation:
