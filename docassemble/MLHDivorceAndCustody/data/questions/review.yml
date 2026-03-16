@@ -1074,12 +1074,10 @@ review:
         % endif
     show if: there_are_marital_children
   - Edit:
-      - recompute:
-        - children_previous_address.gathered_reset
       - children_previous_address.there_are_any
       - children_lived_with_which_parent_past
-      - recompute:
-        - interview_order_children
+      - follow up:
+        - children_previous_address.revisit
     button: |
       <h3 class="h5"> Past homes of marital children</h3>
         - Over the last 5 years, ${ comma_and_list(children.filter(legal_parent='both').familiar()) } lived with 
