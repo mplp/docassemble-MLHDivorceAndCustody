@@ -1649,7 +1649,7 @@ attachment:
           % endif
           % else:
           % if confidential_contact_info_yn:
-          Confidential/alternative address: ${ users[0].address.on_one_line() }
+          Confidential/alt. address: ${ users[0].address.on_one_line() }
           % elif users[0].mailing_address.yesno:
           ${ users[0].mailing_address.on_one_line() }
           % else:
@@ -1677,7 +1677,7 @@ attachment:
       - fathers1_address_on_one_line: |
           % if users[0].gender == "male" and other_parties[0].gender == "female":
           % if confidential_contact_info_yn:
-          Confidential/alternative address: ${ users[0].address.on_one_line() }
+          Confidential/alt. address: ${ users[0].address.on_one_line() }
           % elif users[0].mailing_address.yesno:
           ${ users[0].mailing_address.on_one_line() }
           % else:
