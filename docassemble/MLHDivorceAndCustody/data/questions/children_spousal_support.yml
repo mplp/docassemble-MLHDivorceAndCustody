@@ -2242,8 +2242,9 @@ fields:
       % if tool_ID in ["custody_complaint", "custody_answer", "divorce_complaint", "divorce_answer"]:
       ${ collapse_template(family_division_info) }
       % endif
-    js show if: |
-      val("prior_family_cases.there_are_any") === true
+    show if:
+      code: |
+        tool_ID != "JOD_only"
 ---
 # LHI Prior Court Cases Part 1
 id: pending child support requests out of state

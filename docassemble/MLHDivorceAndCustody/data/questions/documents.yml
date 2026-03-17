@@ -1075,7 +1075,7 @@ attachment:
           % if MI_home_state_all_kids:
           Michigan
           % elif len(children.filter(legal_parent='both')) == 1:
-          ${ word("None. Michigan has jurisdiction because the child lived 6 months in MI within the last 6 months. MCL 722.1201(1)(b)") if children.filter(legal_parent='both')[0].home_state == "none" and children.filter(legal_parent='both')[0].MI_jurisdiction == True else children.filter(legal_parent='both')[0].home_state }
+          ${ word("None. Michigan has jurisdiction because the child lived 6 months in MI within the last 6 months. MCL 722.1201(1)(a)") if children.filter(legal_parent='both')[0].home_state == "none" and children.filter(legal_parent='both')[0].MI_jurisdiction == True else children.filter(legal_parent='both')[0].home_state }
           % elif len(children.filter(legal_parent='both')) > 1:
           See addendum. 
           % endif
@@ -1180,7 +1180,7 @@ attachment:
       - users1_occupation: ${ users[0].occupation }
       - users1_employer_name_address: |
           % if users[0].has_job:
-          ${ users[0].job.employer.name.first } ${ users[0].job.employer.address.on_one_line() if users[0].job.employer.address.address != "" else "" }
+          ${ users[0].job.employer.name.first + word(", ") if users[0].job.employer.name.first != "" else "" }${ users[0].job.employer.address.on_one_line() if users[0].job.employer.address.address != "" else "" }
           % endif
       - users1_gross_weekly_income: |
           % if users[0].has_job:
@@ -1253,7 +1253,7 @@ attachment:
       - other_parties1_occupation: ${ other_parties[0].occupation }
       - other_parties1_employer_name_address: |
           % if other_parties[0].has_job:
-          ${ other_parties[0].job.employer.name.first } ${ other_parties[0].job.employer.address.on_one_line() if other_parties[0].job.employer.address.address != "" else "" }
+          ${ other_parties[0].job.employer.name.first + word(", ") if other_parties[0].job.employer.name.first != "" else ""}${ other_parties[0].job.employer.address.on_one_line() if other_parties[0].job.employer.address.address != "" else "" }
           % endif
       - other_parties1_gross_weekly_income: |
           % if other_parties[0].has_job:
