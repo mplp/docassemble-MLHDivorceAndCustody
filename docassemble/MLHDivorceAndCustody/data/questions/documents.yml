@@ -358,12 +358,12 @@ attachment:
           sole
           % endif
       - parties_with_parenting_time: |
-          % if PT_who == "user":
+          % if physical_custody_who == "both" or PT_who == "both":
+          both parties
+          % elif PT_who == "user":
           Plaintiff
           % elif PT_who == "other_party":
           Defendant
-          % elif PT_who == "both":
-          both parties
           % endif
       - parenting_time_request: |
           % if physical_custody_who != "both":
@@ -2037,14 +2037,14 @@ attachment:
         % if len(children.filter(legal_parent="both")) > 3:
         % if children_now_live_with_which_parent == "both":
         See addendum for children's addresses.
-        % elif children_now_live_with_which_parent == "users[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[4].lives_with == "users[0]"):
+        % elif children_now_live_with_which_parent == "users[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[3].lives_with == "users[0]"):
         % if confidential_contact_info_yn:
         Confidential
         % else:
         ${ users[0].address.line_one() }
         ${ users[0].address.line_two() }
         % endif
-        % elif children_now_live_with_which_parent == "other_parties[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[4].lives_with == "other_parties[0]"):
+        % elif children_now_live_with_which_parent == "other_parties[0]" or (children_now_live_with_which_parent == "depends_on_child" and children.filter(legal_parent="both")[3].lives_with == "other_parties[0]"):
         ${ other_parties[0].address.line_one() }
         ${ other_parties[0].address.line_two() }
         % endif
