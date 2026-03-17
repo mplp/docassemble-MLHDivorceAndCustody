@@ -2728,20 +2728,25 @@ code: |
 ---
 id: guidepost_stepchildren
 continue button field: guidepost_stepchildren
-question: More information about stepchildren
+question: |
+  % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 1:
+  Other children
+  % else:
+  More information about **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**
+  % endif
 subquestion: |
   % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 1:
-  The next few questions are about you and ${ other_parties[0] }'s other minor children (stepchildren): 
+  The next few questions are about the minor children:
   
   **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**.
   
-  Stepchildren are children that have only one of you as their legal parent. This ${ case_label } case will not directly affect your stepchildren or ${ other_parties[0] }'s stepchildren, but information about them is required on some of the forms.   
+  These children only have one of you as their legal parent. This divorce case will not directly affect these children, but information about them is required on some of the forms.   
   % else:
   The next few questions are about the minor child: 
   
   **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**.
   
-    Stepchildren are children that have only one of you as their legal parent. This ${ case_label } case will not directly affect ${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }, but information about them is required on some of the forms.
+  This child only has one of you as their legal parent. This divorce case will not directly affect ${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }, but information about them is required on some of the forms.
   % endif
 ---
 if: children[i].legal_parent == "user"

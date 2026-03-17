@@ -45,6 +45,15 @@ code: |
 depends on:
   - there_are_marital_children
 ---
+# sets MLH_case_type_language
+code: |
+  if there_are_marital_children:
+    MLH_case_type_language = "The case type code for a divorce with {marital children} is **DM.**"  
+  else:
+    MLH_case_type_language = "The case type code for a divorce with no {marital children} is **DO.**"  
+depends on:
+  - there_are_marital_children
+---
 # TODO need survey script
 template: survey_embed_script
 content: |
