@@ -1,13 +1,14 @@
 ---
 include:
+  - docassemble.FeeWaiverRequest:shared_code.yml
   - divorce_custody_setup.yml
 ---
 # TODO subtitle? & confirm description
 metadata:
-  title: Michigan Judgment of Divorce
-  short title: Michigan Judgment of Divorce
+  title: Michigan Complaint for Divorce
+  short title: Michigan Divorce Complaint
   description: |
-    Self-help interview to obtain a Judgment of Divorce and other documents needed to finish a divorce in Michigan.
+    Self-help interview to get documents needed to file for divorce in Michigan.
   tags:
     - Family
   authors:
@@ -21,74 +22,56 @@ sections:
   - signpost_spouse: "Spouse's Information"
   - signpost_support: "Spousal Support"
   - signpost_children: "Children"
+  - signpost_prior_cases: "Past Cases"
   - signpost_income_etc: "Income, Insurance, etc."
   - signpost_property: "Property and Debt"
   - signpost_last_section: "Final Questions"
   - signpost_done: "Get Your Forms"
   - review_full: "✎ <u>Review / Edit</u>"
 ---
+# set static instructions variables
 # TODO need survey url
 code: |
-  survey_link_url_only = "https://www.surveymonkey.com/r/VSBQNT3"
----
-template: optional_download_message
-content: |
-  To learn what to do next in your court case, go to [${ resource_page_name }](${ resource_page_url_only }) and read the step-by-step instructions.
+  survey_link_url_only = "https://www.surveymonkey.com/r/VSJYG9P"
 ---
 code: |
-  tool_ID = "JOD_only"
+  tool_ID = "divorce_complaint"
+---
+code: |
+  if there_are_marital_children:
+    docket_number = "                         -DM"
+  else:
+    docket_number = "                         -DO"
+depends on:
+  - there_are_marital_children
+---
+# sets MLH_case_type_language
+code: |
+  if there_are_marital_children:
+    MLH_case_type_language = "The case type code for a divorce with marital children is **DM.**"  
+  else:
+    MLH_case_type_language = "The case type code for a divorce with no marital children is **DO.**"  
+depends on:
+  - there_are_marital_children
 ---
 # TODO need survey script
 template: survey_embed_script
 content: |
   <script>
-  (function(t,e,s,n){var o,a,c;t.SMCX=t.SMCX||[],e.getElementById(n)||(o=e.getElementsByTagName(s),a=o[o.length-1],c=e.createElement(s),c.type="text/javascript",c.async=!0,c.id=n,c.src="https://widget.surveymonkey.com/collect/website/js/tRaiETqnLgj758hTBazgd3klEhgaKMHlXfvlsGbv5FaYfLmgWJ2K2UosZbMxcMcu.js",a.parentNode.insertBefore(c,a))})(window,document,"script","smcx-sdk");
+  (function(t,e,s,n){var o,a,c;t.SMCX=t.SMCX||[],e.getElementById(n)||(o=e.getElementsByTagName(s),a=o[o.length-1],c=e.createElement(s),c.type="text/javascript",c.async=!0,c.id=n,c.src="https://widget.surveymonkey.com/collect/website/js/tRaiETqnLgj758hTBazgd3klEhgaKMHlXfvlsGbv5FZAlDWvFjduioTLlUVSyjRs.js",a.parentNode.insertBefore(c,a))})(window,document,"script","smcx-sdk");
   </script>
 ---
 # set intro landing screen variables
 code: |
   MLH_form_type = "forms"
-  MLH_time_min = 30
+  MLH_time_min = 40
   MLH_time_max = 90
-
-  # for JOD_only, there are no specific instructions
-  MLH_instructions_included = False
----
-# nothing to sign unless there was a temporary order (FOC 100) or parties agree one of them will pay spousal support (FOC10b)
-code: |
-  if marriage.temporary_order or spousal_support_provisions in ["user_agrees_to_pay_spousal_support", "OP_agrees_to_pay_spousal_support"]:
-    MLH_esign_supported = True
-  else:
-    MLH_esign_supported = False
-depends on:
-  - marriage.temporary_order
-  - spousal_support_provisions
----
-# sets MLH_case_type_language
-code: |
-  MLH_case_type_language = "The case type code will be two letters at the very end of your case number. It should be **DM** if there are marital children or **DO** if there are no marital children."  
 ---
 template: MLH_welcome_message
 content: |
- Welcome to the Do-It-Yourself Judgment of Divorce tool. 
+  Welcome to the Do-It-Yourself Divorce tool.
 
- A Judgment of Divorce is the **final order** you need for the end of a divorce case. Use this tool if:
-  
-   * you already have an active divorce case, and
-   * all you need is a Judgment of Divorce and the forms that go with it.
----
-id: JOD_only special instructions
-question: How to answer the questions in this tool
-continue button field: JOD_only_instructions
-subquestion: |
-  To prepare a Judgment of Divorce **before** the final hearing:
-  
-  * if you and your spouse **agree** on a question, use your agreed answer;
-  * if you and your spouse **don't agree** on a question, give the answer that you want the judge to order. 
-  
-  To prepare a Judgment of Divorce **after** the final hearing:
-  
-  * give answers that match what the judge ordered at the final hearing.
+  This tool will help you prepare the forms you need to ask the court for a divorce. This tool may not be able to help you with every aspect of your divorce. In some cases, you may want to have a lawyer help you finish the divorce process. ${MLH_GUIDE_FULL}
 ---
 # ====================================================================
 ## interview_order
@@ -101,35 +84,25 @@ code: |
   set_persistent_interview_specific_logic
   nav.set_section("review_full")
   nav.set_section("signpost_intro")
-  MLH_intro_landing
-  JOD_only_instructions
-  MLH_agree_terms
-  MLH_intro_navigate_save
-  if MLH_intro_agree_no_pii == False:
-    MLH_intro_agree_no_pii_exit
+  MLH_standard_intro_pages
 
   nav.set_section("signpost_qualify")
-  if not marriage.pending_divorce:
-    exit_no_pending_divorce
+  if marriage.pending_divorce:
+      if edit_existing_divorce:
+        existing_divorce_options
+      else:
+        exit_second_divorce
 
   if not marriage.breakdown:
     exit_no_marriage_breakdown
+  if spouse_is_incompetent:
+    exit_general
+  if spouse_is_in_military and military_spouse_agrees_consent_judgment != "yes":
+    exit_general
 
   if marriage.have_experienced_domestic_violence:
     if not marriage.have_experienced_domestic_violence_continue:
       exit_general
-
-  user_ask_role
-  set_JOD_party_labels
-  county_choice
-  court_index
-  the_court
-  the_foc
-  if user_ask_role == "plaintiff":
-    party_lived_6_months_MI
-    if not (party_lived_6_months_MI['user'] and party_ten_days_in_county['user']) and not (party_lived_6_months_MI['other_party'] and party_ten_days_in_county['other_party']):
-      jurisdiction_warning
-  docket_number
 
   if marriage.have_pension_retirement:
     marriage.pension_retirement_accounts_keep_own
@@ -139,8 +112,13 @@ code: |
   if marriage.have_business:
     exit_general
 
-  if marriage.temporary_order:
-    marriage.temporary_order_changed
+  if marriage.pending_divorce:
+    if marriage.temporary_order:
+      marriage.temporary_order_changed
+  
+  if need_temporary_order:
+    if not temporary_order_continue:
+      exit_general
 
   nav.set_section("signpost_user")
 
@@ -166,43 +144,67 @@ code: |
   other_parties[0].birthplace
 
   interview_order_other_parties_address_info
+
+  if not returning_to_finalize:
+    if not ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI) or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI)):
+       exit_jurisdiction
+  else:
+    county_where_filed
+    court_index
+    party_lived_6_months_MI
+    if not (party_lived_6_months_MI['user'] and party_ten_days_in_county['user']) and not (party_lived_6_months_MI['other_party'] and party_ten_days_in_county['other_party']):
+      jurisdiction_warning
+
   if other_parties[0].address.country == "US":
     other_parties[0].village_or_township_yn  
     other_parties[0].address.county # skipped if already asked on lives_in_Michigan screen
+  else:
+    international_service_warning
+
   if other_parties[0].mailing_address.yesno:
     other_parties[0].mailing_address.address
   other_parties[0].no_phone_number
   other_parties[0].email
 
-  interview_order_other_parties_attorney
-
   nav.set_section("signpost_support")
-
   interview_order_spousal_support
-  
+
   nav.set_section("signpost_children")
   interview_order_children
   interview_order_pregnancy
 
-  if there_are_marital_children:
-    prior_family_cases.gather()
-    child_support_pending_elsewhere
+  nav.set_section("signpost_prior_cases")
+  prior_family_cases.gather()
+  child_support_pending_elsewhere
+  has_prior_civil_cases
 
-  nav.set_section("signpost_income_etc")
+  nav.set_section("signpost_income_etc") 
   if there_are_marital_children:
     users[0].insurance.gather()
     other_parties[0].insurance.gather()
     if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
       marriage.cobra_coverage
-    
+  
   elif not there_are_marital_children:
     marriage.cobra_coverage
 
-  if there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support" or marriage.temporary_order:
+  if there_are_marital_children or user_wants_post_divorce_support: #FOC23+FOC100
     interview_order_user_employment
+    interview_order_user_income
+    interview_order_user_identifying_info
+    users[0].has_alias
+    interview_order_other_party_employment
+    interview_order_other_party_income
+    interview_order_other_party_identifying_info
+    other_parties[0].has_alias
+  elif spousal_support_provisions == "user_agrees_to_pay_spousal_support" or (returning_to_finalize and marriage.temporary_order): #FOC100
+    interview_order_user_employment
+    interview_order_user_income
     interview_order_user_identifying_info
     interview_order_other_party_employment
     interview_order_other_party_identifying_info
+  else: 
+    interview_order_user_income
 
   nav.set_section("signpost_property")
 
@@ -214,7 +216,7 @@ code: |
   interview_order_debts
   if there_are_marital_children:
     interview_order_income_tax
-  
+
   nav.set_section("signpost_last_section")
 
   marriage.date
@@ -224,17 +226,67 @@ code: |
     if there_are_marital_children:
       marriage.number_children_in_home_when_separated
 
+  if not returning_to_finalize:
+    check_for_required_venue
+    venue 
+
   if marriage.other_provisions_any:
     marriage.other_provisions
 
   if not marriage.true_statement:
     exit_general
 
-  # load value of these so that they populate forms as expected
+  MLH_standard_outro_pages
+
+  # just making sure these are defined
+  the_court
+  the_foc 
+  docket_number
+  stepchildren_for_addendum
   plaintiffs
   defendants
 
-  MLH_standard_outro_pages  
   nav.set_section("signpost_done")
   MLH_download
 ---
+
+# ====================================================================
+## interview_order - for testing divorce instructions
+# ====================================================================
+# To test, make the main interview order block not mandatory and the below block mandatory
+# ---
+# id: interview_order_instructions_test
+# mandatory: True
+# scan for variables: False
+# code: |
+#   tool_ID = "divorce_complaint"
+#   divorce_instructions_test
+#   instructions_test_download
+# ---
+# id: Choose a court
+# question: |
+#   Select test parameters.
+# subquestion: |
+# fields:
+#   - County: county_choice
+#     code: court_list._load_courts()["address_county"].unique()
+#   - With or without children: there_are_marital_children
+#     input type: radio
+#     code: |
+#       [ { False : 'Without' }, { True : 'With' } ]  
+# continue button field: divorce_instructions_test
+# 
+# ---
+# id: TestDownloadScreen
+# event: instructions_test_download
+# question: |
+#   Get your instructions!
+# subquestion: |
+#   You can **view**, **download**, or **e-mail** your ${ MLH_form_type } to yourself below.
+# 
+#   ${ al_user_bundle.download_list_html() }
+# 
+#   ${ al_user_bundle.send_button_html(show_editable_checkbox=True) }
+# ---
+# objects:
+#   - al_user_bundle: ALDocumentBundle.using(elements=[instructions], enabled=True)
