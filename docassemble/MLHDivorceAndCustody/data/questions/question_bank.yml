@@ -625,8 +625,8 @@ field: users[0].birthplace
 question: |
   Where were you born?
 subquestion: |
-  * If you were born **in** the U.S., please enter the state or territory.
-  * If you were born **outside** the U.S., please enter the country.
+  * If you were born **in** the U.S., enter the state or territory.
+  * If you were born **outside** the U.S., enter the country.
 fields:
   - label: Please enter the state or country where you were born
     field: users[0].birthplace
@@ -988,8 +988,8 @@ field: other_parties[0].birthplace
 question: |
   Where was your spouse born?
 subquestion: |
-  * If your spouse was born **in** the U.S., please enter the state or territory.
-  * If your spouse was born **outside** the U.S., please enter the country.
+  * If your spouse was born **in** the U.S., enter the state or territory.
+  * If your spouse was born **outside** the U.S., enter the country.
 fields:
   - label: Please enter the state or country where your spouse was born
     field: other_parties[0].birthplace
