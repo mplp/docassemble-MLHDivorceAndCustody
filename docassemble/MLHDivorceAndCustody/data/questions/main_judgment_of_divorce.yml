@@ -64,6 +64,10 @@ depends on:
   - marriage.temporary_order
   - spousal_support_provisions
 ---
+# sets MLH_case_type_language
+code: |
+  MLH_case_type_language = "The case type code will be two letters at the very end of your case number. It should be **DM** if there are {marital children} or **DO** if there are no marital children."  
+---
 template: MLH_welcome_message
 content: |
  Welcome to the Do-It-Yourself Judgment of Divorce tool. 
