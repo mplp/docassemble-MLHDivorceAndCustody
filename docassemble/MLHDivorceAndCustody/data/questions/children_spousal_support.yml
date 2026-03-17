@@ -1,16 +1,4 @@
 ---
-# below sections needed if testing as separate yml
-#include:
-#  - divorce_custody_setup.yml
----
-#code: |
-#  tool_ID = "divorce_complaint"
-# options: "JOD_only", "divorce_complaint", "divorce_answer", "custody_complaint", "custody_answer"
-# confidential_contact_info_yn = False
-#  marriage.date = "2015-07-20T00:00:00-04:00" 
----
-### need the above for now to run just this yml
-### below objects are not included in question bank yml
 objects:
   - children: ALPeopleList.using(
       complete_attribute="complete",
@@ -52,10 +40,7 @@ columns:
 delete buttons: True
 confirm: True
 ---
-# trying using filter() method from https://docassemble.org/docs/objects.html
-# if not, try using list comprehension something like "[child for child in children if child.legal_parent=="both"]"
 id: child questions
-# mandatory: True # remove later
 code: |
   children_intro
   children_previous_address # calling now so that reset_gathered works even if no kids
@@ -661,7 +646,6 @@ code: |
     children[i].complicated_issue_kickout
 
   children[i].complete = True
-# TODO: IF (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) and children[i].legal_parent == "both" and children[i].parentage_plan_to_revoke: we need to say in the complaint and Answer? that user intends to file motion to establish child born out of wedlock
 ---
 id: divorce with or without children tag
 code: |
@@ -826,12 +810,6 @@ content: |
 
   Age: {Marital children}'s age, but not their date of birth, will be included on other court forms.
 ---
-# TODO: think this is unneeded, can delete after running without it for a while
-#code: |
-#  if children[i].adopted_during_marriage:
-#    children[i].timing = "marital"
-#    children[i].origin = "adoption"
-#---
 id: marital children's origin
 if: children[i].timing == "marital" and not children[i].adopted_during_marriage
 question: |

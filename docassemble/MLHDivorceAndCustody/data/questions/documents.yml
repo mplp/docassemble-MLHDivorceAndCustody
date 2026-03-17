@@ -1649,7 +1649,7 @@ attachment:
           % endif
           % else:
           % if confidential_contact_info_yn:
-          Confidential/alternative address: ${ users[0].address.on_one_line() }
+          Confidential/alt. address: ${ users[0].address.on_one_line() }
           % elif users[0].mailing_address.yesno:
           ${ users[0].mailing_address.on_one_line() }
           % else:
@@ -1677,7 +1677,7 @@ attachment:
       - fathers1_address_on_one_line: |
           % if users[0].gender == "male" and other_parties[0].gender == "female":
           % if confidential_contact_info_yn:
-          Confidential/alternative address: ${ users[0].address.on_one_line() }
+          Confidential/alt. address: ${ users[0].address.on_one_line() }
           % elif users[0].mailing_address.yesno:
           ${ users[0].mailing_address.on_one_line() }
           % else:
@@ -2974,8 +2974,8 @@ objects:
       ], filename="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", title="Judgment of Divorce with Children CC-MLH-413" if there_are_marital_children else "Judgment of Divorce without Children CC-MLH-412", enabled=True, add_page_numbers=True, page_number_area="BOTTOM_LEFT", page_number_digits=2, page_number_font_size=10, page_number_horizontal_offset=45, page_number_vertical_offset=27, page_number_prefix="Page ")
 ---
 objects:
-  - judgment_ccmlh412: ALDocument.using(title="Judgment", filename="Judgment.pdf")
-  - judgment_ccmlh413: ALDocument.using(title="Judgment", filename="Judgment.pdf")
+  - judgment_ccmlh412: ALDocument.using(title="Judgment of Divorce", filename="Judgment of Divorce")
+  - judgment_ccmlh413: ALDocument.using(title="Judgment of Divorce", filename="Judgment of Divorce")
   - judgment_addendum_personal_property_and_debt: ALDocument.using(title="Personal property and debt addendum", filename="Personal property and debt addendum.pdf")
   - judgment_addendum_vehicles_1_to_4: ALDocument.using(title="Vehicles addendum 1", filename="Vehicles addendum.pdf")
   - judgment_addendum_vehicles_5_to_8: ALDocument.using(title="Vehicles addendum 2", filename="Vehicles addendum.pdf")
@@ -3012,14 +3012,16 @@ attachment:
           % if user_ask_role == "defendant" and confidential_contact_info_yn:
           Confidential/alternative address:
           % endif
-          ${defendants[0].address.on_one_line()}
+          ${ defendants[0].address.line_one() }
+          ${ defendants[0].address.line_two() }
           ${word("Does not have phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
       - plaintiffs_block: |
           ${plaintiffs}
           % if user_ask_role == "plaintiff" and confidential_contact_info_yn:
           Confidential/alternative address:
           % endif
-          ${plaintiffs[0].address.on_one_line()}
+          ${ plaintiffs[0].address.line_one() }
+          ${ plaintiffs[0].address.line_two() }
           ${word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number) }
       - plaintiffs1_name: ${plaintiffs}
       - defendants1_name: ${defendants}
@@ -3112,14 +3114,16 @@ attachment:
           % if user_ask_role == "plaintiff" and confidential_contact_info_yn:
           Confidential/alternative address:
           % endif
-          ${plaintiffs[0].address.on_one_line()}
+          ${ plaintiffs[0].address.line_one() }
+          ${ plaintiffs[0].address.line_two() }
           ${word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_number)}
       - defendants_block: |
           ${defendants}
           % if user_ask_role == "defendant" and confidential_contact_info_yn:
           Confidential/alternative address:
           % endif
-          ${defendants[0].address.on_one_line()}
+          ${ defendants[0].address.line_one() }
+          ${ defendants[0].address.line_two() }
           ${word("Does not have phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number)}
       - plaintiffs1_name: ${plaintiffs}
       - defendants1_name: ${defendants}
