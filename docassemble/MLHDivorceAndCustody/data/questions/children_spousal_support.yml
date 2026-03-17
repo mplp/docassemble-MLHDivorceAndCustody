@@ -1,16 +1,4 @@
 ---
-# below sections needed if testing as separate yml
-#include:
-#  - divorce_custody_setup.yml
----
-#code: |
-#  tool_ID = "divorce_complaint"
-# options: "JOD_only", "divorce_complaint", "divorce_answer", "custody_complaint", "custody_answer"
-# confidential_contact_info_yn = False
-#  marriage.date = "2015-07-20T00:00:00-04:00" 
----
-### need the above for now to run just this yml
-### below objects are not included in question bank yml
 objects:
   - children: ALPeopleList.using(
       complete_attribute="complete",
@@ -52,10 +40,7 @@ columns:
 delete buttons: True
 confirm: True
 ---
-# trying using filter() method from https://docassemble.org/docs/objects.html
-# if not, try using list comprehension something like "[child for child in children if child.legal_parent=="both"]"
 id: child questions
-# mandatory: True # remove later
 code: |
   children_intro
   children_previous_address # calling now so that reset_gathered works even if no kids
@@ -97,8 +82,7 @@ code: |
       if not confidential_contact_info_yn and (children_now_live_with_which_parent in ["depends_on_child", "users[0]"]):
         child_address_not_confidential_warning
       children_lived_with_which_parent_past
-      if children_previous_address.there_are_any:
-        children_previous_address.gather()
+      children_previous_address.gather() # calls "children's previous addresses" screen
 
     legal_custody_who
     if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]:
@@ -662,7 +646,6 @@ code: |
     children[i].complicated_issue_kickout
 
   children[i].complete = True
-# TODO: IF (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) and children[i].legal_parent == "both" and children[i].parentage_plan_to_revoke: we need to say in the complaint and Answer? that user intends to file motion to establish child born out of wedlock
 ---
 id: divorce with or without children tag
 code: |
@@ -827,12 +810,6 @@ content: |
 
   Age: {Marital children}'s age, but not their date of birth, will be included on other court forms.
 ---
-# TODO: think this is unneeded, can delete after running without it for a while
-#code: |
-#  if children[i].adopted_during_marriage:
-#    children[i].timing = "marital"
-#    children[i].origin = "adoption"
-#---
 id: marital children's origin
 if: children[i].timing == "marital" and not children[i].adopted_during_marriage
 question: |
@@ -1414,10 +1391,8 @@ question: |
   **WARNING! This tool may not be right for you.**
 subquestion: |
   You said that you think a temporary custody order is needed to protect ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } because of abuse, mistreatment, threats, or neglect.
-  
-  Getting temporary orders for custody is not simple. Neither this tool nor the Michigan Legal Help website will create temporary orders. **The forms created by this tool will not let the judge know that a temporary order is needed or that the children in this case have been abused, mistreated, threatened, or neglected.**
-  
-  You can still use this tool to prepare your forms and begin the divorce process, but this tool will not create any motions for temporary custody orders or proposed temporary custody orders. 
+
+  Getting a temporary custody order is not simple. You can still use this tool to prepare your forms and begin the divorce process, but this tool will not help you ask for or get a temporary custody order.
   
   You may want to speak to a lawyer. ${MLH_GUIDE_FULL}
 fields:
@@ -1533,8 +1508,12 @@ subquestion: |
   ${ collapse_template(home_state_info) }
 fields:
   - label: |
-      % if children[i].age_in_months() >= 6:
+      % if children[i].age_in_months() >= 6 and children[i].currently_resides_in_type == "tribal_lands":
+      Has ${ children[i] } been living on ${ children[i].currently_resides_in_locality_display_name } land **for the last 6 months?**
+      % elif children[i].age_in_months() >= 6:
       Has ${ children[i] } been living in ${ children[i].currently_resides_in_locality_display_name } **for the last 6 months?**
+      % elif children[i].currently_resides_in_type == "tribal_lands":
+      Has ${ children[i] } lived on ${ children[i].currently_resides_in_locality_display_name } land **since birth?**
       % else:
       Has ${ children[i] } lived in ${ children[i].currently_resides_in_locality_display_name } **since birth?**
       % endif
@@ -1704,7 +1683,7 @@ rows: children_previous_address
 columns:
   - Address: row_item.on_one_line()
 edit:
-  - address.address
+  - address
 delete buttons: True
 confirm: True
 ---
@@ -1756,6 +1735,25 @@ fields:
       Are there any more previous address where ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } lived in the last five years?
     field: children_previous_address.there_is_another
     datatype: yesnoradio
+---
+id: children_previous_address.revisit
+if: children_previous_address.there_are_any
+question: |
+  Children's previous addresses
+subquestion: |
+  List all previous addresses where ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } lived in the last five years.
+
+  % if len(children_previous_address.complete_elements()) > 0:
+  So far, you have listed&colon;
+
+  ${children_previous_address.table}
+  % endif
+
+  ${children_previous_address.add_action(color="success", size="md")}
+continue button field: children_previous_address.revisit
+validation code: |
+  if children_previous_address.number_gathered() == 0:
+    validation_error("You said a child lived at a different address in the last 5 years. Use the Undo button if this is untrue.")
 ---
 ######## start custody questions #######
 ---
@@ -2230,7 +2228,9 @@ fields:
       % elif tool_ID in ["custody_complaint", "custody_answer"]:
       Are there any pending or resolved **family division** court cases or orders involving you and ${ OP_label }? 
       % elif tool_ID in ["divorce_complaint", "divorce_answer"]:
-      % if there_are_marital_children:
+      % if there_are_marital_children and len(children.filter(legal_parent='both')) > 1:
+      Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') }, or you and your spouse?
+      % elif there_are_marital_children:
       Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } or you and your spouse?
       % else:
       Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving you and your spouse?
@@ -2242,8 +2242,9 @@ fields:
       % if tool_ID in ["custody_complaint", "custody_answer", "divorce_complaint", "divorce_answer"]:
       ${ collapse_template(family_division_info) }
       % endif
-    js show if: |
-      val("prior_family_cases.there_are_any") === true
+    show if:
+      code: |
+        tool_ID != "JOD_only"
 ---
 # LHI Prior Court Cases Part 1
 id: pending child support requests out of state
@@ -2326,7 +2327,7 @@ content: |
   * Emancipation
   * Juvenile court cases
 
-  **Other states and countries** may call their family court something different. Cases from outside of Michigan that fall within these categories should be listed where the form asks for pending or resolved family law cases in other states or countries.
+  **Other states** may have different names for their family court cases. Include cases outside of Michigan that fall within the categories listed above.
 ---
 id: any more family court cases or custody orders?
 question: |
@@ -2728,20 +2729,25 @@ code: |
 ---
 id: guidepost_stepchildren
 continue button field: guidepost_stepchildren
-question: More information about stepchildren
+question: |
+  % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 1:
+  Other children
+  % else:
+  More information about **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**
+  % endif
 subquestion: |
   % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 1:
-  The next few questions are about you and ${ other_parties[0] }'s other minor children (stepchildren): 
+  The next few questions are about the minor children:
   
   **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**.
   
-  Stepchildren are children that have only one of you as their legal parent. This ${ case_label } case will not directly affect your stepchildren or ${ other_parties[0] }'s stepchildren, but information about them is required on some of the forms.   
+  These children only have one of you as their legal parent. This divorce case will not directly affect these children, but information about them is required on some of the forms.   
   % else:
   The next few questions are about the minor child: 
   
   **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**.
   
-    Stepchildren are children that have only one of you as their legal parent. This ${ case_label } case will not directly affect ${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }, but information about them is required on some of the forms.
+  This child only has one of you as their legal parent. This divorce case will not directly affect ${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }, but information about them is required on some of the forms.
   % endif
 ---
 if: children[i].legal_parent == "user"
@@ -3845,7 +3851,7 @@ fields:
     required: False
     maxlength: 26
     show if: 
-      variable: users[0].race 
+      variable: other_parties[0].race 
       is: Other
 ---
 id: other party alias
@@ -3946,7 +3952,7 @@ fields:
 ---
 template: federal_tax_default_info
 subject: |
-  More info about giving tax benefits based on the actual number overnights (the first option)
+  More info about giving tax benefits based on the actual number of overnights (the first option)
 content: |
   Choosing this option can have a  different effect than specifically giving the tax deductions, credits, and exemptions to the parent who has the greater number of parenting time overnights based on the Judgment of Divorce. 
   

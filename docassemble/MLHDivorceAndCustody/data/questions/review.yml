@@ -329,7 +329,7 @@ review:
     button: |
       <h3 class="h5"> Your income</h3>
         - Paycheck amount: ${ word("not answered") if users[0].income.value == 0.0 else word(currency(users[0].income.value)) }
-        - Paycheck frequency: ${ word("not answered") if users[0].income.times_per_year == None else word("once a week") if users[0].income.times_per_year == 52 else word("every two weeks") if users[0].income.times_per_year == 26 else word("twice a month") if users[0].income.times_per_year == 24 else word("once a month") }
+        - Paycheck frequency: ${ word("not answered") if users[0].income.times_per_year == None else word("once a week") if users[0].income.times_per_year == "52" else word("every two weeks") if users[0].income.times_per_year == "26" else word("twice a month") if users[0].income.times_per_year == "24" else word("once a month") }
     show if: there_are_marital_children or user_wants_post_divorce_support and users[0].has_job #for FOC23; never asked for JOD-only
   - Edit:
       - pa_status
@@ -661,7 +661,7 @@ review:
     button: |
       <h3 class="h5"> ${other_parties[0]}'s income</h3>
         - Paycheck amount: ${ word("not answered") if other_parties[0].income.value == 0.0 else word(currency(other_parties[0].income.value)) }
-        - Paycheck frequency: ${ word("not answered") if other_parties[0].income.times_per_year == None else word("once a week") if other_parties[0].income.times_per_year == 52 else word("every two weeks") if other_parties[0].income.times_per_year == 26 else word("twice a month") if other_parties[0].income.times_per_year == 24 else word("once a month") }
+        - Paycheck frequency: ${ word("not answered") if other_parties[0].income.times_per_year == None else word("once a week") if other_parties[0].income.times_per_year == "52" else word("every two weeks") if other_parties[0].income.times_per_year == "26" else word("twice a month") if other_parties[0].income.times_per_year == "24" else word("once a month") }
     show if: there_are_marital_children or user_wants_post_divorce_support and other_parties[0].has_job #for FOC23; never asked for JOD-only
   - Edit:
       - other_party_pa_status
@@ -1074,12 +1074,10 @@ review:
         % endif
     show if: there_are_marital_children
   - Edit:
-      - recompute:
-        - children_previous_address.gathered_reset
       - children_previous_address.there_are_any
       - children_lived_with_which_parent_past
-      - recompute:
-        - interview_order_children
+      - follow up:
+        - children_previous_address.revisit
     button: |
       <h3 class="h5"> Past homes of marital children</h3>
         - Over the last 5 years, ${ comma_and_list(children.filter(legal_parent='both').familiar()) } lived with 

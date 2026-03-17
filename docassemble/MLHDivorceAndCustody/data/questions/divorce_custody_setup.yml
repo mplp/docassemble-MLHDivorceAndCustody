@@ -214,5 +214,8 @@ terms:
       - parties
     definition: |
       In a legal case, a "party" means one of the "sides" in the case. In a divorce, you and your spouse are each a "party".
+  - phrases:
+      - legal description
+    definition: |
+      A paragraph of text in the deed that describes exactly where the property is located and where the boundaries are. It uses precise measurements instead of just the street address.
 ---
-
