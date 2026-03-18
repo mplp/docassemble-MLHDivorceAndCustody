@@ -3298,11 +3298,11 @@ attachment:
       - personal_property_as_is: ${not personal_property_in_addendum(marriage)}
       - personal_property_in_addendum: ${personal_property_in_addendum(marriage)}
       - debts_none: ${not debts_in_addendum(marriage)}
-      - debts_pay_debts_in_own_name: ${marriage.debts.any and marriage.attr("debts.pay_debts_in_own_names")}
+      - debts_pay_debts_in_own_name: ${marriage.debts.any and marriage.debts.pay_debts_in_own_names}
       - debts_in_addendum: ${debts_in_addendum(marriage)}
       - vehicles_none: ${not marriage.vehicles.any}
-      - vehicles_keep_same: ${marriage.vehicles.any and marriage.attr("vehicles.keep_own")}
-      - vehicles_in_addendum: ${marriage.vehicles.any and not marriage.attr("vehicles.keep_own")}
+      - vehicles_keep_same: ${marriage.vehicles.any and marriage.vehicles.keep_own}
+      - vehicles_in_addendum: ${marriage.vehicles.any and not marriage.vehicles.keep_own}
       - real_property_none: ${not bool(marriage.real_property)}
       - real_property_in_addendum: ${bool(marriage.real_property)}
       - pensions_none: ${not marriage.have_pension_retirement}
