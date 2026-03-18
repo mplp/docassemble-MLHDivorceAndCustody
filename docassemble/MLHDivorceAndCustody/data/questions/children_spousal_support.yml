@@ -3069,9 +3069,9 @@ fields:
 ---
 code: |
   users[0].has_job
-  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
-    users[0].occupation
   if users[0].has_job:
+    if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
+      users[0].occupation
     users[0].job.employer.name.first
   users[0].has_professional_license
 
@@ -3105,9 +3105,9 @@ code: |
 ---
 code: |
   other_parties[0].has_job
-  if tool_ID == "divorce_complaint" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
-    other_parties[0].occupation
   if other_parties[0].has_job:
+    if tool_ID == "divorce_complaint" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
+      other_parties[0].occupation
     other_parties[0].job.employer.name.first
   other_parties[0].has_professional_license
 
