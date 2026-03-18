@@ -2445,7 +2445,7 @@ data: !!omap
   - juvenile_delinquency: 'Juvenile Delinquency'
   - name_change: 'Name Change'
   - parental_rights: 'Parental Rights (abuse/neglect)'
-  - paternity: 'Parentage'
+  - paternity: 'Paternity/Parentage'
   - protection_order: 'Protection Order'
   - separate_maintenance: 'Separate Maintenance'
   - other: 'Other'
