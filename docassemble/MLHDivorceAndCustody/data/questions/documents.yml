@@ -3175,7 +3175,7 @@ attachment:
           % else:
           False
           % endif
-      - custody_not_determined: ${ not MI_has_jurisdiction_all_kids }
+      - custody_not_determined: # ${ not MI_has_jurisdiction_all_kids } ## commenting out per attorney feedback: "There are times under the statute where a MI court could decide to exercise jurisdiction even when MI is not the home state."
       - must_notify_address_change: ${MI_has_jurisdiction_all_kids}
       - court_must_approve_domicile_change: ${MI_has_jurisdiction_all_kids}
       - 100_mile_rule_applies: |
