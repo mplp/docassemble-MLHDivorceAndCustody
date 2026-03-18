@@ -676,7 +676,7 @@ content: |
   If you and your {spouse} have any **minor children together**, your divorce must address custody, parenting time, and child support. 
 
   % if tool_ID in ["divorce_complaint", "divorce_answer"]:
-  If you have any children together, **minor children of just one spouse** must also be listed in the divorce paperwork. However, the divorce will not cover their custody, parenting time, or child support.
+  In some cases, **minor children of just one spouse** must also be listed in the divorce paperwork. However, the divorce will not cover their custody, parenting time, or child support.
   % endif
 ---
 template: adult_children_info
@@ -697,12 +697,12 @@ id: any children divorce
 question: |
   Any minor children?
 subquestion: |
-  Answer yes if there are:
+  This includes:
   
-  * any minor children who have you **and** your {spouse} as legal parents, or
-  * any minor children of either spouse, and you're **not sure** who their legal parents are.
+  * children you had together, or 
+  * children one of you had separately.
 fields:
-  - Do you and your spouse have any living {minor} children?: children.there_are_any
+  - Do you or ${other_parties[0]} have any living {minor} children?: children.there_are_any
     datatype: yesnoradio
 validation code: |
   if not children.there_are_any: 
@@ -712,14 +712,7 @@ id: any more children
 question: |
   Any more children?
 subquestion: |
-  % if tool_ID == "divorce_complaint":
   Please list **all minor children** that you or your {spouse} have, either separately or together.
-  % elif tool_ID == "JOD_only":
-  Please include:
-
-  * all minor children who have you and your spouse as legal parents, and
-  * all minor children of either spouse, if you're not sure who their legal parents are.
-  % endif
   
   You have already told us about:
 
@@ -2072,15 +2065,8 @@ question: |
   Add or remove a child
 subquestion: |
   Use the buttons below to add or remove a child. 
-  
-  % if tool_ID == "divorce_complaint":
-  Please list **all minor children** that you or your {spouse} have, either separately or together.
-  % elif tool_ID == "JOD_only":
-  Please include:
 
-  * all minor children who have you and your spouse as legal parents, and
-  * all minor children of either spouse, if you're not sure who their legal parents are.
-  % endif
+  Please list **all minor children** that you or your {spouse} have, either separately or together.
 
   % if len(children.complete_elements()) > 0:
   You have already told us about:
