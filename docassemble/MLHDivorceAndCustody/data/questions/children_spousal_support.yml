@@ -697,10 +697,7 @@ id: any children divorce
 question: |
   Any minor children?
 subquestion: |
-  This includes:
-  
-  * children you had together, or 
-  * children one of you had separately.
+  This includes children you have together or children one of you has separately.
 fields:
   - Do you or ${other_parties[0]} have any living {minor} children?: children.there_are_any
     datatype: yesnoradio

@@ -175,7 +175,8 @@ code: |
 
   nav.set_section("signpost_prior_cases")
   prior_family_cases.gather()
-  child_support_pending_elsewhere
+  if there_are_marital_children:
+    child_support_pending_elsewhere
   has_prior_civil_cases
 
   nav.set_section("signpost_income_etc") 
