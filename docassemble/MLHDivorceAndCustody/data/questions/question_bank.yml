@@ -497,7 +497,12 @@ id: marriage.have_experienced_domestic_violence_continue
 question: |
   Domestic violence
 subquestion: |
-  Domestic violence is often at its worst when a relationship ends. It is important to take steps to be as safe as possible before you start a divorce. If there has been verbal, emotional, or physical abuse in your marriage, you may want to find a lawyer. Your local legal aid office or domestic violence agency may be able to help you. 
+  % if tool_ID == "JOD_only":
+  Domestic violence is often at its worst when a relationship ends. It is important to take steps to be as safe as possible.
+  % elif tool_ID == "divorce_complaint":
+  Domestic violence is often at its worst when a relationship ends. It is important to take steps to be as safe as possible before you start a divorce. 
+  % endif
+  If there has been verbal, emotional, or physical abuse in your marriage, you may want to find a lawyer. Your local legal aid office or domestic violence agency may be able to help you. 
   
   To learn about how domestic violence can affect a divorce case and what you can do to keep safe, read [Domestic Violence and Divorce](https://michiganlegalhelp.org/resources/family/domestic-violence-and-divorce). To find a lawyer and contact information for local domestic violence agencies, use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help).
 fields:
