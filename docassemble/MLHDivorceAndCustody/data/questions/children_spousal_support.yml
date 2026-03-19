@@ -1335,7 +1335,7 @@ if: kids_had_other_custodian
 event: other_custodian_kickout
 question: This tool is not right for you
 subquestion: |
-  We're sorry. You cannot use this tool if any of your and ${ other_parties[0] }'s minor children have lived with a legal custodian other than a parent during the past five years
+  We're sorry. You cannot use this tool if any of your and ${ other_parties[0] }'s minor children have lived with a legal custodian other than a parent during the past five years.
   
   You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
 ---
