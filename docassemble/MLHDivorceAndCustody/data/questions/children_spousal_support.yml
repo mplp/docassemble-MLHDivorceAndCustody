@@ -413,7 +413,7 @@ fields:
     required: False
   - note: ${ collapse_template(ss_factor_ten_standards_help) }
   - note: |
-      If you are responsible for supporting someone, explain below.
+      If you are responsible for supporting someone who is not a minor child of the marriage, explain below.
       
       ${ collapse_template(ss_factor_ten_responsibilities_help) }
   - Explain your relationship to the person you are supporting (if anyone) and other facts that will help the court understand what this responsibility involves.: ss_factor_ten_responsibilities
@@ -1335,7 +1335,7 @@ if: kids_had_other_custodian
 event: other_custodian_kickout
 question: This tool is not right for you
 subquestion: |
-  We're sorry. You cannot use this tool if any of your and ${ other_parties[0] }'s minor children have lived with a legal custodian other than a parent during the past five years
+  We're sorry. You cannot use this tool if any of your and ${ other_parties[0] }'s minor children have lived with a legal custodian other than a parent during the past five years.
   
   You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
 ---
@@ -2016,7 +2016,7 @@ fields:
   - note: |
       According to your answers, the minor child will have a legal residence with each parent, (meaning you and your spouse will be granted joint legal custody), and **the 100-mile rule will apply in your case.** 
       
-      Your Judgment of Divorce will state that “neither {party} shall move more than 100 miles away from where he or she lived at the beginning of this case, and the child has a legal residence with each parent. For more information, read [Moving with Children After Separation or Divorce](https://michiganlegalhelp.org/resources/family/moving-children-after-separation-or-divorce).
+      Your Judgment of Divorce will state that "neither {party} shall move more than 100 miles away from where they lived at the beginning of this case, and the child(ren) have a legal residence with each parent." For more information, read [Moving with Children After Separation or Divorce](https://michiganlegalhelp.org/resources/family/moving-children-after-separation-or-divorce).
     show if:
       variable: allow_over_100_miles
       is: False
