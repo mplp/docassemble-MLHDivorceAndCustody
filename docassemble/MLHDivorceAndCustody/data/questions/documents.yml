@@ -4078,7 +4078,7 @@ attachment:
       ### Real property 1 ###
       - real_properties1_address_on_one_line: ${marriage.real_property[0].address.on_one_line()}
       - real_properties1_legal_description: |
-          % if len(marriage.real_property[0].desc) > 123:
+          % if len(marriage.real_property[0].desc) > 250:
 
           See addendum.
           % else:
@@ -4164,11 +4164,11 @@ attachment:
       - real_properties2_address_on_one_line: ${marriage.real_property[1].address.on_one_line() if len(marriage.real_property) > 1 else ""}
       - real_properties2_legal_description: |
           % if len(marriage.real_property) > 1:
-            % if len(marriage.real_property[1].desc) > 123:
+            % if len(marriage.real_property[1].desc) > 250:
 
           See addendum.
             % else:
-            ${marriage.real_property[1].desc}
+          ${marriage.real_property[1].desc}
             % endif
           % else:
           ${""}
@@ -4282,11 +4282,11 @@ attachment:
       - real_properties3_address_on_one_line: ${marriage.real_property[2].address.on_one_line() if len(marriage.real_property) > 2 else ""}
       - real_properties3_legal_description: |
           % if len(marriage.real_property) > 2:
-            % if len(marriage.real_property[2].desc) > 123:
+            % if len(marriage.real_property[2].desc) > 250:
 
           See addendum.
             % else:
-            ${marriage.real_property[2].desc}
+          ${marriage.real_property[2].desc}
             % endif
           % else:
           ${""}
@@ -4371,11 +4371,11 @@ attachment:
       - real_properties4_address_on_one_line: ${marriage.real_property[3].address.on_one_line() if len(marriage.real_property) > 3 else ""}
       - real_properties4_legal_description: |
           % if len(marriage.real_property) > 3:
-            % if len(marriage.real_property[3].desc) > 123:
+            % if len(marriage.real_property[3].desc) > 250:
 
           See addendum.
             % else:
-            ${marriage.real_property[3].desc}
+          ${marriage.real_property[3].desc}
             % endif
           % else:
           ${""}
@@ -4489,11 +4489,11 @@ attachment:
       - real_properties5_address_on_one_line: ${marriage.real_property[4].address.on_one_line() if len(marriage.real_property) > 4 else ""}
       - real_properties5_legal_description: |
           % if len(marriage.real_property) > 4:
-            % if len(marriage.real_property[4].desc) > 123:
+            % if len(marriage.real_property[4].desc) > 250:
 
           See addendum.
             % else:
-            ${marriage.real_property[4].desc}
+          ${marriage.real_property[4].desc}
             % endif
           % else:
           ${""}
@@ -4578,11 +4578,11 @@ attachment:
       - real_properties6_address_on_one_line: ${marriage.real_property[5].address.on_one_line() if len(marriage.real_property) > 5 else ""}
       - real_properties6_legal_description: |
           % if len(marriage.real_property) > 5:
-            % if len(marriage.real_property[5].desc) > 123:
+            % if len(marriage.real_property[5].desc) > 250:
 
           See addendum.
             % else:
-            ${marriage.real_property[5].desc}
+          ${marriage.real_property[5].desc}
             % endif
           % else:
           ${""}
@@ -4696,11 +4696,11 @@ attachment:
       - real_properties7_address_on_one_line: ${marriage.real_property[6].address.on_one_line() if len(marriage.real_property) > 6 else ""}
       - real_properties7_legal_description: |
           % if len(marriage.real_property) > 6:
-            % if len(marriage.real_property[6].desc) > 123:
+            % if len(marriage.real_property[6].desc) > 250:
 
           See addendum.
             % else:
-            ${marriage.real_property[6].desc}
+          ${marriage.real_property[6].desc}
             % endif
           % else:
           ${""}
@@ -4785,11 +4785,11 @@ attachment:
       - real_properties8_address_on_one_line: ${marriage.real_property[7].address.on_one_line() if len(marriage.real_property) > 7 else ""}
       - real_properties8_legal_description: |
           % if len(marriage.real_property) > 7:
-            % if len(marriage.real_property[7].desc) > 123:
+            % if len(marriage.real_property[7].desc) > 250:
 
           See addendum.
             % else:
-            ${marriage.real_property[7].desc}
+          ${marriage.real_property[7].desc}
             % endif
           % else:
           ${""}
@@ -4903,11 +4903,11 @@ attachment:
       - real_properties9_address_on_one_line: ${marriage.real_property[8].address.on_one_line() if len(marriage.real_property) > 8 else ""}
       - real_properties9_legal_description: |
           % if len(marriage.real_property) > 8:
-            % if len(marriage.real_property[8].desc) > 123:
+            % if len(marriage.real_property[8].desc) > 250:
 
           See addendum.
             % else:
-            ${marriage.real_property[8].desc}
+          ${marriage.real_property[8].desc}
             % endif
           % else:
           ${""}
@@ -4992,11 +4992,11 @@ attachment:
       - real_properties10_address_on_one_line: ${marriage.real_property[9].address.on_one_line() if len(marriage.real_property) > 9 else ""}
       - real_properties10_legal_description: |
           % if len(marriage.real_property) > 9:
-            % if len(marriage.real_property[9].desc) > 123:
+            % if len(marriage.real_property[9].desc) > 250:
 
           See addendum.
             % else:
-            ${marriage.real_property[9].desc}
+          ${marriage.real_property[9].desc}
             % endif
           % else:
           ${""}
@@ -5295,7 +5295,7 @@ code: |
   
   if marriage.real_property:
     for property in marriage.real_property:
-      if len(property.desc) > 123:
+      if len(property.desc) > 250:
         send_rp_legal_description_to_addendum = True
 ---
 # The following functions are here so that the logic can be kept consistent,
