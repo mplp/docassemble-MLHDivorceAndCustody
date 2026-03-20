@@ -3664,7 +3664,7 @@ attachment:
   - name: Judgment addendum 2 (vehicles 5 to 8)
     filename: Judgment addendum 2 (vehicles 5 to 8)
     variable name: judgment_addendum_vehicles_5_to_8[i]
-    pdf template file: judgment_addendum_2_vehicles_5_to_8.pdf
+    pdf template file: judgment_addendum_2_vehicles_1_to_4.pdf
     skip undefined: True
     editable: False
     fields:
@@ -3685,129 +3685,129 @@ attachment:
           ${"412"}
           % endif
       # Vehicle 5
-      - vehicles5_awarded_plaintiff: |
+      - vehicles1_awarded_plaintiff: |
           % if len(marriage.vehicles) > 4 and marriage.vehicles[4].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles5_awarded_defendant: |
+      - vehicles1_awarded_defendant: |
           % if len(marriage.vehicles) > 4 and marriage.vehicles[4].owner == defendants[0]:
           True
           % else:
           False
           % endif
-      - vehicles5_year: ${marriage.vehicles[4].year if len(marriage.vehicles) > 4 else ""}
-      - vehicles5_make: ${marriage.vehicles[4].make if len(marriage.vehicles) > 4 else ""}
-      - vehicles5_model: ${marriage.vehicles[4].model if len(marriage.vehicles) > 4 else ""}
-      - vehicles5_VIN: ${marriage.vehicles[4].vin if len(marriage.vehicles) > 4 else ""}
-      - vehicles5_loan_yes: ${len(marriage.vehicles) > 4 and marriage.vehicles[4].debt}
-      - vehicles5_loan_no: ${len(marriage.vehicles) > 4 and not marriage.vehicles[4].debt}
-      - vehicles5_loan_responsibility_plaintiff: |
+      - vehicles1_year: ${marriage.vehicles[4].year if len(marriage.vehicles) > 4 else ""}
+      - vehicles1_make: ${marriage.vehicles[4].make if len(marriage.vehicles) > 4 else ""}
+      - vehicles1_model: ${marriage.vehicles[4].model if len(marriage.vehicles) > 4 else ""}
+      - vehicles1_VIN: ${marriage.vehicles[4].vin if len(marriage.vehicles) > 4 else ""}
+      - vehicles1_loan_yes: ${len(marriage.vehicles) > 4 and marriage.vehicles[4].debt}
+      - vehicles1_loan_no: ${len(marriage.vehicles) > 4 and not marriage.vehicles[4].debt}
+      - vehicles1_loan_responsibility_plaintiff: |
           % if len(marriage.vehicles) > 4 and marriage.vehicles[4].debt and marriage.vehicles[4].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles5_loan_responsibility_defendant: |
+      - vehicles1_loan_responsibility_defendant: |
           % if len(marriage.vehicles) > 4 and marriage.vehicles[4].debt and marriage.vehicles[4].owner == defendants[0]:
           True
           % else:
           False
           % endif
-      - vehicles5_loan_responsibility_plaintiff__1: |
+      - vehicles1_loan_responsibility_plaintiff__1: |
           % if len(marriage.vehicles) > 4 and marriage.vehicles[4].debt and marriage.vehicles[4].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles5_loan_responsibility_defendant__1: |
+      - vehicles1_loan_responsibility_defendant__1: |
           % if len(marriage.vehicles) > 4 and marriage.vehicles[4].debt and marriage.vehicles[4].owner == defendants[0]:
           True
           % else:
           False
           % endif
       # Vehicle 6
-      - vehicles6_awarded_plaintiff: |
+      - vehicles2_awarded_plaintiff: |
           % if len(marriage.vehicles) > 5 and marriage.vehicles[5].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles6_awarded_defendant: |
+      - vehicles2_awarded_defendant: |
           % if len(marriage.vehicles) > 5 and marriage.vehicles[5].owner == defendants[0]:
           True
           % else:
           False
           % endif
-      - vehicles6_year: ${marriage.vehicles[5].year if len(marriage.vehicles) > 5 else ""}
-      - vehicles6_make: ${marriage.vehicles[5].make if len(marriage.vehicles) > 5 else ""}
-      - vehicles6_model: ${marriage.vehicles[5].model if len(marriage.vehicles) > 5 else ""}
-      - vehicles6_VIN: ${marriage.vehicles[5].vin if len(marriage.vehicles) > 5 else ""}
-      - vehicles6_loan_yes: ${len(marriage.vehicles) > 5 and marriage.vehicles[5].debt}
-      - vehicles6_loan_no: ${len(marriage.vehicles) > 5 and not marriage.vehicles[5].debt}
-      - vehicles6_loan_responsibility_plaintiff: |
+      - vehicles2_year: ${marriage.vehicles[5].year if len(marriage.vehicles) > 5 else ""}
+      - vehicles2_make: ${marriage.vehicles[5].make if len(marriage.vehicles) > 5 else ""}
+      - vehicles2_model: ${marriage.vehicles[5].model if len(marriage.vehicles) > 5 else ""}
+      - vehicles2_VIN: ${marriage.vehicles[5].vin if len(marriage.vehicles) > 5 else ""}
+      - vehicles2_loan_yes: ${len(marriage.vehicles) > 5 and marriage.vehicles[5].debt}
+      - vehicles2_loan_no: ${len(marriage.vehicles) > 5 and not marriage.vehicles[5].debt}
+      - vehicles2_loan_responsibility_plaintiff: |
           % if len(marriage.vehicles) > 5 and marriage.vehicles[5].debt and marriage.vehicles[5].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles6_loan_responsibility_defendant: |
+      - vehicles2_loan_responsibility_defendant: |
           % if len(marriage.vehicles) > 5 and marriage.vehicles[5].debt and marriage.vehicles[5].owner == defendants[0]:
           True
           % else:
           False
           % endif
-      - vehicles6_loan_responsibility_plaintiff__1: |
+      - vehicles2_loan_responsibility_plaintiff__1: |
           % if len(marriage.vehicles) > 5 and marriage.vehicles[5].debt and marriage.vehicles[5].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles6_loan_responsibility_defendant__1: |
+      - vehicles2_loan_responsibility_defendant__1: |
           % if len(marriage.vehicles) > 5 and marriage.vehicles[5].debt and marriage.vehicles[5].owner == defendants[0]:
           True
           % else:
           False
           % endif
       # Vehicle 7
-      - vehicles7_awarded_plaintiff: |
+      - vehicles3_awarded_plaintiff: |
           % if len(marriage.vehicles) > 6 and marriage.vehicles[6].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles7_awarded_defendant: |
+      - vehicles3_awarded_defendant: |
           % if len(marriage.vehicles) > 6 and marriage.vehicles[6].owner == defendants[0]:
           True
           % else:
           False
           % endif
-      - vehicles7_year: ${marriage.vehicles[6].year if len(marriage.vehicles) > 6 else ""}
-      - vehicles7_make: ${marriage.vehicles[6].make if len(marriage.vehicles) > 6 else ""}
-      - vehicles7_model: ${marriage.vehicles[6].model if len(marriage.vehicles) > 6 else ""}
-      - vehicles7_VIN: ${marriage.vehicles[6].vin if len(marriage.vehicles) > 6 else ""}
-      - vehicles7_loan_yes: ${len(marriage.vehicles) > 6 and marriage.vehicles[6].debt}
-      - vehicles7_loan_no: ${len(marriage.vehicles) > 6 and not marriage.vehicles[6].debt}
-      - vehicles7_loan_responsibility_plaintiff: |
+      - vehicles3_year: ${marriage.vehicles[6].year if len(marriage.vehicles) > 6 else ""}
+      - vehicles3_make: ${marriage.vehicles[6].make if len(marriage.vehicles) > 6 else ""}
+      - vehicles3_model: ${marriage.vehicles[6].model if len(marriage.vehicles) > 6 else ""}
+      - vehicles3_VIN: ${marriage.vehicles[6].vin if len(marriage.vehicles) > 6 else ""}
+      - vehicles3_loan_yes: ${len(marriage.vehicles) > 6 and marriage.vehicles[6].debt}
+      - vehicles3_loan_no: ${len(marriage.vehicles) > 6 and not marriage.vehicles[6].debt}
+      - vehicles3_loan_responsibility_plaintiff: |
           % if len(marriage.vehicles) > 6 and marriage.vehicles[6].debt and marriage.vehicles[6].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles7_loan_responsibility_defendant: |
+      - vehicles3_loan_responsibility_defendant: |
           % if len(marriage.vehicles) > 6 and marriage.vehicles[6].debt and marriage.vehicles[6].owner == defendants[0]:
           True
           % else:
           False
           % endif
-      - vehicles7_loan_responsibility_plaintiff__1: |
+      - vehicles3_loan_responsibility_plaintiff__1: |
           % if len(marriage.vehicles) > 6 and marriage.vehicles[6].debt and marriage.vehicles[6].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles7_loan_responsibility_defendant__1: |
+      - vehicles3_loan_responsibility_defendant__1: |
           % if len(marriage.vehicles) > 6 and marriage.vehicles[6].debt and marriage.vehicles[6].owner == defendants[0]:
           True
           % else:
@@ -3815,43 +3815,43 @@ attachment:
           % endif
       - vehicle_addendum_title_page_2: ${"Judgment of Divorce, With Children, Vehicle Addendum" if there_are_marital_children else "Judgment of Divorce, No Children, Vehicle Addendum"}
       # Vehicle 8
-      - vehicles8_awarded_plaintiff: |
+      - vehicles4_awarded_plaintiff: |
           % if len(marriage.vehicles) > 7 and marriage.vehicles[7].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles8_awarded_defendant: |
+      - vehicles4_awarded_defendant: |
           % if len(marriage.vehicles) > 7 and marriage.vehicles[7].owner == defendants[0]:
           True
           % else:
           False
           % endif
-      - vehicles8_year: ${marriage.vehicles[7].year if len(marriage.vehicles) > 7 else ""}
-      - vehicles8_make: ${marriage.vehicles[7].make if len(marriage.vehicles) > 7 else ""}
-      - vehicles8_model: ${marriage.vehicles[7].model if len(marriage.vehicles) > 7 else ""}
-      - vehicles8_VIN: ${marriage.vehicles[7].vin if len(marriage.vehicles) > 7 else ""}
-      - vehicles8_loan_yes: ${len(marriage.vehicles) > 7 and marriage.vehicles[7].debt}
-      - vehicles8_loan_no: ${len(marriage.vehicles) > 7 and not marriage.vehicles[7].debt}
-      - vehicles8_loan_responsibility_plaintiff: |
+      - vehicles4_year: ${marriage.vehicles[7].year if len(marriage.vehicles) > 7 else ""}
+      - vehicles4_make: ${marriage.vehicles[7].make if len(marriage.vehicles) > 7 else ""}
+      - vehicles4_model: ${marriage.vehicles[7].model if len(marriage.vehicles) > 7 else ""}
+      - vehicles4_VIN: ${marriage.vehicles[7].vin if len(marriage.vehicles) > 7 else ""}
+      - vehicles4_loan_yes: ${len(marriage.vehicles) > 7 and marriage.vehicles[7].debt}
+      - vehicles4_loan_no: ${len(marriage.vehicles) > 7 and not marriage.vehicles[7].debt}
+      - vehicles4_loan_responsibility_plaintiff: |
           % if len(marriage.vehicles) > 7 and marriage.vehicles[7].debt and marriage.vehicles[7].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles8_loan_responsibility_defendant: |
+      - vehicles4_loan_responsibility_defendant: |
           % if len(marriage.vehicles) > 7 and marriage.vehicles[7].debt and marriage.vehicles[7].owner == defendants[0]:
           True
           % else:
           False
           % endif
-      - vehicles8_loan_responsibility_plaintiff__1: |
+      - vehicles4_loan_responsibility_plaintiff__1: |
           % if len(marriage.vehicles) > 7 and marriage.vehicles[7].debt and marriage.vehicles[7].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles8_loan_responsibility_defendant__1: |
+      - vehicles4_loan_responsibility_defendant__1: |
           % if len(marriage.vehicles) > 7 and marriage.vehicles[7].debt and marriage.vehicles[7].owner == defendants[0]:
           True
           % else:
@@ -3862,7 +3862,7 @@ attachment:
   - name: Judgment addendum 2 (vehicles 9 to 12)
     filename: Judgment addendum 2 (vehicles 9 to 12)
     variable name: judgment_addendum_vehicles_9_to_12[i]
-    pdf template file: judgment_addendum_2_vehicles_9_to_12.pdf
+    pdf template file: judgment_addendum_2_vehicles_1_to_4.pdf
     skip undefined: True
     editable: False
     fields:
@@ -3883,129 +3883,129 @@ attachment:
           ${"412"}
           % endif
       # Vehicle 9
-      - vehicles9_awarded_plaintiff: |
+      - vehicles1_awarded_plaintiff: |
           % if len(marriage.vehicles) > 8 and marriage.vehicles[8].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles9_awarded_defendant: |
+      - vehicles1_awarded_defendant: |
           % if len(marriage.vehicles) > 8 and marriage.vehicles[8].owner == defendants[0]:
           True
           % else:
           False
           % endif
-      - vehicles9_year: ${marriage.vehicles[8].year if len(marriage.vehicles) > 8 else ""}
-      - vehicles9_make: ${marriage.vehicles[8].make if len(marriage.vehicles) > 8 else ""}
-      - vehicles9_model: ${marriage.vehicles[8].model if len(marriage.vehicles) > 8 else ""}
-      - vehicles9_VIN: ${marriage.vehicles[8].vin if len(marriage.vehicles) > 8 else ""}
-      - vehicles9_loan_yes: ${len(marriage.vehicles) > 8 and marriage.vehicles[8].debt}
-      - vehicles9_loan_no: ${len(marriage.vehicles) > 8 and not marriage.vehicles[8].debt}
-      - vehicles9_loan_responsibility_plaintiff: |
+      - vehicles1_year: ${marriage.vehicles[8].year if len(marriage.vehicles) > 8 else ""}
+      - vehicles1_make: ${marriage.vehicles[8].make if len(marriage.vehicles) > 8 else ""}
+      - vehicles1_model: ${marriage.vehicles[8].model if len(marriage.vehicles) > 8 else ""}
+      - vehicles1_VIN: ${marriage.vehicles[8].vin if len(marriage.vehicles) > 8 else ""}
+      - vehicles1_loan_yes: ${len(marriage.vehicles) > 8 and marriage.vehicles[8].debt}
+      - vehicles1_loan_no: ${len(marriage.vehicles) > 8 and not marriage.vehicles[8].debt}
+      - vehicles1_loan_responsibility_plaintiff: |
           % if len(marriage.vehicles) > 8 and marriage.vehicles[8].debt and marriage.vehicles[8].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles9_loan_responsibility_defendant: |
+      - vehicles1_loan_responsibility_defendant: |
           % if len(marriage.vehicles) > 8 and marriage.vehicles[8].debt and marriage.vehicles[8].owner == defendants[0]:
           True
           % else:
           False
           % endif
-      - vehicles9_loan_responsibility_plaintiff__1: |
+      - vehicles1_loan_responsibility_plaintiff__1: |
           % if len(marriage.vehicles) > 8 and marriage.vehicles[8].debt and marriage.vehicles[8].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles9_loan_responsibility_defendant__1: |
+      - vehicles1_loan_responsibility_defendant__1: |
           % if len(marriage.vehicles) > 8 and marriage.vehicles[8].debt and marriage.vehicles[8].owner == defendants[0]:
           True
           % else:
           False
           % endif
       # Vehicle 10
-      - vehicles10_awarded_plaintiff: |
+      - vehicles2_awarded_plaintiff: |
           % if len(marriage.vehicles) > 9 and marriage.vehicles[9].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles10_awarded_defendant: |
+      - vehicles2_awarded_defendant: |
           % if len(marriage.vehicles) > 9 and marriage.vehicles[9].owner == defendants[0]:
           True
           % else:
           False
           % endif
-      - vehicles10_year: ${marriage.vehicles[9].year if len(marriage.vehicles) > 9 else ""}
-      - vehicles10_make: ${marriage.vehicles[9].make if len(marriage.vehicles) > 9 else ""}
-      - vehicles10_model: ${marriage.vehicles[9].model if len(marriage.vehicles) > 9 else ""}
-      - vehicles10_VIN: ${marriage.vehicles[9].vin if len(marriage.vehicles) > 9 else ""}
-      - vehicles10_loan_yes: ${len(marriage.vehicles) > 9 and marriage.vehicles[9].debt}
-      - vehicles10_loan_no: ${len(marriage.vehicles) > 9 and not marriage.vehicles[9].debt}
-      - vehicles10_loan_responsibility_plaintiff: |
+      - vehicles2_year: ${marriage.vehicles[9].year if len(marriage.vehicles) > 9 else ""}
+      - vehicles2_make: ${marriage.vehicles[9].make if len(marriage.vehicles) > 9 else ""}
+      - vehicles2_model: ${marriage.vehicles[9].model if len(marriage.vehicles) > 9 else ""}
+      - vehicles2_VIN: ${marriage.vehicles[9].vin if len(marriage.vehicles) > 9 else ""}
+      - vehicles2_loan_yes: ${len(marriage.vehicles) > 9 and marriage.vehicles[9].debt}
+      - vehicles2_loan_no: ${len(marriage.vehicles) > 9 and not marriage.vehicles[9].debt}
+      - vehicles2_loan_responsibility_plaintiff: |
           % if len(marriage.vehicles) > 9 and marriage.vehicles[9].debt and marriage.vehicles[9].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles10_loan_responsibility_defendant: |
+      - vehicles2_loan_responsibility_defendant: |
           % if len(marriage.vehicles) > 9 and marriage.vehicles[9].debt and marriage.vehicles[9].owner == defendants[0]:
           True
           % else:
           False
           % endif
-      - vehicles10_loan_responsibility_plaintiff__1: |
+      - vehicles2_loan_responsibility_plaintiff__1: |
           % if len(marriage.vehicles) > 9 and marriage.vehicles[9].debt and marriage.vehicles[9].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles10_loan_responsibility_defendant__1: |
+      - vehicles2_loan_responsibility_defendant__1: |
           % if len(marriage.vehicles) > 9 and marriage.vehicles[9].debt and marriage.vehicles[9].owner == defendants[0]:
           True
           % else:
           False
           % endif
       # Vehicle 11
-      - vehicles11_awarded_plaintiff: |
+      - vehicles3_awarded_plaintiff: |
           % if len(marriage.vehicles) > 10 and marriage.vehicles[10].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles11_awarded_defendant: |
+      - vehicles3_awarded_defendant: |
           % if len(marriage.vehicles) > 10 and marriage.vehicles[10].owner == defendants[0]:
           True
           % else:
           False
           % endif
-      - vehicles11_year: ${marriage.vehicles[10].year if len(marriage.vehicles) > 10 else ""}
-      - vehicles11_make: ${marriage.vehicles[10].make if len(marriage.vehicles) > 10 else ""}
-      - vehicles11_model: ${marriage.vehicles[10].model if len(marriage.vehicles) > 10 else ""}
-      - vehicles11_VIN: ${marriage.vehicles[10].vin if len(marriage.vehicles) > 10 else ""}
-      - vehicles11_loan_yes: ${len(marriage.vehicles) > 10 and marriage.vehicles[10].debt}
-      - vehicles11_loan_no: ${len(marriage.vehicles) > 10 and not marriage.vehicles[10].debt}
-      - vehicles11_loan_responsibility_plaintiff: |
+      - vehicles3_year: ${marriage.vehicles[10].year if len(marriage.vehicles) > 10 else ""}
+      - vehicles3_make: ${marriage.vehicles[10].make if len(marriage.vehicles) > 10 else ""}
+      - vehicles3_model: ${marriage.vehicles[10].model if len(marriage.vehicles) > 10 else ""}
+      - vehicles3_VIN: ${marriage.vehicles[10].vin if len(marriage.vehicles) > 10 else ""}
+      - vehicles3_loan_yes: ${len(marriage.vehicles) > 10 and marriage.vehicles[10].debt}
+      - vehicles3_loan_no: ${len(marriage.vehicles) > 10 and not marriage.vehicles[10].debt}
+      - vehicles3_loan_responsibility_plaintiff: |
           % if len(marriage.vehicles) > 10 and marriage.vehicles[10].debt and marriage.vehicles[10].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles11_loan_responsibility_defendant: |
+      - vehicles3_loan_responsibility_defendant: |
           % if len(marriage.vehicles) > 10 and marriage.vehicles[10].debt and marriage.vehicles[10].owner == defendants[0]:
           True
           % else:
           False
           % endif
-      - vehicles11_loan_responsibility_plaintiff__1: |
+      - vehicles3_loan_responsibility_plaintiff__1: |
           % if len(marriage.vehicles) > 10 and marriage.vehicles[10].debt and marriage.vehicles[10].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles11_loan_responsibility_defendant__1: |
+      - vehicles3_loan_responsibility_defendant__1: |
           % if len(marriage.vehicles) > 10 and marriage.vehicles[10].debt and marriage.vehicles[10].owner == defendants[0]:
           True
           % else:
@@ -4013,43 +4013,43 @@ attachment:
           % endif
       - vehicle_addendum_title_page_2: ${"Judgment of Divorce, With Children, Vehicle Addendum" if there_are_marital_children else "Judgment of Divorce, No Children, Vehicle Addendum"}
       # Vehicle 12
-      - vehicles12_awarded_plaintiff: |
+      - vehicles4_awarded_plaintiff: |
           % if len(marriage.vehicles) > 11 and marriage.vehicles[11].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles12_awarded_defendant: |
+      - vehicles4_awarded_defendant: |
           % if len(marriage.vehicles) > 11 and marriage.vehicles[11].owner == defendants[0]:
           True
           % else:
           False
           % endif
-      - vehicles12_year: ${marriage.vehicles[11].year if len(marriage.vehicles) > 11 else ""}
-      - vehicles12_make: ${marriage.vehicles[11].make if len(marriage.vehicles) > 11 else ""}
-      - vehicles12_model: ${marriage.vehicles[11].model if len(marriage.vehicles) > 11 else ""}
-      - vehicles12_VIN: ${marriage.vehicles[11].vin if len(marriage.vehicles) > 11 else ""}
-      - vehicles12_loan_yes: ${len(marriage.vehicles) > 11 and marriage.vehicles[11].debt}
-      - vehicles12_loan_no: ${len(marriage.vehicles) > 11 and not marriage.vehicles[11].debt}
-      - vehicles12_loan_responsibility_plaintiff: |
+      - vehicles4_year: ${marriage.vehicles[11].year if len(marriage.vehicles) > 11 else ""}
+      - vehicles4_make: ${marriage.vehicles[11].make if len(marriage.vehicles) > 11 else ""}
+      - vehicles4_model: ${marriage.vehicles[11].model if len(marriage.vehicles) > 11 else ""}
+      - vehicles4_VIN: ${marriage.vehicles[11].vin if len(marriage.vehicles) > 11 else ""}
+      - vehicles4_loan_yes: ${len(marriage.vehicles) > 11 and marriage.vehicles[11].debt}
+      - vehicles4_loan_no: ${len(marriage.vehicles) > 11 and not marriage.vehicles[11].debt}
+      - vehicles4_loan_responsibility_plaintiff: |
           % if len(marriage.vehicles) > 11 and marriage.vehicles[11].debt and marriage.vehicles[11].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles12_loan_responsibility_defendant: |
+      - vehicles4_loan_responsibility_defendant: |
           % if len(marriage.vehicles) > 11 and marriage.vehicles[11].debt and marriage.vehicles[11].owner == defendants[0]:
           True
           % else:
           False
           % endif
-      - vehicles12_loan_responsibility_plaintiff__1: |
+      - vehicles4_loan_responsibility_plaintiff__1: |
           % if len(marriage.vehicles) > 11 and marriage.vehicles[11].debt and marriage.vehicles[11].owner == plaintiffs[0]:
           True
           % else:
           False
           % endif
-      - vehicles12_loan_responsibility_defendant__1: |
+      - vehicles4_loan_responsibility_defendant__1: |
           % if len(marriage.vehicles) > 11 and marriage.vehicles[11].debt and marriage.vehicles[11].owner == defendants[0]:
           True
           % else:
