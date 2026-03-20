@@ -155,7 +155,7 @@ code: |
 
   judgment_addendum_income_tax.enabled = there_are_marital_children
 
-  judgment_addendum_parenting_time.enabled = there_are_marital_children and MI_has_jurisdiction_all_kids and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 240
+  judgment_addendum_parenting_time.enabled = there_are_marital_children and MI_has_jurisdiction_all_kids and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 650
 ---
 # enabling logic for JOD_only addenda overflow fields (personal property and debts, real property legal description, and other provisions)
 code: |
@@ -167,7 +167,7 @@ code: |
   elif marriage.real_property and send_rp_legal_description_to_addendum:
     judgment_overflow_addendum.enabled = True
 
-  elif marriage.other_provisions_any and len(marriage.other_provisions) > 240:
+  elif marriage.other_provisions_any and len(marriage.other_provisions) > 650:
     judgment_overflow_addendum.enabled = True
 ---
 code: |
@@ -3081,11 +3081,11 @@ attachment:
       - has_vehicle_addendum: ${has_vehicle_addendum(marriage)}
       - has_real_property_addendum: ${bool(marriage.real_property)}
       - has_pension_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
-      - has_overflow_addendum: ${(send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum) or (marriage.real_property and send_rp_legal_description_to_addendum) or (marriage.other_provisions_any and len(marriage.other_provisions) > 240)}
+      - has_overflow_addendum: ${(send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum) or (marriage.real_property and send_rp_legal_description_to_addendum) or (marriage.other_provisions_any and len(marriage.other_provisions) > 650)}
       - has_other_provisions: ${marriage.other_provisions_any}
       - other_provisions: |
           % if marriage.other_provisions_any:
-            % if len(marriage.other_provisions) > 240:
+            % if len(marriage.other_provisions) > 650:
           See addendum.
             % else:
           ${marriage.other_provisions}
@@ -3217,7 +3217,7 @@ attachment:
           Parenting time arrangements will be made by mutual agreement of the parties.
               % elif PT_type in ["specific", "supervised"]:
                 % if specific_PT_how == "custom":
-                  % if len(custom_PT_details) > 240:
+                  % if len(custom_PT_details) > 650:
           Both parties will have specific parenting time with the minor ${"child" if len(children.filter(legal_parent="both")) == 1 else "children"} according to the Parenting Time Addendum.
                   % else:
           ${custom_PT_details}
@@ -3225,7 +3225,7 @@ attachment:
                 % else:
           Both parties will have specific parenting time with the minor ${"child" if len(children.filter(legal_parent="both")) else "children"} according to the ${the_court.address.county} County Friend of the Court parenting time schedule.
                 % endif
-                % if PT_type == "supervised" and not (specific_PT_how == "custom" and len(custom_PT_details) > 240):
+                % if PT_type == "supervised" and not (specific_PT_how == "custom" and len(custom_PT_details) > 650):
                   % if physical_custody_who == "user":
 
           Parenting time for ${OP_party_label.lower()} will be supervised by ${PT_supervisor if PT_supervisor != "" else "________________________"}.
@@ -3307,12 +3307,12 @@ attachment:
       - pensions_keep_own: ${marriage.have_pension_retirement and marriage.attr("pension_retirement_accounts_keep_own")}
       - pensions_in_addendum: ${marriage.have_pension_retirement and not marriage.attr("pension_retirement_accounts_keep_own")}
       - has_income_tax_addendum: ${there_are_marital_children}
-      - has_parenting_time_addendum: ${MI_has_jurisdiction_all_kids and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 240}
-      - has_overflow_addendum: ${(send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum) or (marriage.real_property and send_rp_legal_description_to_addendum) or (marriage.other_provisions_any and len(marriage.other_provisions) > 240)}
+      - has_parenting_time_addendum: ${MI_has_jurisdiction_all_kids and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 650}
+      - has_overflow_addendum: ${(send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum) or (marriage.real_property and send_rp_legal_description_to_addendum) or (marriage.other_provisions_any and len(marriage.other_provisions) > 650)}
       - has_other_provisions: ${marriage.other_provisions_any}
       - other_provisions: |
           % if marriage.other_provisions_any:
-            % if len(marriage.other_provisions) > 240:
+            % if len(marriage.other_provisions) > 650:
           See addendum.
             % else:
           ${marriage.other_provisions}
