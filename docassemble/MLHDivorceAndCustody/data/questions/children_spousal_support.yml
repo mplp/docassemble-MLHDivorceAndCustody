@@ -2319,7 +2319,7 @@ content: |
   * Divorce, annulment, or separate maintenance (sometimes called legal separation)
   % if tool_ID in ["divorce_complaint", "divorce_answer"]:
   * Custody
-  * Parentage
+  * Paternity/Parentage
   * Child support
   % endif
   * All types of personal protection orders-- whether for a domestic relationship, sexual assault, or nondomestic stalking
