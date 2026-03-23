@@ -139,6 +139,10 @@ code: |
 ---
 # enabling logic for judgment addenda bundle
 code: |
+  # run these functions first because if they have not been run they will be skipped when used to fill out judgment checkboxes
+  debts_in_addendum(marriage) 
+  personal_property_in_addendum(marriage)
+  
   judgment_addendum_personal_property_and_debt.enabled = debts_in_addendum(marriage) or personal_property_in_addendum(marriage)
 
   judgment_addendum_vehicles_1_to_4.enabled = has_vehicle_addendum(marriage)
