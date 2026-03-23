@@ -3329,18 +3329,16 @@ fields:
       children[i].name_fields()
 ---
 id: children adoption/timing info
-question: When ${ children[i] } joined your family
+question: About ${ children[i] }
 fields:
-  - Did you and ${other_parties[0]} **adopt** ${ children[i] } together during your marriage?: children[i].adopted_during_marriage
-    datatype: yesnoradio
   - Was this child born before or after you married ${other_parties}?: children[i].timing
     datatype: radio
     choices: 
       - They were born before we got married.: premarital
       - They were born after we got married.: marital
-    show if:
-      variable: children[i].adopted_during_marriage
-      is: False
+  - Did you and ${other_parties[0]} **adopt** ${ children[i] } together?: children[i].adopted_during_marriage
+    datatype: yesnoradio
+  # if adopted_during_marriage, the first question is unnecessary. Put first for interview flow.
   # TODO? need help text saying don't include children who were born to or adopted by either spouse prior to marriage
 validation code: |
   children[i].revoke_paternity_reminder = False # sets for ALL kids, overridden on later screens as needed
