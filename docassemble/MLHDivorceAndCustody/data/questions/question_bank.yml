@@ -3736,7 +3736,7 @@ subquestion: |
   Your ${ filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
   
   % endif
-  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to consider finding a lawyer to help you.
+  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to find a lawyer to help you.
       
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
   
@@ -3745,7 +3745,7 @@ subquestion: |
   Your ${ filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
 
   % endif
-  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to consider finding a lawyer to help you.
+  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to find a lawyer to help you.
       
   If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
   % endif
@@ -3753,12 +3753,12 @@ subquestion: |
   % elif children[i].parentage_established =="court_order":
   
   % if children[i].bio_parent == "other_party":
-  To do this, you can file a [Motion to Set Aside Order of Filiation](https://www.courts.michigan.gov/4a8194/siteassets/forms/scao-approved/cc437.pdf) in the same case that the Order of Filiation was entered in. You may want to consider finding a lawyer to help you.
+  To do this, you can file a [Motion to Set Aside Order of Filiation](https://www.courts.michigan.gov/4a8194/siteassets/forms/scao-approved/cc437.pdf) in the same case that the Order of Filiation was entered in. You may want to find a lawyer to help you.
   
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
 
   % elif children[i].bio_parent == "user":
-  To do this, file a [Motion to Set Aside Order of Filiation](https://www.courts.michigan.gov/4a8194/siteassets/forms/scao-approved/cc437.pdf) in the same case that the Order of Filiation was entered in. You may want to consider finding a lawyer to help you.
+  To do this, file a [Motion to Set Aside Order of Filiation](https://www.courts.michigan.gov/4a8194/siteassets/forms/scao-approved/cc437.pdf) in the same case that the Order of Filiation was entered in. You may want to find a lawyer to help you.
 
   If the judge revokes your spouse’s parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
   % endif
@@ -3789,6 +3789,16 @@ subquestion: |
   If nobody files a Motion to Determine Child Born Out of Wedlock, your spouse will remain a legal parent. This means the judge can award them custody and/or parenting time, and they may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
   % endif
   % endif
+---
+id: parentage revocation info for reminders document
+code: |
+  for child in children:
+    if child.origin == "premarital_with_another" and child.parentage_established == "affidavit" and child.how_conceived == "sex" and child.parentage_plan_to_revoke:
+      revocation_reminders = f"/n To revoke parentage of a child whose parentage was established by affidavit, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage, CC-435](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) form along with the forms you file to start your divorce case. This type of case can be complex. You may want to find a lawyer to help you."
+    elif child.origin == "premarital_with_another" and child.parentage_established == "court_order" and child.how_conceived == "sex" and child.parentage_plan_to_revoke:
+      revocation_reminders += f"/n To revoke parentage of a child whose parentage was established by a court order, file a [Motion to Set Aside Order of Filiation, CC-437](https://www.courts.michigan.gov/4a8194/siteassets/forms/scao-approved/cc437.pdf) in the same case that the Order of Filiation was entered in. This type of case can be complex. You may want to find a lawyer to help you."
+    elif child.origin == "marital_third_party_conceived" and child.legal_parent == "both" and child.parentage_plan_to_revoke:
+      revocation_reminders += f"/n To revoke parentage of a child whose parentage was established by marriage, use the [Do-It-Yourself Revoke Parentage Established by Marriage](https://michiganlegalhelp.org/node/6243) (https://michiganlegalhelp.org/node/6243) to create the additional forms you will need."
 ---
 id: info about nonmarital children
 if: children[i].legal_parent != "both"
