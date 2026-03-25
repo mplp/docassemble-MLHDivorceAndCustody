@@ -22,8 +22,6 @@ code: |
   filing_court = "circuit_only"
   ottawa_circuit_location = "West Olive"
 ---
-# need to reconsider these so that if users[0] or other_parties[0] info is changed after download screen, change flows to plaintiffs[0] and defendants[0]
-reconsider: True
 code: |
   if user_ask_role == "plaintiff":
     plaintiffs = users
