@@ -1136,7 +1136,7 @@ review:
         % if physical_custody_who != "both" and PT_who == "both" and PT_type == "supervised":
         - Preferred supervisor: ${ PT_supervisor }
         % endif
-        % if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and not ((tool_ID == "divorce_complaint" and (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon")) or (tool_ID == "JOD_only" and county_choice == "Muskegon")):  
+        % if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and not ((tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID == "JOD_only" and county_choice == "Muskegon")):  
         - Schedule type: 
         % if specific_PT_how == "custom":
         **you write the schedule.**
@@ -1150,7 +1150,7 @@ review:
     button: |
       <h3 class="h5"> Custom parenting time plan:</h3>
       ${ custom_PT_details }
-    show if: there_are_marital_children and ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]) and (((tool_ID == "divorce_complaint" and (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon")) or (tool_ID == "JOD_only" and county_choice == "Muskegon")) or specific_PT_how == "custom")
+    show if: there_are_marital_children and ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]) and (((tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID == "JOD_only" and county_choice == "Muskegon")) or specific_PT_how == "custom")
   - Edit:
       - child_domicile_info
       - hundred_mile_rule
