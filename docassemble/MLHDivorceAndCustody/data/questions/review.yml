@@ -938,6 +938,7 @@ review:
         - temporary_order_kids_exit
         - interview_order_home_state
         - set_children_home_state_info
+        - set_parentage_reminder_logic
         - other_case_controls_child_support
         - children_live_with_parent
         - children_now_live_with_which_parent
@@ -993,6 +994,7 @@ review:
         - temporary_order_kids_exit
         - interview_order_home_state
         - set_children_home_state_info
+        - set_parentage_reminder_logic
         - other_case_controls_child_support
         - children_live_with_parent
         - children_now_live_with_which_parent

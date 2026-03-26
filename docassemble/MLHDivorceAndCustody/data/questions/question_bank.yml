@@ -2649,6 +2649,7 @@ code: |
   
   set_marital_children_or_not
   set_child_home_choices
+  set_parentage_reminder_logic
   
   if there_are_marital_children:
 
@@ -3341,7 +3342,6 @@ fields:
   # if adopted_during_marriage, the first question is unnecessary. Put first for interview flow.
   # TODO? need help text saying don't include children who were born to or adopted by either spouse prior to marriage
 validation code: |
-  children[i].revoke_paternity_reminder = False # sets for ALL kids, overridden on later screens as needed
   if children[i].adopted_during_marriage:
     children[i].timing = "marital"
     children[i].origin = "marital_adoption"
@@ -3693,10 +3693,6 @@ fields:
       If you answer **Yes,** your ${ filing_name } will state that you plan to file a motion asking to revoke your spouse's parentage.
     js show if: |
       val("children[i].legal_parent") == "both" && ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer"] and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" }  
-# NOTE: see above for another way to to do js show if logic without json.dumps!
-validation code: |
-  if children[i].legal_parent == "both" and children[i].parentage_plan_to_revoke:
-    children[i].revoke_paternity_reminder = True
 ---
 id: parentage revocation questions, spouse is bio parent
 if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived")) and children[i].bio_parent == "other_party"
@@ -3718,9 +3714,6 @@ fields:
       If you answer **Yes,** your ${ filing_name } will state that you plan to file a motion asking to revoke your parentage.
     js show if: |
       val("children[i].legal_parent") == "both" && ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer"] and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" } 
-validation code: |
-  if children[i].legal_parent == "both" and children[i].parentage_plan_to_revoke:
-    children[i].revoke_paternity_reminder = True
 ---
 id: info about revoking parentage
 if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived" and children[i].legal_parent == "both")) and children[i].parentage_plan_to_revoke
@@ -3736,7 +3729,7 @@ subquestion: |
   Your ${ filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
   
   % endif
-  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to consider finding a lawyer to help you.
+  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to find a lawyer to help you.
       
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
   
@@ -3745,7 +3738,7 @@ subquestion: |
   Your ${ filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
 
   % endif
-  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to consider finding a lawyer to help you.
+  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to find a lawyer to help you.
       
   If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
   % endif
@@ -3753,12 +3746,12 @@ subquestion: |
   % elif children[i].parentage_established =="court_order":
   
   % if children[i].bio_parent == "other_party":
-  To do this, you can file a [Motion to Set Aside Order of Filiation](https://www.courts.michigan.gov/4a8194/siteassets/forms/scao-approved/cc437.pdf) in the same case that the Order of Filiation was entered in. You may want to consider finding a lawyer to help you.
+  To do this, you can file a [Motion to Set Aside Order of Filiation](https://www.courts.michigan.gov/4a8194/siteassets/forms/scao-approved/cc437.pdf) in the same case that the Order of Filiation was entered in. You may want to find a lawyer to help you.
   
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
 
   % elif children[i].bio_parent == "user":
-  To do this, file a [Motion to Set Aside Order of Filiation](https://www.courts.michigan.gov/4a8194/siteassets/forms/scao-approved/cc437.pdf) in the same case that the Order of Filiation was entered in. You may want to consider finding a lawyer to help you.
+  To do this, file a [Motion to Set Aside Order of Filiation](https://www.courts.michigan.gov/4a8194/siteassets/forms/scao-approved/cc437.pdf) in the same case that the Order of Filiation was entered in. You may want to find a lawyer to help you.
 
   If the judge revokes your spouse’s parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
   % endif
@@ -3789,6 +3782,23 @@ subquestion: |
   If nobody files a Motion to Determine Child Born Out of Wedlock, your spouse will remain a legal parent. This means the judge can award them custody and/or parenting time, and they may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
   % endif
   % endif
+---
+id: parentage revocation logic for reminders document
+code: |
+  parentage_affidavit_revoke = False
+  parentage_order_revoke = False
+  parentage_marital_revoke = False
+
+  if there_are_marital_children:
+    for child in children.filter(legal_parent="both"):
+      if child.origin == "premarital_with_another" and child.parentage_established == "affidavit" and child.how_conceived == "sex" and child.parentage_plan_to_revoke:
+        parentage_affidavit_revoke = True
+      elif child.origin == "premarital_with_another" and child.parentage_established == "court_order" and child.how_conceived == "sex" and child.parentage_plan_to_revoke:
+        parentage_order_revoke = True 
+      elif child.origin == "marital_third_party_conceived" and child.legal_parent == "both" and child.parentage_plan_to_revoke:
+        parentage_marital_revoke = True
+
+  set_parentage_reminder_logic = True
 ---
 id: info about nonmarital children
 if: children[i].legal_parent != "both"
