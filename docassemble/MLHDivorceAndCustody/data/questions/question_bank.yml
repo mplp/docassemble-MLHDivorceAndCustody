@@ -3798,7 +3798,7 @@ code: |
       elif child.origin == "marital_third_party_conceived" and child.legal_parent == "both" and child.parentage_plan_to_revoke:
         parentage_marital_revoke = True
 
-  set_parentage_reminder_logic
+  set_parentage_reminder_logic = True
 ---
 id: info about nonmarital children
 if: children[i].legal_parent != "both"
