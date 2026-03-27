@@ -143,8 +143,9 @@ code: |
   debts_in_addendum(marriage) 
   personal_property_in_addendum(marriage)
   format_children_names(children)
-  tax_format_names(tax_children_plaintiff)
-  tax_format_names(tax_children_defendant)
+  if there_are_marital_children and income_tax_method == "specify_per_child":
+    tax_format_names(tax_children_plaintiff)
+    tax_format_names(tax_children_defendant)
   send_plaintiff_personal_property_to_addendum
   send_defendant_personal_property_to_addendum
   send_plaintiff_debts_to_addendum
