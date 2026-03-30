@@ -1877,6 +1877,7 @@ subquestion: |
 fields:
   - label: VIN
     field: marriage.mobile_home[i].kind
+    maxlength: 17
   - label: Location
     field: marriage.mobile_home[i].desc
     maxlength: 60
