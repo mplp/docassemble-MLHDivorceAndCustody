@@ -69,7 +69,7 @@ code: |
 
   if verified_statement_foc_23_full.enabled:
     verified_statement_foc_23.enabled = True
-    if (there_are_marital_children and (insurance_in_addendum or len(children.filter(legal_parent="both")) > 5 or len(stepchildren_for_addendum) > 2)) or len(users[0].other_identifying_info) > 19 or len(other_parties[0].other_identifying_info) > 19:
+    if (there_are_marital_children and (insurance_in_addendum or len(children.filter(legal_parent="both")) > 5 or len(stepchildren_for_addendum) > 2) or (len(children.filter(legal_parent="both")) > 0 and children_now_live_with_which_parent == "both")) or len(users[0].other_identifying_info) > 19 or len(other_parties[0].other_identifying_info) > 19:
       verified_statement_foc_23_addendum.enabled = True
     else:
       verified_statement_foc_23_addendum.enabled = False
@@ -137,9 +137,9 @@ code: |
   judgment_ccmlh413.enabled = there_are_marital_children
   judgment_ccmlh412.enabled = not there_are_marital_children
 ---
-# enabling logic for judgment addenda bundle
+# enabling logic for judgment addenda bundle and load functions/variables
 code: |
-  # run these functions first because if they have not been run they will be skipped when used to fill out judgment checkboxes
+  # run these functions/load variables first because if they have not been run they will be skipped when used to fill out judgment checkboxes
   debts_in_addendum(marriage) 
   personal_property_in_addendum(marriage)
   format_children_names(children)
