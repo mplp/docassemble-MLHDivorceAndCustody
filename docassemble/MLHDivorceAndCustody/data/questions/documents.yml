@@ -69,7 +69,7 @@ code: |
 
   if verified_statement_foc_23_full.enabled:
     verified_statement_foc_23.enabled = True
-    if (there_are_marital_children and (insurance_in_addendum or len(children.filter(legal_parent="both")) > 5 or len(stepchildren_for_addendum) > 2) or (len(children.filter(legal_parent="both")) > 0 and children_now_live_with_which_parent == "both")) or len(users[0].other_identifying_info) > 19 or len(other_parties[0].other_identifying_info) > 19:
+    if (there_are_marital_children and (insurance_in_addendum or len(children.filter(legal_parent="both")) > 5 or len(stepchildren_for_addendum) > 2 or children_now_live_with_which_parent == "both")) or len(users[0].other_identifying_info) > 19 or len(other_parties[0].other_identifying_info) > 19:
       verified_statement_foc_23_addendum.enabled = True
     else:
       verified_statement_foc_23_addendum.enabled = False
