@@ -151,6 +151,8 @@ code: |
   else:
     county_where_filed
     court_index
+    the_court
+    the_foc
     party_lived_6_months_MI
     if not (party_lived_6_months_MI['user'] and party_ten_days_in_county['user']) and not (party_lived_6_months_MI['other_party'] and party_ten_days_in_county['other_party']):
       jurisdiction_warning
@@ -240,8 +242,6 @@ code: |
   MLH_standard_outro_pages
 
   # just making sure these are defined
-  the_court
-  the_foc 
   docket_number
   stepchildren_for_addendum
   plaintiffs
