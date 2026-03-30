@@ -1659,8 +1659,6 @@ review:
       <h3 class="h5"> Time in Michigan and in ${county_choice} County</h3>
         - You did ${word("not") if not party_lived_6_months_MI['user'] else ""} live in Michigan for 180 days before filing for divorce. You did ${word("not") if not party_ten_days_in_county['user'] else ""} live in ${county_choice} County for 10 days before filing for divorce.
         - Your spouse did ${word("not") if not party_lived_6_months_MI['other_party'] else ""} live in Michigan for 180 days before filing for divorce. Your spouse did ${word("not") if not party_ten_days_in_county['other_party'] else ""} live in ${county_choice} County for 10 days before filing for divorce.
-      <h3 class="h5"> Court</h3>
-        - ${the_court}
     show if: (tool_ID == "JOD_only" and user_ask_role == "plaintiff") or (tool_ID == "divorce_complaint" and returning_to_finalize)
   - Edit: docket_number
     button: |

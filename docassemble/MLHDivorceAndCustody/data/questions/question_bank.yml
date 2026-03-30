@@ -1719,6 +1719,7 @@ fields:
       is: "Other Investment"
   - label: Location (e.g., Fifth Third Bank)
     field: marriage.accounts[i].source
+    maxlength: 38
   - note: |
       **Note:** Investment value can be complicated. You may need a financial advisor or other professional to determine an accurate value.
     show if:
@@ -1811,6 +1812,7 @@ fields:
       - Other Personal Property
   - label: Describe the item
     field: marriage.other_pp[i].desc
+    maxlength: 65
   - label: Award to
     field: marriage.other_pp[i].owner
     datatype: object_radio
@@ -1875,8 +1877,10 @@ subquestion: |
 fields:
   - label: VIN
     field: marriage.mobile_home[i].kind
+    maxlength: 17
   - label: Location
     field: marriage.mobile_home[i].desc
+    maxlength: 60
   - label: Award to
     field: marriage.mobile_home[i].owner
     datatype: object_radio
@@ -1995,6 +1999,7 @@ fields:
       - Judgment
   - label: To whom do you owe the money
     field: marriage.debts[i].source
+    maxlength: 35
   - label: Approximate balance
     field: marriage.debts[i].balance
     datatype: currency
