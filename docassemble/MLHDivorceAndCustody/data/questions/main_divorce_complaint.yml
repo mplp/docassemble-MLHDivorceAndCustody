@@ -37,6 +37,10 @@ code: |
 code: |
   tool_ID = "divorce_complaint"
 ---
+#should be able to pull this from framework but getting error so trying it here
+code: |
+  optional_download_message = ""
+---
 code: |
   if there_are_marital_children:
     docket_number = "                         -DM"
