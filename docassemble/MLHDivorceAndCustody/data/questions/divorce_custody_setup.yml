@@ -16,6 +16,7 @@ features:
   labels above fields: True
   css: mlh-divorce-and-custody.css
   # note css line copied from Jack's main judgment yml-- Ask Jack -- maybe just a placeholder?
+  # error notification variables: True
 ---
 code: |
   snapshot_dv_question = True
