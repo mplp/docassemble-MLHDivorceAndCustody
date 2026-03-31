@@ -961,6 +961,7 @@ review:
         - court_index
         - the_court
         - the_foc
+        - stepchildren_for_addendum
       - recompute:
         - children_previous_address.gathered_reset
         - interview_order_children
@@ -1016,6 +1017,7 @@ review:
         - court_index
         - the_court
         - the_foc
+        - stepchildren_for_addendum
       - recompute:
         - children_previous_address.gathered_reset
         - interview_order_children
@@ -1751,6 +1753,9 @@ review:
   - raw html: |
       ${ end_accordion() }
     show if: marriage.attribute_defined("have_experienced_domestic_violence")
+validation code: |
+  # update cached documents in case edits are made after docs generated
+  undefine('al_user_bundle._downloadable_files', 'al_user_bundle.generate_downloads_task')
 ---
 #
 ### -------- Tables and Review Screens -------------------

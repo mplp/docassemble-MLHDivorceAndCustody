@@ -22,8 +22,6 @@ code: |
   filing_court = "circuit_only"
   ottawa_circuit_location = "West Olive"
 ---
-# need to reconsider these so that if users[0] or other_parties[0] info is changed after download screen, change flows to plaintiffs[0] and defendants[0]
-reconsider: True
 code: |
   if user_ask_role == "plaintiff":
     plaintiffs = users
@@ -212,4 +210,27 @@ terms:
       - legal description
     definition: |
       A paragraph of text in the deed that describes exactly where the property is located and where the boundaries are. It uses precise measurements instead of just the street address.
+---
+#directly copied from framework, but adding code for previously cached files for background assembly. May be OK to have this code in Framework version (may just do nothing if there are no cached files).
+id: DownloadScreen
+event: MLH_download
+question: |
+  Get your ${ MLH_form_type }
+subquestion: |
+  You can **view**, **download**, or **e-mail** your ${ MLH_form_type } to yourself below. Tap the "✎ Review / Edit" button to fix any mistakes.
+
+  ${ optional_download_message }
+    
+  <h2 class="h3">Download or e-mail your ${ MLH_form_type }</h2>
+
+  ${ action_button_html(url_action('review_full'), label='✎ Review / Edit', color='info') }
+  
+  ${ al_user_bundle.download_list_html(use_previously_cached_files=True) }
+
+  ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
+  
+  <h2 class="h3">Take our quick survey!</h2>
+  Answer below or [open the survey in a new tab](${ survey_link_url_only }).
+  ${ survey_embed_script }
+progress: 100
 ---
