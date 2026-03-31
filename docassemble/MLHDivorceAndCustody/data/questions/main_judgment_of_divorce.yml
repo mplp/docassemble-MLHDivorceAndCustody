@@ -238,8 +238,8 @@ code: |
   MLH_standard_outro_pages  
   al_user_bundle.generate_downloads_task
   nav.set_section("signpost_done")
+  snapshot_download
   if not al_user_bundle.generate_downloads_task.ready():
     al_download_waiting_screen
-  snapshot_download
   MLH_download
 ---
