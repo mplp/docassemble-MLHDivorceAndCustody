@@ -17,6 +17,11 @@ features:
   css: mlh-divorce-and-custody.css
   # note css line copied from Jack's main judgment yml-- Ask Jack -- maybe just a placeholder?
 ---
+code: |
+  snapshot_dv_question = True
+  snapshot_dv_present = marriage.have_experienced_domestic_violence
+---
+
 # for framework court loader logic
 code: |
   filing_court = "circuit_only"

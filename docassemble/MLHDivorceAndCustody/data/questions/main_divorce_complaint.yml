@@ -84,6 +84,7 @@ code: |
   set_persistent_interview_specific_logic
   nav.set_section("review_full")
   nav.set_section("signpost_intro")
+  snapshot_start
   MLH_standard_intro_pages
 
   nav.set_section("signpost_qualify")
@@ -232,6 +233,8 @@ code: |
   if not returning_to_finalize:
     check_for_required_venue
     venue 
+    the_court
+    the_foc
 
   if marriage.other_provisions_any:
     marriage.other_provisions
@@ -251,6 +254,7 @@ code: |
   nav.set_section("signpost_done")
   if not al_user_bundle.generate_downloads_task.ready():
     al_download_waiting_screen
+  snapshot_download
   MLH_download
 ---
 
