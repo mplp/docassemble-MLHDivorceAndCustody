@@ -44,13 +44,13 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
     return out
 
 setup(name='docassemble.MLHDivorceAndCustody',
-      version='0.2.1',
+      version='1.0.0',
       description=('Michigan divorce and child support tools'),
-      long_description='# docassemble.MLHDivorceAndCustody\r\n\r\nMichigan divorce and custody tools\r\n\r\n## Authors:\r\n\r\n\r\n## Changelog:\r\n',
+      long_description='# docassemble.MLHDivorceAndCustody\r\n\r\nMichigan divorce and custody tools\r\n\r\n## Authors:\r\nMichigan Legal Help\r\nLemma Legal\r\n\r\n## Changelog:\r\n* 3/31/26  1.0.0 initial launch of divorce complaint and judgment of divorce tools',
       long_description_content_type='text/markdown',
       author='Emily Miller',
       author_email='ekressmiller@lsscm.org',
-      license='',
+      license='MIT',
       url='https://michiganlegalhelp.org/resources/divorce',
       packages=find_namespace_packages(),
       install_requires=[],

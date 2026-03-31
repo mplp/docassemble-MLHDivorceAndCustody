@@ -488,7 +488,7 @@ id: pension_retirement_accounts_divide
 question: |
   Pension and/or retirement accounts
 subquestion: |
-  **WARNING!** Dividing pensions or retirement accounts is not easy. You will likely need a special order called a QDRO or EDRO that this tool does not provide. You can still use this tool to get your other divorce forms. But the Pension/Retirement Account Addendum to the Judgment of Divorce will be **incomplete.**
+  **WARNING!** Dividing pensions or retirement accounts is not easy. You will likely need a special order called a QDRO or EDRO that this tool does not provide. You can still use this tool, but the Pension/Retirement Account Addendum to the Judgment of Divorce will be **incomplete.**
   
   You will need to find a lawyer to help you complete the Judgment of Divorce and prepare a QDRO or EDRO. ${MLH_GUIDE_FULL}
 fields:
@@ -548,6 +548,7 @@ fields:
 validation code: |
   if not users[0].has_previous_name:
     users[0].invalidate_attr("previous_last_name")
+progress: 25
 ---
 if: tool_ID in ["divorce_complaint", "divorce_answer"]
 id: users[0].previous_name 
@@ -573,6 +574,7 @@ fields:
 validation code: |
   if not users[0].has_previous_name:
     users[0].invalidate_attr("previous_last_name", "previous_first_name", "previous_middle_name")
+progress: 25
 ---
 id: users[0].new_last_name_yn
 question: |
@@ -672,7 +674,12 @@ fields:
 
       ${collapse_template(why_lawyer_address_safety)}
 
-      But if you need to file for divorce without a lawyer, you can continue with this tool. On the next page, you will need to give a mailing address where the court and your spouse can send you mail related to your case. You may want to use a P.O. Box or the address of a friend or relative, and a different telephone number (such as the telephone number of a friend or relative).
+      % if tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and returning_to_finalize):
+      But if you need to finish your divorce without a lawyer, you can continue with this tool. 
+      % else:
+      But if you need to file for divorce without a lawyer, you can continue with this tool.
+      % endif
+      On the next page, you will need to give a mailing address where the court and your spouse can send you mail related to your case. You may want to use a P.O. Box or the address of a friend or relative, and a different telephone number (such as the telephone number of a friend or relative).
     show if:
       variable: confidential_contact_info_yn
       is: True
@@ -1561,6 +1568,7 @@ subquestion : |
 
   ${ collapse_template(separate_property_treated_marital) }
 continue button field: marriage.marital_property_info
+progress: 75
 ---
 template: property_in_one_name
 subject: |
@@ -2455,12 +2463,12 @@ subquestion: |
   
   1. 
   % if not user_logged_in():
-  [Log in](https://da-dev.mplp.org/user/sign-in?next=https://forms.michiganlegalhelp.org/interviews) to **edit saved forms** if you already created an account and used this tool to create your divorce forms. (Forms are saved for 180 days from last access.)
+  [Log in](https://forms.michiganlegalhelp.org/user/sign-in?next=https://forms.michiganlegalhelp.org/interviews) to **edit saved forms** if you already created an account and used this tool to create your divorce forms. (Forms are saved for 180 days from last access.)
   % else:
-  Go to [My Forms](https://da-dev.mplp.org/interviews) to **edit saved forms** if you already created an account and used this tool to create your divorce forms. (Forms are saved for 180 days from last access.)
+  Go to [My Forms](https://forms.michiganlegalhelp.org/interviews) to **edit saved forms** if you already created an account and used this tool to create your divorce forms. (Forms are saved for 180 days from last access.)
   % endif
 
-  2. If you only need updated forms for the **end of your case,** you can use our [Judgment of Divorce tool](https://da-dev.mplp.org/start/divorce_judgment/) instead of this one. It is a little faster.
+  2. If you only need updated forms for the **end of your case,** you can use our [Judgment of Divorce tool](https://forms.michiganlegalhelp.org/start/divorce_judgment/) instead of this one. It is a little faster.
 
   3. Continue using this tool if:
   
@@ -2756,6 +2764,7 @@ subquestion: |
   Spousal support is not a part of every divorce case. If you or your spouse asks the judge for spousal support and the other spouse does not agree, the judge will base their decision on many different factors. 
   
   To learn more, read [Spousal Support (Alimony)](https://michiganlegalhelp.org/resources/family/spousal-support-alimony-nutshell). 
+progress: 50
 ---
 id: wants temporary spousal support?
 question: Temporary spousal support (while case is pending)
@@ -4474,11 +4483,11 @@ template: custody_PT_guidance
 subject: |
   How to answer the custody and parenting time questions:
 content: |
-  % if tool_ID == "JOD_only":
+  % if tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and returning_to_finalize):
   
-  1. If the **judge issued temporary orders** for custody or {parenting time}, you should match the judge's orders.
+  1. If you **already went to the final hearing** and the judge made decisions about custody and {parenting time}, you should match what the judge ordered.
   
-  2. If there are **no temporary orders** for custody or {parenting time}:
+  2. Otherwise:
       * if you and your spouse **agree** on a question, use your agreed answer.
       * if you and your spouse **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
   
