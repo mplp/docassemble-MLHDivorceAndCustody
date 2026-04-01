@@ -6,11 +6,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "docassemble.MLHDivorceAndCustody"
-version = "1.0.0"
+version = "1.0.1"
 description = "Michigan divorce and child support tools"
 readme = "README.md"
 authors = [
-    { name = "Emily Miller", email = "ekressmiller@lsscm.org" },
+    { name = "Michigan Legal Help", email = "ekressmiller@lsscm.org" },
 ]
 dependencies = []
 license = "MIT"

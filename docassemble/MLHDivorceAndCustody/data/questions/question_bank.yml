@@ -3356,6 +3356,7 @@ fields:
   # if adopted_during_marriage, the first question is unnecessary. Put first for interview flow.
   # TODO? need help text saying don't include children who were born to or adopted by either spouse prior to marriage
 validation code: |
+  children[i].revoke_paternity_reminder = False # sets for ALL kids, overridden on later screens as needed
   if children[i].adopted_during_marriage:
     children[i].timing = "marital"
     children[i].origin = "marital_adoption"
@@ -3707,6 +3708,9 @@ fields:
       If you answer **Yes,** your ${ filing_name } will state that you plan to file a motion asking to revoke your spouse's parentage.
     js show if: |
       val("children[i].legal_parent") == "both" && ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer"] and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" }  
+validation code: |
+  if children[i].legal_parent == "both" and children[i].parentage_plan_to_revoke:
+    children[i].revoke_paternity_reminder = True
 ---
 id: parentage revocation questions, spouse is bio parent
 if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived")) and children[i].bio_parent == "other_party"
@@ -3728,6 +3732,9 @@ fields:
       If you answer **Yes,** your ${ filing_name } will state that you plan to file a motion asking to revoke your parentage.
     js show if: |
       val("children[i].legal_parent") == "both" && ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer"] and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" } 
+validation code: |
+  if children[i].legal_parent == "both" and children[i].parentage_plan_to_revoke:
+    children[i].revoke_paternity_reminder = True
 ---
 id: info about revoking parentage
 if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived" and children[i].legal_parent == "both")) and children[i].parentage_plan_to_revoke
