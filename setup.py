@@ -44,11 +44,11 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
     return out
 
 setup(name='docassemble.MLHDivorceAndCustody',
-      version='1.0.0',
+      version='1.0.1',
       description=('Michigan divorce and child support tools'),
-      long_description='# docassemble.MLHDivorceAndCustody\r\n\r\nMichigan divorce and custody tools\r\n\r\n## Authors:\r\nMichigan Legal Help\r\nLemma Legal\r\n\r\n## Changelog:\r\n* 3/31/26  1.0.0 initial launch of divorce complaint and judgment of divorce tools',
+      long_description='# docassemble.MLHDivorceAndCustody\r\n\r\nMichigan divorce and custody tools\r\n\r\n## Authors:\r\nMichigan Legal Help\r\nLemma Legal\r\n\r\n## Changelog:\r\n* 4/1/26   1.0.1 fix issue with children not displaying in complaint #7\r\n* 3/31/26  1.0.0 initial launch of divorce complaint and judgment of divorce tools',
       long_description_content_type='text/markdown',
-      author='Emily Miller',
+      author='Michigan Legal Help',
       author_email='ekressmiller@lsscm.org',
       license='MIT',
       url='https://michiganlegalhelp.org/resources/divorce',
