@@ -3,8 +3,7 @@ include:
   - docassemble.FeeWaiverRequest:shared_code.yml
   - divorce_custody_setup.yml
 ---
-# TODO subtitle? & confirm description 
-# TEST CHANGE
+# TODO subtitle? & confirm description
 metadata:
   title: Michigan Complaint for Divorce
   short title: Michigan Divorce Complaint

@@ -3690,7 +3690,7 @@ fields:
 ---
 id: parentage revocation questions, user is bio parent
 if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived")) and children[i].bio_parent == "user"
-Question: Legal parentage status for ${children[i]}
+question: Legal parentage status for ${children[i]}
 fields:
   - Has your spouse's parentage been revoked (canceled) by a court order? This would only happen if you, your spouse, or ${children[i]}’s other biological parent filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].legal_parent
     datatype: radio
@@ -3714,7 +3714,7 @@ validation code: |
 ---
 id: parentage revocation questions, spouse is bio parent
 if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived")) and children[i].bio_parent == "other_party"
-Question: Legal parentage status for ${children[i]}
+question: Legal parentage status for ${children[i]}
 fields:
   - Has your parentage been revoked (canceled) by a court order? This would only happen if you, your spouse, or ${children[i]}’s other biological parent filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].legal_parent
     datatype: radio
@@ -6492,7 +6492,7 @@ code: |
 ---
 if: income_tax_method == "alternate_years"
 id: income tax deductions starting year
-Question: Who gets income tax deductions first?
+question: Who gets income tax deductions first?
 subquestion: |
   You said that you and ${ other_parties[0] } will claim income tax deductions in alternating years, starting in tax year ${ tax_start_year }. 
 fields:
