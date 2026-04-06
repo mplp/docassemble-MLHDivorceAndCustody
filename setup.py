@@ -46,7 +46,7 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
 setup(name='docassemble.MLHDivorceAndCustody',
       version='1.0.2',
       description=('Michigan divorce and child support tools'),
-      long_description='# docassemble.MLHDivorceAndCustody\r\n\r\nMichigan divorce and custody tools\r\n\r\n## Authors:\r\nMichigan Legal Help\r\nLemma Legal\r\n\r\n## Changelog:\r\ntest test\r\n* 4/6/26   1.0.2 patch Ottawa County court selection issue; fix minor typos\r\n* 4/1/26   1.0.1 fix issue with children not displaying in complaint #7\r\n* 3/31/26  1.0.0 initial launch of divorce complaint and judgment of divorce tools',
+      long_description='# docassemble.MLHDivorceAndCustody\r\n\r\nMichigan divorce and custody tools\r\n\r\n## Authors:\r\nMichigan Legal Help\r\nLemma Legal\r\n\r\n## Changelog:\r\n* 4/6/26   1.0.2 patch Ottawa County court selection issue; fix and standardize Ottawa case initiation form reference; fix minor code typos\r\n* 4/1/26   1.0.1 fix issue with children not displaying in complaint #7\r\n* 3/31/26  1.0.0 initial launch of divorce complaint and judgment of divorce tools',
       long_description_content_type='text/markdown',
       author='Michigan Legal Help',
       author_email='ekressmiller@lsscm.org',
