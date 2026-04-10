@@ -4636,7 +4636,7 @@ subquestion: |
   % if tool_ID == "divorce_complaint":
   Your Complaint for Divorce will ask the judge to order child support. 
   % endif
-  Michigan law requires judges to order child support based on the Michigan Child Support Formula. In many counties, the Friend of the Court will calculate child support for you. The amount of child support is based on the income of each parent, the number of overnights that each parent has with the child, and a number of other factors. You can use the [MiChildSupport Calculator](https://micase.state.mi.us/calculatorapp/public/welcome/load.html) on the Michigan Department of Health and Human Services website to find out what the support amount might be in your case.
+  Michigan law requires judges to order child support based on the Michigan Child Support Formula. In many counties, the Friend of the Court will calculate child support for you. The amount of child support is based on the income of each parent, the number of overnights that each parent has with the child, and a number of other factors. You can use the [MiChildSupport Calculator](https://pcal.state.mi.us/welcome) on the Michigan Department of Health and Human Services website to find out what the support amount might be in your case.
 
   In some situations, the judge can order support that is less than what is required by the Michigan Child Support Formula, or order no child support at all—but this is uncommon. If you think there is a reason to have less child support than required by the Formula or none at all, you may want to contact a lawyer. ${MLH_GUIDE_FULL} 
   
