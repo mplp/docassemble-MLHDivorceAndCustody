@@ -30,7 +30,7 @@ sections:
 ---
 # TODO need survey url
 code: |
-  #survey_link_url_only = "https://www.surveymonkey.com/r/xxxxxx"
+  survey_link_url_only = "https://www.surveymonkey.com/r/xxxxxx"
 ---
 code: |
   tool_ID = "divorce_answer"
@@ -49,7 +49,7 @@ code: |
   MLH_time_max = 45
 
   # TODO need resource url & confirm page name
-  # resource_page_url_only = "https://michiganlegalhelp.org/node/xxxx"
+  resource_page_url_only = "https://michiganlegalhelp.org/node/xxxx"
   resource_page_name = "Judgment of Divorce"
 
 ---
