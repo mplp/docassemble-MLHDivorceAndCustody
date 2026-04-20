@@ -2811,25 +2811,30 @@ id: spousal support factors intro
 question: Asking for spousal support for after your divorce
 continue button field: spousal_support_factors_intro
 subquestion: |
-  The next pages will go through each of the 14 spousal support factors that the judge in your case may consider before making a spousal support decision. 
+  Next, we'll go through the 14 {spousal support factors} that the judge may consider. For each factor:
   
-  Read about each factor, including the help text, and consider if each factor applies to your need for spousal support or your {spouse}’s ability to pay. If it applies, include the facts in your case that relate to that factor. 
+  1. Read about the {factor}, including the help text. 
+  2. Consider if the factor applies to:
+      * your need for spousal support, or 
+      * your {spouse}’s ability to pay
+  3. Explain the facts in your case that relate to that factor, if any.
   
-  **It is ok if you don't have an answer for each factor. Not every factor applies in every case.** Some factors are similar to each other and will overlap. Note that the examples in the help text do not cover every possible situation.
+  **It's ok if you don't have an answer** for each factor. Not every factor applies in every case. 
+  
+  **It's also ok to repeat yourself a bit** for different factors. Some factors are similar to each other and will overlap. 
 
-  Tips for answering: 
-  
-  ${ ss_factor_tips }
+  ${ collapse_template(ss_factor_tips) }
 ---
 template: ss_factor_tips
 subject: Tips for answering
 content: |
   * Type in complete sentences with capitalization and punctuation. 
   * Call yourself "${ user_party_label }" and call your {spouse} “${ OP_party_label }.” Avoid using “I” and “my.” 
+  * The help text examples don't cover every situation. Include any facts that relate to a {factor} and show your need for spousal support, or your spouse’s ability to pay.
   * If a question does not apply to you, leave it blank.
 ---
 id: spousal support factor 1
-question: "Factor 1: The past relations and conduct of the {parties}"
+question: "{Factor} 1: The past relations and conduct of the {parties}"
 subquestion: |
   This factor has two parts:
   
