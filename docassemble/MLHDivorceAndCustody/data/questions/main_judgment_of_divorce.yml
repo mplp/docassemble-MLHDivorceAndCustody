@@ -72,10 +72,23 @@ template: MLH_welcome_message
 content: |
  Welcome to the Do-It-Yourself Judgment of Divorce tool. 
 
+ ${ collapse_template(already_used_diy_divorce)}
+
  A Judgment of Divorce is the **final order** you need for the end of a divorce case. Use this tool if:
   
    * you already have an active divorce case, and
    * all you need is a Judgment of Divorce and the forms that go with it.
+---
+template: already_used_diy_divorce
+subject: Wait! Did you **already use** the Do-It-Yourself Divorce Tool?
+content: |
+  If you used our **Do-It-Yourself Divorce** tool to start your case and **created an account** to save your forms, you may already have a *Judgment of Divorce* form. (Forms are saved for 180 days from when you last accessed them.) 
+  
+  % if not user_logged_in():
+  [Log in](https://forms.michiganlegalhelp.org/user/sign-in?next=https://forms.michiganlegalhelp.org/interviews) and look for saved **Do-It-Yourself Divorce** forms on the **My Forms** page. Once you return to your **Do-It-Yourself Divorce** forms, you can make any edits and download your *Judgment of Divorce.*
+  % else:
+  Go to [My Forms](https://forms.michiganlegalhelp.org/interviews) and look for saved **Do-It-Yourself Divorce** forms. Once you return to your **Do-It-Yourself Divorce** forms, you can make any edits and download your *Judgment of Divorce.*
+  % endif
 ---
 id: JOD_only special instructions
 question: How to answer the questions in this tool
