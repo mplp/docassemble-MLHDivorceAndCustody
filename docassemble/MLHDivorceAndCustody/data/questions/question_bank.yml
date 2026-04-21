@@ -1630,10 +1630,12 @@ subquestion: |
   
   **Do not include vehicles** (such as cars, boats, trailers, motorcycles, or snowmobiles) in this section. You will be asked about vehicles in the next section.
 
+  % if tool_ID == "divorce_complaint" and not returning_to_finalize:
   When answering these questions:
 
   * If you and your spouse **agree** on how something should be divided, use your agreed answer.
   * If you and your spouse **don't agree** on something, use the division of property terms that you want the judge to order.
+  % endif
 continue button field: marriage.personal_property_info
 ---
 id: marriage.personal_property

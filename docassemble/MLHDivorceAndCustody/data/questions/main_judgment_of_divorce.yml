@@ -156,6 +156,9 @@ code: |
   if marriage.temporary_order:
     marriage.temporary_order_changed
 
+  marriage.date
+  marriage.address.city
+
   nav.set_section("signpost_user")
 
   users.gather()
@@ -231,8 +234,6 @@ code: |
   
   nav.set_section("signpost_last_section")
 
-  marriage.date
-  marriage.address.city
   if not marriage.living_together_yn:
     marriage.living_together_stopped_date
     if there_are_marital_children:

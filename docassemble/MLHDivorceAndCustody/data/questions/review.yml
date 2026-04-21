@@ -1624,7 +1624,7 @@ review:
 # ---------- case information ----------
   - raw html: |
       ${ next_accordion("""<h2 class="h4">Your Divorce Case</h2>""") }
-    show if: defined("county_choice") or defined ("venue") or defined ("marriage.temporary_order")
+    show if: defined("county_choice") or defined("venue") or defined("marriage.temporary_order")
   - Edit:
       - user_ask_role
       - recompute:
