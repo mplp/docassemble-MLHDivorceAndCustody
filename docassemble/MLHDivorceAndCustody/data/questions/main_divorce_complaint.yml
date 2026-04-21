@@ -125,6 +125,9 @@ code: |
     if not temporary_order_continue:
       exit_general
 
+  marriage.date
+  marriage.address.city
+
   nav.set_section("signpost_user")
 
   users.gather()
@@ -153,14 +156,6 @@ code: |
   if not returning_to_finalize:
     if not ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI) or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI)):
        exit_jurisdiction
-  else:
-    county_where_filed
-    court_index
-    the_court
-    the_foc
-    party_lived_6_months_MI
-    if not (party_lived_6_months_MI['user'] and party_ten_days_in_county['user']) and not (party_lived_6_months_MI['other_party'] and party_ten_days_in_county['other_party']):
-      jurisdiction_warning
 
   if other_parties[0].address.country == "US":
     other_parties[0].village_or_township_yn  
@@ -172,6 +167,15 @@ code: |
     other_parties[0].mailing_address.address
   other_parties[0].no_phone_number
   other_parties[0].email
+
+  if returning_to_finalize:
+    county_where_filed
+    court_index
+    the_court
+    the_foc
+    party_lived_6_months_MI
+    if not (party_lived_6_months_MI['user'] and party_ten_days_in_county['user']) and not (party_lived_6_months_MI['other_party'] and party_ten_days_in_county['other_party']):
+      jurisdiction_warning
 
   nav.set_section("signpost_support")
   interview_order_spousal_support
@@ -227,8 +231,6 @@ code: |
 
   nav.set_section("signpost_last_section")
 
-  marriage.date
-  marriage.address.city
   if not marriage.living_together_yn:
     marriage.living_together_stopped_date
     if there_are_marital_children:

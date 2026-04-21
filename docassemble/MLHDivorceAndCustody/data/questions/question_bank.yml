@@ -1630,10 +1630,12 @@ subquestion: |
   
   **Do not include vehicles** (such as cars, boats, trailers, motorcycles, or snowmobiles) in this section. You will be asked about vehicles in the next section.
 
+  % if tool_ID == "divorce_complaint" and not returning_to_finalize:
   When answering these questions:
 
   * If you and your spouse **agree** on how something should be divided, use your agreed answer.
   * If you and your spouse **don't agree** on something, use the division of property terms that you want the judge to order.
+  % endif
 continue button field: marriage.personal_property_info
 ---
 id: marriage.personal_property
@@ -2811,25 +2813,30 @@ id: spousal support factors intro
 question: Asking for spousal support for after your divorce
 continue button field: spousal_support_factors_intro
 subquestion: |
-  The next pages will go through each of the 14 spousal support factors that the judge in your case may consider before making a spousal support decision. 
+  Next, we'll go through the 14 {spousal support factors} that the judge may consider. For each factor:
   
-  Read about each factor, including the help text, and consider if each factor applies to your need for spousal support or your {spouse}’s ability to pay. If it applies, include the facts in your case that relate to that factor. 
+  1. Read about the {factor}, including the help text. 
+  2. Consider if the factor applies to:
+      * your need for spousal support, or 
+      * your {spouse}’s ability to pay
+  3. Explain the facts in your case that relate to that factor, if any. 
   
-  **It is ok if you don't have an answer for each factor. Not every factor applies in every case.** Some factors are similar to each other and will overlap. Note that the examples in the help text do not cover every possible situation.
+  **It's ok if you don't have an answer** for each factor. When this happens, leave the box blank. Not every factor applies in every case.
+  
+  **It's also ok to repeat yourself a bit** for different factors. Some factors are similar to each other and will overlap. 
 
-  Tips for answering: 
-  
-  ${ ss_factor_tips }
+  ${ collapse_template(ss_factor_tips) }
 ---
 template: ss_factor_tips
 subject: Tips for answering
 content: |
+  * The help text examples don't cover every situation. Include any facts that relate to a {factor} and show your need for spousal support, or your spouse’s ability to pay.
+  * If a question does not apply to you, leave it blank.
   * Type in complete sentences with capitalization and punctuation. 
   * Call yourself "${ user_party_label }" and call your {spouse} “${ OP_party_label }.” Avoid using “I” and “my.” 
-  * If a question does not apply to you, leave it blank.
 ---
 id: spousal support factor 1
-question: "Factor 1: The past relations and conduct of the {parties}"
+question: "{Factor} 1: The past relations and conduct of the {parties}"
 subquestion: |
   This factor has two parts:
   
@@ -2874,7 +2881,7 @@ content: |
   If this applies to your marriage, briefly explain what actions or behavior of your spouse (${ OP_party_label }) contributed to the breakdown of the marriage. For example: “${ capitalize(OP_party_label) } has been controlling throughout the marriage. They did not allow the Plaintiff to work outside the home, so ${ user_party_label } lost the opportunity to build their career for ten years.”
 ---
 id: spousal support factor 2
-question: "Factor 2: The length of the marriage"
+question: "{Factor} 2: The length of the marriage"
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -2890,7 +2897,7 @@ content: |
   But a spousal support award is most likely if one spouse in a **long-term marriage** does not have a career and will likely have a lower standard of living because of the divorce.
 ---
 id: spousal support factor 3
-question: "Factor 3: The ability of each {party} to work"
+question: "{Factor} 3: The ability of each {party} to work"
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -2929,7 +2936,7 @@ content: |
   **Do not** include if ${ OP_party_label } has an illness, injury, or disability that limits their ability to work. Save that information for Factor 9 (the parties’ health).
 ---
 id: spousal support factor 4
-question: "Factor 4: The source and amount of property awarded to the {parties}"
+question: "{Factor} 4: The source and amount of property awarded to the {parties}"
 continue button field: ss_factor_four_property
 subquestion: |
   The judge will consider the division of property in the divorce in determining whether spousal support should also be ordered. You are not expected to include anything about this factor now since it is unlikely you have reached a property settlement before filing for divorce. 
@@ -2937,7 +2944,7 @@ subquestion: |
   But if you go to trial on the issue of spousal support, be aware that you should consider if this factor is relevant at that time.
 ---
 id: spousal support factor 5
-question: "Factor 5: The {parties}' ages"
+question: "{Factor} 5: The {parties}' ages"
 continue button field: ss_factor_five_ages
 subquestion: |
   This tool will pull your age and your spouse’s age from the birthdates you entered before.
@@ -2950,7 +2957,7 @@ content: |
   If the person asking for support is older, this may weigh into the judge's determination of whether that person is able to work.
 ---
 id: spousal support factor 6
-question: "Factor 6: The ability to pay spousal support"
+question: "{Factor} 6: The ability to pay spousal support"
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -2966,7 +2973,7 @@ content: |
   * In some cases the judge may also consider a person's other sources of income besides their wages or salary in deciding if they are able to pay spousal support. If your spouse's income from their job is not significant, but they have other sources of income, you can include that.
 ---
 id: spousal support factor 7
-question: "Factor 7: The {parties}' present situation"
+question: "{Factor} 7: The {parties}' present situation"
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -2981,7 +2988,7 @@ content: |
   In some cases a person may be awarded spousal support so they can continue caring for an adult child of the spouses who is disabled.
 ---
 id: spousal support factor 8
-question: "Factor 8: The needs of the {parties}"
+question: "{Factor} 8: The needs of the {parties}"
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -2998,7 +3005,7 @@ content: |
   If you are nearing typical retirement age and you didn’t work enough to qualify for Social Security retirement, and you are unlikely to find a job to get sufficient retirement benefits or to support yourself, you may need spousal support.
 ---
 id: spousal support factor 9
-question: "Factor 9: The {parties}' health"
+question: "{Factor} 9: The {parties}' health"
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -3014,7 +3021,7 @@ content: |
   * Is your health condition due to mistreatment or abuse by your spouse?
 ---
 id: spousal support factor 10
-question: "Factor 10: The prior standard of living of the {parties} and whether either is responsible for the support of others."
+question: "{Factor} 10: The prior standard of living of the {parties} and whether either is responsible for the support of others."
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -3041,7 +3048,7 @@ content: |
   If you are responsible for supporting someone else, such as your adult child with a disability, include that.
 ---
 id: spousal support factor 11
-question: "Factor 11: The contributions of the {parties} to the joint estate."
+question: "{Factor} 11: The contributions of the {parties} to the joint estate."
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -3056,7 +3063,7 @@ content: |
   If you were a homemaker and cooked, cleaned, paid bills, and cared for the children, include that. If you saved your family the cost of daycare because you were the full-time caregiver, you can include that. 
 ---
 id: spousal support factor 12
-question: "Factor 12: A {party}’s fault in causing the divorce."
+question: "{Factor} 12: A {party}’s fault in causing the divorce."
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -3071,7 +3078,7 @@ content: |
   For example, if your spouse told you they wanted a divorce and it came as a surprise to you, you may need spousal support to help navigate the unexpected change.
 ---
 id: spousal support factor 13
-question: "Factor 13: The effect of cohabitation on a {party}’s financial status."
+question: "{Factor} 13: The effect of cohabitation on a {party}’s financial status."
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 fields:
@@ -3091,7 +3098,7 @@ content: |
   3. If you share expenses such as rent or mortgage payments and day-to-day expenses.
 ---
 id: spousal support factor 14
-question: "Factor 14: General principles of equity."
+question: "{Factor} 14: General principles of equity."
 subquestion: |
   ${ collapse_template(ss_factor_tips) }
 
