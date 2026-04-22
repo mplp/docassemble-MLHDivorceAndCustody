@@ -580,6 +580,12 @@ id: users[0].new_last_name_yn
 question: |
   Change last name
 subquestion: |
+  % if users[0].gender == "female":
+  Michigan law says that a woman may ask the court to change her last name as part of a divorce case.
+  % else:
+  Michigan law specifically says that **a woman** may ask the court to change her last name as part of a divorce case. If you're not a woman and you want to change your last name, you may want to talk to a lawyer. Some judges may allow you to change your name as part of the divorce, but others may not.
+  % endif
+  
   ${collapse_template(users[0].can_i_change_my_name_later_template)}
 
   ${collapse_template(users[0].what_can_i_change_my_last_name_to_template)}
@@ -587,11 +593,6 @@ fields:
   - label: Would you like the judge to allow you to change your last name as part of your divorce?
     field: users[0].new_last_name_yn
     datatype: yesnoradio
-  - note: |
-      Michigan law specifically says that **a woman** may ask the court to change her last name as part of a divorce case. If you're not a woman and you want to ask the court to change your last name, you may want to talk to a lawyer.
-    show if:
-      variable: users[0].new_last_name_yn
-      is: True
   - label: What is the **last name** that you want the judge to allow you to use?
     field: users[0].new_last_name
     show if: users[0].new_last_name_yn
@@ -603,7 +604,7 @@ template: users[0].what_can_i_change_my_last_name_to_template
 subject: |
   What can I change my last name to?
 content: |
-  As part of the divorce, a woman can ask the judge to change her name to any of the following:
+  As part of the divorce, Michigan law says a woman can ask the judge to change her name to any of the following:
 
   - Her last name at birth,
   - Her last name before marriage to the spouse she is divorcing, or
@@ -703,6 +704,10 @@ content: |
 id: your address
 question: |
   Please enter your ${"safe mailing address" if confidential_contact_info_yn else "address"}
+subquestion: |
+  % if confidential_contact_info_yn:
+  You said you need to keep your address confidential. Please give a safe address where the court and your spouse can send you mail about the divorce case. For example, you can use a P.O. Box or the address of a friend or relative.
+  % endif
 fields:
   - label: Street Address or PO Box
     field: users[0].address.address
@@ -826,7 +831,10 @@ question: |
 fields:
   - label: Do you live in a **township or village** other than ${users[0].address.city}?
     field: users[0].village_or_township_yn
-    datatype: yesnoradio
+    datatype: radio
+    choices:
+      - Yes: True
+      - "No, or I don't know": False
   - label: Village or township
     field: users[0].village_or_township
     show if: users[0].village_or_township_yn
@@ -890,7 +898,7 @@ question: |
   Phone number
 subquestion: |
   % if confidential_contact_info_yn:
-  Please enter a safe telephone number where the court can reach you, starting with the area code. This telephone number will appear on papers filed with the court and served on your spouse. **Do not enter a telephone number that you want to keep confidential.**
+  Please enter a safe telephone number where the court can reach you (such as the number of a friend or relative), starting with the area code. This telephone number will appear on papers filed with the court and served on your spouse. **Do not enter a telephone number that you want to keep confidential.**
   % else:
   Enter a telephone number where the court can reach you, starting with the area code.
   % endif
@@ -1142,7 +1150,10 @@ question: |
 fields:
   - label: Does your spouse live in a **township or village** other than ${other_parties[0].address.city}?
     field: other_parties[0].village_or_township_yn
-    datatype: yesnoradio
+    datatype: radio
+    choices:
+      - Yes: True
+      - "No, or I don't know": False
   - label: Village or township
     field: other_parties[0].village_or_township
     show if: other_parties[0].village_or_township_yn
@@ -4554,7 +4565,7 @@ content: |
   
   * **Reasonable** parenting time means that specific dates, times, and other conditions are left for the parents to work out. If you believe that you and your spouse can agree on parenting time arrangements, you may ask for reasonable parenting time. However, if the judge orders reasonable parenting time, and you and your spouse can’t agree, the judge may not be able to enforce the order or judgment. You will need to return to court and ask for a specific parenting time schedule in order for the judge to enforce the judgment.
   * **Specific** parenting time means that all of the dates, times, and conditions for visits are included in the court order. Many counties have standard parenting time schedules that you can use in your case. You can contact the Friend of the Court in the county where your case will be filed and ask if there is a standard parenting time schedule. You can also find sample schedules in the [Michigan Parenting Time Guideline](https://www.courts.michigan.gov/4a537f/siteassets/court-administration/standardsguidelines/foc/pt_gdlns.pdf).
-  * **Specific and supervised** parenting time means that all of the dates, times, and conditions for visits are included in the court order. The judge will order parenting time to be supervised by a third party – such as a relative, friend, or supervised parenting time center. Supervised parenting time may be appropriate if the {noncustodial parent} is a risk to the children. The supervisor must be willing to supervise parenting time.
+  * **Specific and supervised** parenting time means that all of the dates, times, and conditions for visits are included in the court order. The judge will order parenting time to be supervised by a third party – such as a relative, friend, or supervised parenting time center. Supervised parenting time may be appropriate if the {noncustodial parent} is a risk to the children. The supervisor must be willing to supervise parenting time. (This option does not apply if both parents share physical custody.)
 
 ---
 id: custom parenting time schedule
