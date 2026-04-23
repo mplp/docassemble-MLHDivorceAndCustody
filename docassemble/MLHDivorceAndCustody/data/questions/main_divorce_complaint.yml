@@ -133,8 +133,8 @@ code: |
   users.gather()
   users[0].name.first
   users[0].has_previous_name
-  users[0].new_last_name_yn
   users[0].gender
+  users[0].new_last_name_yn
   users[0].marriage_number
   users[0].birthdate
   users[0].birthplace
