@@ -45,7 +45,7 @@ code: |
       user_party_label = "the Plaintiff"
       OP_party_label = "the Defendant"
     elif tool_ID == "divorce_answer":
-      filing_name = "Counterclaim for Divorce"
+      filing_name = "Divorce Answer"
       user_ask_role = "defendant"
       user_party_label = "the Defendant"
       OP_party_label = "the Plaintiff"
@@ -84,15 +84,26 @@ code: |
 ### divorce instructions variables
 # note: currently no JOD_only instructions, but using some of this in optional_download_message
 code: |
-  if there_are_marital_children:
-    resource_page_url_only = "https://michiganlegalhelp.org/node/1078"
-    resource_page_name = "Filing for Divorce with Children"
-    has_whats_next_text = False
-  else:
-    resource_page_url_only = "https://michiganlegalhelp.org/node/1077"
-    resource_page_name = "Filing for Divorce without Children"
-    has_whats_next_text = True
-    whats_next_text_message = "Text 1400 to (734) 275-2201 to get automated text messages about the next steps in a divorce case."
+  if tool_ID in ["divorce_complaint", "JOD_only"]:
+    if there_are_marital_children:
+      resource_page_url_only = "https://michiganlegalhelp.org/node/1078"
+      resource_page_name = "Filing for Divorce with Children"
+      has_whats_next_text = False
+    else:
+      resource_page_url_only = "https://michiganlegalhelp.org/node/1077"
+      resource_page_name = "Filing for Divorce without Children"
+      has_whats_next_text = True
+      whats_next_text_message = "Text 1400 to (734) 275-2201 to get automated text messages about the next steps in a divorce case."
+  elif tool_ID == "divorce_answer":
+    if there_are_marital_children:
+      resource_page_url_only = "https://michiganlegalhelp.org/node/1628"
+      resource_page_name = "Responding to Divorce with Children"
+      has_whats_next_text = False
+    else:
+      resource_page_url_only = "https://michiganlegalhelp.org/node/1627"
+      resource_page_name = "Responding to Divorce without Children"
+      has_whats_next_text = True
+      whats_next_text_message = "Text 1450 to (734) 275-2201 to to get automated text messages about the next steps for filing an Answer in a divorce case."
 
   undefine("resource_page_link")
 
@@ -216,6 +227,14 @@ terms:
       - parties
     definition: |
       In a legal case, a "party" means one of the "sides" in the case. In a divorce, you and your spouse are each a "party".
+  - phrases:
+      - personally served
+    definition: |
+      Personal service means:
+
+      * You accepted the papers and signed an acknowledgment of service for them; or
+      * Someone handed the papers to you directly, whether you signed for them or not; or
+      * The papers were sent to you by registered or certified mail, and you signed a return receipt acknowledging delivery of the papers.
   - phrases:
       - legal description
     definition: |

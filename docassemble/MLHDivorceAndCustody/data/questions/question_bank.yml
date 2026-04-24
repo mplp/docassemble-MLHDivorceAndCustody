@@ -215,6 +215,23 @@ action buttons:
     color: danger
     icon: right-from-bracket
 ---
+id: exit_no_MI_complaint
+event: exit_no_MI_complaint
+question: |
+  Sorry, this tool cannot help you.
+subquestion: |
+  We’re sorry, but you can only use this tool to file an answer to a complaint for divorce that was filed in Michigan.
+
+  You may want to contact a lawyer for help. ${MLH_GUIDE_FULL}
+
+  If you think you made a mistake, tap **Undo** and change the answer to this question.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
 id: exit_jurisdiction
 event: exit_jurisdiction
 question: Sorry, you cannot use this tool
@@ -280,6 +297,43 @@ fields:
     code: court_list._load_courts()["address_county"].unique()
 validation code: |
   undefine("court_index", "the_court", "the_foc", "party_lived_6_months_MI", "party_ten_days_in_county", "jurisdiction_warning")
+---
+if: tool_ID == "divorce_answer"
+id: divorce complaint filed?
+question: The divorce complaint
+fields:
+  - Did you receive a complaint for divorce that was filed in Michigan?: complaint_received
+    datatype: yesnoradio
+  - Were you {personally served} the complaint?: personally_served
+    datatype: yesnoradio
+    show if:
+      variable: complaint_received
+      is: True
+---
+if: tool_ID == "divorce_answer"
+id: divorce complaint is with or without children
+question: Type of divorce complaint
+fields:
+  - Which type of divorce complaint did you receive?: complaint_type
+    # maybe this should directly set there_are_marital_children?
+    input type: radio
+    choices:
+      - Complaint for divorce without minor children: "no_children"
+      - Complaint for divorce with minor children: "with_children"
+  - note: |
+      This type of complaint for divorce means you and your spouse are both legal parents of at least one child. Read How to Become a Legal Parent if you are not sure if that is true. If you think your spouse filed the wrong type of divorce case, use the Guide to Legal Help to look for a lawyer or legal services near you.
+    show if:
+      variable: complaint_type
+      is: "with_children"
+  - note: |
+      This type of complaint for divorce means that you and your spouse do not have any marital minor children. Marital minor children include children who were conceived, born, or adopted during your marriage. Marital minor children also include children born before your marriage, if both you and your spouse are their parents.
+    show if:
+      variable: complaint_type
+      is: "no_children"
+  - Do you want to continue?: complaint_type_continue
+    datatype: yesnoradio
+    js show if: |
+      val("complaint_type") === "no_children" || val("complaint_type") === "with_children"
 ---
 if: tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and returning_to_finalize)
 id: JOD_only jurisdiction check
@@ -4753,6 +4807,8 @@ content: |
   The Complaint for Divorce (one of the forms you will file to start your divorce case), must say if either spouse is pregnant.
   % elif tool_ID == "JOD_only":
   The divorce generally cannot be completed while either spouse is pregnant.
+  % elif tool_ID == "divorce_answer":
+  It is important for the judge to know about any children born or conceived before the divorce is final.
   % endif
 ---
 generic object: ALIndividual
