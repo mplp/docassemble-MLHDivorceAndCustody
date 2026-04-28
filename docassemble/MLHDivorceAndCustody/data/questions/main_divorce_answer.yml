@@ -85,7 +85,26 @@ code: |
   complaint_type
   if not complaint_type_continue:
     exit_general
-  users[0].pregnant
+  users[0].pregnant #maybe taking this out
+
+  if marriage.have_experienced_domestic_violence:
+    if not marriage.have_experienced_domestic_violence_continue:
+      exit_general
+
+  county_where_filed
+  court_index
+  the_court
+  the_foc
+  
+  party_lived_6_months_MI
+  if not party_lived_6_months_MI['user'] and not party_lived_6_months_MI['other_party']:
+    exit_jurisdiction
+  elif not (party_lived_6_months_MI['user'] and party_ten_days_in_county['user']) and not (party_lived_6_months_MI['other_party'] and party_ten_days_in_county['other_party']):
+    if not venue_issue_continue:
+      exit_general
+  
+  docket_number
+  divorce_judge
 
   interview_order_spousal_support
   

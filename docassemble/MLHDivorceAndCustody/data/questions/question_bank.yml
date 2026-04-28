@@ -232,10 +232,11 @@ action buttons:
     color: danger
     icon: right-from-bracket
 ---
-id: exit_jurisdiction
+id: exit_jurisdiction divorce_complaint
 event: exit_jurisdiction
 question: Sorry, you cannot use this tool
 subquestion: |
+  % if tool_ID == "divorce_complaint":
   Sorry, you cannot use this tool to prepare your divorce forms in Michigan. 
   
   You or your spouse must have lived in Michigan for at least 180 days (six months) before using this tool and filing for divorce in Michigan. You may return to use this tool when one of you has lived in Michigan for at least 180 days. 
@@ -244,6 +245,11 @@ subquestion: |
   
   % if not other_parties[0].lives_in_Michigan:
   ${ collapse_template(spouse_MI_address_unknown_exit)}
+  % endif
+  % elif tool_ID == "divorce_answer":
+  Sorry, you cannot use this tool to file an answer to your spouse’s complaint for divorce. Your answers indicate that your spouse may have improperly filed the divorce case in ${county_choice} County, Michigan. 
+  
+  This means there could be problems with jurisdiction or venue in your divorce case. Jurisdiction and venue are not simple issues. You may want to consider talking to a lawyer to get the best possible result. ${MLH_GUIDE_FULL}
   % endif
 ---
 template: spouse_MI_address_unknown_exit
@@ -286,7 +292,7 @@ validation code: |
     edit_existing_divorce = False
     returning_to_finalize = False
 ---
-if: tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and returning_to_finalize)
+if: tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and returning_to_finalize)
 id: Choose a court
 question: In what county was the divorce filed?
 continue button field: county_where_filed
@@ -321,12 +327,12 @@ fields:
       - Complaint for divorce without minor children: "no_children"
       - Complaint for divorce with minor children: "with_children"
   - note: |
-      This type of complaint for divorce means you and your spouse are both legal parents of at least one child. Read How to Become a Legal Parent if you are not sure if that is true. If you think your spouse filed the wrong type of divorce case, use the Guide to Legal Help to look for a lawyer or legal services near you.
+      This type of complaint is used if there is at least one {minor} child who has **both** you and your spouse as legal parents.
     show if:
       variable: complaint_type
       is: "with_children"
   - note: |
-      This type of complaint for divorce means that you and your spouse do not have any marital minor children. Marital minor children include children who were conceived, born, or adopted during your marriage. Marital minor children also include children born before your marriage, if both you and your spouse are their parents.
+      This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents.
     show if:
       variable: complaint_type
       is: "no_children"
@@ -335,20 +341,32 @@ fields:
     js show if: |
       val("complaint_type") === "no_children" || val("complaint_type") === "with_children"
 ---
-if: tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and returning_to_finalize)
-id: JOD_only jurisdiction check
+if: tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and returning_to_finalize)
+id: case already filed jurisdiction check
 question: Time in ${ county_choice } County and in Michigan before your divorce case
 subquestion: |
   ${collapse_template(jurisdiction_check_help)}
 fields:
-  - Who lived in **Michigan for 180 days before you filed** for divorce?: party_lived_6_months_MI
+  - label: |
+      % if tool_ID in ["JOD_only", "divorce_complaint"]:
+      Who lived in **Michigan for 180 days before you filed** for divorce? 
+      % elif tool_ID == "divorce_answer":
+      Who lived in **Michigan for 180 days before your spouse filed** for divorce? 
+      % endif
+    field: party_lived_6_months_MI
     datatype: checkboxes
     choices:
       - Me: user
       - My spouse: other_party
     none of the above: |
       Neither of us
-  - Who lived in **${ county_choice } County for 10 days before you filed** for divorce?: party_ten_days_in_county
+  - label: |
+      % if tool_ID in ["JOD_only", "divorce_complaint"]:
+      Who lived in **${ county_choice } County for 10 days before you filed** for divorce? 
+      % elif tool_ID == "divorce_answer":
+      Who lived in **${ county_choice } County for 10 days before your spouse filed** for divorce? 
+      % endif
+    field: party_ten_days_in_county
     datatype: checkboxes
     choices:
       - Me: user
@@ -361,15 +379,16 @@ fields:
 template: jurisdiction_check_help
 subject: Why does this matter?
 content: |
-  At the end of your divorce, you may need to testify (tell the judge under oath) that you met the legal requirements to file in ${ county_choice } County. 
+  At the end of your divorce, you may need to testify (tell the judge under oath) whether you met the legal requirements to get divorced in ${ county_choice } County. 
   
   Usually, **either you or your spouse** must have:
 
-  * lived in Michigan for 180 days before you filed for divorce, **and**
-  * lived in ${ county_choice } County for 10 days before you filed for divorce.
+  * lived in Michigan for 180 days before ${word("you") if tool_ID in ["divorce_complaint", "JOD_only"] else word("your spouse")} filed for divorce, **and**
+  * lived in ${ county_choice } County for 10 days before ${word("you") if tool_ID in ["divorce_complaint", "JOD_only"] else word("your spouse")} filed for divorce.
 
   The same person must meet both of the requirements.
 ---
+# used in JOD_only and divorce_complaint tools
 id: jurisdiction warning
 continue button field: jurisdiction_warning
 question: "**Warning!** There may be a jurisdiction issue."
@@ -383,6 +402,23 @@ subquestion: |
   
   You should **talk to a lawyer** about the potential jurisdiction issue. ${MLH_GUIDE_FULL}
 ---
+id: venue warning
+question: There may be an issue getting divorced in ${county_choice} County
+subquestion: |
+  Your answers indicate that ${county_choice} County may not be the proper venue (filing county) for this divorce case. To get a divorce in ${ county_choice } County, usually **one spouse** must **both**:
+
+  * have lived in Michigan for 180 days before your spouse filed for divorce, **and**
+  * have lived in ${ county_choice } County for 10 days before your spouse filed for divorce.
+
+  You said you and your spouse did **not** meet these requirements.
+  
+  If you believe your spouse may have filed this divorce case in the wrong county, you may want to consider talking to a lawyer. ${MLH_GUIDE_FULL}
+  
+  You can still use this tool to prepare an answer and counterclaim to your spouse's complaint, but you should let the judge know as soon as possible that venue may be improper. 
+fields:
+  - Do you want to continue with this tool?: venue_issue_continue
+    datatype: yesnoradio
+---
 id: docket number
 question: |
   Case number
@@ -394,6 +430,16 @@ fields:
   - label: What is the case number?
     field: docket_number
     maxlength: 25
+---
+id: judge's last name
+question: Judge's last name
+subquestion: |
+  Enter the last name of the judge in the divorce case. 
+  
+  *Do not include 'Judge' or 'Hon.'.*
+fields:
+  - "Judge": divorce_judge
+    label above field: False
 ---
 id: what is the user's role?
 question: |
