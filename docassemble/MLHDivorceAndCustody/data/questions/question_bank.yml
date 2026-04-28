@@ -49,6 +49,12 @@ objects:
   - users[0].income: ALIncome
   - other_parties[0].job: ALJob
   - other_parties[0].income: ALIncome
+  # for divorce answer
+  - complaint_paragraphs: DAList.using(
+      complete_attribute="complete",
+      object_type = DAObject,
+      there_are_any = True
+      )
 ---
 code: |
   joint.name.text = "Joint (50/50)"
@@ -2649,12 +2655,14 @@ code: |
   
   else:
     users[0].address.address
-    if tool_ID == "divorce_complaint" and not returning_to_finalize:
-      if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
-        users[0].ten_days_in_county
-    if users[0].address.country == "US":
-      users[0].village_or_township_yn
-      users[0].address.county # skipped if answered on lives_in_Michigan screen
+    if tool_ID in ["divorce_complaint", "JOD_only"]:
+      if tool_ID == "divorce_complaint" and not returning_to_finalize:
+        if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
+          users[0].ten_days_in_county
+      if users[0].address.country == "US":
+        users[0].village_or_township_yn
+        users[0].address.county # skipped if answered on lives_in_Michigan screen
+  
     if users[0].mailing_address.yesno:
       users[0].mailing_address.address
   
@@ -6648,4 +6656,81 @@ fields:
     choices:
       - I will: users[0]
       - My spouse will: other_parties[0]
+---
+# --------------------------------------------------------------------
+## divorce answer
+# --------------------------------------------------------------------
+---
+id: complaint_paragraphs.there_is_another
+question: |
+  Respond to each complaint paragraph
+subquestion: |
+  Continue until you have responded to all of the paragraphs in the Plaintiff’s complaint.
+
+  So far, you have listed&colon;
+
+  ${complaint_paragraphs.table}
+fields:
+  - label: Do you have another paragraph to add?
+    field: complaint_paragraphs.there_is_another
+    datatype: yesnoradio
+---
+table: complaint_paragraphs.table
+rows: complaint_paragraphs
+columns:
+  - Paragraph: |
+      " ".join((str(row_item.number), row_item.letter))
+  - Your response: word("I agree") if row_item.response == "agree" else word("I disagree") if row_item.response == "disagree" else word("I don't know")
+  #- Comment: row_item.details if row_item.response == "disagree" else ""
+edit:
+  - number
+delete buttons: True
+confirm: True
+allow reordering: True
+---
+code: |
+  complaint_paragraphs[i].number
+  complaint_paragraphs[i].complete = True
+---
+id: intro to complaint paragraph response
+continue button field: complaint_paragraphs_intro
+question: Answering the Complaint
+subquestion: |
+  For the next section of the tool, look at the complaint for divorce that you received. For each numbered paragraph and subparagraph decide whether you:
+  
+  * **Agree** that the statements are true, or
+  * **Disagree** that the statements are true, or
+  * **Do not know** if the statements are true.
+
+  You should respond to **every paragraph and subparagraph** in the order that they appear in your complaint.
+---
+id: collect a paragraph response
+question: |
+  % if i == 0:
+  Respond to the first paragraph
+  % else:
+  Respond to the next paragraph
+  % endif
+subquestion: |
+  ${complaint_paragraphs.question_text_table_template}
+fields:
+  - Paragraph number: complaint_paragraphs[i].number
+    datatype: integer
+    label above field: False
+  - Paragraph letter (if any): complaint_paragraphs[i].letter
+    label above field: False
+    required: False
+  - note: |
+      Carefully read the paragraph.
+  - "Answer whether you agree, disagree, or don’t know if the statements in that paragraph are true.": complaint_paragraphs[i].response
+    input type: radio
+    choices: 
+      - "I agree": agree
+      - "I disagree": disagree
+      - "I do not know whether the statements are true": unsure
+  - "I disagree that the statements in Paragraph 1 are true because:": complaint_paragraphs[i].details
+    maxlength: 140
+    show if:
+      variable: complaint_paragraphs[i].response
+      is: disagree
 ---

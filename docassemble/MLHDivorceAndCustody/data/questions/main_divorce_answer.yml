@@ -106,6 +106,39 @@ code: |
   docket_number
   divorce_judge
 
+  nav.set_section("signpost_user")
+
+  users.gather()
+  users[0].name.first
+  users[0].has_previous_name
+  users[0].gender
+  users[0].birthdate
+
+  interview_order_user_contact_info
+
+  nav.set_section("signpost_spouse")
+
+  other_parties.gather()
+  other_parties[0].name.first
+  other_parties[0].has_previous_name
+  other_parties[0].gender
+  other_parties[0].birthdate
+
+  interview_order_other_parties_address_info
+
+  if other_parties[0].mailing_address.yesno:
+    other_parties[0].mailing_address.address
+  other_parties[0].no_phone_number
+  other_parties[0].email
+  
+  interview_order_other_parties_attorney
+
+  complaint_paragraphs_intro
+  complaint_paragraphs.gather()  
+
+  # counterclaim
+  #.has_alias questions if with kids? (maybe foc 23?)
+
   interview_order_spousal_support
   
   nav.set_section("signpost_children")

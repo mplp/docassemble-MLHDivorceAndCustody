@@ -161,7 +161,7 @@ review:
         - the_foc
       # Note validation logic on users[0].address.address question
     button: |
-      % if tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and confidential_contact_info_yn):
+      % if tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and confidential_contact_info_yn):
       <h3 class="h5"> Your ${"safe mailing address" if confidential_contact_info_yn else "address"}</h3>
         - ${users[0].address.on_one_line()}
       % elif not confidential_contact_info_yn:
@@ -481,7 +481,7 @@ review:
         - the_foc
       # Note validation logic on other_parties[0].address.address question
     button: |
-      % if tool_ID == "JOD_only":
+      % if tool_ID in ["JOD_only", "divorce_answer"]:
       <h3 class="h5"> Spouse's address</h3>
         - ${other_parties[0].address.on_one_line()}
       % elif tool_ID == "divorce_complaint":
@@ -497,11 +497,11 @@ review:
       % endif
       % endif
   - Edit:
-      - other_parties[0].mailing_address_yn
+      - other_parties[0].mailing_address.yesno
     button: |
       <h3 class="h5"> Your spouse has a different mailing address</h3>
-        - ${word(yesno(other_parties[0].mailing_address_yn))}
-      % if other_parties[0].mailing_address_yn:
+        - ${word(yesno(other_parties[0].mailing_address.yesno))}
+      % if other_parties[0].mailing_address.yesno:
       <h3 class="h5"> Spouse's mailing address</h3>
         - ${other_parties[0].mailing_address.on_one_line()}
       % endif
