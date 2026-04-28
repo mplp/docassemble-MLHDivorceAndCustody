@@ -30,7 +30,6 @@ sections:
   - review_full: "✎ <u>Review / Edit</u>"
 ---
 # set static instructions variables
-# TODO need survey url
 code: |
   survey_link_url_only = "https://www.surveymonkey.com/r/VSJYG9P"
 ---
@@ -58,7 +57,6 @@ code: |
 depends on:
   - there_are_marital_children
 ---
-# TODO need survey script
 template: survey_embed_script
 content: |
   <script>

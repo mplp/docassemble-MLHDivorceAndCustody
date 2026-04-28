@@ -161,7 +161,7 @@ review:
         - the_foc
       # Note validation logic on users[0].address.address question
     button: |
-      % if tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and confidential_contact_info_yn):
+      % if tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and confidential_contact_info_yn):
       <h3 class="h5"> Your ${"safe mailing address" if confidential_contact_info_yn else "address"}</h3>
         - ${users[0].address.on_one_line()}
       % elif not confidential_contact_info_yn:
@@ -481,7 +481,7 @@ review:
         - the_foc
       # Note validation logic on other_parties[0].address.address question
     button: |
-      % if tool_ID == "JOD_only":
+      % if tool_ID in ["JOD_only", "divorce_answer"]:
       <h3 class="h5"> Spouse's address</h3>
         - ${other_parties[0].address.on_one_line()}
       % elif tool_ID == "divorce_complaint":
@@ -497,11 +497,11 @@ review:
       % endif
       % endif
   - Edit:
-      - other_parties[0].mailing_address_yn
+      - other_parties[0].mailing_address.yesno
     button: |
       <h3 class="h5"> Your spouse has a different mailing address</h3>
-        - ${word(yesno(other_parties[0].mailing_address_yn))}
-      % if other_parties[0].mailing_address_yn:
+        - ${word(yesno(other_parties[0].mailing_address.yesno))}
+      % if other_parties[0].mailing_address.yesno:
       <h3 class="h5"> Spouse's mailing address</h3>
         - ${other_parties[0].mailing_address.on_one_line()}
       % endif
@@ -1626,6 +1626,18 @@ review:
       ${ next_accordion("""<h2 class="h4">Your Divorce Case</h2>""") }
     show if: defined("county_choice") or defined("venue") or defined("marriage.temporary_order")
   - Edit:
+      - complaint_received
+    button: |
+      <h3 class="h5"> Did you receive a Michigan divorce complaint?</h3>
+        - ${word(yesno(complaint_received))}, and it **${word("was not") if not personally_served else word("was")}** personally served on me.
+    # divorce_answer
+  - Edit:
+      - complaint_type
+    button: |
+      <h3 class="h5"> Type of divorce complaint</h3>
+        - Complaint for divorce ${word("with minor children") if complaint_type == "with_children" else word("without minor children")}
+    # divorce_answer
+  - Edit:
       - user_ask_role
       - recompute:
         - plaintiffs
@@ -1645,26 +1657,37 @@ review:
         - party_lived_6_months_MI
         - party_ten_days_in_county
         - jurisdiction_warning
+        - venue_issue_continue
     button: |
       <h3 class="h5"> County where your divorce case is filed</h3>
         - ${county_choice}
       <h3 class="h5"> Court</h3>
         - ${the_court}
-    show if: tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and returning_to_finalize)
+    show if: tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and returning_to_finalize)
   - Edit:
       - party_lived_6_months_MI
       - invalidate:
         - jurisdiction_warning
+        - venue_issue_continue
     button: |
       <h3 class="h5"> Time in Michigan and in ${county_choice} County</h3>
-        - You did ${word("not") if not party_lived_6_months_MI['user'] else ""} live in Michigan for 180 days before filing for divorce. You did ${word("not") if not party_ten_days_in_county['user'] else ""} live in ${county_choice} County for 10 days before filing for divorce.
-        - Your spouse did ${word("not") if not party_lived_6_months_MI['other_party'] else ""} live in Michigan for 180 days before filing for divorce. Your spouse did ${word("not") if not party_ten_days_in_county['other_party'] else ""} live in ${county_choice} County for 10 days before filing for divorce.
-    show if: (tool_ID == "JOD_only" and user_ask_role == "plaintiff") or (tool_ID == "divorce_complaint" and returning_to_finalize)
+        - You did ${word("not") if not party_lived_6_months_MI['user'] else ""} live in Michigan for 180 days before your divorce case was filed. You did ${word("not") if not party_ten_days_in_county['user'] else ""} live in ${county_choice} County for 10 days before your divorce case was filed.
+        - Your spouse did ${word("not") if not party_lived_6_months_MI['other_party'] else ""} live in Michigan for 180 days before your divorce case was filed. Your spouse did ${word("not") if not party_ten_days_in_county['other_party'] else ""} live in ${county_choice} County for 10 days before your divorce case was filed.
+    show if: (tool_ID == "JOD_only" and user_ask_role == "plaintiff") or (tool_ID == "divorce_complaint" and returning_to_finalize) or tool_ID == "divorce_answer"
   - Edit: docket_number
     button: |
       <h3 class="h5"> Case number</h3>
         - ${docket_number}
     show if: tool_ID == "JOD_only"
+  - Edit: docket_number
+    button: |
+      <h3 class="h5"> Case number</h3>
+        - ${docket_number}
+    show if: tool_ID in ["JOD_only", "divorce_answer"]
+  - Edit: divorce_judge
+    button: |
+      <h3 class="h5"> Judge's last name</h3>
+        - ${divorce_judge}
   - Edit:
       - venue
       - invalidate:
