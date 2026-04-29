@@ -66,6 +66,10 @@ code: |
   filing_court = "circuit_only"
   ottawa_circuit_location = "West Olive"
 
+  # loading this for review screen
+  debt_review_template
+  property_review_template
+
   set_persistent_interview_specific_logic = True
 ---
 # needed for spousal support questions

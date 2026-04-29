@@ -1678,7 +1678,7 @@ fields:
     datatype: integer
     min: 0
     js show if: |
-      val("marriage.living_together_yn") === false && ${ "true" if there_are_marital_children else "false"}
+      ${ "true" if tool_ID in ["divorce_complaint", "JOD_only"] else "false" } && val("marriage.living_together_yn") === false && ${ "true" if there_are_marital_children else "false"}
 ---
 id: marriage.cobra_coverage
 question: |
@@ -1794,7 +1794,9 @@ id: marriage.personal_property
 question: |
   Personal property
 subquestion: |
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
   **Please do not include vehicles.** You will be asked about vehicles on a separate page.
+  % endif
 fields:
   - label: Did you and your spouse {get} any {personal property} during the marriage?
     field: marriage.personal_property_acquired
@@ -1806,12 +1808,14 @@ fields:
   - label: Have you and your spouse **actually divided** all the personal property based on your agreement?
     field: marriage.personal_property_division_actual
     datatype: yesnoradio
-    show if: marriage.personal_property_division_agreement
+    js show if: |
+      val("marriage.personal_property_division_agreement") === true && ${ "true" if tool_ID in ["divorce_complaint", "JOD_only"] else "false" }
   - note: |
       _Only answer **Yes** if each of you has in your possession all of the items that you have agreed you will have._
-    show if: marriage.personal_property_division_agreement
+    js show if: |
+      val("marriage.personal_property_division_agreement") === true && ${ "true" if tool_ID in ["divorce_complaint", "JOD_only"] else "false" }
 validation code: |
-  if marriage.personal_property_acquired and (not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual):
+  if tool_ID in ["divorce_complaint", "JOD_only"] and marriage.personal_property_acquired and (not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual):
     marriage.personal_property_need_items = True
   else:
     marriage.personal_property_need_items = False
@@ -2362,6 +2366,7 @@ fields:
     field: marriage.real_property.there_are_any
     datatype: yesnoradio
 ---
+if: marriage.real_property.there_are_any
 id: continue_real_property (divorce answer)
 question: Real property can be complicated
 subquestion: |

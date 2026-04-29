@@ -65,7 +65,7 @@ review:
       % else:
       <h3 class="h5"> Date you and your spouse stopped living together</h3>
         - ${marriage.living_together_stopped_date}
-      % if there_are_marital_children:
+      % if tool_ID in ["divorce_complaint", "JOD_only"] and there_are_marital_children:
         - Number of minor children living in household on this date: ${marriage.number_children_in_home_when_separated}
       % endif
       % endif
@@ -886,10 +886,10 @@ review:
       <h3 class="h5"> Spousal Support Factor Fourteen</h3>
         - Any other reasons it is fair for you to get spousal support: ${ "*no response*" if ss_factor_fourteen_equity == "" else ss_factor_fourteen_equity}
 #
-# ---------- respones to complaint paragraphs ----------
+# ---------- responses to complaint paragraphs ----------
 #
   - raw html: |
-      ${ next_accordion("""<h2 class="h4">Your Response to the Complaint</h2>""") }
+      ${ next_accordion("""<h2 class="h4">Your Response to the Divorce Complaint</h2>""") }
     show if: defined('complaint_paragraphs.revisit')
   - Edit:
       - complaint_paragraphs.revisit
@@ -909,6 +909,11 @@ review:
     button: |
       <h3 class="h5"> Your other statements</h3>
         - ${other_statements if other_statements_any else word("none")}
+  - Edit:
+      - create_counterclaim
+    button: |
+      <h3 class="h5"> Counterclaim</h3>
+        - You **${word("do") if create_counterclaim else word("do not")}** want to create a **counterclaim** along with your answer.
 #
 # ---------- children and pregnancy ----------
 #
@@ -1409,7 +1414,7 @@ review:
     button: |
       <h3 class="h5"> Do you or your spouse have a pension or retirement account?</h3>
         - ${word(yesno(marriage.have_pension_retirement))}
-      % if marriage.have_pension_retirement:
+      % if tool_ID in ["divorce_complaint", "JOD_only"] and marriage.have_pension_retirement:
       <h3 class="h5"> Do you each plan to keep your own accounts?</h3>
         - ${word(yesno(marriage.pension_retirement_accounts_keep_own))}
       % endif
@@ -1434,22 +1439,17 @@ review:
         - marriage.other_pp.revisit
         - marriage.mobile_home.revisit
     button: |
-      <h3 class="h5"> Did you and your spouse acquire personal property during the marriage?</h3>
-        - ${word(yesno(marriage.personal_property_acquired))}
-
-      % if marriage.personal_property_acquired:
-      <h3 class="h5"> Have you and your spouse reached an agreement about how all personal property will be divided?</h3>
-        - ${word(yesno(marriage.personal_property_division_agreement))}
-
-      % if marriage.personal_property_division_agreement:
-      <h3 class="h5"> Have you and your spouse <b>actually divided</b> all the personal property based on your agreement?</h3>
-        - ${word(yesno(marriage.personal_property_division_actual))}
-      % endif
-      % endif
+      ${property_review_template}
     show if:
+      - tool_ID in ["divorce_complaint", "JOD_only"]
       - marriage.accounts.revisit
       - marriage.other_pp.revisit
       - marriage.mobile_home.revisit
+  - Edit:
+      - marriage.personal_property_acquired
+    button: |
+      ${property_review_template}
+    show if: tool_ID == "divorce_answer"
   - Edit:
       - marriage.accounts.revisit
       - invalidate:
@@ -1562,32 +1562,23 @@ review:
         - marriage.debts.agree_responsibility_debts_both_names
         - send_plaintiff_debts_to_addendum
         - send_defendant_debts_to_addendum
-      - marriage.debts.info
+      - follow up:
+        - marriage.debts.info
       - recompute:
         - marriage.debts.need_items
       - follow up:
         - marriage.debts.revisit
     button: |
-      <h3 class="h5"> Do you or your spouse have any debts, either in your own names or together?</h3>
-        - ${word(yesno(marriage.debts.any))}
-
-      % if marriage.debts.any:
-      <h3 class="h5"> Do you and your spouse each plan to pay the debts <b>in your own names?</b></h3>
-        - ${word(yesno(marriage.debts.pay_debts_in_own_names))}
-
-      % if not marriage.debts.pay_debts_in_own_names:
-      <h3 class="h5"> Do you and your spouse agree on who will be responsible for these debts?</h3>
-        - ${word(yesno(marriage.debts.agree_responsibility_debts_own_name))}
-      % endif
-
-      <h3 class="h5"> Do you and your spouse have any debts that are in <b>both</b> of your names?</h3>
-        - ${word(yesno(marriage.debts.any_in_both_names))}
-
-      % if marriage.debts.any_in_both_names:
-      <h3 class="h5"> Do you and your spouse agree on who will be responsible for these debts?</h3>
-        - ${word(yesno(marriage.debts.agree_responsibility_debts_both_names))}
-      % endif
-      % endif
+      ${debt_review_template}
+    show if: tool_ID in ["divorce_complaint", "JOD_only"]
+  - Edit:
+      - marriage.debts.any
+      - follow up:
+        - marriage.debts.pay_debts_in_own_names
+        - marriage.debts.any_in_both_names
+    button: |
+      ${debt_review_template}
+    show if: tool_ID == "divorce_answer"
   - Edit:
       - marriage.debts.revisit
       - invalidate:
@@ -1645,6 +1636,14 @@ review:
       % else:
         - None
       % endif
+  - Edit:
+      - marriage.real_property.there_are_any
+      - follow up:
+          - continue_real_property
+    button: |
+      <h3 class="h5"> Real property bought or paid for during the marriage?</h3>
+        - ${word(yesno(marriage.real_property.there_are_any))}
+    show if: tool_ID == "divorce_answer"
 # ---------- case information ----------
   - raw html: |
       ${ next_accordion("""<h2 class="h4">Your Divorce Case</h2>""") }
@@ -1950,3 +1949,40 @@ code: |
 
   enable_child_legal_parent_review_screen = True
 ---
+template: debt_review_template
+content: |
+  <h3 class="h5"> Do you or your spouse have any debts, either in your own names or together?</h3>
+    - ${word(yesno(marriage.debts.any))}
+
+  % if marriage.debts.any:
+  <h3 class="h5"> Do you and your spouse each plan to pay the debts <b>in your own names?</b></h3>
+    - ${word(yesno(marriage.debts.pay_debts_in_own_names))}
+
+  % if not marriage.debts.pay_debts_in_own_names:
+  <h3 class="h5"> Do you and your spouse agree on who will be responsible for these debts?</h3>
+    - ${word(yesno(marriage.debts.agree_responsibility_debts_own_name))}
+  % endif
+
+  <h3 class="h5"> Do you and your spouse have any debts that are in <b>both</b> of your names?</h3>
+    - ${word(yesno(marriage.debts.any_in_both_names))}
+
+  % if marriage.debts.any_in_both_names:
+  <h3 class="h5"> Do you and your spouse agree on who will be responsible for these debts?</h3>
+    - ${word(yesno(marriage.debts.agree_responsibility_debts_both_names))}
+  % endif
+  % endif
+---
+template: property_review_template
+content: |
+    <h3 class="h5"> Did you and your spouse acquire personal property during the marriage?</h3>
+      - ${word(yesno(marriage.personal_property_acquired))}
+
+    % if marriage.personal_property_acquired:
+    <h3 class="h5"> Have you and your spouse reached an agreement about how all personal property will be divided?</h3>
+      - ${word(yesno(marriage.personal_property_division_agreement))}
+
+    % if tool_ID in ["divorce_complaint", "JOD_only"] and marriage.personal_property_division_agreement:
+    <h3 class="h5"> Have you and your spouse <b>actually divided</b> all the personal property based on your agreement?</h3>
+      - ${word(yesno(marriage.personal_property_division_actual))}
+    % endif
+    % endif

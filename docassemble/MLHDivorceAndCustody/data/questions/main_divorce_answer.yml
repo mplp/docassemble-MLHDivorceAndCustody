@@ -157,9 +157,23 @@ code: |
     if marriage.real_property.there_are_any:
       if not continue_real_property:
         exit_general
+
+    if need_temporary_order:
+      if not temporary_order_continue:
+        exit_general
+
+    marriage.date
+    marriage.address.city
+    marriage.living_together_yn
+
+    marriage.personal_property_acquired
+    if marriage.debts.any:
+      marriage.debts.pay_debts_in_own_names
+      marriage.debts.any_in_both_names
   
     interview_order_spousal_support
-    
+
+    ## counterclaim with children ##
     nav.set_section("signpost_children")
     interview_order_children
     
