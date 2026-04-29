@@ -143,6 +143,20 @@ code: |
   ### Start counterclaim section ###
   else:   
     #.has_alias questions if with kids? (maybe foc 23?)
+
+    if marriage.have_pension_retirement:
+      if not marriage.pension_retirement_accounts_continue:
+        exit_general
+
+    # investments question??
+
+    if marriage.have_business:
+      if not continue_with_business:
+        exit_general
+
+    if marriage.real_property.there_are_any:
+      if not continue_real_property:
+        exit_general
   
     interview_order_spousal_support
     

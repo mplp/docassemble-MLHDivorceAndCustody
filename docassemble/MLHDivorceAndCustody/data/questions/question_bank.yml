@@ -541,11 +541,19 @@ fields:
   - Do you **need a temporary order** to stop your spouse from transferring, hiding, selling, or getting rid of **marital property or assets?**: need_temporary_order
     datatype: yesnoradio
   - note: |
+      % if tool_ID == "divorce_answer":
+      **WARNING!** This tool may not be right for you. Getting a temporary order to prevent a spouse from transferring, selling, hiding, or getting rid of property is not simple. 
+      
+      You can continue with the tool and get the forms you need to file an answer to your spouse's divorce complaint and to file a counterclaim for divorce, but this tool will not create any motions for temporary orders or proposed temporary orders. 
+      
+      You may want to consider hiring a lawyer to help you get a temporary order. Even if your spouse has a lawyer, you should consider hiring your own. Your spouse’s lawyer does not represent you and has a duty to do what is best for your spouse. ${MLH_GUIDE_FULL}
+      % else:
       **WARNING!** This tool may not be right for you. You cannot use this tool or the Michigan Legal Help website to get a temporary order. 
       
       Getting a temporary order to prevent a spouse from transferring, selling, hiding, or getting rid of property is not simple. You can still complete this tool to prepare your forms and begin the divorce process, but this tool will not create any motions for temporary orders or proposed temporary orders. 
       
       You may want to consider hiring a lawyer to help you ask the judge for a temporary restraining order. ${MLH_GUIDE_FULL}
+      % endif
     show if:
       variable: need_temporary_order
       is: True
@@ -577,7 +585,7 @@ fields:
       - label: I want the judge to divide our account(s)
         value: False
 ---
-if: marriage.have_pension_retirement and marriage.pension_retirement_accounts_keep_own
+if: tool_ID in ["divorce_complaint", "JOD_only"] and marriage.have_pension_retirement and marriage.pension_retirement_accounts_keep_own
 id: pension_retirement_accounts_keep
 question: |
   Pension and/or retirement accounts
@@ -588,7 +596,7 @@ fields:
     field: marriage.pension_retirement_accounts_continue
     datatype: yesnoradio
 ---
-if: marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own
+if: tool_ID in ["divorce_complaint", "JOD_only"] and marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own
 id: pension_retirement_accounts_divide
 question: |
   Pension and/or retirement accounts
@@ -601,12 +609,37 @@ fields:
     field: marriage.pension_retirement_accounts_continue
     datatype: yesnoradio
 ---
+if: tool_ID == "divorce_answer" and marriage.have_pension_retirement
+id: divorce answer pension warning
+question: |
+  Pension and/or retirement accounts
+subquestion: |
+  **WARNING!** This tool may not be right for you. Dividing pensions or retirement accounts is not simple. You may need to hire a lawyer to help you ask the judge to divide your pensions or retirement accounts. A lawyer can also draft the special order that is required. 
+  
+  Even if your spouse has a lawyer, you may need to hire your own. Your spouse’s lawyer does not represent you and has a duty to do what is best for your spouse. You can continue with the tool and get the forms you need to file an answer to your spouse's divorce complaint and to file a counterclaim for divorce. However, you may want to consider hiring a lawyer to help you finish your case. ${MLH_GUIDE_FULL}
+fields:
+  - label: Do you want to continue?
+    field: marriage.pension_retirement_accounts_continue
+    datatype: yesnoradio
+---
 id: marriage.have_business
 question: |
   Business ownership
 fields:
   - label: Do you or your spouse own a business?
     field: marriage.have_business
+    datatype: yesnoradio
+---
+id: divorce answer continue with business
+question: Warning! Businesses make divorce more complicated
+subquestion: |
+  **WARNING!** This tool may not be right for you. Dividing a business in a divorce is not simple. You cannot use this tool or the Michigan Legal Help website to do this.
+
+  You can continue with the tool to get the forms you need to file an answer to your spouse's divorce complaint and to file a counterclaim for divorce. However, you may want to consider hiring a lawyer to help you divide your business. Also consider hiring a financial professional to value the business and to get advice about any tax issues that come with dividing a business. 
+  
+  Even if your spouse has a lawyer, consider hiring your own. Your spouse's lawyer does not represent you and has a duty to do what is best for your spouse. ${MLH_GUIDE_FULL}
+fields: 
+  - Do you want to continue with this tool now?: continue_with_business
     datatype: yesnoradio
 ---
 id: marriage.have_experienced_domestic_violence
@@ -2327,6 +2360,18 @@ subquestion: |
 fields:
   - label: Do you or your spouse own real property that was bought or paid for while you were married?
     field: marriage.real_property.there_are_any
+    datatype: yesnoradio
+---
+id: continue_real_property (divorce answer)
+question: Real property can be complicated
+subquestion: |
+  **WARNING!** This tool may not be right for you. Dividing {real estate} in a divorce is not simple. There are also more steps that you need to take after your Judgment of Divorce is final to make sure your real estate is titled and financed properly.
+
+  You can continue with the tool and get the forms you need to file an answer to your spouse's divorce complaint and to file a counterclaim for divorce. However, you may want to consider hiring a lawyer to help you ask the judge to divide your real property and finish your case. Even if your spouse has a lawyer, consider hiring your own. Your spouse's lawyer does not represent you and has a duty to do what is best for your spouse.
+
+  ${MLH_GUIDE_FULL}
+fields:
+  - Do you want to continue with the tool now?: continue_real_property
     datatype: yesnoradio
 ---
 id: marriage.real_property[i].warning
