@@ -135,32 +135,52 @@ code: |
 
   complaint_paragraphs_intro
   complaint_paragraphs.gather()  
+  other_statements_any
 
-  # counterclaim
-  #.has_alias questions if with kids? (maybe foc 23?)
-
-  interview_order_spousal_support
-  
-  nav.set_section("signpost_children")
-  interview_order_children
-  
-  if there_are_marital_children:
-    nav.set_section("signpost_prior_cases")
-    interview_order_prior_cases
-
-    nav.set_section("signpost_income_etc")
-    users[0].insurance.gather()
-    other_parties[0].insurance.gather()
-    if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
-      marriage.cobra_coverage
-    interview_order_user_employment
-    interview_order_user_income
-    interview_order_user_identifying_info
-    interview_order_other_party_employment
-    interview_order_other_party_income
-    interview_order_other_party_identifying_info
-    interview_order_income_tax
-
-  if not there_are_marital_children:
+  if not create_counterclaim:
     marriage.cobra_coverage
-    interview_order_prior_cases
+  
+  ### Start counterclaim section ###
+  else:   
+    #.has_alias questions if with kids? (maybe foc 23?)
+  
+    interview_order_spousal_support
+    
+    nav.set_section("signpost_children")
+    interview_order_children
+    
+    if there_are_marital_children:
+      nav.set_section("signpost_prior_cases")
+      interview_order_prior_cases
+  
+      nav.set_section("signpost_income_etc")
+      users[0].insurance.gather()
+      other_parties[0].insurance.gather()
+      if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
+        marriage.cobra_coverage
+      interview_order_user_employment
+      interview_order_user_income
+      interview_order_user_identifying_info
+      interview_order_other_party_employment
+      interview_order_other_party_income
+      interview_order_other_party_identifying_info
+      interview_order_income_tax
+  
+    if not there_are_marital_children:
+      marriage.cobra_coverage
+      interview_order_prior_cases
+
+  ### End counterclaim section ###
+  
+  MLH_standard_outro_pages
+
+  # just making sure these are defined
+  plaintiffs
+  defendants
+
+  al_user_bundle.generate_downloads_task
+  nav.set_section("signpost_done")
+  snapshot_download
+  if not al_user_bundle.generate_downloads_task.ready():
+    al_download_waiting_screen
+  MLH_download

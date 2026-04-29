@@ -49,12 +49,6 @@ objects:
   - users[0].income: ALIncome
   - other_parties[0].job: ALJob
   - other_parties[0].income: ALIncome
-  # for divorce answer
-  - complaint_paragraphs: DAList.using(
-      complete_attribute="complete",
-      object_type = DAObject,
-      there_are_any = True
-      )
 ---
 code: |
   joint.name.text = "Joint (50/50)"
@@ -120,7 +114,7 @@ subquestion: |
 
   ${x.table}
 fields:
-  - label: Do you have another ${x.noun_sl} to add?
+  - label: Is there another ${x.noun_sl} to add?
     field: x.there_is_another
     datatype: yesnoradio
 ---
@@ -346,6 +340,11 @@ fields:
     datatype: yesnoradio
     js show if: |
       val("complaint_type") === "no_children" || val("complaint_type") === "with_children"
+validation code: |
+  if complaint_type == "no_children":
+    there_are_marital_children = False
+  else:
+    there_are_marital_children = True
 ---
 if: tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and returning_to_finalize)
 id: case already filed jurisdiction check
@@ -1652,8 +1651,11 @@ id: marriage.cobra_coverage
 question: |
   Health coverage
 subquestion: |
-  **COBRA**: After your divorce is final, one spouse may continue getting coverage under the other spouse's insurance through COBRA. Your Judgment of Divorce will include language about this. Typically, the spouse who gets continuing medical insurance through COBRA must pay for it. Insurance through COBRA may cost more than when that person was covered as a spouse. If the spouses agree to something else, like having the other spouse pay for the COBRA coverage, that must be specifically added to the Judgment of Divorce. You can add this in the Other Provisions section. The Other Provisions section will be available at the end of this tool.
-
+  **COBRA**: After your divorce is final, one spouse may continue getting coverage under the other spouse's insurance through COBRA. Your Judgment of Divorce will include language about this. Typically, the spouse who gets continuing medical insurance through COBRA must pay for it. Insurance through COBRA may cost more than when that person was covered as a spouse. If the spouses agree to something else, like having the other spouse pay for the COBRA coverage, that must be specifically added to the Judgment of Divorce. 
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
+  You can add this in the Other Provisions section. The Other Provisions section will be available at the end of this tool.
+  % endif
+  
   ${ collapse_template(cobra_help_text) }
 continue button field: marriage.cobra_coverage
 ---
@@ -2471,7 +2473,7 @@ template: marriage.real_property.there_is_another_template
 content: ""
 ---
 # --------------------------------------------------------------------
-## marriage.other_provisions
+## other provisions, other statements
 # --------------------------------------------------------------------
 ---
 id: marriage.other_provisions
@@ -2489,6 +2491,19 @@ fields:
 validation code: |
   if not marriage.other_provisions_any:
     marriage.invalidate_attr("other_provisions")
+---
+id: other_statements
+question: |
+  Other Statements Related to Case  
+fields:
+  - label: Are there any other statements related to your divorce case that you want to include in your answer?
+    field: other_statements_any
+    datatype: yesnoradio
+  - label: "Enter the other statements related to this case:"
+    field: other_statements
+    input type: area
+    rows: 10
+    show if: other_statements_any
 ---
 # --------------------------------------------------------------------
 ## marriage.temporary_order
@@ -6658,22 +6673,22 @@ fields:
       - My spouse will: other_parties[0]
 ---
 # --------------------------------------------------------------------
-## divorce answer
+## divorce answer respond to complaint paragraphs
 # --------------------------------------------------------------------
 ---
-id: complaint_paragraphs.there_is_another
-question: |
-  Respond to each complaint paragraph
-subquestion: |
-  Continue until you have responded to all of the paragraphs in the Plaintiff’s complaint.
-
-  So far, you have listed&colon;
-
-  ${complaint_paragraphs.table}
-fields:
-  - label: Do you have another paragraph to add?
-    field: complaint_paragraphs.there_is_another
-    datatype: yesnoradio
+objects:
+  - complaint_paragraphs: DAList.using(
+      question_text="Respond to each complaint paragraph",
+      minimum_number=1,
+      noun_sl="paragraph",
+      complete_attribute="complete",
+      object_type = DAObject,
+      there_are_any = True
+      )
+---
+template: complaint_paragraphs.there_is_another_template
+content: |
+  Continue until you have responded to **all of the paragraphs** in your spouse’s complaint.
 ---
 table: complaint_paragraphs.table
 rows: complaint_paragraphs
@@ -6687,6 +6702,21 @@ edit:
 delete buttons: True
 confirm: True
 allow reordering: True
+---
+id: complaint_paragraphs.revisit
+question: |
+  ${complaint_paragraphs.question_text}
+subquestion: |
+  ${complaint_paragraphs.there_is_another_template}
+
+  % if complaint_paragraphs:
+  So far, you have listed&colon;
+
+  ${complaint_paragraphs.table}
+  % endif
+
+  ${complaint_paragraphs.add_action(color="success", size="md")}
+continue button field: complaint_paragraphs.revisit
 ---
 code: |
   complaint_paragraphs[i].number
@@ -6729,8 +6759,44 @@ fields:
       - "I disagree": disagree
       - "I do not know whether the statements are true": unsure
   - "I disagree that the statements in Paragraph 1 are true because:": complaint_paragraphs[i].details
+    input type: area
+    rows: 2
     maxlength: 140
     show if:
       variable: complaint_paragraphs[i].response
       is: disagree
+---
+# --------------------------------------------------------------------
+## other divorce answer questions (that didn't naturally fit above)
+# --------------------------------------------------------------------
+---
+id: file a counterclaim
+question: |
+  Filing a Counterclaim  
+subquestion: |
+  You have finished the section of the tool for creating your *answer* to the complaint for divorce. The next section of the tool creates a *counterclaim* for divorce.
+
+  A counterclaim is needed if you want to:
+
+  * **change your last name** as part of the divorce
+  * ask for **spousal support**
+  * ask the court to **address any other issue** or order something that your spouse did not request in their Complaint for Divorce
+  * make sure the divorce case **can be finished** if your spouse stops participating. 
+
+  ${collapse_template(no_counterclaim_exp)}
+fields: 
+  - Do you want to create a counterclaim for divorce?: create_counterclaim
+    datatype: yesnoradio
+---
+template: no_counterclaim_exp
+subject: |
+  What if I don't file a counterclaim?
+content: |
+  If you do not file a counterclaim for divorce and your spouse does something to have the case dismissed, your divorce case will end. Then, if you still want to get divorced, you will have to start over by filing a new case.
+
+  You also will **not** be able to:
+
+  * **change your last name** as part of the divorce
+  * ask for **spousal support**
+  * ask the court to **address other issues** your spouse did not raise
 ---

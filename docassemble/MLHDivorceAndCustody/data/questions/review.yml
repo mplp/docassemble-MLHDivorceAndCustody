@@ -886,6 +886,30 @@ review:
       <h3 class="h5"> Spousal Support Factor Fourteen</h3>
         - Any other reasons it is fair for you to get spousal support: ${ "*no response*" if ss_factor_fourteen_equity == "" else ss_factor_fourteen_equity}
 #
+# ---------- respones to complaint paragraphs ----------
+#
+  - raw html: |
+      ${ next_accordion("""<h2 class="h4">Your Response to the Complaint</h2>""") }
+    show if: defined('complaint_paragraphs.revisit')
+  - Edit:
+      - complaint_paragraphs.revisit
+    button: |
+      <h3 class="h5"> Your responses to your spouse's complaint</h3>
+
+      % for item in complaint_paragraphs:
+        - Paragraph ${" ".join((str(item.number), item.letter))}
+          - **Your response:** ${word("I agree") if item.response == "agree" else word("I disagree") if item.response == "disagree" else word("I don't know")}
+      % if item.response == "disagree":
+          - **Comment:** ${item.details}
+      % endif
+      
+      % endfor
+  - Edit:
+      - other_statements_any
+    button: |
+      <h3 class="h5"> Your other statements</h3>
+        - ${other_statements if other_statements_any else word("none")}
+#
 # ---------- children and pregnancy ----------
 #
   - raw html: |
