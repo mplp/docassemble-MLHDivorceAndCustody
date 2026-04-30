@@ -1562,8 +1562,7 @@ review:
         - marriage.debts.agree_responsibility_debts_both_names
         - send_plaintiff_debts_to_addendum
         - send_defendant_debts_to_addendum
-      - follow up:
-        - marriage.debts.info
+      - marriage.debts.info
       - recompute:
         - marriage.debts.need_items
       - follow up:
@@ -1697,11 +1696,6 @@ review:
         - You did ${word("not") if not party_lived_6_months_MI['user'] else ""} live in Michigan for 180 days before your divorce case was filed. You did ${word("not") if not party_ten_days_in_county['user'] else ""} live in ${county_choice} County for 10 days before your divorce case was filed.
         - Your spouse did ${word("not") if not party_lived_6_months_MI['other_party'] else ""} live in Michigan for 180 days before your divorce case was filed. Your spouse did ${word("not") if not party_ten_days_in_county['other_party'] else ""} live in ${county_choice} County for 10 days before your divorce case was filed.
     show if: (tool_ID == "JOD_only" and user_ask_role == "plaintiff") or (tool_ID == "divorce_complaint" and returning_to_finalize) or tool_ID == "divorce_answer"
-  - Edit: docket_number
-    button: |
-      <h3 class="h5"> Case number</h3>
-        - ${docket_number}
-    show if: tool_ID == "JOD_only"
   - Edit: docket_number
     button: |
       <h3 class="h5"> Case number</h3>
