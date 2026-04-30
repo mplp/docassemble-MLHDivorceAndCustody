@@ -36,12 +36,12 @@ code: |
 ---
 # sets MLH_case_type_language
 code: |
-  if there_are_marital_children:
+  if complaint_type == "with_children":
     MLH_case_type_language = "The case type code for a divorce with {marital children} is **DM.**"  
   else:
     MLH_case_type_language = "The case type code for a divorce with no {marital children} is **DO.**"  
 depends on:
-  - there_are_marital_children
+  - complaint_type
 ---
 # TODO need survey script
 template: survey_embed_script
@@ -170,18 +170,21 @@ code: |
       marriage.debts.pay_debts_in_own_names
       marriage.debts.any_in_both_names
 
+    users[0].new_last_name_yn
+
     nav.set_section("signpost_spousal_support")
-    interview_order_spousal_support
+    #interview_order_spousal_support
     #if complaint_type != "with_children" and some spousal support condition(s)
-    #.has_alias questions ? (maybe foc 23? so if spousal support too)
+    #.has_alias questions ? (foc 23 so if spousal support too, but honestly we probably need a fair amount of that stuff)
 
     ## counterclaim with children ##
-    nav.set_section("signpost_children")
-    interview_order_children
+    if complaint_type == "with_children":
+      nav.set_section("signpost_children")
+      interview_order_children
     
     if there_are_marital_children:
       nav.set_section("signpost_prior_cases")
-      interview_order_prior_cases
+      prior_family_cases.gather()
   
       nav.set_section("signpost_income_etc")
       users[0].insurance.gather()

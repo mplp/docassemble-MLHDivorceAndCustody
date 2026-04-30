@@ -1167,7 +1167,7 @@ review:
         % if physical_custody_who != "both" and PT_who == "both" and PT_type == "supervised":
         - Preferred supervisor: ${ PT_supervisor }
         % endif
-        % if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and not ((tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID == "JOD_only" and county_choice == "Muskegon")):  
+        % if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and not ((tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID in ["JOD_only", "divorce_answer"] and county_choice == "Muskegon")):  
         - Schedule type: 
         % if specific_PT_how == "custom":
         **you write the schedule.**
@@ -1181,7 +1181,7 @@ review:
     button: |
       <h3 class="h5"> Custom parenting time plan:</h3>
       ${ custom_PT_details }
-    show if: there_are_marital_children and ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]) and (((tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID == "JOD_only" and county_choice == "Muskegon")) or specific_PT_how == "custom")
+    show if: there_are_marital_children and ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]) and (((tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID in ["JOD_only", "divorce_answer"] and county_choice == "Muskegon")) or specific_PT_how == "custom")
   - Edit:
       - child_domicile_info
       - hundred_mile_rule
@@ -1645,7 +1645,7 @@ review:
     show if: tool_ID == "divorce_answer"
 # ---------- case information ----------
   - raw html: |
-      ${ next_accordion("""<h2 class="h4">Your Divorce Case</h2>""") }
+      ${ next_accordion("""<h2 class="h4">The Divorce Case</h2>""") }
     show if: defined("county_choice") or defined("venue") or defined("marriage.temporary_order")
   - Edit:
       - complaint_received
@@ -1655,6 +1655,8 @@ review:
     # divorce_answer
   - Edit:
       - complaint_type
+      - recompute:
+        - children.there_are_any
     button: |
       <h3 class="h5"> Type of divorce complaint</h3>
         - Complaint for divorce ${word("with minor children") if complaint_type == "with_children" else word("without minor children")}
