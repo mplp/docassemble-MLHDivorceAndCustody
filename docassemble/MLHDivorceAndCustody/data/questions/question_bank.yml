@@ -114,7 +114,7 @@ subquestion: |
 
   ${x.table}
 fields:
-  - label: Do you have another ${x.noun_sl} to add?
+  - label: Is there another ${x.noun_sl} to add?
     field: x.there_is_another
     datatype: yesnoradio
 ---
@@ -215,10 +215,28 @@ action buttons:
     color: danger
     icon: right-from-bracket
 ---
-id: exit_jurisdiction
+id: exit_no_MI_complaint
+event: exit_no_MI_complaint
+question: |
+  Sorry, this tool cannot help you.
+subquestion: |
+  We’re sorry, but you can only use this tool to file an answer to a complaint for divorce that was filed in Michigan.
+
+  You may want to contact a lawyer for help. ${MLH_GUIDE_FULL}
+
+  If you think you made a mistake, tap **Undo** and change the answer to this question.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
+id: exit_jurisdiction divorce_complaint
 event: exit_jurisdiction
 question: Sorry, you cannot use this tool
 subquestion: |
+  % if tool_ID == "divorce_complaint":
   Sorry, you cannot use this tool to prepare your divorce forms in Michigan. 
   
   You or your spouse must have lived in Michigan for at least 180 days (six months) before using this tool and filing for divorce in Michigan. You may return to use this tool when one of you has lived in Michigan for at least 180 days. 
@@ -227,6 +245,11 @@ subquestion: |
   
   % if not other_parties[0].lives_in_Michigan:
   ${ collapse_template(spouse_MI_address_unknown_exit)}
+  % endif
+  % elif tool_ID == "divorce_answer":
+  Sorry, you cannot use this tool to file an answer to your spouse’s complaint for divorce. Your answers indicate that your spouse may have improperly filed the divorce case in ${county_choice} County, Michigan. 
+  
+  This means there could be problems with jurisdiction or venue in your divorce case. Jurisdiction and venue are not simple issues. You may want to consider talking to a lawyer to get the best possible result. ${MLH_GUIDE_FULL}
   % endif
 ---
 template: spouse_MI_address_unknown_exit
@@ -269,7 +292,7 @@ validation code: |
     edit_existing_divorce = False
     returning_to_finalize = False
 ---
-if: tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and returning_to_finalize)
+if: tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and returning_to_finalize)
 id: Choose a court
 question: In what county was the divorce filed?
 continue button field: county_where_filed
@@ -281,20 +304,74 @@ fields:
 validation code: |
   undefine("court_index", "the_court", "the_foc", "party_lived_6_months_MI", "party_ten_days_in_county", "jurisdiction_warning")
 ---
-if: tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and returning_to_finalize)
-id: JOD_only jurisdiction check
+if: tool_ID == "divorce_answer"
+id: divorce complaint filed?
+question: The divorce complaint
+fields:
+  - Did you receive a complaint for divorce that was filed in Michigan?: complaint_received
+    datatype: yesnoradio
+  - Were you {personally served} the complaint?: personally_served
+    datatype: yesnoradio
+    show if:
+      variable: complaint_received
+      is: True
+---
+if: tool_ID == "divorce_answer"
+id: divorce complaint is with or without children
+question: Type of divorce complaint
+fields:
+  - Which type of divorce complaint did you receive?: complaint_type
+    # maybe this should directly set there_are_marital_children?
+    input type: radio
+    choices:
+      - Complaint for divorce without minor children: "no_children"
+      - Complaint for divorce with minor children: "with_children"
+  - note: |
+      This type of complaint is used if there is at least one {minor} child who has **both** you and your spouse as legal parents.
+    show if:
+      variable: complaint_type
+      is: "with_children"
+  - note: |
+      This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents.
+    show if:
+      variable: complaint_type
+      is: "no_children"
+  - Do you want to continue?: complaint_type_continue
+    datatype: yesnoradio
+    js show if: |
+      val("complaint_type") === "no_children" || val("complaint_type") === "with_children"
+validation code: |
+  if complaint_type == "no_children":
+    there_are_marital_children = False
+  else:
+    there_are_marital_children = True
+---
+if: tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and returning_to_finalize)
+id: case already filed jurisdiction check
 question: Time in ${ county_choice } County and in Michigan before your divorce case
 subquestion: |
   ${collapse_template(jurisdiction_check_help)}
 fields:
-  - Who lived in **Michigan for 180 days before you filed** for divorce?: party_lived_6_months_MI
+  - label: |
+      % if tool_ID in ["JOD_only", "divorce_complaint"]:
+      Who lived in **Michigan for 180 days before you filed** for divorce? 
+      % elif tool_ID == "divorce_answer":
+      Who lived in **Michigan for 180 days before your spouse filed** for divorce? 
+      % endif
+    field: party_lived_6_months_MI
     datatype: checkboxes
     choices:
       - Me: user
       - My spouse: other_party
     none of the above: |
       Neither of us
-  - Who lived in **${ county_choice } County for 10 days before you filed** for divorce?: party_ten_days_in_county
+  - label: |
+      % if tool_ID in ["JOD_only", "divorce_complaint"]:
+      Who lived in **${ county_choice } County for 10 days before you filed** for divorce? 
+      % elif tool_ID == "divorce_answer":
+      Who lived in **${ county_choice } County for 10 days before your spouse filed** for divorce? 
+      % endif
+    field: party_ten_days_in_county
     datatype: checkboxes
     choices:
       - Me: user
@@ -307,15 +384,16 @@ fields:
 template: jurisdiction_check_help
 subject: Why does this matter?
 content: |
-  At the end of your divorce, you may need to testify (tell the judge under oath) that you met the legal requirements to file in ${ county_choice } County. 
+  At the end of your divorce, you may need to testify (tell the judge under oath) whether you met the legal requirements to get divorced in ${ county_choice } County. 
   
   Usually, **either you or your spouse** must have:
 
-  * lived in Michigan for 180 days before you filed for divorce, **and**
-  * lived in ${ county_choice } County for 10 days before you filed for divorce.
+  * lived in Michigan for 180 days before ${word("you") if tool_ID in ["divorce_complaint", "JOD_only"] else word("your spouse")} filed for divorce, **and**
+  * lived in ${ county_choice } County for 10 days before ${word("you") if tool_ID in ["divorce_complaint", "JOD_only"] else word("your spouse")} filed for divorce.
 
   The same person must meet both of the requirements.
 ---
+# used in JOD_only and divorce_complaint tools
 id: jurisdiction warning
 continue button field: jurisdiction_warning
 question: "**Warning!** There may be a jurisdiction issue."
@@ -329,6 +407,23 @@ subquestion: |
   
   You should **talk to a lawyer** about the potential jurisdiction issue. ${MLH_GUIDE_FULL}
 ---
+id: venue warning
+question: There may be an issue getting divorced in ${county_choice} County
+subquestion: |
+  Your answers indicate that ${county_choice} County may not be the proper venue (filing county) for this divorce case. To get a divorce in ${ county_choice } County, usually **one spouse** must **both**:
+
+  * have lived in Michigan for 180 days before your spouse filed for divorce, **and**
+  * have lived in ${ county_choice } County for 10 days before your spouse filed for divorce.
+
+  You said you and your spouse did **not** meet these requirements.
+  
+  If you believe your spouse may have filed this divorce case in the wrong county, you may want to consider talking to a lawyer. ${MLH_GUIDE_FULL}
+  
+  You can still use this tool to prepare an answer and counterclaim to your spouse's complaint, but you should let the judge know as soon as possible that venue may be improper. 
+fields:
+  - Do you want to continue with this tool?: venue_issue_continue
+    datatype: yesnoradio
+---
 id: docket number
 question: |
   Case number
@@ -340,6 +435,16 @@ fields:
   - label: What is the case number?
     field: docket_number
     maxlength: 25
+---
+id: judge's last name
+question: Judge's last name
+subquestion: |
+  Enter the last name of the judge in the divorce case. 
+  
+  *Do not include 'Judge' or 'Hon.'.*
+fields:
+  - "Judge": divorce_judge
+    label above field: False
 ---
 id: what is the user's role?
 question: |
@@ -436,11 +541,19 @@ fields:
   - Do you **need a temporary order** to stop your spouse from transferring, hiding, selling, or getting rid of **marital property or assets?**: need_temporary_order
     datatype: yesnoradio
   - note: |
+      % if tool_ID == "divorce_answer":
+      **WARNING!** This tool may not be right for you. Getting a temporary order to prevent a spouse from transferring, selling, hiding, or getting rid of property is not simple. 
+      
+      You can continue with the tool and get the forms you need to file an answer to your spouse's divorce complaint and to file a counterclaim for divorce, but this tool will not create any motions for temporary orders or proposed temporary orders. 
+      
+      You may want to consider hiring a lawyer to help you get a temporary order. Even if your spouse has a lawyer, you should consider hiring your own. Your spouse’s lawyer does not represent you and has a duty to do what is best for your spouse. ${MLH_GUIDE_FULL}
+      % else:
       **WARNING!** This tool may not be right for you. You cannot use this tool or the Michigan Legal Help website to get a temporary order. 
       
       Getting a temporary order to prevent a spouse from transferring, selling, hiding, or getting rid of property is not simple. You can still complete this tool to prepare your forms and begin the divorce process, but this tool will not create any motions for temporary orders or proposed temporary orders. 
       
       You may want to consider hiring a lawyer to help you ask the judge for a temporary restraining order. ${MLH_GUIDE_FULL}
+      % endif
     show if:
       variable: need_temporary_order
       is: True
@@ -472,7 +585,7 @@ fields:
       - label: I want the judge to divide our account(s)
         value: False
 ---
-if: marriage.have_pension_retirement and marriage.pension_retirement_accounts_keep_own
+if: tool_ID in ["divorce_complaint", "JOD_only"] and marriage.have_pension_retirement and marriage.pension_retirement_accounts_keep_own
 id: pension_retirement_accounts_keep
 question: |
   Pension and/or retirement accounts
@@ -483,7 +596,7 @@ fields:
     field: marriage.pension_retirement_accounts_continue
     datatype: yesnoradio
 ---
-if: marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own
+if: tool_ID in ["divorce_complaint", "JOD_only"] and marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own
 id: pension_retirement_accounts_divide
 question: |
   Pension and/or retirement accounts
@@ -496,12 +609,37 @@ fields:
     field: marriage.pension_retirement_accounts_continue
     datatype: yesnoradio
 ---
+if: tool_ID == "divorce_answer" and marriage.have_pension_retirement
+id: divorce answer pension warning
+question: |
+  Pension and/or retirement accounts
+subquestion: |
+  **WARNING!** This tool may not be right for you. Dividing pensions or retirement accounts is not simple. You may need to hire a lawyer to help you ask the judge to divide your pensions or retirement accounts. A lawyer can also draft the special order that is required. 
+  
+  Even if your spouse has a lawyer, you may need to hire your own. Your spouse’s lawyer does not represent you and has a duty to do what is best for your spouse. You can continue with the tool and get the forms you need to file an answer to your spouse's divorce complaint and to file a counterclaim for divorce. However, you may want to consider hiring a lawyer to help you finish your case. ${MLH_GUIDE_FULL}
+fields:
+  - label: Do you want to continue?
+    field: marriage.pension_retirement_accounts_continue
+    datatype: yesnoradio
+---
 id: marriage.have_business
 question: |
   Business ownership
 fields:
   - label: Do you or your spouse own a business?
     field: marriage.have_business
+    datatype: yesnoradio
+---
+id: divorce answer continue with business
+question: Warning! Businesses make divorce more complicated
+subquestion: |
+  **WARNING!** This tool may not be right for you. Dividing a business in a divorce is not simple. You cannot use this tool or the Michigan Legal Help website to do this.
+
+  You can continue with the tool to get the forms you need to file an answer to your spouse's divorce complaint and to file a counterclaim for divorce. However, you may want to consider hiring a lawyer to help you divide your business. Also consider hiring a financial professional to value the business and to get advice about any tax issues that come with dividing a business. 
+  
+  Even if your spouse has a lawyer, consider hiring your own. Your spouse's lawyer does not represent you and has a duty to do what is best for your spouse. ${MLH_GUIDE_FULL}
+fields: 
+  - Do you want to continue with this tool now?: continue_with_business
     datatype: yesnoradio
 ---
 id: marriage.have_experienced_domestic_violence
@@ -1540,14 +1678,17 @@ fields:
     datatype: integer
     min: 0
     js show if: |
-      val("marriage.living_together_yn") === false && ${ "true" if there_are_marital_children else "false"}
+      ${ "true" if tool_ID in ["divorce_complaint", "JOD_only"] else "false" } && val("marriage.living_together_yn") === false && ${ "true" if there_are_marital_children else "false"}
 ---
 id: marriage.cobra_coverage
 question: |
   Health coverage
 subquestion: |
-  **COBRA**: After your divorce is final, one spouse may continue getting coverage under the other spouse's insurance through COBRA. Your Judgment of Divorce will include language about this. Typically, the spouse who gets continuing medical insurance through COBRA must pay for it. Insurance through COBRA may cost more than when that person was covered as a spouse. If the spouses agree to something else, like having the other spouse pay for the COBRA coverage, that must be specifically added to the Judgment of Divorce. You can add this in the Other Provisions section. The Other Provisions section will be available at the end of this tool.
-
+  **COBRA**: After your divorce is final, one spouse may continue getting coverage under the other spouse's insurance through COBRA. Your Judgment of Divorce will include language about this. Typically, the spouse who gets continuing medical insurance through COBRA must pay for it. Insurance through COBRA may cost more than when that person was covered as a spouse. If the spouses agree to something else, like having the other spouse pay for the COBRA coverage, that must be specifically added to the Judgment of Divorce. 
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
+  You can add this in the Other Provisions section. The Other Provisions section will be available at the end of this tool.
+  % endif
+  
   ${ collapse_template(cobra_help_text) }
 continue button field: marriage.cobra_coverage
 ---
@@ -1653,7 +1794,9 @@ id: marriage.personal_property
 question: |
   Personal property
 subquestion: |
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
   **Please do not include vehicles.** You will be asked about vehicles on a separate page.
+  % endif
 fields:
   - label: Did you and your spouse {get} any {personal property} during the marriage?
     field: marriage.personal_property_acquired
@@ -1665,18 +1808,21 @@ fields:
   - label: Have you and your spouse **actually divided** all the personal property based on your agreement?
     field: marriage.personal_property_division_actual
     datatype: yesnoradio
-    show if: marriage.personal_property_division_agreement
+    js show if: |
+      val("marriage.personal_property_division_agreement") === true && ${ "true" if tool_ID in ["divorce_complaint", "JOD_only"] else "false" }
   - note: |
       _Only answer **Yes** if each of you has in your possession all of the items that you have agreed you will have._
-    show if: marriage.personal_property_division_agreement
+    js show if: |
+      val("marriage.personal_property_division_agreement") === true && ${ "true" if tool_ID in ["divorce_complaint", "JOD_only"] else "false" }
 validation code: |
-  if marriage.personal_property_acquired and (not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual):
-    marriage.personal_property_need_items = True
-  else:
-    marriage.personal_property_need_items = False
-    marriage.accounts.clear()
-    marriage.other_pp.clear()
-    marriage.mobile_home.clear()
+  if tool_ID in ["divorce_complaint", "JOD_only"]:
+    if marriage.personal_property_acquired and (not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual):
+      marriage.personal_property_need_items = True
+    else:
+      marriage.personal_property_need_items = False
+      marriage.accounts.clear()
+      marriage.other_pp.clear()
+      marriage.mobile_home.clear()
 ---
 # --------------------------------------------------------------------
 ## marriage.accounts
@@ -2221,6 +2367,19 @@ fields:
     field: marriage.real_property.there_are_any
     datatype: yesnoradio
 ---
+if: marriage.real_property.there_are_any
+id: continue_real_property (divorce answer)
+question: Real property can be complicated
+subquestion: |
+  **WARNING!** This tool may not be right for you. Dividing {real estate} in a divorce is not simple. There are also more steps that you need to take after your Judgment of Divorce is final to make sure your real estate is titled and financed properly.
+
+  You can continue with the tool and get the forms you need to file an answer to your spouse's divorce complaint and to file a counterclaim for divorce. However, you may want to consider hiring a lawyer to help you ask the judge to divide your real property and finish your case. Even if your spouse has a lawyer, consider hiring your own. Your spouse's lawyer does not represent you and has a duty to do what is best for your spouse.
+
+  ${MLH_GUIDE_FULL}
+fields:
+  - Do you want to continue with the tool now?: continue_real_property
+    datatype: yesnoradio
+---
 id: marriage.real_property[i].warning
 continue button field: marriage.real_property[i].warning
 question: Important information about real property and divorce
@@ -2365,7 +2524,7 @@ template: marriage.real_property.there_is_another_template
 content: ""
 ---
 # --------------------------------------------------------------------
-## marriage.other_provisions
+## other provisions, other statements
 # --------------------------------------------------------------------
 ---
 id: marriage.other_provisions
@@ -2383,6 +2542,19 @@ fields:
 validation code: |
   if not marriage.other_provisions_any:
     marriage.invalidate_attr("other_provisions")
+---
+id: other_statements
+question: |
+  Other Statements Related to Case  
+fields:
+  - label: Are there any other statements related to your divorce case that you want to include in your answer?
+    field: other_statements_any
+    datatype: yesnoradio
+  - label: "Enter the other statements related to this case:"
+    field: other_statements
+    input type: area
+    rows: 10
+    show if: other_statements_any
 ---
 # --------------------------------------------------------------------
 ## marriage.temporary_order
@@ -2549,12 +2721,14 @@ code: |
   
   else:
     users[0].address.address
-    if tool_ID == "divorce_complaint" and not returning_to_finalize:
-      if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
-        users[0].ten_days_in_county
-    if users[0].address.country == "US":
-      users[0].village_or_township_yn
-      users[0].address.county # skipped if answered on lives_in_Michigan screen
+    if tool_ID in ["divorce_complaint", "JOD_only"]:
+      if tool_ID == "divorce_complaint" and not returning_to_finalize:
+        if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
+          users[0].ten_days_in_county
+      if users[0].address.country == "US":
+        users[0].village_or_township_yn
+        users[0].address.county # skipped if answered on lives_in_Michigan screen
+  
     if users[0].mailing_address.yesno:
       users[0].mailing_address.address
   
@@ -4753,6 +4927,8 @@ content: |
   The Complaint for Divorce (one of the forms you will file to start your divorce case), must say if either spouse is pregnant.
   % elif tool_ID == "JOD_only":
   The divorce generally cannot be completed while either spouse is pregnant.
+  % elif tool_ID == "divorce_answer":
+  It is important for the judge to know about any children born or conceived before the divorce is final.
   % endif
 ---
 generic object: ALIndividual
@@ -6546,4 +6722,157 @@ fields:
     choices:
       - I will: users[0]
       - My spouse will: other_parties[0]
+---
+# --------------------------------------------------------------------
+## divorce answer respond to complaint paragraphs
+# --------------------------------------------------------------------
+---
+objects:
+  - complaint_paragraphs: DAList.using(
+      question_text="Respond to each complaint paragraph",
+      minimum_number=1,
+      noun_sl="paragraph",
+      complete_attribute="complete",
+      object_type = DAObject,
+      there_are_any = True
+      )
+---
+template: complaint_paragraphs.there_is_another_template
+content: |
+  Continue until you have responded to **all of the paragraphs** in your spouse’s complaint.
+---
+table: complaint_paragraphs.table
+rows: complaint_paragraphs
+columns:
+  - Paragraph: |
+      " ".join((str(row_item.number), row_item.letter))
+  - Your response: word("I agree") if row_item.response == "agree" else word("I disagree") if row_item.response == "disagree" else word("I don't know")
+  #- Comment: row_item.details if row_item.response == "disagree" else ""
+edit:
+  - number
+delete buttons: True
+confirm: True
+allow reordering: True
+---
+id: complaint_paragraphs.revisit
+question: |
+  ${complaint_paragraphs.question_text}
+subquestion: |
+  ${complaint_paragraphs.there_is_another_template}
+
+  % if complaint_paragraphs:
+  So far, you have listed&colon;
+
+  ${complaint_paragraphs.table}
+  % endif
+
+  ${complaint_paragraphs.add_action(color="success", size="md")}
+continue button field: complaint_paragraphs.revisit
+---
+code: |
+  complaint_paragraphs[i].number
+  complaint_paragraphs[i].complete = True
+---
+id: intro to complaint paragraph response
+continue button field: complaint_paragraphs_intro
+question: Answering the Complaint
+subquestion: |
+  For the next section of the tool, look at the complaint for divorce that you received. For each numbered paragraph and subparagraph decide whether you:
+  
+  * **Agree** that the statements are true, or
+  * **Disagree** that the statements are true, or
+  * **Do not know** if the statements are true.
+
+  You should respond to **every paragraph and subparagraph** in the order that they appear in your complaint.
+---
+id: collect a paragraph response
+question: |
+  % if i == 0:
+  Respond to the first paragraph
+  % else:
+  Respond to the next paragraph
+  % endif
+subquestion: |
+  ${complaint_paragraphs.question_text_table_template}
+fields:
+  - Paragraph number: complaint_paragraphs[i].number
+    datatype: integer
+    label above field: False
+  - label: |
+      Paragraph letter  
+      (if any)
+    field: complaint_paragraphs[i].letter
+    label above field: False
+    required: False
+  - note: |
+      Carefully read the paragraph.
+  - "Answer whether you agree, disagree, or don’t know if the statements in that paragraph are true.": complaint_paragraphs[i].response
+    input type: radio
+    choices: 
+      - "I agree": agree
+      - "I disagree": disagree
+      - "I do not know whether the statements are true": unsure
+  - "Optional comment:": complaint_paragraphs[i].details
+    required: False
+    input type: area
+    rows: 2
+    maxlength: 140
+    show if:
+      variable: complaint_paragraphs[i].response
+      is: agree
+  - label: |
+      I disagree that the statements in this paragraph are true because:
+    field: complaint_paragraphs[i].details
+    input type: area
+    rows: 2
+    maxlength: 140
+    show if:
+      variable: complaint_paragraphs[i].response
+      is: disagree
+  - "Optional comment:": complaint_paragraphs[i].details
+    required: False
+    input type: area
+    rows: 2
+    maxlength: 140
+    show if:
+      variable: complaint_paragraphs[i].response
+      is: unsure
+  - note: |
+      *(140 character limit)*
+    js show if: |
+      ['agree', 'disagree', 'unsure'].includes(val("complaint_paragraphs[i].response"))
+---
+# --------------------------------------------------------------------
+## other divorce answer questions (that didn't naturally fit above)
+# --------------------------------------------------------------------
+---
+id: file a counterclaim
+question: |
+  Filing a Counterclaim  
+subquestion: |
+  You have finished the section of the tool for creating your *answer* to the complaint for divorce. The next section of the tool creates a *counterclaim* for divorce.
+
+  A counterclaim is needed if you want to:
+
+  * **change your last name** as part of the divorce
+  * ask for **spousal support**
+  * ask the court to **address any other issue** or order something that your spouse did not request in their Complaint for Divorce
+  * make sure the divorce case **can be finished** if your spouse stops participating. 
+
+  ${collapse_template(no_counterclaim_exp)}
+fields: 
+  - Do you want to create a counterclaim for divorce?: create_counterclaim
+    datatype: yesnoradio
+---
+template: no_counterclaim_exp
+subject: |
+  What if I don't file a counterclaim?
+content: |
+  If you do not file a counterclaim for divorce and your spouse does something to have the case dismissed, your divorce case will end. Then, if you still want to get divorced, you will have to start over by filing a new case.
+
+  You also will **not** be able to:
+
+  * **change your last name** as part of the divorce
+  * ask for **spousal support**
+  * ask the court to **address other issues** your spouse did not raise
 ---
