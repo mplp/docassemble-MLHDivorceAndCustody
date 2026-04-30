@@ -16,14 +16,13 @@ metadata:
 ---
 sections:
   - signpost_intro: "Introduction"
-  - signpost_qualify: "Do you qualify?"
+  - signpost_qualify: "Divorce Complaint"
   - signpost_user: "Your Information"
   - signpost_spouse: "Spouse's Information"
-  - signpost_marriage: "Marriage Information"
-  - signpost_personal_property: "Personal Property"
-  - signpost_debts: "Debts"
-  - signpost_vehicles: "Vehicles"
-  - signpost_real_property: "Real Property"
+  - signpost_respond: "Complaint Paragraphs"
+  - signpost_personal_property: "Counterclaim: Basics"
+  - signpost_spousal_support: "Counterclaim: Support"
+  - signpost_children: "Counterclaim: Children"
   - signpost_judgment_information: "Judgment Information"
   - signpost_done: "Get Your Forms"
   - review_full: "✎ <u>Review / Edit</u>"
@@ -80,6 +79,7 @@ code: |
   snapshot_start
   MLH_standard_intro_pages
 
+  nav.set_section("signpost_qualify")
   if not complaint_received:
     exit_no_MI_complaint
   complaint_type
@@ -133,6 +133,7 @@ code: |
   
   interview_order_other_parties_attorney
 
+  nav.set_section("signpost_respond")
   complaint_paragraphs_intro
   complaint_paragraphs.gather()  
   other_statements_any
@@ -142,8 +143,6 @@ code: |
   
   ### Start counterclaim section ###
   else:   
-    #.has_alias questions if with kids? (maybe foc 23?)
-
     if marriage.have_pension_retirement:
       if not marriage.pension_retirement_accounts_continue:
         exit_general
@@ -170,8 +169,11 @@ code: |
     if marriage.debts.any:
       marriage.debts.pay_debts_in_own_names
       marriage.debts.any_in_both_names
-  
+
+    nav.set_section("signpost_spousal_support")
     interview_order_spousal_support
+    #if complaint_type != "with_children" and some spousal support condition(s)
+    #.has_alias questions ? (maybe foc 23? so if spousal support too)
 
     ## counterclaim with children ##
     nav.set_section("signpost_children")
@@ -192,6 +194,7 @@ code: |
       interview_order_other_party_employment
       interview_order_other_party_income
       interview_order_other_party_identifying_info
+      #.has_alias questions if not already included? (maybe foc 23?)
       interview_order_income_tax
   
     if not there_are_marital_children:

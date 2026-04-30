@@ -899,8 +899,8 @@ review:
       % for item in complaint_paragraphs:
         - Paragraph ${" ".join((str(item.number), item.letter))}
           - **Your response:** ${word("I agree") if item.response == "agree" else word("I disagree") if item.response == "disagree" else word("I don't know")}
-      % if item.response == "disagree":
-          - **Comment:** ${item.details}
+      % if item.details != "":
+          - **${word("Because:") if item.response == "disagree" else word("Comment:")}** ${item.details}
       % endif
       
       % endfor

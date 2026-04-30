@@ -1815,13 +1815,14 @@ fields:
     js show if: |
       val("marriage.personal_property_division_agreement") === true && ${ "true" if tool_ID in ["divorce_complaint", "JOD_only"] else "false" }
 validation code: |
-  if tool_ID in ["divorce_complaint", "JOD_only"] and marriage.personal_property_acquired and (not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual):
-    marriage.personal_property_need_items = True
-  else:
-    marriage.personal_property_need_items = False
-    marriage.accounts.clear()
-    marriage.other_pp.clear()
-    marriage.mobile_home.clear()
+  if tool_ID in ["divorce_complaint", "JOD_only"]:
+    if marriage.personal_property_acquired and (not marriage.personal_property_division_agreement or not marriage.personal_property_division_actual):
+      marriage.personal_property_need_items = True
+    else:
+      marriage.personal_property_need_items = False
+      marriage.accounts.clear()
+      marriage.other_pp.clear()
+      marriage.mobile_home.clear()
 ---
 # --------------------------------------------------------------------
 ## marriage.accounts
@@ -6797,7 +6798,10 @@ fields:
   - Paragraph number: complaint_paragraphs[i].number
     datatype: integer
     label above field: False
-  - Paragraph letter (if any): complaint_paragraphs[i].letter
+  - label: |
+      Paragraph letter  
+      (if any)
+    field: complaint_paragraphs[i].letter
     label above field: False
     required: False
   - note: |
@@ -6808,13 +6812,35 @@ fields:
       - "I agree": agree
       - "I disagree": disagree
       - "I do not know whether the statements are true": unsure
-  - "I disagree that the statements in Paragraph 1 are true because:": complaint_paragraphs[i].details
+  - "Optional comment:": complaint_paragraphs[i].details
+    required: False
+    input type: area
+    rows: 2
+    maxlength: 140
+    show if:
+      variable: complaint_paragraphs[i].response
+      is: agree
+  - label: |
+      I disagree that the statements in this paragraph are true because:
+    field: complaint_paragraphs[i].details
     input type: area
     rows: 2
     maxlength: 140
     show if:
       variable: complaint_paragraphs[i].response
       is: disagree
+  - "Optional comment:": complaint_paragraphs[i].details
+    required: False
+    input type: area
+    rows: 2
+    maxlength: 140
+    show if:
+      variable: complaint_paragraphs[i].response
+      is: unsure
+  - note: |
+      *(140 character limit)*
+    js show if: |
+      ['agree', 'disagree', 'unsure'].includes(val("complaint_paragraphs[i].response"))
 ---
 # --------------------------------------------------------------------
 ## other divorce answer questions (that didn't naturally fit above)
