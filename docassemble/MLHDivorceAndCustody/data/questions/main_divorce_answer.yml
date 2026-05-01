@@ -1,5 +1,6 @@
 ---
 include:
+  - docassemble.FeeWaiverRequest:shared_code.yml
   - divorce_custody_setup.yml
 ---
 # TODO subtitle? & confirm description
@@ -17,13 +18,14 @@ metadata:
 sections:
   - signpost_intro: "Introduction"
   - signpost_qualify: "Divorce Complaint"
-  - signpost_user: "Your Information"
-  - signpost_spouse: "Spouse's Information"
-  - signpost_respond: "Complaint Paragraphs"
-  - signpost_personal_property: "Counterclaim: Basics"
-  - signpost_spousal_support: "Counterclaim: Support"
-  - signpost_children: "Counterclaim: Children"
-  - signpost_judgment_information: "Judgment Information"
+  - signpost_user: "You and Your Spouse"
+  - signpost_respond: "Reply to Complaint"
+  - signpost_counterclaim: "Counterclaim Basics"
+  - signpost_spousal_support: "Spousal Support"
+  - signpost_children: "Children"
+  - signpost_prior_cases: "Past Cases"
+  - signpost_income_etc: "Income, Insurance, etc."
+  - signpost_last_section: "Final Questions"
   - signpost_done: "Get Your Forms"
   - review_full: "✎ <u>Review / Edit</u>"
 ---
@@ -59,11 +61,26 @@ template: MLH_welcome_message
 content: |
   Welcome to the Do-It-Yourself Answer and Counterclaim for Divorce tool.
 
-  Use this tool if you are served with a complaint for divorce and want to file a written answer. You must file an answer within the time stated on the summons, or a default may be entered against you. A default can make it more difficult for you to participate in your divorce case and ask the judge for the things you want.
+  Use this tool if you are served with a complaint for divorce and want to file a written answer. 
+---
+id: divorce answer intro part 2
+question: More about answers and counterclaims
+continue button field: divorce_answer_intro_2
+subquestion: |
+  ## Answer
+  An answer is an official response to your spouse's complaint for divorce. You must file an answer within the time stated on the summons, or a default may be entered against you. A default can make it more difficult for you to participate in your divorce case and ask the judge for the things you want.
+  
+  ## Counterclaim
+  You should file a counterclaim for divorce if you want to make sure that your divorce goes forward. If you do not file a counterclaim for divorce, and your spouse does something to have the original divorce case dismissed, your divorce case will end. Then, if you still want to get divorced, you will have to start over by filing a new case.
 
-  You can also use this tool if you want to file a counterclaim for divorce along with your answer. You should file a counterclaim for divorce if you want to make sure that your divorce goes forward. If you do not file a counterclaim for divorce, and your spouse does something to have the original divorce case dismissed, your divorce case will end. Then, if you still want to get divorced, you will have to start over by filing a new case.
+  A counterclaim is also needed if you want to:
 
-  The first part of this tool will ask you questions that will be used to create your answer to your spouse’s complaint. The second part of the tool will ask you questions that can be used to create a counterclaim for divorce. You will have the option to stop at the end of the answer section or to continue to the counterclaim questions.
+  * **change your last name** as part of the divorce
+  * ask for **spousal support**
+  * ask the court to **address any other issue** or order something that your spouse did not request in their Complaint for Divorce
+
+  ## Your choice
+  The first part of this tool will ask you questions to create an answer. Then you can choose whether to stop there or continue to create a counterclaim.
 ---
 # ====================================================================
 ## interview_order
@@ -77,6 +94,8 @@ code: |
   nav.set_section("review_full")
   nav.set_section("signpost_intro")
   snapshot_start
+  MLH_intro_landing
+  divorce_answer_intro_2
   MLH_standard_intro_pages
 
   nav.set_section("signpost_qualify")
@@ -116,8 +135,6 @@ code: |
 
   interview_order_user_contact_info
 
-  nav.set_section("signpost_spouse")
-
   other_parties.gather()
   other_parties[0].name.first
   other_parties[0].has_previous_name
@@ -138,7 +155,9 @@ code: |
   complaint_paragraphs.gather()  
   other_statements_any
 
+  nav.set_section("signpost_counterclaim")
   if not create_counterclaim:
+    nav.set_section("signpost_income_etc")
     marriage.cobra_coverage
   
   ### Start counterclaim section ###
@@ -173,16 +192,14 @@ code: |
     users[0].new_last_name_yn
 
     nav.set_section("signpost_spousal_support")
-    #interview_order_spousal_support
-    #if complaint_type != "with_children" and some spousal support condition(s)
-    #.has_alias questions ? (foc 23 so if spousal support too, but honestly we probably need a fair amount of that stuff)
+    interview_order_spousal_support
 
-    ## counterclaim with children ##
     if complaint_type == "with_children":
       nav.set_section("signpost_children")
       interview_order_children
-    
-    if there_are_marital_children:
+      if not there_are_marital_children:
+        exit_no_kids
+
       nav.set_section("signpost_prior_cases")
       prior_family_cases.gather()
   
@@ -191,21 +208,23 @@ code: |
       other_parties[0].insurance.gather()
       if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
         marriage.cobra_coverage
+
+    else:
+      nav.set_section("signpost_income_etc")
+      marriage.cobra_coverage
+
+    if complaint_type == "with_children" or user_wants_post_divorce_support:
       interview_order_user_employment
       interview_order_user_income
       interview_order_user_identifying_info
+      users[0].has_alias
       interview_order_other_party_employment
       interview_order_other_party_income
       interview_order_other_party_identifying_info
-      #.has_alias questions if not already included? (maybe foc 23?)
-      interview_order_income_tax
+      other_parties[0].has_alias
   
-    if not there_are_marital_children:
-      marriage.cobra_coverage
-      interview_order_prior_cases
-
   ### End counterclaim section ###
-  
+  nav.set_section("signpost_last_section")
   MLH_standard_outro_pages
 
   # just making sure these are defined

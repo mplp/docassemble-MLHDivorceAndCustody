@@ -276,6 +276,24 @@ action buttons:
     color: danger
     icon: right-from-bracket
 ---
+if: tool_ID == "divorce_answer" and complaint_type == "with_children"
+id: exit_no_kids
+event: exit_no_kids
+question: |
+  No marital children
+subquestion: |
+  You did not enter any {marital children}. Your spouse filed this divorce as a divorce with children. If you believe there are no marital children, there may be complications in your case and you should speak with a lawyer. 
+
+  If you and your spouse are the legal parents of a child, use the **Undo** button or the **Review / Edit** link to go back and add that child or edit your answers.
+
+  ${MLH_GUIDE_FULL}
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
 # --------------------------------------------------------------------
 ## introduction
 # --------------------------------------------------------------------
@@ -321,7 +339,6 @@ id: divorce complaint is with or without children
 question: Type of divorce complaint
 fields:
   - Which type of divorce complaint did you receive?: complaint_type
-    # maybe this should directly set there_are_marital_children?
     input type: radio
     choices:
       - Complaint for divorce without minor children: "no_children"
@@ -340,6 +357,11 @@ fields:
     datatype: yesnoradio
     js show if: |
       val("complaint_type") === "no_children" || val("complaint_type") === "with_children"
+validation code: |
+  if complaint_type == "no_children":
+    there_are_marital_children = False
+  else: # if with_children, set by child gathering process
+    undefine("there_are_marital_children")
 ---
 if: tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and returning_to_finalize)
 id: case already filed jurisdiction check
@@ -1673,7 +1695,7 @@ fields:
     datatype: integer
     min: 0
     js show if: |
-      ${ "true" if tool_ID in ["divorce_complaint", "JOD_only"] else "false" } && val("marriage.living_together_yn") === false && ${ "true" if there_are_marital_children else "false"}
+      ${ "true" if tool_ID in ["divorce_complaint", "JOD_only"] and there_are_marital_children else "false" } && val("marriage.living_together_yn") === false
 ---
 id: marriage.cobra_coverage
 question: |
@@ -3507,6 +3529,8 @@ code: |
   if tool_ID == "divorce_answer":
     if complaint_type == "with_children":
       children.there_are_any = True
+    else:
+      children.there_are_any = False
 ---
 id: any more children
 question: |
@@ -5160,7 +5184,8 @@ code: |
   if tool_ID == "JOD_only" and there_are_marital_children:
     prior_family_cases[i].status
   
-  elif tool_ID != "JOD_only":
+  elif tool_ID in ["divorce_complaint", "divorce_answer"]:
+    # only called in divorce_answer if complaint_type == "with_children"
     prior_family_cases[i].status
     if there_are_marital_children:
       if prior_family_cases[i].state != "MI":
@@ -5834,7 +5859,8 @@ code: |
     if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
       users[0].occupation
     users[0].job.employer.name.first
-  users[0].has_professional_license
+  if tool_ID in ["divorce_complaint", "JOD_only"]:
+    users[0].has_professional_license
 
   interview_order_user_employment = True
 ---
@@ -5867,10 +5893,11 @@ code: |
 code: |
   other_parties[0].has_job
   if other_parties[0].has_job:
-    if tool_ID == "divorce_complaint" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
+    if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
       other_parties[0].occupation
     other_parties[0].job.employer.name.first
-  other_parties[0].has_professional_license
+  if tool_ID in ["divorce_complaint", "JOD_only"]:
+    other_parties[0].has_professional_license
 
   interview_order_other_party_employment = True
 ---
@@ -6486,7 +6513,7 @@ subquestion: |
   * Your name is ${users[0]}.
   % if tool_ID == "JOD_only" and users[0].has_previous_name:
   * Your previous last name was ${users[0].previous_last_name}.
-  % elif tool_ID == "divorce_complaint" and users[0].has_previous_name:
+  % elif tool_ID in ["divorce_complaint", "divorce_answer"] and users[0].has_previous_name:
   * Your previous name was ${users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name}.
   % endif
 fields:
@@ -6622,7 +6649,7 @@ subquestion: |
   * Your spouse's name is ${other_parties[0]}.
   % if tool_ID == "JOD_only" and other_parties[0].has_previous_name:
   * Their previous last name was ${other_parties[0].previous_last_name}.
-  % elif tool_ID == "divorce_complaint" and other_parties[0].has_previous_name:
+  % elif tool_ID in ["divorce_complaint", "divorce_answer"] and other_parties[0].has_previous_name:
   * Their previous name was ${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}.
   % endif
 fields:
@@ -6782,13 +6809,13 @@ id: intro to complaint paragraph response
 continue button field: complaint_paragraphs_intro
 question: Answering the Complaint
 subquestion: |
-  For the next section of the tool, look at the complaint for divorce that you received. For each numbered paragraph and subparagraph decide whether you:
+  For the next section of the tool, look at the complaint for divorce that you received. For each numbered paragraph and decide whether you:
   
   * **Agree** that the statements are true, or
   * **Disagree** that the statements are true, or
   * **Do not know** if the statements are true.
 
-  You should respond to **every paragraph and subparagraph** in the order that they appear in your complaint.
+  You should respond to **every paragraph** in the order that they appear in your complaint.
 ---
 id: collect a paragraph response
 question: |

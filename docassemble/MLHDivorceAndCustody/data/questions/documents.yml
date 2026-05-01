@@ -14,7 +14,7 @@ objects:
 ---
 if: tool_ID == "divorce_answer"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, uniform_spousal_support_order_foc10b, UCCJEA_affidavit_mc416_full], filename="Michigan Divorce Answer --all forms", title="All forms and instructions", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, uniform_spousal_support_order_foc10b, UCCJEA_affidavit_mc416_full, proof_of_service], filename="Michigan Divorce Answer --all forms", title="All forms and instructions", enabled=True)
   #- al_court_bundle: ALDocumentBundle.using(elements=[], filename="Michigan Divorce Answer --all forms", title="All forms and instructions", enabled=True)
 ---
 # ====================================================================
