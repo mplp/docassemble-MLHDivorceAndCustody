@@ -1091,7 +1091,7 @@ attachment:
           % elif len(children.filter(legal_parent='both')) == 1:
             % if children.filter(legal_parent='both')[0].home_state == "none" and children.filter(legal_parent='both')[0].MI_jurisdiction == True:
           ${ word("None. Michigan has jurisdiction because the child lived 6 months in MI within the last 6 months. MCL 722.1201(1)(a)") }
-            % elif children.filter(legal_parent='both')[0].currently_resides_in_type == "Michigan" and children.filter(legal_parent='both')[0].age_in_months() >= 6 and not children.filter(legal_parent='both')[0].current_residence_is_home_state and children.filter(legal_parent='both')[0].MI_jurisdiction == False:
+            % elif children.filter(legal_parent='both')[0].currently_resides_in_type == "Michigan" and not children.filter(legal_parent='both')[0].current_residence_is_home_state:
           ${ word("None. The child moved to Michigan within the last six months.") }
             % else:
           ${ children.filter(legal_parent='both')[0].home_state }
