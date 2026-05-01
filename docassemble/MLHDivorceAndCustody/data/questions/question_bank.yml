@@ -3500,12 +3500,20 @@ question: |
   Any minor children?
 subquestion: |
   This includes children you have together or children one of you has separately.
+
+  ${ collapse_template(non_marital_children_explanation_template) }
 fields:
   - Do you or ${other_parties[0]} have any living {minor} children?: children.there_are_any
     datatype: yesnoradio
 validation code: |
   if not children.there_are_any: 
     children.clear()
+---
+template: non_marital_children_explanation_template
+subject: |
+  Why do I need to include both children in common and separate children?
+content: |
+  If you or your spouse has a child that is not also the child of the other spouse, this child must also be named in some of the divorce documents.
 ---
 id: any more children
 question: |
