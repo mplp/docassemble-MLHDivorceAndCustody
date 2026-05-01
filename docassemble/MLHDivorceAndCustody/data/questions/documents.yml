@@ -1095,7 +1095,13 @@ attachment:
           % if MI_home_state_all_kids:
           Michigan
           % elif len(children.filter(legal_parent='both')) == 1:
-          ${ word("None. Michigan has jurisdiction because the child lived 6 months in MI within the last 6 months. MCL 722.1201(1)(a)") if children.filter(legal_parent='both')[0].home_state == "none" and children.filter(legal_parent='both')[0].MI_jurisdiction == True else children.filter(legal_parent='both')[0].home_state }
+            % if children.filter(legal_parent='both')[0].home_state == "none" and children.filter(legal_parent='both')[0].MI_jurisdiction == True:
+          ${ word("None. Michigan has jurisdiction because the child lived 6 months in MI within the last 6 months. MCL 722.1201(1)(a)") }
+            % elif children.filter(legal_parent='both')[0].currently_resides_in_type == "Michigan" and not children.filter(legal_parent='both')[0].current_residence_is_home_state:
+          ${ word("None. The child moved to Michigan within the last six months.") }
+            % else:
+          ${ children.filter(legal_parent='both')[0].home_state }
+            % endif
           % elif len(children.filter(legal_parent='both')) > 1:
           See addendum. 
           % endif
@@ -2776,7 +2782,7 @@ attachment:
           % endif
           ${ plaintiffs[0].address.line_one() }
           ${ plaintiffs[0].address.line_two() }
-          ${ word("Does not have phone") if plaintiffs[0].no_phone_number else plaintiffs[0].phone_numbers() }
+          ${ word("Does not have phone") if plaintiffs[0].no_phone_number else phone_number_formatted(plaintiffs[0].phone_numbers()) }
       - defendant_block: |
           ${ defendants[0].name_full() }
           % if user_ask_role == "defendant" and confidential_contact_info_yn:
@@ -2784,7 +2790,7 @@ attachment:
           % endif
           ${ defendants[0].address.line_one() }
           ${ defendants[0].address.line_two() }
-          ${ word("Does not have phone") if defendants[0].no_phone_number else defendants[0].phone_numbers() }
+          ${ word("Does not have phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_numbers()) }
       - plaintiffs_attorney_block: |
           % if user_ask_role == "plaintiff" or (tool_ID == "JOD_only" and user_ask_role == "defendant" and not other_parties[0].has_attorney):
           Self-represented
@@ -2792,7 +2798,7 @@ attachment:
           ${ plaintiffs[0].attorney.name_full() }
           ${ plaintiffs[0].attorney.address.line_one() }
           ${ plaintiffs[0].attorney.address.line_two() }
-          ${ word("Does not have phone") if plaintiffs[0].attorney.no_phone_number else plaintiffs[0].attorney.phone_numbers() }
+          ${ word("Does not have phone") if plaintiffs[0].attorney.no_phone_number else phone_number_formatted(plaintiffs[0].attorney.phone_numbers()) }
           % endif
       - defendants_attorney_block: |
           % if user_ask_role == "defendant" or (tool_ID == "JOD_only" and user_ask_role == "plaintiff" and not other_parties[0].has_attorney):
@@ -2801,7 +2807,7 @@ attachment:
           ${ defendants[0].attorney.name_full() }
           ${ defendants[0].attorney.address.line_one() }
           ${ defendants[0].attorney.address.line_two() }
-          ${ word("Does not have phone") if defendants[0].attorney.no_phone_number else defendants[0].attorney.phone_numbers() }
+          ${ word("Does not have phone") if defendants[0].attorney.no_phone_number else phone_number_formatted(defendants[0].attorney.phone_numbers()) }
           % endif
       - plaintiff_employer_block: |
           % if plaintiffs[0].has_job:
@@ -2811,7 +2817,7 @@ attachment:
           ${ plaintiffs[0].job.employer.address.line_two() }
           % endif
           % if plaintiffs[0].job.employer.name.first != "" or plaintiffs[0].job.employer.address.address != "" or plaintiffs[0].job.employer.address.city != "":
-          ${ word("Phone unknown.") if plaintiffs[0].job.employer.phone == "" else plaintiffs[0].job.employer.phone }
+          ${ word("Phone unknown.") if plaintiffs[0].job.employer.phone == "" else phone_number_formatted(plaintiffs[0].job.employer.phone) }
           % endif
           % endif
       - defendant_employer_block: |
@@ -2822,7 +2828,7 @@ attachment:
           ${ defendants[0].job.employer.address.line_two() }
           % endif
           % if defendants[0].job.employer.name.first != "" or defendants[0].job.employer.address.address != "" or defendants[0].job.employer.address.city != "":
-          ${ word("Phone unknown.") if defendants[0].job.employer.phone == "" else defendants[0].job.employer.phone }
+          ${ word("Phone unknown.") if defendants[0].job.employer.phone == "" else phone_number_formatted(defendants[0].job.employer.phone) }
           % endif
           % endif
       # - order_entered_after_hearing:
