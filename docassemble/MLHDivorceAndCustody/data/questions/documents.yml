@@ -12,6 +12,11 @@ objects:
   - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, complaint_407_full, complaint_408_full, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, record_of_divorce, default_request_mc07, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
   - al_court_bundle: ALDocumentBundle.using(elements=[summons_mc01, complaint_407_full, complaint_408_full, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, record_of_divorce, default_request_mc07, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
 ---
+if: tool_ID == "divorce_answer"
+objects:
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, uniform_spousal_support_order_foc10b, UCCJEA_affidavit_mc416_full, proof_of_service], filename="Michigan Divorce Answer --all forms", title="All forms and instructions", enabled=True)
+  #- al_court_bundle: ALDocumentBundle.using(elements=[], filename="Michigan Divorce Answer --all forms", title="All forms and instructions", enabled=True)
+---
 # ====================================================================
 ## Enabling logic
 # ====================================================================
@@ -33,6 +38,8 @@ code: |
     UCCJEA_affidavit_mc416.enabled = there_are_marital_children
   elif tool_ID == "custody_complaint":
     UCCJEA_affidavit_mc416.enabled = True
+  elif tool_ID == "divorce_answer":
+    UCCJEA_affidavit_mc416.enabled = create_counterclaim and complaint_type == "with_children"
   else:
     UCCJEA_affidavit_mc416.enabled = False
 
@@ -58,10 +65,7 @@ code: |
   if tool_ID == "divorce_complaint":
     verified_statement_foc_23_full.enabled = (there_are_marital_children or user_wants_post_divorce_support)
   elif tool_ID == "divorce_answer":
-    if (there_are_marital_children and filing_counterclaim) or user_wants_post_divorce_support:
-      verified_statement_foc_23_full.enabled = True
-    else:
-      verified_statement_foc_23_full.enabled = False
+    verified_statement_foc_23_full.enabled = create_counterclaim and (user_wants_post_divorce_support or complaint_type == "with_children")
   elif tool_ID == "custody_complaint":
     verified_statement_foc_23_full.enabled = True
   elif tool_ID == "custody_answer":
@@ -95,6 +99,8 @@ code: |
 code: |
   if tool_ID in ["divorce_complaint", "custody_complaint"]:
     child_support_services_dhs_1201d.enabled = there_are_marital_children
+  elif tool_ID == "divorce_answer":
+    child_support_services_dhs_1201d.enabled = complaint_type == "with_children"
 ---
 code: |
   uniform_spousal_support_order_foc10b.enabled = user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
