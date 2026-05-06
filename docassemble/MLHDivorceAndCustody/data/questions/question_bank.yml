@@ -348,20 +348,70 @@ fields:
     show if:
       variable: complaint_type
       is: "with_children"
+  - Do you agree that you have minor children with your spouse?: complaint_check_agree_kids
+    datatype: yesnoradio
+    show if:
+      variable: complaint_type
+      is: "with_children"
   - note: |
       This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents.
     show if:
       variable: complaint_type
       is: "no_children"
-  - Do you want to continue?: complaint_type_continue
-    datatype: yesnoradio
-    js show if: |
-      val("complaint_type") === "no_children" || val("complaint_type") === "with_children"
 validation code: |
   if complaint_type == "no_children":
     there_are_marital_children = False
   else: # if with_children, set by child gathering process
     undefine("there_are_marital_children")
+---
+id: complaint type check with no children
+if: complaint_type == "no_children"
+question:
+subquestion: |
+  You said your spouse filed a complaint for divorce **without children.**   
+fields:
+  - Are you pregnant?: users[0].pregnant
+    datatype: yesnoradio
+  - Is your spouse pregnant?: other_parties[0].pregnant
+    datatype: yesnoradio
+  - Is there any {minor} child who has both you and your spouse as legal parents?: complaint_check_have_kids
+    input type: radio
+    choices:
+      - Yes, there is at least one child who has us both as legal parents.
+      - There is a child I want to continue to parent. But I'm not their legal parent, or I'm not sure if I'm their legal parent.
+      - No
+  - note: |
+      You are both legal parents if either of you gave birth to a child during the marriage and parentage has not been revoked by court order.
+      
+      ${collapse_template(legal_parentage_info)}
+---
+template: legal_parentage_info
+subject: Situations where you might both be legal parents.
+content: |
+  You are both legal parents if any of the following apply:
+
+  *	You or your spouse gave birth to a child before you married, and the non-birthing parent became a legal parent by court order or Affidavit of Parentage. There has not been a court order revoking parentage. 
+  *	During the marriage, you or your spouse gave birth to a child conceived through sexual intercourse. There has **not** been a court order revoking the parentage of the husband or non-birthing spouse. 
+  *	During the marriage, you or your spouse gave birth to a child conceived through assisted reproductive technology (ART). There was no valid surrogacy agreement naming other parents, and no court order determining that one or both spouses are not legal parent(s). 
+  *	You and your spouse adopted a child together.
+  *	During the marriage, one of you adopted a child who was already the other spouse's child before the marriage.
+  *	You and your spouse became parents together through a valid surrogacy agreement.
+---
+id: complaint with children continue information
+question: Complaint with children
+subquestion: |
+  You said your spouse filed a complaint for divorce **with children,** but you don't agree that you have children together.
+  
+  A divorce case should be filed as a divorce **with children** if:
+  
+  * you or your spouse are pregnant, **or**
+  * there is a {minor} child who has both you and your spouse as legal parents.
+  
+  ${legal_parentage_info}
+
+  If there is no pregnancy and no children, when you enter your answers to your spouse's Complaint for Divorce later in this tool **explain why there is no minor child who has you both as legal parents.** 
+  
+  You may need to find a lawyer if you need help with this. ${MLH_GUIDE_FULL}
 ---
 if: tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and returning_to_finalize)
 id: case already filed jurisdiction check
