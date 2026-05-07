@@ -366,24 +366,18 @@ validation code: |
 ---
 id: complaint type check with no children
 if: complaint_type == "no_children"
-question:
+question: Did your spouse file the right type of complaint?
 subquestion: |
-  You said your spouse filed a complaint for divorce **without children.**   
+  You said your spouse filed a complaint for divorce **without children.** This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents.
+
+  ${collapse_template(legal_parentage_info)}
 fields:
-  - Are you pregnant?: users[0].pregnant
-    datatype: yesnoradio
-  - Is your spouse pregnant?: other_parties[0].pregnant
-    datatype: yesnoradio
   - Is there any {minor} child who has both you and your spouse as legal parents?: complaint_check_have_kids
     input type: radio
     choices:
-      - Yes, there is at least one child who has us both as legal parents.
-      - There is a child I want to continue to parent. But I'm not their legal parent, or I'm not sure if I'm their legal parent.
-      - No
-  - note: |
-      You are both legal parents if either of you gave birth to a child during the marriage and parentage has not been revoked by court order.
-      
-      ${collapse_template(legal_parentage_info)}
+      - Yes, there is at least one child who has us both as legal parents.: have_kids
+      - There is a child I want to continue to parent. But I'm not their legal parent, or I'm not sure if I'm their legal parent.: want_parental_rights
+      - No: no_kids
 ---
 template: legal_parentage_info
 subject: Situations where you might both be legal parents.
@@ -399,6 +393,7 @@ content: |
 ---
 id: complaint with children continue information
 question: Complaint with children
+continue button field: complaint_with_children_issue_continue
 subquestion: |
   You said your spouse filed a complaint for divorce **with children,** but you don't agree that you have children together.
   
@@ -407,9 +402,19 @@ subquestion: |
   * you or your spouse are pregnant, **or**
   * there is a {minor} child who has both you and your spouse as legal parents.
   
-  ${legal_parentage_info}
+  ${collapse_template(legal_parentage_info)}
 
   If there is no pregnancy and no children, when you enter your answers to your spouse's Complaint for Divorce later in this tool **explain why there is no minor child who has you both as legal parents.** 
+  
+  You may need to find a lawyer if you need help with this. ${MLH_GUIDE_FULL}
+---
+id: complaint no children continue information
+question: Complaint without children
+continue button field: complaint_without_children_issue_continue
+subquestion: |
+  You said your spouse filed a complaint for divorce **without children,** but there is a child or one of you is pregnant.
+  
+  When you enter your answers to your spouse's Complaint for Divorce later in this tool **explain about the minor child or pregnancy.** 
   
   You may need to find a lawyer if you need help with this. ${MLH_GUIDE_FULL}
 ---
@@ -4997,11 +5002,16 @@ question: |
   Pregnancy
 subquestion: |
   ${collapse_template(users[0].pregnant_explanation_template)}
+  % if tool_ID == "divorce_answer":
+  ${collapse_template(nonbio_pregnancy)}
+  ${collapse_template(ART_preganancy)}
+  % endif
 fields:
   - label: Are you pregnant?
     field: users[0].pregnant
     datatype: yesnoradio
   - label: Is your spouse pregnant?
+    help: If you're not sure, answer as best you can. If you have no reason to think your spouse is pregnant, you can say "No".
     field: other_parties[0].pregnant
     datatype: yesnoradio
 ---
@@ -5017,6 +5027,28 @@ content: |
   % elif tool_ID == "divorce_answer":
   It is important for the judge to know about any children born or conceived before the divorce is final.
   % endif
+---
+template: nonbio_pregnancy
+subject: |
+  What if one of us is pregnant with someone else's child? Do we still have to include the pregnancy in the divorce forms?
+content: |
+  Yes. If either spouse gives birth to or conceives a child during the marriage, that child is considered a child of the marriage unless a judge determines that the husband or non-birthing parent is not the child's other parent. Make sure you acknowledge the pregnancy in your Answer.
+  
+  To deal with the parentage issue, you can file a motion in the divorce case asking the judge to revoke the legal parentage of the spouse who is not the child's biological parent. To learn more, read [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent) or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
+---
+template: ART_pregnancy
+subject: |
+  Pregnancy where conception was through assisted reproductive technology (ART). Do we have to include the pregnancy in the divorce forms even if there is a surrogacy agreement or a parentage issue?
+content: |
+  Yes. If the pregnancy is the result of a surrogacy agreement, include that information in your Answer if the plaintiff did not include it in their complaint. 
+  
+  If the pregnancy is a result of assisted reproduction that does not involve surrogacy **and** you believe that you or your spouse should not be a legal parent, stop using this tool and find a lawyer to help you. {MLH_GUIDE_FULL}
+---
+id: pregnancy answer info
+continue button field: continue_answer_pregnancy
+question: It's important to let the judge know about preganancy
+subquestion: |
+  Important! If you or your spouse is pregnant, it is important to say so in your Answer. If your spouse already stated this in their complaint, then you can simply agree with their statement in your Answer. Otherwise, you will need to state that you or your spouse is pregnant. All children born or conceived during your marriage must be included in the divorce so that custody, parenting time, and support provisions are made for that child. 
 ---
 generic object: ALIndividual
 if: (users[0].pregnant or other_parties[0].pregnant) and there_are_marital_children

@@ -102,9 +102,13 @@ code: |
   if not complaint_received:
     exit_no_MI_complaint
   complaint_type
-  if not complaint_type_continue:
-    exit_general
-  users[0].pregnant #maybe taking this out
+  if complaint_type == "with_children":
+    if not complaint_check_agree_kids:
+      complaint_with_children_issue_continue
+  else:
+    if complaint_check_have_kids != "no_kids" or users[0].pregnant or other_parties[0].pregnant:
+      complaint_without_children_issue_continue
+  # users[0].pregnant #maybe taking this out
 
   if marriage.have_experienced_domestic_violence:
     if not marriage.have_experienced_domestic_violence_continue:
