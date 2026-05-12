@@ -5004,7 +5004,7 @@ subquestion: |
   ${collapse_template(users[0].pregnant_explanation_template)}
   % if tool_ID == "divorce_answer":
   ${collapse_template(nonbio_pregnancy)}
-  ${collapse_template(ART_preganancy)}
+  ${collapse_template(ART_pregnancy)}
   % endif
 fields:
   - label: Are you pregnant?
@@ -5046,7 +5046,7 @@ content: |
 ---
 id: pregnancy answer info
 continue button field: continue_answer_pregnancy
-question: It's important to let the judge know about preganancy
+question: It's important to let the judge know about pregnancy
 subquestion: |
   Important! If you or your spouse is pregnant, it is important to say so in your Answer. If your spouse already stated this in their complaint, then you can simply agree with their statement in your Answer. Otherwise, you will need to state that you or your spouse is pregnant. All children born or conceived during your marriage must be included in the divorce so that custody, parenting time, and support provisions are made for that child. 
 ---

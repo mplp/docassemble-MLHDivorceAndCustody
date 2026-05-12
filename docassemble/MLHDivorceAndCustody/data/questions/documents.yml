@@ -14,7 +14,7 @@ objects:
 ---
 if: tool_ID == "divorce_answer"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, uniform_spousal_support_order_foc10b, UCCJEA_affidavit_mc416_full, proof_of_service], filename="Michigan Divorce Answer --all forms", title="All forms and instructions", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, counterclaim_410_full, counterclaim_411_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, uniform_spousal_support_order_foc10b, UCCJEA_affidavit_mc416_full, proof_of_service], filename="Michigan Divorce Answer --all forms", title="All forms and instructions", enabled=True)
   #- al_court_bundle: ALDocumentBundle.using(elements=[], filename="Michigan Divorce Answer --all forms", title="All forms and instructions", enabled=True)
 ---
 # ====================================================================
@@ -551,6 +551,268 @@ attachment:
   skip undefined: True
   valid formats:
     - pdf
+---
+# --------------------------------------------------------------------
+## Counterclaim for Divorce, CC 410/411 and Attachments
+# --------------------------------------------------------------------
+---
+objects:
+    - counterclaim_410_full: ALDocumentBundle.using(elements=[counterclaim_for_divorce_no_children_cc_410, complaint_answer_attachment], filename="Counterclaim for Divorce - CC 410", title="Counterclaim for Divorce - CC 410")
+    - counterclaim_411_full: ALDocumentBundle.using(elements=[counterclaim_for_divorce_with_children_cc_411, complaint_answer_attachment], filename="Counterclaim for Divorce - CC 411", title="Counterclaim for Divorce - CC 411")
+---
+code: |
+    counterclaim_410_full.enabled = tool_ID in ["divorce_answer"] and (not there_are_marital_children)
+    if counterclaim_410_full.enabled:
+        counterclaim_for_divorce_no_children_cc_410.enabled = create_counterclaim and user_wants_post_divorce_support
+        complaint_answer_attachment.enabled = user_wants_post_divorce_support
+---
+code: |
+    counterclaim_411_full.enabled = tool_ID in ["divorce_answer"] and there_are_marital_children
+    if counterclaim_411_full.enabled:
+        counterclaim_for_divorce_with_children_cc_411.enabled = create_counterclaim and (user_wants_post_divorce_support or ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom"))
+        complaint_answer_attachment.enabled = user_wants_post_divorce_support or ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom")
+---
+# --------------------------------------------------------------------
+## Counterclaim for Divorce, CC 410
+# --------------------------------------------------------------------
+---
+objects:
+  - counterclaim_for_divorce_no_children_cc_410: ALDocument.using(title="Counterclaim for Divorce - CC 410", filename="Counterclaim for Divorce - CC 410", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
+attachment:
+  - name: Counterclaim for Divorce - CC 410
+    filename: Counterclaim for Divorce - CC 410
+    variable name: counterclaim_for_divorce_no_children_cc_410[i]
+    pdf template file: counterclaim_for_divorce_no_children_cc_410.pdf
+    skip undefined: False
+    editable: False
+    fields:
+      - trial_court: ${ the_court.number }
+      - trial_court_county: ${ the_court.address.county.upper() }
+      - case_number: ${ docket_number }
+      - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+      - trial_court_phone_number: ${ the_court.phone }
+      - plaintiff: ${ other_parties[0].name_full() }
+      - defendant: ${ users[0].name_full() }
+      - plaintiff_previous_name: |
+          % if other_parties[0].has_previous_name:
+          ${ other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name }
+          % else:
+          ${ other_parties[0].name_full() }
+          % endif
+      - defendant_previous_name: |
+          % if users[0].has_previous_name:
+          ${ users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name }
+          % else:
+          ${ users[0].name_full() }
+          % endif
+      - marriage_date: ${ marriage.date }
+      - marriage_location: |
+          ${ marriage.address.city + ", " + (marriage.address.county + " County, " if marriage.address.country == "US" and hasattr(marriage.address, "county") and marriage.address.county else "") + (state_name(marriage.address.state) if marriage.address.country == "US" else country_name(marriage.address.country)) }
+      - parties_separated: ${ not marriage.living_together_yn }
+      - separation_date: ${ marriage.living_together_stopped_date if not marriage.living_together_yn else "" }
+      - parties_live_together: ${ marriage.living_together_yn }
+      - plaintiff_pregnant: ${ other_parties[0].pregnant }
+      - defendant_pregnant: ${ users[0].pregnant }
+      - no_party_pregnant: ${ (not other_parties[0].pregnant) and (not users[0].pregnant) }
+      - no_marriage_debts_or_property: #Emily to fill
+      - marriage_debts_or_property_equitable: #Emily to fill
+      - marriage_debts_or_property_agreement: #Emily to fill
+      - no_spousal_support_needed: ${ not user_wants_post_divorce_support }
+      - spousal_support_needed: ${ user_wants_post_divorce_support }
+      - request_equitable_division: #Emily to fill
+      - request_last_name_change: ${ users[0].new_last_name_yn }
+      - new_last_name: ${ users[0].new_last_name }
+      - signature_date: ${ signature_date if MLH_esign and MLH_esign_supported else "" }
+      - defendant_signature: |
+          % if MLH_esign:
+          /s/ ${ users[0].name_full() }
+          % else:
+          ${ '' }
+          % endif
+      - pursuant_to: |
+          % if MLH_esign:
+          ${ MLH_esign_tag }
+          % else:
+          ${ '' }
+          % endif
+---
+# --------------------------------------------------------------------
+## Counterclaim for Divorce, CC 411
+# --------------------------------------------------------------------
+---
+objects:
+  - counterclaim_for_divorce_with_children_cc_411: ALDocument.using(title="Counterclaim for Divorce - CC 411", filename="Counterclaim for Divorce - CC 411", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
+attachment:
+  - name: Counterclaim for Divorce - CC 411
+    filename: Counterclaim for Divorce - CC 411
+    variable name: counterclaim_for_divorce_with_children_cc_411[i]
+    pdf template file: counterclaim_for_divorce_with_children_cc_411.pdf
+    skip undefined: False
+    editable: False
+    fields:
+      - trial_court: ${ the_court.number }
+      - trial_court_county: ${ the_court.address.county.upper() }
+      - case_number__1: ${ docket_number }
+      - case_number__2: ${ docket_number }
+      - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+      - trial_court_phone_number: ${ the_court.phone }
+      - plaintiff: ${ other_parties[0].name_full() }
+      - defendant: ${ users[0].name_full() }
+      - plaintiff_previous_name: |
+          % if other_parties[0].has_previous_name:
+          ${ other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name }
+          % else:
+          ${ other_parties[0].name_full() }
+          % endif
+      - defendant_previous_name: |
+          % if users[0].has_previous_name:
+          ${ users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name }
+          % else:
+          ${ users[0].name_full() }
+          % endif
+      - marriage_date: ${ marriage.date }
+      - marriage_location: |
+          ${ marriage.address.city + ", " + (marriage.address.county + " County, " if marriage.address.country == "US" and hasattr(marriage.address, "county") and marriage.address.county else "") + (state_name(marriage.address.state) if marriage.address.country == "US" else country_name(marriage.address.country)) }
+      - parties_separated: ${ not marriage.living_together_yn }
+      - separation_date: ${ marriage.living_together_stopped_date if not marriage.living_together_yn else "" }
+      - parties_live_together: ${ marriage.living_together_yn }
+      - plaintiff_pregnant: ${ other_parties[0].pregnant }
+      - defendant_pregnant: ${ users[0].pregnant }
+      - no_party_pregnant: ${ (not other_parties[0].pregnant) and (not users[0].pregnant) }
+      - marital_children_names_ages: |
+          ${ comma_and_list([child.name.full() + ", age " + str(child.age_in_years()) for child in children if child.legal_parent == "both"]) + "." if any(child.legal_parent == "both" for child in children) else "" }
+          ${ "I intend to file a Motion to Determine Child Born Out of Wedlock with regard to " + comma_and_list([child.name.full() for child in children if child.legal_parent == "both" and child.revoke_paternity_reminder]) + "." if any(child.legal_parent == "both" and child.revoke_paternity_reminder for child in children) else "" }
+      - parties_with_legal_custody__1: |
+          % if legal_custody_who == "other_party":
+          Plaintiff
+          % elif legal_custody_who == "user":
+          Defendant
+          % elif legal_custody_who == "both":
+          Both Parties
+          % endif
+      - parties_with_legal_custody__2: |
+          % if legal_custody_who == "other_party":
+          Plaintiff
+          % elif legal_custody_who == "user":
+          Defendant
+          % elif legal_custody_who == "both":
+          both parties
+          % endif
+      - legal_custody_type__1: |
+          % if legal_custody_who == "both":
+          joint
+          % else:
+          sole
+          % endif
+      - parties_with_physical_custody__1: |
+          % if physical_custody_who == "other_party":
+          Plaintiff
+          % elif physical_custody_who == "user":
+          Defendant
+          % elif physical_custody_who == "both":
+          Both parties
+          % endif
+      - parties_with_physical_custody__2: |
+          % if physical_custody_who == "other_party":
+          Plaintiff
+          % elif physical_custody_who == "user":
+          Defendant
+          % elif physical_custody_who == "both":
+          both parties
+          % endif
+      - physical_custody_type__1: |
+          % if physical_custody_who == "both":
+          joint
+          % else:
+          sole
+          % endif
+      - parties_with_parenting_time: |
+          % if physical_custody_who == "both" or PT_who == "both":
+          both parties
+          % elif PT_who == "other_party":
+          Plaintiff
+          % elif PT_who == "user":
+          Defendant
+          % endif
+      - parenting_time_request: |
+          % if physical_custody_who != "both":
+          % if PT_who == "other_party":
+          Defendant will not have parenting time.
+          % elif PT_who == "user":
+          Plaintiff will not have parenting time.
+          % endif
+          % endif
+          % if physical_custody_who == "both" or PT_who == "both":
+          % if PT_type == "reasonable":
+          Reasonable parenting time on dates and times agreed to by the parties.
+          % elif PT_type == "specific":
+          % if specific_PT_how == "custom":
+          See Attachment to Divorce Complaint.
+          % elif specific_PT_how == "FOC_sample":
+          Parenting time according to the ${ county_choice } County Friend of the Court parenting time schedule.
+          % endif
+          % elif PT_type == "supervised":
+          % if specific_PT_how == "custom":
+          See Attachment to Divorce Complaint.
+          % elif specific_PT_how == "FOC_sample":
+          % if PT_supervisor != "":
+          Parenting time supervised by ${ PT_supervisor }.
+          % endif
+          Parenting time according to the ${ county_choice } County Friend of the Court parenting time schedule.
+          % endif
+          % endif
+          % endif
+      - parties_with_legal_custody__3: |
+          % if legal_custody_who == "other_party":
+          Plaintiff
+          % elif legal_custody_who == "user":
+          Defendant
+          % elif legal_custody_who == "both":
+          Both parties
+          % endif
+      - legal_custody_type__2: |
+          % if legal_custody_who == "both":
+          joint
+          % else:
+          sole
+          % endif
+      - parties_with_physical_custody__3: |
+          % if physical_custody_who == "other_party":
+          Plaintiff
+          % elif physical_custody_who == "user":
+          Defendant
+          % elif physical_custody_who == "both":
+          Both parties
+          % endif
+      - physical_custody_type__2: |
+          % if physical_custody_who == "both":
+          joint
+          % else:
+          sole
+          % endif
+      - no_marriage_debts_or_property: #Emily to fill
+      - marriage_debts_or_property_equitable: #Emily to fill
+      - marriage_debts_or_property_agreement: #Emily to fill
+      - no_spousal_support_needed: ${ not user_wants_post_divorce_support }
+      - spousal_support_needed: ${ user_wants_post_divorce_support }
+      - request_equitable_division: #Emily to fill
+      - request_last_name_change: ${ users[0].new_last_name_yn }
+      - new_last_name: ${ users[0].new_last_name }
+      - signature_date: ${ signature_date if MLH_esign and MLH_esign_supported else "" }
+      - defendant_signature: |
+          % if MLH_esign:
+          /s/ ${ users[0].name_full() }
+          % else:
+          ${ '' }
+          % endif
+      - pursuant_to: |
+          % if MLH_esign:
+          ${ MLH_esign_tag }
+          % else:
+          ${ '' }
+          % endif
 ---
 # --------------------------------------------------------------------
 ## Confidential Case Inventory, MC 21
