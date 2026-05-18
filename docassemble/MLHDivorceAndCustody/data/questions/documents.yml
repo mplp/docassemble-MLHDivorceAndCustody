@@ -561,15 +561,15 @@ objects:
     - counterclaim_411_full: ALDocumentBundle.using(elements=[counterclaim_for_divorce_with_children_cc_411, complaint_answer_attachment], filename="Counterclaim for Divorce - CC 411", title="Counterclaim for Divorce - CC 411")
 ---
 code: |
-    counterclaim_410_full.enabled = tool_ID in ["divorce_answer"] and (not there_are_marital_children)
+    counterclaim_410_full.enabled = tool_ID in ["divorce_answer"] and complaint_type == "no_children" and create_counterclaim
     if counterclaim_410_full.enabled:
-        counterclaim_for_divorce_no_children_cc_410.enabled = create_counterclaim and user_wants_post_divorce_support
+        counterclaim_for_divorce_no_children_cc_410.enabled = True
         complaint_answer_attachment.enabled = user_wants_post_divorce_support
 ---
 code: |
-    counterclaim_411_full.enabled = tool_ID in ["divorce_answer"] and there_are_marital_children
+    counterclaim_411_full.enabled = tool_ID in ["divorce_answer"] and complaint_type == "with_children" and create_counterclaim
     if counterclaim_411_full.enabled:
-        counterclaim_for_divorce_with_children_cc_411.enabled = create_counterclaim and (user_wants_post_divorce_support or ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom"))
+        counterclaim_for_divorce_with_children_cc_411.enabled = True
         complaint_answer_attachment.enabled = user_wants_post_divorce_support or ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom")
 ---
 # --------------------------------------------------------------------
@@ -584,7 +584,7 @@ attachment:
     filename: Counterclaim for Divorce - CC 410
     variable name: counterclaim_for_divorce_no_children_cc_410[i]
     pdf template file: counterclaim_for_divorce_no_children_cc_410.pdf
-    skip undefined: False
+    skip undefined: True
     editable: False
     fields:
       - trial_court: ${ the_court.number }
@@ -649,7 +649,7 @@ attachment:
     filename: Counterclaim for Divorce - CC 411
     variable name: counterclaim_for_divorce_with_children_cc_411[i]
     pdf template file: counterclaim_for_divorce_with_children_cc_411.pdf
-    skip undefined: False
+    skip undefined: True
     editable: False
     fields:
       - trial_court: ${ the_court.number }

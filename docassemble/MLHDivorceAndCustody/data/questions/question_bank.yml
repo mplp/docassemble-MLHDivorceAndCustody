@@ -5042,7 +5042,7 @@ subject: |
 content: |
   Yes. If the pregnancy is the result of a surrogacy agreement, include that information in your Answer if the plaintiff did not include it in their complaint. 
   
-  If the pregnancy is a result of assisted reproduction that does not involve surrogacy **and** you believe that you or your spouse should not be a legal parent, stop using this tool and find a lawyer to help you. {MLH_GUIDE_FULL}
+  If the pregnancy is a result of assisted reproduction that does not involve surrogacy **and** you believe that you or your spouse should not be a legal parent, stop using this tool and find a lawyer to help you. ${MLH_GUIDE_FULL}
 ---
 id: pregnancy answer info
 continue button field: continue_answer_pregnancy
