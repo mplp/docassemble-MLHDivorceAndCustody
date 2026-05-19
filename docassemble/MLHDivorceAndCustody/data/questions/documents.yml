@@ -14,7 +14,7 @@ objects:
 ---
 if: tool_ID == "divorce_answer"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, counterclaim_410_full, counterclaim_411_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, uniform_spousal_support_order_foc10b, UCCJEA_affidavit_mc416_full, proof_of_service], filename="Michigan Divorce Answer --all forms", title="All forms and instructions", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, counterclaim_410_full, counterclaim_411_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, UCCJEA_affidavit_mc416_full, proof_of_service], filename="Michigan Divorce Answer --all forms", title="All forms and instructions", enabled=True)
   #- al_court_bundle: ALDocumentBundle.using(elements=[], filename="Michigan Divorce Answer --all forms", title="All forms and instructions", enabled=True)
 ---
 # ====================================================================
@@ -749,13 +749,13 @@ attachment:
           Reasonable parenting time on dates and times agreed to by the parties.
           % elif PT_type == "specific":
           % if specific_PT_how == "custom":
-          See Attachment to Divorce Complaint.
+          See Attachment to Counterclaim for Divorce.
           % elif specific_PT_how == "FOC_sample":
           Parenting time according to the ${ county_choice } County Friend of the Court parenting time schedule.
           % endif
           % elif PT_type == "supervised":
           % if specific_PT_how == "custom":
-          See Attachment to Divorce Complaint.
+          See Attachment to Counterclaim for Divorce.
           % elif specific_PT_how == "FOC_sample":
           % if PT_supervisor != "":
           Parenting time supervised by ${ PT_supervisor }.

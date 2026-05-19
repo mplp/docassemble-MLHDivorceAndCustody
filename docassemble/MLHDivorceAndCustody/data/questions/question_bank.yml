@@ -2988,8 +2988,9 @@ code: |
   
   if user_wants_post_divorce_support:
     if continue_with_spousal_support_request:
-      if spousal_support_provisions == "OP_agrees_to_pay_spousal_support":
-        spousal_support_is_immutable
+      if tool_ID != "divorce_answer":
+        if spousal_support_provisions == "OP_agrees_to_pay_spousal_support":
+          spousal_support_is_immutable
       if tool_ID in ["divorce_complaint", "divorce_answer"]:
         spousal_support_factors_intro
         ss_factor_one_division_labor
@@ -3009,7 +3010,7 @@ code: |
     else:
       exit_general
 
-  elif not user_wants_post_divorce_support:
+  elif tool_ID != "divorce_answer" and not user_wants_post_divorce_support:
     if spousal_support_provisions == "user_agrees_to_pay_spousal_support":
       spousal_support_is_immutable
   
