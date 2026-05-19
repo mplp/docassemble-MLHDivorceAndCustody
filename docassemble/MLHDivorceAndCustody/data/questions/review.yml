@@ -1326,7 +1326,9 @@ review:
         ${"-- " + case.address}
         % endif
         % endif
+        % if tool_ID in ["divorce_complaint", "custody_complaint"]:
         - Judge ${case.judge}
+        % endif
         % if case.type == "other":
         case.type_description
         % endif
@@ -1339,11 +1341,11 @@ review:
         - Included custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
         % if case.included_custody_PT_order:
         - Date of custody/PT order: ${case.custody_PT_order_date}
-        % if case.type == "separate_maintenance" and case.status == "ended_with_order":
+        % if tool_ID != "divorce_answer" and case.type == "separate_maintenance" and case.status == "ended_with_order":
         - Custody/parenting time order currently in effect? **${word(yesno(case.has_current_custody_PT_order))}**
         % endif
         % endif
-        % if case.type == "separate_maintenance" and case.status == "ended_with_order":
+        % if tool_ID != "divorce_answer" and case.type == "separate_maintenance" and case.status == "ended_with_order":
         - Child support order currently in effect? **${word(yesno(case.has_child_support_order))}**
         % endif
         % endif    
@@ -1354,12 +1356,16 @@ review:
         % if case.status in ["ended_with_order", "stayed", "pending"]:
         - Included custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
         % if case.included_custody_PT_order:
+        % if tool_ID != "divorce_answer":
         - Custody/parenting time order currently in effect? **${word(yesno(case.has_current_custody_PT_order))}**
+        % endif
         % if case.status in ["stayed", "pending"]:
         - Date of custody/PT order: ${case.custody_PT_order_date}
         % endif
         % endif
+        % if tool_ID != "divorce_answer":
         - Child support order currently in effect? **${word(yesno(case.has_child_support_order))}**
+        % endif
         % elif case.status == "dismissed":
         - Custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
         - Date of custody/PT order: ${case.custody_PT_order_date}

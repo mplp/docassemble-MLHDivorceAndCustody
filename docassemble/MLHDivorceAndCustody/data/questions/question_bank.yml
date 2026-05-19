@@ -5105,9 +5105,8 @@ columns:
   - County: row_item.county
 edit:
   - status
-  - involved_custody_pt_support
-  - separate_maintenance_pending_kickout
   - included_custody_PT_order  
+  - separate_maintenance_pending_kickout
 delete buttons: True
 confirm: True
 ---
@@ -5284,10 +5283,14 @@ code: |
       if prior_family_cases[i].type == "separate_maintenance":
         if prior_family_cases[i].status in ["ended_with_order", "dismissed"]:
           prior_family_cases[i].involved_custody_pt_support
-          if prior_family_cases[i].status == "ended_with_order":
+          if tool_ID == "divorce_complaint" and prior_family_cases[i].status == "ended_with_order":
             prior_family_cases[i].convert_separate_maintenance_notice
         elif prior_family_cases[i].status in ["pending", "stayed"]:
-          prior_family_cases[i].separate_maintenance_pending_kickout
+          if tool_ID == "divorce_complaint":
+            prior_family_cases[i].separate_maintenance_pending_kickout
+          elif tool_ID == "divorce_answer":
+            prior_family_cases[i].involved_custody_pt_support
+            prior_family_cases[i].report_separate_maintenance_notice
   
       elif prior_family_cases[i].type != "separate_maintenance":
         prior_family_cases[i].included_custody_PT_order
@@ -5458,18 +5461,20 @@ fields:
 validation code: |
   prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
 ---
+sets: prior_family_cases[i].included_custody_PT_order
 id: prior family separate maintenance case additional info
-if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].status in ["ended_with_order", "dismissed"]
+if: there_are_marital_children and prior_family_cases[i].type == "separate_maintenance" and (tool_ID == "divorce_answer" or (tool_ID == "divorce_complaint" and prior_family_cases[i].status in ["ended_with_order", "dismissed"]))
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }", the Separate Maintenance case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
-  - Did the separate maintenance case involve custody, parenting time, or child support?: prior_family_cases[i].involved_custody_pt_support
+  - label: ${word("Did") if prior_family_cases[i].status in ["dismissed", "ended_with_order"] else word ("Does")} the separate maintenance case involve custody, parenting time, or child support?
+    field: prior_family_cases[i].involved_custody_pt_support
     datatype: yesnoradio
   - Was a **custody or parenting time** *order* entered?: prior_family_cases[i].included_custody_PT_order
     datatype: yesnoradio
     js show if: |
-      ${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true
+      ${ "true" if prior_family_cases[i].status != "dismissed" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true
   - Was a temporary custody or parenting time order entered in that case when the case was pending?: prior_family_cases[i].included_custody_PT_order
     datatype: yesnoradio
     js show if: |
@@ -5479,19 +5484,24 @@ fields:
     max: |
      ${ today() }
     js show if: |
-      (${ "true" if prior_family_cases[i].status == "dismissed" else "false" } || (${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true)) && val("prior_family_cases[i].included_custody_PT_order") === true
+      val("prior_family_cases[i].involved_custody_pt_support") === true && val("prior_family_cases[i].included_custody_PT_order") === true
   - Is the custody or parenting time order **currently in effect?**: prior_family_cases[i].has_current_custody_PT_order
     datatype: yesnoradio
     js show if: |
-      ${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true && val("prior_family_cases[i].included_custody_PT_order") === true
+      ${ "true" if tool_ID != "divorce_answer" and prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true && val("prior_family_cases[i].included_custody_PT_order") === true
   - Is there a **child support** order in this case that is **currently in effect?**: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
     js show if: |
-      ${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true
+      ${ "true" if tool_ID != "divorce_answer" and prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true
 validation code: |
   prior_family_cases[i].add_to_MC416_4 = True if prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order else False
+  
+  if not prior_family_cases[i].involved_custody_pt_support:
+    prior_family_cases[i].included_custody_PT_order = False 
+# 2nd validation code (and "sets" modifier above) is here so that on the table/revisit screen, we can just call included_custody_PT_order rather than needing to call both included and involved and potentially triggering this screen twice
 ---
 id: separate maintenance conversion notice
+if: tool_ID == "divorce_complaint"
 continue button field: prior_family_cases[i].convert_separate_maintenance_notice
 question: You **might** be able to convert your separate maintenance to a divorce instead of filing a new divorce
 subquestion: |
@@ -5504,7 +5514,7 @@ subquestion: |
   * call the clerk's office of the court where you had the separate maintenance case, or 
   * talk to a lawyer. 
 ---
-if: there_are_marital_children and prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].status in ["pending", "stayed"]
+if: tool_ID == "divorce_complaint" and there_are_marital_children and prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].status in ["pending", "stayed"]
 id: separate maintenance pending kickout
 event: prior_family_cases[i].separate_maintenance_pending_kickout
 question: Sorry, this tool cannot help you.
@@ -5515,6 +5525,18 @@ subquestion: |
   * If you are the "defendant" (if your spouse originally filed) in the separate maintenance case, you need to file a counterclaim for divorce in your separate maintenance case. 
   
   You may want to contact a lawyer for help. ${ MLH_GUIDE_FULL }
+---
+id: separate maintenance divorce answer notice
+if: tool_ID == "divorce_answer" and prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].status in ["pending", "stayed"]
+continue button field: prior_family_cases[i].report_separate_maintenance_notice
+question: Add information about the separate maintenance case to your Answer
+subquestion: |
+  You said there is currently an open separate maintenance case with your spouse. You should let the judge know about this case by mentioning it in your Answer. To do this:
+
+  1. Tap ${ action_button_html(url_action('review_full'), label='✎ Review / Edit', color='info') }
+  2. Tap the section called "Your Response to the Divorce Complaint".
+  3. Tap the **Edit** button next to "Your Other Statements".
+  4. Add information about the separate maintenance case.
 ---
 # LHI "Prior Family Cases DLG" (start at row 132)
 id: other prior family case or order additional info (completed case)
@@ -5532,11 +5554,11 @@ fields:
   - Is the custody or parenting time order **currently in effect?**: prior_family_cases[i].has_current_custody_PT_order
     datatype: yesnoradio
     js show if: |
-      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && val("prior_family_cases[i].included_custody_PT_order") === true
+      ${ "true" if tool_ID in ["divorce_complaint", "custody_complaint"] else "false" } && val("prior_family_cases[i].included_custody_PT_order") === true
   - Is there a **child support** order from this case that is **currently in effect?**: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
     show if: 
-      code: tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] 
+      code: tool_ID in ["divorce_complaint", "custody_complaint"] 
 validation code: |
   if prior_family_cases[i].type in ["paternity", "custody", "guardianship"]: 
     prior_family_cases[i].add_to_MC416_4 = True
@@ -5555,7 +5577,7 @@ fields:
   - Is the custody or parenting time order **currently in effect?**: prior_family_cases[i].has_current_custody_PT_order
     datatype: yesnoradio
     js show if: |
-      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && val("prior_family_cases[i].included_custody_PT_order") === true
+      ${ "true" if tool_ID in ["divorce_complaint", "custody_complaint"] else "false" } && val("prior_family_cases[i].included_custody_PT_order") === true
   - Date of the custody or parenting time order:: prior_family_cases[i].custody_PT_order_date
     datatype: ThreePartsDate
     max: |
@@ -5565,7 +5587,7 @@ fields:
   - Is there a **child support** order in this case that is **currently in effect?**: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
     show if: 
-      code: tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] 
+      code: tool_ID in ["divorce_complaint", "custody_complaint"] 
 validation code: |
   prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
 ---
