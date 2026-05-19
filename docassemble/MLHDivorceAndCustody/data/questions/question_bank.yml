@@ -2618,6 +2618,8 @@ validation code: |
 id: other_statements
 question: |
   Other Statements Related to Case  
+subquestion: |
+  ${collapse_template(other_statements_help)}
 fields:
   - label: Are there any other statements related to your divorce case that you want to include in your answer?
     field: other_statements_any
@@ -2627,6 +2629,16 @@ fields:
     input type: area
     rows: 10
     show if: other_statements_any
+---
+template: other_statements_help
+subject: "What kind of other statements should go here?"
+content: |
+  This area is just for technical or procedural issues. Some examples of these types of issues are:
+  
+  * You were not properly served with the divorce complaint or other forms.
+  * There is another divorce or separate maintenance case between you and your spouse already in progress.
+  
+  This is **not** a place to make arguments about what you think should happen in the divorce.
 ---
 # --------------------------------------------------------------------
 ## marriage.temporary_order
@@ -7001,13 +7013,23 @@ subquestion: |
 
   * **change your last name** as part of the divorce
   * ask for **spousal support**
-  * ask the court to **address any other issue** or order something that your spouse did not request in their Complaint for Divorce
   * make sure the divorce case **can be finished** if your spouse stops participating. 
 
   ${collapse_template(no_counterclaim_exp)}
+  ${collapse_template(cobra_counterclaim)}
 fields: 
   - Do you want to create a counterclaim for divorce?: create_counterclaim
     datatype: yesnoradio
+---
+template: cobra_counterclaim
+subject: |
+  What if I want to ask for my spouse to pay for my health insurance (COBRA coverage) after the divorce?
+content: |
+  Another reason to file a counterclaim is if you want your spouse to pay for your health insurance after the divorce under COBRA. 
+  
+  COBRA is a law that provides a way to temporarily continue group health coverage under your spouse's plan after divorce. Typically, the spouse who gets continuing health insurance through COBRA pays for it. Insurance through COBRA often costs more than when that person was covered as a spouse. 
+  
+  In some circumstances a judge may order one spouse to pay for the **other** spouse's COBRA coverage after the divorce. However, **our counterclaim form does not include this type of request.** If you want to ask for this, find a lawyer to help you. ${MLH_GUIDE_FULL}
 ---
 template: no_counterclaim_exp
 subject: |
@@ -7019,5 +7041,4 @@ content: |
 
   * **change your last name** as part of the divorce
   * ask for **spousal support**
-  * ask the court to **address other issues** your spouse did not raise
 ---

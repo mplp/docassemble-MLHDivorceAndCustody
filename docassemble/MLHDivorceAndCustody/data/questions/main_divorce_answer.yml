@@ -71,14 +71,15 @@ subquestion: |
   An answer is an official response to your spouse's complaint for divorce. You must file an answer within the time stated on the summons, or a default may be entered against you. A default can make it more difficult for you to participate in your divorce case and ask the judge for the things you want.
   
   ## Counterclaim
-  You should file a counterclaim for divorce if you want to make sure that your divorce goes forward. If you do not file a counterclaim for divorce, and your spouse does something to have the original divorce case dismissed, your divorce case will end. Then, if you still want to get divorced, you will have to start over by filing a new case.
+  You should file a counterclaim for divorce if you want to make sure that your divorce goes forward. If you do not file a counterclaim for divorce, and your spouse does something to have the case dismissed, your divorce case will end. Then, if you still want to get divorced, you will have to start over by filing a new case.
 
   A counterclaim is also needed if you want to:
 
   * **change your last name** as part of the divorce
   * ask for **spousal support**
-  * ask the court to **address any other issue** or order something that your spouse did not request in their Complaint for Divorce
 
+  ${collapse_template(cobra_counterclaim)}
+  
   ## Your choice
   The first part of this tool will ask you questions to create an answer. Then you can choose whether to stop there or continue to create a counterclaim.
 ---
@@ -160,12 +161,9 @@ code: |
   other_statements_any
 
   nav.set_section("signpost_counterclaim")
-  if not create_counterclaim:
-    nav.set_section("signpost_income_etc")
-    marriage.cobra_coverage
-  
+ 
   ### Start counterclaim section ###
-  else:   
+  if create_counterclaim:   
     if marriage.have_pension_retirement:
       if not marriage.pension_retirement_accounts_continue:
         exit_general
@@ -208,12 +206,8 @@ code: |
       nav.set_section("signpost_income_etc")
       users[0].insurance.gather()
       other_parties[0].insurance.gather()
-      if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
-        marriage.cobra_coverage
-
     else:
       nav.set_section("signpost_income_etc")
-      marriage.cobra_coverage
 
     if complaint_type == "with_children" or user_wants_post_divorce_support:
       interview_order_user_employment
