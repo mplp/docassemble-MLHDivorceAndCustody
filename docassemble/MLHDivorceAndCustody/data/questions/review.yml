@@ -1415,13 +1415,21 @@ review:
       - marriage.have_pension_retirement
       - follow up:
         - marriage.pension_retirement_accounts_keep_own
-        - pension_retirement_accounts_keep
+        - marriage.divide_separate_pension
         - marriage.pension_retirement_accounts_continue
     button: |
       <h3 class="h5"> Do you or your spouse have a pension or retirement account?</h3>
         - ${word(yesno(marriage.have_pension_retirement))}
-      % if tool_ID in ["divorce_complaint", "JOD_only"] and marriage.have_pension_retirement:
+      % if marriage.have_pension_retirement:
+      <h3 class="h5"> Were contributions made during the marriage?</h3>
+        - ${word(yesno(marriage.pension_contributions_made))}
+      % endif
+      % if marriage.have_pension_retirement and marriage.pension_contributions_made:
       <h3 class="h5"> Do you each plan to keep your own accounts?</h3>
+        - ${word(yesno(marriage.pension_retirement_accounts_keep_own))}
+      % endif
+      % if tool_ID in ["divorce_complaint", "JOD_only"] and marriage.have_pension_retirement and not marriage.pension_contributions_made:
+      <h3 class="h5"> Do you plan to ask for part of your spouse's separate pension or retirement account?</h3>
         - ${word(yesno(marriage.pension_retirement_accounts_keep_own))}
       % endif
   - Edit:

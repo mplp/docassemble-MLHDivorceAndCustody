@@ -642,8 +642,42 @@ fields:
   - label: Do you or your spouse have a pension or retirement account?
     field: marriage.have_pension_retirement
     datatype: yesnoradio
+  - label: Were any contributions made to a pension or retirement account **during the marriage?**
+    field: marriage.pension_contributions_made
+    datatype: yesnoradio
+    show if: marriage.have_pension_retirement
 ---
-if: marriage.have_pension_retirement
+if: tool_ID in ["divorce_complaint", "JOD_only"] and marriage.have_pension_retirement and not marriage.pension_contributions_made
+id: pensions separate property division question
+question: |
+  Pension and/or retirement accounts
+subquestion: |
+  ${separate_pensions_message}
+fields:
+  - label: Do you plan to ask the judge to award you part of a pension or retirement account that was accumulated before the marriage?
+    field: marriage.divide_separate_pension
+    datatype: yesnoradio
+---
+if: tool_ID == "divorce_answer" and marriage.have_pension_retirement and not marriage.pension_contributions_made
+id: pensions separate property info only
+continue button field: marriage.divide_separate_pension
+question: |
+  Pension and/or retirement accounts
+subquestion: |
+  ${separate_pensions_message}
+---
+template: separate_pensions_message
+content: |
+  If either one of you has a pension or retirement account and contributions were made to it **only before** the marriage, it is considered **separate property.** 
+  
+  Usually the owner of the separate property keeps it in a divorce. But in special circumstances, a judge might divide separate property. If you want the judge to award you some of your spouse's separate property, you have to prove either:
+
+  * The division of marital property is not enough to provide suitable support for you and the children, if any, or
+  * You helped to get the separate property or to increase its value.
+
+  This can be hard to prove. If you want to ask the judge to divide separate property, consider talking to a lawyer. ${MLH_GUIDE_FULL}
+---
+if: marriage.have_pension_retirement and marriage.pension_contributions_made
 id: marriage.pension_retirement_accounts_keep_own
 question: |
   Pension and/or retirement accounts
@@ -657,38 +691,40 @@ fields:
       - label: I want the judge to divide our account(s)
         value: False
 ---
-if: tool_ID in ["divorce_complaint", "JOD_only"] and marriage.have_pension_retirement and marriage.pension_retirement_accounts_keep_own
+if: marriage.have_pension_retirement and marriage.pension_contributions_made and marriage.pension_retirement_accounts_keep_own
 id: pension_retirement_accounts_keep
 question: |
   Pension and/or retirement accounts
 subquestion: |
   You may have a right to part of your spouse's pension or retirement account, and your spouse may have a right to part of yours. This is an important decision that can impact your future. Sometimes it is hard to know the full value of a pension or retirement account, especially if an account includes future benefits. If you don't know all the details of each person's pension and retirement accounts, you may want to consider talking to a lawyer before you decide how you want to divide them.
+
+  % if tool_ID == "divorce_answer":
+  Even if your spouse has a lawyer, you may need to hire your own. Your spouse's lawyer does not represent you and has a duty to do what is best for your spouse. You can continue with the tool and get the forms you need to file an answer to your spouse's divorce complaint and to file a counterclaim for divorce. However, you may want to consider hiring a lawyer to help you finish your case. ${MLH_GUIDE_FULL}
+  % endif
 fields:
-  - label: Do you want to continue with the tool, knowing that you will not get a share of your spouse's pension or retirement account and will not be able to return to court in the future and ask for a change?
+  - label: |
+      % if tool_ID in ["divorce_complaint", "JOD_only"]:
+      Do you want to continue with the tool, knowing that you will not get a share of your spouse's pension or retirement account and will not be able to return to court in the future and ask for a change?
+      % elif tool_ID == "divorce_answer":
+      Do you want to continue?
+      % endif
     field: marriage.pension_retirement_accounts_continue
     datatype: yesnoradio
 ---
-if: tool_ID in ["divorce_complaint", "JOD_only"] and marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own
+if: marriage.have_pension_retirement and marriage.pension_contributions_made and not marriage.pension_retirement_accounts_keep_own
 id: pension_retirement_accounts_divide
 question: |
   Pension and/or retirement accounts
 subquestion: |
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
   **WARNING!** Dividing pensions or retirement accounts is not easy. You will likely need a special order called a QDRO or EDRO that this tool does not provide. You can still use this tool, but the Pension/Retirement Account Addendum to the Judgment of Divorce will be **incomplete.**
   
   You will need to find a lawyer to help you complete the Judgment of Divorce and prepare a QDRO or EDRO. ${MLH_GUIDE_FULL}
-fields:
-  - label: Do you want to continue?
-    field: marriage.pension_retirement_accounts_continue
-    datatype: yesnoradio
----
-if: tool_ID == "divorce_answer" and marriage.have_pension_retirement
-id: divorce answer pension warning
-question: |
-  Pension and/or retirement accounts
-subquestion: |
-  **WARNING!** This tool may not be right for you. Dividing pensions or retirement accounts is not simple. You may need to hire a lawyer to help you ask the judge to divide your pensions or retirement accounts. A lawyer can also draft the special order that is required. 
+  % elif tool_ID == "divorce_answer":
+  **WARNING!** Dividing pensions or retirement accounts is not simple. You may need to hire a lawyer to help you ask the judge to divide your pensions or retirement accounts. A lawyer can also draft the special order that is required. 
   
   Even if your spouse has a lawyer, you may need to hire your own. Your spouse’s lawyer does not represent you and has a duty to do what is best for your spouse. You can continue with the tool and get the forms you need to file an answer to your spouse's divorce complaint and to file a counterclaim for divorce. However, you may want to consider hiring a lawyer to help you finish your case. ${MLH_GUIDE_FULL}
+  % endif
 fields:
   - label: Do you want to continue?
     field: marriage.pension_retirement_accounts_continue
