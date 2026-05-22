@@ -67,21 +67,20 @@ id: divorce answer intro part 2
 question: More about answers and counterclaims
 continue button field: divorce_answer_intro_2
 subquestion: |
+  ## Your choice
+  The first part of this tool will ask you questions to create an *Answer.* Then you can choose whether to stop there or continue to create a *Counterclaim.*
+  
   ## Answer
   An answer is an official response to your spouse's complaint for divorce. You must file an answer within the time stated on the summons, or a default may be entered against you. A default can make it more difficult for you to participate in your divorce case and ask the judge for the things you want.
   
   ## Counterclaim
-  You should file a counterclaim for divorce if you want to make sure that your divorce goes forward. If you do not file a counterclaim for divorce, and your spouse does something to have the case dismissed, your divorce case will end. Then, if you still want to get divorced, you will have to start over by filing a new case.
+  A counterclaim is needed if you want to:
 
-  A counterclaim is also needed if you want to:
-
-  * **change your last name** as part of the divorce
-  * ask for **spousal support**
+  * **change your last name** as part of the divorce,
+  * ask for **spousal support,** or
+  * make sure the divorce case **can be finished** if your spouse stops participating. 
 
   ${collapse_template(cobra_counterclaim)}
-  
-  ## Your choice
-  The first part of this tool will ask you questions to create an answer. Then you can choose whether to stop there or continue to create a counterclaim.
 ---
 # ====================================================================
 ## interview_order
@@ -107,9 +106,10 @@ code: |
     if not complaint_check_agree_kids:
       complaint_with_children_issue_continue
   else:
-    if complaint_check_have_kids != "no_kids" or users[0].pregnant or other_parties[0].pregnant:
+    complaint_check_have_kids
+    users[0].pregnant
+    if complaint_check_have_kids or users[0].pregnant or other_parties[0].pregnant:
       complaint_without_children_issue_continue
-  # users[0].pregnant #maybe taking this out
 
   if marriage.have_experienced_domestic_violence:
     if not marriage.have_experienced_domestic_violence_continue:
@@ -203,6 +203,7 @@ code: |
       interview_order_children
       if not there_are_marital_children:
         exit_no_kids
+      users[0].pregnant  ##### CHECK DO WE NEED THIS OR ARE WE ALWAYS GOING TO ASK ALREADY?
 
       nav.set_section("signpost_prior_cases")
       prior_family_cases.gather()

@@ -375,14 +375,35 @@ fields:
   - Is there any {minor} child who has both you and your spouse as legal parents?: complaint_check_have_kids
     input type: radio
     choices:
-      - Yes, there is at least one child who has us both as legal parents.: have_kids
-      - There is a child I want to continue to parent. But I'm not their legal parent, or I'm not sure if I'm their legal parent.: want_parental_rights
-      - No: no_kids
+      - Yes, there is at least one child who has us both as legal parents.: True
+      - No: False
+  - note: |
+      ${collapse_template(wants_to_parent)}
+      ${collapse_template(unsure_legal_parent)}
 ---
 template: legal_parentage_info
 subject: Situations where you might both be legal parents.
 content: |
   You are both legal parents if any of the following apply:
+
+  *	You or your spouse gave birth to a child before you married, and the non-birthing parent became a legal parent by court order or Affidavit of Parentage. There has not been a court order revoking parentage. 
+  *	During the marriage, you or your spouse gave birth to a child conceived through sexual intercourse. There has **not** been a court order revoking the parentage of the husband or non-birthing spouse. 
+  *	During the marriage, you or your spouse gave birth to a child conceived through assisted reproductive technology (ART). There was no valid surrogacy agreement naming other parents, and no court order determining that one or both spouses are not legal parent(s). 
+  *	You and your spouse adopted a child together.
+  *	During the marriage, one of you adopted a child who was already the other spouse's child before the marriage.
+  *	You and your spouse became parents together through a valid surrogacy agreement.
+---
+template: wants_to_parent
+subject: What if there's a child I want to parent, but I'm not their legal parent or not sure if I am?
+content: |
+  If you are concerned about your ability to be a part of the child's life, talk to a lawyer. ${MLH_GUIDE_FULL}
+---
+template: unsure_legal_parent
+subject: What if I'm not sure if I'm a legal parent of a child with my spouse?
+content: |
+  If you're not sure you may want to talk to a lawyer. ${MLH_GUIDE_FULL}
+  
+  Answer yes, if any of these apply to you:
 
   *	You or your spouse gave birth to a child before you married, and the non-birthing parent became a legal parent by court order or Affidavit of Parentage. There has not been a court order revoking parentage. 
   *	During the marriage, you or your spouse gave birth to a child conceived through sexual intercourse. There has **not** been a court order revoking the parentage of the husband or non-birthing spouse. 
@@ -412,11 +433,24 @@ id: complaint no children continue information
 question: Complaint without children
 continue button field: complaint_without_children_issue_continue
 subquestion: |
-  You said your spouse filed a complaint for divorce **without children,** but there is a child or one of you is pregnant.
+  You said your spouse filed a complaint for divorce **without children,** but 
+  % if (users[0].pregnant or other_parties[0].pregnant) and complaint_check_have_kids:
+  there is a child and you or your spouse are pregnant.
+  % elif users[0].pregnant or other_parties[0].pregnant:
+  you or your spouse are pregnant.
+  % elif complaint_check_have_kids:
+  there is a child.
+  % endif
+  The case should have been filed as a divorce **with** minor children.
   
-  When you enter your answers to your spouse's Complaint for Divorce later in this tool **explain about the minor child or pregnancy.** 
-  
-  You may need to find a lawyer if you need help with this. ${MLH_GUIDE_FULL}
+  When you enter your answers to your spouse's Complaint for Divorce later in this tool **explain about the**
+  % if (users[0].pregnant or other_parties[0].pregnant) and complaint_check_have_kids:
+  **minor child and pregnancy.** 
+  % elif users[0].pregnant or other_parties[0].pregnant:
+  **pregnancy.** 
+  % elif complaint_check_have_kids:
+  **minor child.** 
+  % endif
 ---
 if: tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and returning_to_finalize)
 id: case already filed jurisdiction check
@@ -5056,13 +5090,18 @@ subquestion: |
   ${collapse_template(ART_pregnancy)}
   % endif
 fields:
-  - label: Are you pregnant?
+  - label: To the best of your knowledge, are you pregnant?
     field: users[0].pregnant
     datatype: yesnoradio
-  - label: Is your spouse pregnant?
-    help: If you're not sure, answer as best you can. If you have no reason to think your spouse is pregnant, you can say "No".
+  - label: To the best of your knowledge, is your spouse pregnant?
     field: other_parties[0].pregnant
     datatype: yesnoradio
+  - note: |
+      ${collapse_template(not_sure_pregnant)}
+---
+template: not_sure_pregnant
+subject: What if I'm not sure?
+content: If you're not sure, answer as best you can. If you have no reason to think someone is pregnant, you can say "No".
 ---
 generic object: ALIndividual
 template: x.pregnant_explanation_template
@@ -7047,8 +7086,8 @@ subquestion: |
 
   A counterclaim is needed if you want to:
 
-  * **change your last name** as part of the divorce
-  * ask for **spousal support**
+  * **change your last name** as part of the divorce,
+  * ask for **spousal support,** or
   * make sure the divorce case **can be finished** if your spouse stops participating. 
 
   ${collapse_template(no_counterclaim_exp)}
