@@ -179,7 +179,7 @@ code: |
     the_court
     the_foc
     party_lived_6_months_MI
-    if not (party_lived_6_months_MI['user'] and party_ten_days_in_county['user']) and not (party_lived_6_months_MI['other_party'] and party_ten_days_in_county['other_party']):
+    if not (party_lived_6_months_MI.any_true() and party_ten_days_in_county.any_true()):
       jurisdiction_warning
 
   nav.set_section("signpost_support")

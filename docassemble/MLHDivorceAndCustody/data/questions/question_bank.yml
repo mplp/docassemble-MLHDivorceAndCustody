@@ -490,24 +490,22 @@ fields:
 template: jurisdiction_check_help
 subject: Why does this matter?
 content: |
-  At the end of your divorce, you may need to testify (tell the judge under oath) whether you met the legal requirements to get divorced in ${ county_choice } County. 
-  
-  Usually, **either you or your spouse** must have:
+  At the end of your divorce, you may need to testify (tell the judge under oath) whether you met the legal requirements to get divorced in ${ county_choice } County. Usually:
 
-  * lived in Michigan for 180 days before ${word("you") if tool_ID in ["divorce_complaint", "JOD_only"] else word("your spouse")} filed for divorce, **and**
-  * lived in ${ county_choice } County for 10 days before ${word("you") if tool_ID in ["divorce_complaint", "JOD_only"] else word("your spouse")} filed for divorce.
+  * one spouse must have lived in Michigan for 180 days before ${word("you") if tool_ID in ["divorce_complaint", "JOD_only"] else word("your spouse")} filed for divorce, **and**
+  * one spouse must have lived in ${ county_choice } County for 10 days before ${word("you") if tool_ID in ["divorce_complaint", "JOD_only"] else word("your spouse")} filed for divorce.
 
-  The same person must meet both of the requirements.
+  The requirements can be met by different spouses.
 ---
 # used in JOD_only and divorce_complaint tools
 id: jurisdiction warning
 continue button field: jurisdiction_warning
 question: "**Warning!** There may be a jurisdiction issue."
 subquestion: |
-  To get a divorce in ${ county_choice } County, usually **one spouse** must **both**:
+  To get a divorce in ${ county_choice } County, usually:
 
-  * have lived in Michigan for 180 days before you filed for divorce, **and**
-  * have lived in ${ county_choice } County for 10 days before you filed for divorce.
+  * one spouse must have lived in Michigan for 180 days before you filed for divorce, **and**
+  * one spouse must have lived in ${ county_choice } County for 10 days before you filed for divorce.
 
   You said you and your spouse did **not** meet these requirements.
   
@@ -516,10 +514,10 @@ subquestion: |
 id: venue warning
 question: There may be an issue getting divorced in ${county_choice} County
 subquestion: |
-  Your answers indicate that ${county_choice} County may not be the proper venue (filing county) for this divorce case. To get a divorce in ${ county_choice } County, usually **one spouse** must **both**:
+  Your answers indicate that ${county_choice} County may not be the proper venue (filing county) for this divorce case. To get a divorce in ${ county_choice } County, usually:
 
-  * have lived in Michigan for 180 days before your spouse filed for divorce, **and**
-  * have lived in ${ county_choice } County for 10 days before your spouse filed for divorce.
+  * one spouse must have lived in Michigan for 180 days before your spouse filed for divorce, **and**
+  * one spouse must have lived in ${ county_choice } County for 10 days before your spouse filed for divorce.
 
   You said you and your spouse did **not** meet these requirements.
   
@@ -1083,7 +1081,7 @@ fields:
     code: court_list._load_courts()["address_county"].unique()
     show if: users[0].lives_in_Michigan
 ---
-if: tool_ID == "divorce_complaint" and users[0].lives_in_Michigan and users[0].has_lived_6_months_MI
+if: tool_ID == "divorce_complaint" and users[0].lives_in_Michigan
 id: 10-day test user
 question: Time in ${ users[0].address.county } County
 fields:
@@ -1400,7 +1398,7 @@ validation code: |
   if not other_parties[0].lives_in_Michigan and other_parties[0].address.state in ["Michigan", "MI"]:
     validation_error('If your spouse does not live in Michigan, tap "Undo" and update their address.', field="other_parties[0].lives_in_Michigan")  
 ---
-if: tool_ID == "divorce_complaint" and other_parties[0].has_lived_6_months_MI
+if: tool_ID == "divorce_complaint" and other_parties[0].lives_in_Michigan
 id: 10-day test OP
 question: Time in ${ other_parties[0].address.county } County
 fields:
@@ -1577,12 +1575,13 @@ fields:
         len(current_venue_options) == 0
 validation code: |
   # "jurisdiction_party" is used on Testimony page
-  if not (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI):
-    jurisdiction_party = other_parties[0] #OP logically must be the jurisdictional basis
-  elif not (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI):
-    jurisdiction_party = users[0] #user logically must be the jurisdictional basis
+  # it should really now (June/2026) be "venue_party" but leaving alone for back-compatibility
+  if not users[0].lives_in_Michigan:
+    jurisdiction_party = other_parties[0] #OP logically must be the venue basis
+  elif not other_parties[0].lives_in_Michigan:
+    jurisdiction_party = users[0] #user logically must be the venue basis
   
-  elif users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI:
+  elif users[0].lives_in_Michigan and other_parties[0].lives_in_Michigan:
   
     # if parties don't share county, only one party can live in filing county
     if users[0].address.county != other_parties[0].address.county:
@@ -1632,6 +1631,7 @@ fields:
         val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && ${ json.dumps(other_parties[0].ten_days_in_county) } === false 
 validation code: |
   # "jurisdiction_party" is used on Testimony page
+  # it should really now (June/2026) be "venue_party" but leaving alone for back-compatibility
   if county_choice == users[0].address.county:
     jurisdiction_party = users[0]
   elif county_choice == other_parties[0].address.county:
@@ -1699,6 +1699,7 @@ fields:
         val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && ${ json.dumps(users[0].ten_days_in_county) } === false 
 validation code: |
   # "jurisdiction_party" is used on Testimony page
+  # it should really now (June/2026) be "venue_party" but leaving alone for back-compatibility
   if county_choice == users[0].address.county:
     jurisdiction_party = users[0]
   elif county_choice == other_parties[0].address.county:
@@ -1711,11 +1712,11 @@ code: |
   current_venue_options = []
   all_potential_venue_options = []
   
-  if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
+  if users[0].lives_in_Michigan:
     all_potential_venue_options.append(users[0].address.county)
     if users[0].ten_days_in_county:
       current_venue_options.append(users[0].address.county)
-  if other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI:
+  if other_parties[0].lives_in_Michigan:
     if other_parties[0].address.county not in all_potential_venue_options:
       all_potential_venue_options.append(other_parties[0].address.county)
     if other_parties[0].ten_days_in_county and other_parties[0].address.county not in current_venue_options:
@@ -2868,7 +2869,7 @@ code: |
     if continue_confidential_address:
       users[0].address.address
       if tool_ID == "divorce_complaint" and not returning_to_finalize:
-        if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
+        if users[0].lives_in_Michigan:
           users[0].ten_days_in_county
     else:
       exit_general
@@ -2877,7 +2878,7 @@ code: |
     users[0].address.address
     if tool_ID in ["divorce_complaint", "JOD_only"]:
       if tool_ID == "divorce_complaint" and not returning_to_finalize:
-        if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
+        if users[0].lives_in_Michigan:
           users[0].ten_days_in_county
       if users[0].address.country == "US":
         users[0].village_or_township_yn
@@ -2893,8 +2894,8 @@ code: |
 ---
 code: |
   other_parties[0].address.address
-  if tool_ID == "divorce_complaint":
-    if other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI:
+  if tool_ID == "divorce_complaint": #TODO: should this also be "and not returning_to_finalize"?
+    if other_parties[0].lives_in_Michigan:
       other_parties[0].ten_days_in_county
 
   interview_order_other_parties_address_info = True

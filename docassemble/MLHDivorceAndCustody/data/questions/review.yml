@@ -170,10 +170,8 @@ review:
       % if users[0].lives_in_Michigan:
       <h3 class="h5"> Have you lived in Michigan for 180+ days?</h3>
         - ${word(yesno(users[0].has_lived_6_months_MI))}
-      % if users[0].has_lived_6_months_MI:
       <h3 class="h5"> Have you lived in ${users[0].address.county} County for the last 10 days?</h3>
         - ${word(yesno(users[0].ten_days_in_county))}
-      % endif
       % endif
       % endif
   - Edit:
@@ -196,10 +194,8 @@ review:
       % if users[0].lives_in_Michigan:
       <h3 class="h5"> Have you lived in Michigan for 180+ days?</h3>
         - ${word(yesno(users[0].has_lived_6_months_MI))}
-      % if users[0].has_lived_6_months_MI:
       <h3 class="h5"> Have you lived in ${users[0].address.county} County for the last 10 days?</h3>
         - ${word(yesno(users[0].ten_days_in_county))}
-      % endif
       % endif
     show if: confidential_contact_info_yn
   - Edit:
@@ -490,10 +486,8 @@ review:
       % if other_parties[0].lives_in_Michigan:
       <h3 class="h5"> Has your spouse lived in Michigan for 180+ days?</h3>
         - ${word(yesno(other_parties[0].has_lived_6_months_MI))}
-      % if other_parties[0].has_lived_6_months_MI:
       <h3 class="h5"> Has your spouse lived in ${other_parties[0].address.county} County for the last 10 days?</h3>
         - ${word(yesno(other_parties[0].ten_days_in_county))}
-      % endif
       % endif
       % endif
   - Edit:

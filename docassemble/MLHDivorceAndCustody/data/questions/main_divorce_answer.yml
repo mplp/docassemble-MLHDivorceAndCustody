@@ -121,9 +121,9 @@ code: |
   the_foc
   
   party_lived_6_months_MI
-  if not party_lived_6_months_MI['user'] and not party_lived_6_months_MI['other_party']:
+  if not party_lived_6_months_MI.any_true():
     exit_jurisdiction
-  elif not (party_lived_6_months_MI['user'] and party_ten_days_in_county['user']) and not (party_lived_6_months_MI['other_party'] and party_ten_days_in_county['other_party']):
+  elif not party_ten_days_in_county.any_true():
     if not venue_issue_continue:
       exit_general
   
