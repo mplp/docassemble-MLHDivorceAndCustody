@@ -615,12 +615,12 @@ attachment:
       - plaintiff_pregnant: ${ other_parties[0].pregnant }
       - defendant_pregnant: ${ users[0].pregnant }
       - no_party_pregnant: ${ (not other_parties[0].pregnant) and (not users[0].pregnant) }
-      - no_marriage_debts_or_property: #Emily to fill
-      - marriage_debts_or_property_equitable: #Emily to fill
-      - marriage_debts_or_property_agreement: #Emily to fill
+      - no_marriage_debts_or_property: not (marriage.personal_property_acquired or marriage.debts.any)
+      - marriage_debts_or_property_equitable: (marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names)))
+      - marriage_debts_or_property_agreement: (marriage.personal_property_acquired or marriage.debts.any) and not ((marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names))))
       - no_spousal_support_needed: ${ not user_wants_post_divorce_support }
       - spousal_support_needed: ${ user_wants_post_divorce_support }
-      - request_equitable_division: #Emily to fill
+      - request_equitable_division: (marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names)))
       - request_last_name_change: ${ users[0].new_last_name_yn }
       - new_last_name: ${ users[0].new_last_name }
       - signature_date: ${ signature_date if MLH_esign and MLH_esign_supported else "" }
@@ -792,12 +792,12 @@ attachment:
           % else:
           sole
           % endif
-      - no_marriage_debts_or_property: #Emily to fill
-      - marriage_debts_or_property_equitable: #Emily to fill
-      - marriage_debts_or_property_agreement: #Emily to fill
+      - no_marriage_debts_or_property: not (marriage.personal_property_acquired or marriage.debts.any)
+      - marriage_debts_or_property_equitable: (marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names)))
+      - marriage_debts_or_property_agreement: (marriage.personal_property_acquired or marriage.debts.any) and not ((marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names))))
       - no_spousal_support_needed: ${ not user_wants_post_divorce_support }
       - spousal_support_needed: ${ user_wants_post_divorce_support }
-      - request_equitable_division: #Emily to fill
+      - request_equitable_division: (marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names)))
       - request_last_name_change: ${ users[0].new_last_name_yn }
       - new_last_name: ${ users[0].new_last_name }
       - signature_date: ${ signature_date if MLH_esign and MLH_esign_supported else "" }
