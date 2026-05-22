@@ -497,6 +497,51 @@ content: |
 
   The requirements can be met by different spouses.
 ---
+if: tool_ID == "divorce_answer"
+id: divorce counterclaim jurisdiction/venue check
+question: Legal requirements for filing a counterclaim
+subquestion: |
+  ${collapse_template(jurisdiction_check_help_cc)}
+fields:
+  - label: |
+      Who has lived in **Michigan for the last 180 days or more,** since ${ today().minus(days=180) }?
+    field: counterclaim_180_day_test_met
+    datatype: checkboxes
+    choices:
+      - Me: user
+      - My spouse: other_party
+    none of the above: |
+      Neither of us
+  - label: |
+      Who has lived in **${ county_choice } County for the last 10 days or more?**
+    field: counterclaim_10_day_test_met
+    datatype: checkboxes
+    choices:
+      - Me: user
+      - My spouse: other_party
+    none of the above: |
+      Neither of us
+    js show if: |
+      val("counterclaim_180_day_test_met['user']") || val("counterclaim_180_day_test_met['other_party']")
+---
+template: jurisdiction_check_help_cc
+subject: Why does this matter?
+content: |
+  To file a counterclaim, you must meet the legal requirements to start a divorce in ${ county_choice } County:
+
+  * one spouse must have lived in Michigan for 180 days before you file your counterclaim, **and**
+  * one spouse must have lived in ${ county_choice } County for 10 days before you file your counterclaim.
+
+  The requirements can be met by different spouses.
+---
+id: no jurisdiction/venue for counterclaim
+if: not (counterclaim_180_day_test_met.any_true() and counterclaim_10_day_test_met.any_true())
+continue button field: counterclaim_jurisdiction_venue_problem
+question: You cannot file a counterclaim????
+subquestion: |
+  TBD
+  talk to a lawyer if you want to ask for spousal support, change your namet, etc.???
+---
 # used in JOD_only and divorce_complaint tools
 id: jurisdiction warning
 continue button field: jurisdiction_warning

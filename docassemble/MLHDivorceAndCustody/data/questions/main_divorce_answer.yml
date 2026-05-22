@@ -67,9 +67,6 @@ id: divorce answer intro part 2
 question: More about answers and counterclaims
 continue button field: divorce_answer_intro_2
 subquestion: |
-  ## Your choice
-  The first part of this tool will ask you questions to create an *Answer.* Then you can choose whether to stop there or continue to create a *Counterclaim.*
-  
   ## Answer
   An answer is an official response to your spouse's complaint for divorce. You must file an answer within the time stated on the summons, or a default may be entered against you. A default can make it more difficult for you to participate in your divorce case and ask the judge for the things you want.
   
@@ -81,6 +78,9 @@ subquestion: |
   * make sure the divorce case **can be finished** if your spouse stops participating. 
 
   ${collapse_template(cobra_counterclaim)}
+  
+  ## Your choice
+  The first part of this tool will ask you questions to create an *Answer.* Then you can choose whether to stop there or continue to create a *Counterclaim.*
 ---
 # ====================================================================
 ## interview_order
@@ -164,65 +164,70 @@ code: |
  
   ### Start counterclaim section ###
   if create_counterclaim:   
-    if marriage.have_pension_retirement:
-      if marriage.pension_contributions_made:
-        marriage.pension_retirement_accounts_keep_own
-        if not marriage.pension_retirement_accounts_continue:
-          exit_general
-      else:
-        marriage.divide_separate_pension
-
-    if marriage.have_business:
-      if not continue_with_business:
-        exit_general
-
-    if marriage.real_property.there_are_any:
-      if not continue_real_property:
-        exit_general
-
-    if need_temporary_order:
-      if not temporary_order_continue:
-        exit_general
-
-    marriage.date
-    marriage.address.city
-    marriage.living_together_yn
-
-    marriage.personal_property_acquired
-    if marriage.debts.any:
-      marriage.debts.pay_debts_in_own_names
-      marriage.debts.any_in_both_names
-
-    users[0].new_last_name_yn
-
-    nav.set_section("signpost_spousal_support")
-    interview_order_spousal_support
-
-    if complaint_type == "with_children":
-      nav.set_section("signpost_children")
-      interview_order_children
-      if not there_are_marital_children:
-        exit_no_kids
-      users[0].pregnant  ##### CHECK DO WE NEED THIS OR ARE WE ALWAYS GOING TO ASK ALREADY?
-
-      nav.set_section("signpost_prior_cases")
-      prior_family_cases.gather()
+    if not (counterclaim_180_day_test_met.any_true() and counterclaim_10_day_test_met.any_true()):
+      counterclaim_jurisdiction_venue_problem
   
-      nav.set_section("signpost_income_etc")
-      users[0].insurance.gather()
-      other_parties[0].insurance.gather()
     else:
-      nav.set_section("signpost_income_etc")
-
-    if complaint_type == "with_children" or user_wants_post_divorce_support:
-      interview_order_user_employment
-      interview_order_user_income
-      interview_order_user_identifying_info
-      users[0].has_alias
-      interview_order_other_party_employment
-      interview_order_other_party_income
-      interview_order_other_party_identifying_info
-      other_parties[0].has_alias
+  
+      if marriage.have_pension_retirement:
+        if marriage.pension_contributions_made:
+          marriage.pension_retirement_accounts_keep_own
+          if not marriage.pension_retirement_accounts_continue:
+            exit_general
+        else:
+          marriage.divide_separate_pension
+  
+      if marriage.have_business:
+        if not continue_with_business:
+          exit_general
+  
+      if marriage.real_property.there_are_any:
+        if not continue_real_property:
+          exit_general
+  
+      if need_temporary_order:
+        if not temporary_order_continue:
+          exit_general
+  
+      marriage.date
+      marriage.address.city
+      marriage.living_together_yn
+  
+      marriage.personal_property_acquired
+      if marriage.debts.any:
+        marriage.debts.pay_debts_in_own_names
+        marriage.debts.any_in_both_names
+  
+      users[0].new_last_name_yn
+  
+      nav.set_section("signpost_spousal_support")
+      interview_order_spousal_support
+  
+      if complaint_type == "with_children":
+        nav.set_section("signpost_children")
+        interview_order_children
+        if not there_are_marital_children:
+          exit_no_kids
+        users[0].pregnant  ##### CHECK DO WE NEED THIS OR ARE WE ALWAYS GOING TO ASK ALREADY?
+  
+        nav.set_section("signpost_prior_cases")
+        prior_family_cases.gather()
+    
+        nav.set_section("signpost_income_etc")
+        users[0].insurance.gather()
+        other_parties[0].insurance.gather()
+      else:
+        nav.set_section("signpost_income_etc")
+  
+      if complaint_type == "with_children" or user_wants_post_divorce_support:
+        interview_order_user_employment
+        interview_order_user_income
+        interview_order_user_identifying_info
+        users[0].has_alias
+        interview_order_other_party_employment
+        interview_order_other_party_income
+        interview_order_other_party_identifying_info
+        other_parties[0].has_alias
   
   ### End counterclaim section ###
   nav.set_section("signpost_last_section")

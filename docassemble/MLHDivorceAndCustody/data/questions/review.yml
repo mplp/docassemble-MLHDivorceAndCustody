@@ -908,6 +908,14 @@ review:
     button: |
       <h3 class="h5"> Counterclaim</h3>
         - You **${word("do") if create_counterclaim else word("do not")}** want to create a **counterclaim** along with your answer.
+  - Edit:
+      - counterclaim_180_day_test_met
+      - follow up:
+        - counterclaim_jurisdiction_venue_problem
+    button: |
+      <h3 class="h5">Counterclaim residencey tests</h3>
+        - You have ${word("not") if not counterclaim_180_day_test_met['user'] else ""} lived in Michigan for at least 180 days or more. You have ${word("not") if not party_ten_days_in_county['user'] else ""} lived in ${county_choice} County for at least 10 days or more.
+        - Your spouse has ${word("not") if not counterclaim_180_day_test_met['other_party'] else ""} lived in Michigan for at least 180 days or more. Your spouse has ${word("not") if not party_ten_days_in_county['other_party'] else ""} lived in ${county_choice} County for at least 10 days or more.
 #
 # ---------- children and pregnancy ----------
 #
