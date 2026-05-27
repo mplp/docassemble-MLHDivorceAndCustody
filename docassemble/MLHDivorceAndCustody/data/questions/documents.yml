@@ -14,7 +14,7 @@ objects:
 ---
 if: tool_ID == "divorce_answer"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, counterclaim_410_full, counterclaim_411_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, UCCJEA_affidavit_mc416_full, proof_of_service], filename="Michigan Divorce Answer --all forms", title="All forms and instructions", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, answer_to_complaint_for_divorce_cc_409, counterclaim_410_full, counterclaim_411_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, UCCJEA_affidavit_mc416_full, proof_of_service], filename="Michigan Divorce Answer --all forms", title="All forms and instructions", enabled=True)
   #- al_court_bundle: ALDocumentBundle.using(elements=[], filename="Michigan Divorce Answer --all forms", title="All forms and instructions", enabled=True)
 ---
 # ====================================================================
@@ -551,6 +551,23 @@ attachment:
   skip undefined: True
   valid formats:
     - pdf
+---
+# --------------------------------------------------------------------
+## Answer to Divorce Complaint, CC 409
+# --------------------------------------------------------------------
+---
+objects:
+  - answer_to_complaint_for_divorce_cc_409: ALDocument.using(title="Answer to Complaint for Divorce - CC 409", filename="Answer to Complaint for Divorce - CC 409", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
+code: |
+    answer_to_complaint_for_divorce_cc_409.enabled = tool_ID in ["divorce_answer"] 
+---
+attachment:
+  name: Answer to Complaint for Divorce - CC 409
+  filename: Answer to Complaint for Divorce - CC 409
+  variable name: answer_to_complaint_for_divorce_cc_409[i]
+  docx template file: answer_to_complaint_for_divorce_cc_409.docx
+  skip undefined: True
 ---
 # --------------------------------------------------------------------
 ## Counterclaim for Divorce, CC 410/411 and Attachments
