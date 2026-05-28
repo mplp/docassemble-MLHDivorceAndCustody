@@ -278,21 +278,17 @@ action buttons:
 ---
 if: tool_ID == "divorce_answer" and complaint_type == "with_children"
 id: exit_no_kids
-event: exit_no_kids
 question: |
   No marital children
 subquestion: |
-  You did not enter any {marital children}. Your spouse filed this divorce as a divorce with children. If you believe there are no marital children, there may be complications in your case and you should speak with a lawyer. 
+  You did not enter any {marital children}. Your spouse filed this divorce as a divorce with children. 
+  
+  If you and your spouse are the legal parents of a child, use the **Undo** button or the **Review / Edit** link to go back now and add the child or edit your answers. Then you can create your Counterclaim.
 
-  If you and your spouse are the legal parents of a child, use the **Undo** button or the **Review / Edit** link to go back and add that child or edit your answers.
-
-  ${MLH_GUIDE_FULL}
-action buttons:
-  - label: Exit
-    action: https://michiganlegalhelp.org/resources/family
-    new window: True
-    color: danger
-    icon: right-from-bracket
+  If there are no marital children, there may be complications in your case and you should speak with a lawyer. ${MLH_GUIDE_FULL} You can still continue and get your Answer form, but you cannot use this tool to create a Counterclaim. 
+fields:
+ - Do you want to continue to create your Answer form without a Counterclaim?: continue_no_kids_no_cc
+   datatype: yesnoradio
 ---
 # --------------------------------------------------------------------
 ## introduction
@@ -536,11 +532,17 @@ content: |
 ---
 id: no jurisdiction/venue for counterclaim
 if: not (counterclaim_180_day_test_met.any_true() and counterclaim_10_day_test_met.any_true())
-continue button field: counterclaim_jurisdiction_venue_problem
-question: You cannot file a counterclaim????
+question: You cannot file a counterclaim in ${ county_choice } County
 subquestion: |
-  TBD
-  talk to a lawyer if you want to ask for spousal support, change your namet, etc.???
+  To file a counterclaim, you must meet the legal requirements to start a divorce in ${ county_choice } County:
+
+  * one spouse must have lived in Michigan for 180 days before you file your counterclaim, **and**
+  * one spouse must have lived in ${ county_choice } County for 10 days before you file your counterclaim.
+
+  You said you and your spouse do **not** meet these requirements. You can still continue and get your Answer form, but you cannot use this tool to create a Counterclaim. 
+fields:
+  - Do you want to continue to create your Answer form without a Counterclaim?: counterclaim_jurisdiction_venue_problem_continue
+    datatype: yesnoradio
 ---
 # used in JOD_only and divorce_complaint tools
 id: jurisdiction warning

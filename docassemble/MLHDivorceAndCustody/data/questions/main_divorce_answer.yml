@@ -165,7 +165,8 @@ code: |
   ### Start counterclaim section ###
   if create_counterclaim:   
     if not (counterclaim_180_day_test_met.any_true() and counterclaim_10_day_test_met.any_true()):
-      counterclaim_jurisdiction_venue_problem
+      if not counterclaim_jurisdiction_venue_problem_continue:
+        exit_general
   
     else:
   
@@ -207,19 +208,21 @@ code: |
         nav.set_section("signpost_children")
         interview_order_children
         if not there_are_marital_children:
-          exit_no_kids
-        users[0].pregnant  ##### CHECK DO WE NEED THIS OR ARE WE ALWAYS GOING TO ASK ALREADY?
-  
-        nav.set_section("signpost_prior_cases")
-        prior_family_cases.gather()
+          if not continue_no_kids_no_cc:
+            exit_general
+        else:
+          users[0].pregnant  ##### CHECK DO WE NEED THIS OR ARE WE ALWAYS GOING TO ASK ALREADY?
     
-        nav.set_section("signpost_income_etc")
-        users[0].insurance.gather()
-        other_parties[0].insurance.gather()
+          nav.set_section("signpost_prior_cases")
+          prior_family_cases.gather()
+      
+          nav.set_section("signpost_income_etc")
+          users[0].insurance.gather()
+          other_parties[0].insurance.gather()
       else:
         nav.set_section("signpost_income_etc")
   
-      if complaint_type == "with_children" or user_wants_post_divorce_support:
+      if (complaint_type == "with_children" and there_are_marital_children) or (complaint_type == "no_children" and user_wants_post_divorce_support):
         interview_order_user_employment
         interview_order_user_income
         interview_order_user_identifying_info
