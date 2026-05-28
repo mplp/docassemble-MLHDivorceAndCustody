@@ -1984,6 +1984,8 @@ question: |
 subquestion: |
   % if tool_ID in ["divorce_complaint", "JOD_only"]:
   **Please do not include vehicles.** You will be asked about vehicles on a separate page.
+  % elif tool_ID == "divorce_answer":
+  Some examples are vehicles, furniture, clothes, or eletronic devices.
   % endif
 fields:
   - label: Did you and your spouse {get} any {personal property} during the marriage?
@@ -2554,6 +2556,11 @@ fields:
   - label: Do you or your spouse own real property that was bought or paid for while you were married?
     field: marriage.real_property.there_are_any
     datatype: yesnoradio
+  - label: Do you and your spouse agree on what should happen to **all** the real property that was bought or paid for while you were married?
+    field: marriage.real_property_all_agreed
+    datatype: yesnoradio
+    js show if: |
+      val("marriage.real_property.there_are_any") === true && ${ "true" if tool_ID == "divorce_answer" else "false" }
 ---
 if: marriage.real_property.there_are_any
 id: continue_real_property (divorce answer)

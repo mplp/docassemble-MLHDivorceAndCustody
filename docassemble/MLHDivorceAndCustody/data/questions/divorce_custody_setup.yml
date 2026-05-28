@@ -225,7 +225,13 @@ terms:
       - personal property
       - personal
     definition: |
-      Personal property includes everything that is **not** real property. Some examples are bank accounts, books, clothes, furniture, jewelry, and mobile homes.
+      Personal property includes everything **except** real estate (houses and land). 
+            
+      % if tool_ID in ["divorce_complaint," "JOD_only"]:
+      Some examples of personal property are bank accounts, books, clothes, furniture, jewelry, and mobile homes.
+      % elif tool_ID == "divorce_answer":
+      Some examples of personal property are bank accounts, books, clothes, furniture, jewelry, cars, boats, and mobile homes.
+      % endif
   - phrases:
       - party
       - party's

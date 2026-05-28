@@ -181,10 +181,6 @@ code: |
         if not continue_with_business:
           exit_general
   
-      if marriage.real_property.there_are_any:
-        if not continue_real_property:
-          exit_general
-  
       if need_temporary_order:
         if not temporary_order_continue:
           exit_general
@@ -192,6 +188,10 @@ code: |
       marriage.date
       marriage.address.city
       marriage.living_together_yn
+
+      if marriage.real_property.there_are_any:
+        if not continue_real_property:
+          exit_general
   
       marriage.personal_property_acquired
       if marriage.debts.any:
