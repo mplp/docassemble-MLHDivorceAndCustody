@@ -394,11 +394,6 @@ subject: What if there's a child I want to parent, but I'm not their legal paren
 content: |
   If you are concerned about your ability to be a part of the child's life, talk to a lawyer. ${MLH_GUIDE_FULL}
 ---
-template: wants_to_revoke
-subject: What if there's a 
-content: |
-  If you are concerned about your ability to be a part of the child's life, talk to a lawyer. ${MLH_GUIDE_FULL}
----
 template: unsure_legal_parent
 subject: What if I'm not sure if I'm a legal parent of a child with my spouse?
 content: |
