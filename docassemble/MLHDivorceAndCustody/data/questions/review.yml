@@ -904,14 +904,20 @@ review:
       <h3 class="h5"> Your other statements</h3>
         - ${other_statements if other_statements_any else word("none")}
   - Edit:
-      - create_counterclaim
+      - want_counterclaim
+      - undefine:
+          - counterclaim_jurisdiction_venue_problem_continue
+          - continue_no_kids_no_cc
+          - create_counterclaim
     button: |
       <h3 class="h5"> Counterclaim</h3>
-        - You **${word("do") if create_counterclaim else word("do not")}** want to create a **counterclaim** along with your answer.
+        - You **${word("do") if want_counterclaim else word("do not")} want** to create a **counterclaim** along with your answer.
   - Edit:
       - counterclaim_180_day_test_met
       - follow up:
-        - counterclaim_jurisdiction_venue_problem
+        - counterclaim_jurisdiction_venue_problem_continue
+      - invalidate:
+        - create_counterclaim
     button: |
       <h3 class="h5">Counterclaim residencey tests</h3>
         - You have ${word("not") if not counterclaim_180_day_test_met['user'] else ""} lived in Michigan for at least 180 days or more. You have ${word("not") if not party_ten_days_in_county['user'] else ""} lived in ${county_choice} County for at least 10 days or more.
@@ -993,6 +999,8 @@ review:
         - the_court
         - the_foc
         - stepchildren_for_addendum
+        - continue_no_kids_no_cc
+        - create_counterclaim
       - recompute:
         - children_previous_address.gathered_reset
         - interview_order_children
@@ -1049,6 +1057,8 @@ review:
         - the_court
         - the_foc
         - stepchildren_for_addendum
+        - continue_no_kids_no_cc
+        - create_counterclaim
       - recompute:
         - children_previous_address.gathered_reset
         - interview_order_children
@@ -1671,8 +1681,9 @@ review:
     # divorce_answer
   - Edit:
       - complaint_type
-      - recompute:
-        - children.there_are_any
+      - invalidate:
+        - continue_no_kids_no_cc
+        - create_counterclaim
     button: |
       <h3 class="h5"> Type of divorce complaint</h3>
         - Complaint for divorce ${word("with minor children") if complaint_type == "with_children" else word("without minor children")}

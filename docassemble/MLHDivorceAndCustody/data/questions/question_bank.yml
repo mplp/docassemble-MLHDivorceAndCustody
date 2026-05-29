@@ -283,7 +283,7 @@ question: |
 subquestion: |
   You did not enter any {marital children}. Your spouse filed this divorce as a divorce with children. 
   
-  If you and your spouse are the legal parents of a child, use the **Undo** button or the **Review / Edit** link to go back now and add the child or edit your answers. Then you can create your Counterclaim.
+  If you and your spouse are the legal parents of a child, use the **Review / Edit** link to go back now and add the child or edit your answers. Then you can create your Counterclaim.
 
   If there are no marital children, there may be complications in your case and you should speak with a lawyer. ${MLH_GUIDE_FULL} You can still continue and get your Answer form, but you cannot use this tool to create a Counterclaim. 
 fields:
@@ -340,15 +340,15 @@ fields:
       - Complaint for divorce without minor children: "no_children"
       - Complaint for divorce with minor children: "with_children"
   - note: |
-      This type of complaint is used if there is at least one {minor} child who has **both** you and your spouse as legal parents.
+      This type of complaint is used if there is at least one {minor} child who has **both** you and your spouse as legal parents or if a spouse is pregnant.
     show if:
       variable: complaint_type
       is: "with_children"
-  - Do you agree that you have minor children with your spouse?: complaint_check_agree_kids
-    datatype: yesnoradio
-    show if:
-      variable: complaint_type
-      is: "with_children"
+#  - Do you have minor children with your spouse?: complaint_check_agree_kids
+#    datatype: yesnoradio
+#    show if:
+#      variable: complaint_type
+#      is: "with_children"
   - note: |
       This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents.
     show if:
@@ -360,22 +360,22 @@ validation code: |
   else: # if with_children, set by child gathering process
     undefine("there_are_marital_children")
 ---
-id: complaint type check with no children
-if: complaint_type == "no_children"
-question: Did your spouse file the right type of complaint?
-subquestion: |
-  You said your spouse filed a complaint for divorce **without children.** This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents.
-
-  ${collapse_template(legal_parentage_info)}
-fields:
-  - Is there any {minor} child who has both you and your spouse as legal parents?: complaint_check_have_kids
-    input type: radio
-    choices:
-      - Yes, there is at least one child who has us both as legal parents.: True
-      - No: False
-  - note: |
-      ${collapse_template(wants_to_parent)}
-      ${collapse_template(unsure_legal_parent)}
+#id: complaint type check with no children
+#if: complaint_type == "no_children"
+#question: Did your spouse file the right type of complaint?
+#subquestion: |
+#  You said your spouse filed a complaint for divorce **without children.** This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents.
+#
+#  ${collapse_template(legal_parentage_info)}
+#fields:
+#  - Is there any {minor} child who has both you and your spouse as legal parents?: complaint_check_have_kids
+#    input type: radio
+#    choices:
+#      - Yes, there is at least one child who has us both as legal parents.: True
+#      - No: False
+#  - note: |
+#      ${collapse_template(wants_to_parent)}
+#      ${collapse_template(unsure_legal_parent)}
 ---
 template: legal_parentage_info
 subject: Situations where you might both be legal parents.
@@ -394,12 +394,17 @@ subject: What if there's a child I want to parent, but I'm not their legal paren
 content: |
   If you are concerned about your ability to be a part of the child's life, talk to a lawyer. ${MLH_GUIDE_FULL}
 ---
+template: wants_to_revoke
+subject: What if there's a 
+content: |
+  If you are concerned about your ability to be a part of the child's life, talk to a lawyer. ${MLH_GUIDE_FULL}
+---
 template: unsure_legal_parent
 subject: What if I'm not sure if I'm a legal parent of a child with my spouse?
 content: |
   If you're not sure you may want to talk to a lawyer. ${MLH_GUIDE_FULL}
   
-  Answer yes, if any of these apply to you:
+  You are both legal parents if any of these apply to you:
 
   *	You or your spouse gave birth to a child before you married, and the non-birthing parent became a legal parent by court order or Affidavit of Parentage. There has not been a court order revoking parentage. 
   *	During the marriage, you or your spouse gave birth to a child conceived through sexual intercourse. There has **not** been a court order revoking the parentage of the husband or non-birthing spouse. 
@@ -408,45 +413,58 @@ content: |
   *	During the marriage, one of you adopted a child who was already the other spouse's child before the marriage.
   *	You and your spouse became parents together through a valid surrogacy agreement.
 ---
+template: nonbio_child_or_preg
+subject: |
+  What if one spouse had a child or got pregnant **with someone else** during the marriage?
+content: |
+  If either spouse conceives or gives birth to a child during the marriage, that child will be considered a child of the marriage unless a judge determines that the husband or non-birthing parent is not the other parent. 
+  
+  You may be able to file a motion in the divorce case asking the judge to revoke the legal parentage of the spouse who is not the child's biological parent. To learn more, read [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent) or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
+
+  The revocation process does not apply to children conceived through assisted reproduction (for example, donor insemination). We suggest talking to a lawyer if there are parentage issues involving assisted reproduction. ${MLH_GUIDE_FULL}
+---
 id: complaint with children continue information
 question: Complaint with children
 continue button field: complaint_with_children_issue_continue
 subquestion: |
-  You said your spouse filed a complaint for divorce **with children,** but you don't agree that you have children together.
+  You said your spouse filed a Complaint for Divorce **with children.**
   
-  A divorce case should be filed as a divorce **with children** if:
+  % if not defined("complaint_paragraphs"):
+  Later in this tool, you will be asked if you agree with each statement in your spouse's Complaint. 
+  % endif
+  You should **disagree** with any statement in your spouse's complaint that:
   
-  * you or your spouse are pregnant, **or**
-  * there is a {minor} child who has both you and your spouse as legal parents.
-  
-  ${collapse_template(legal_parentage_info)}
+  * says a child is one of your and your spouse's shared minor children or says that a child has you both for legal parents, *if the child actually does not have you both as legal parents*
+  * leaves out a child that *does* have you both as legal parents, or
+  * is wrong about whether one of you is pregnant or not.
 
-  If there is no pregnancy and no children, when you enter your answers to your spouse's Complaint for Divorce later in this tool **explain why there is no minor child who has you both as legal parents.** 
+  ${collapse_template(unsure_legal_parent)}
+  ${collapse_template(wants_to_parent)}
+  ${collapse_template(nonbio_child_or_preg)}
+  ${collapse_template(ART_pregnancy)}
   
-  You may need to find a lawyer if you need help with this. ${MLH_GUIDE_FULL}
+  You may need to find a lawyer if you disagree with your spouse about these issues. ${MLH_GUIDE_FULL}
 ---
 id: complaint no children continue information
 question: Complaint without children
 continue button field: complaint_without_children_issue_continue
 subquestion: |
-  You said your spouse filed a complaint for divorce **without children,** but 
-  % if (users[0].pregnant or other_parties[0].pregnant) and complaint_check_have_kids:
-  there is a child and you or your spouse are pregnant.
-  % elif users[0].pregnant or other_parties[0].pregnant:
-  you or your spouse are pregnant.
-  % elif complaint_check_have_kids:
-  there is a child.
-  % endif
-  The case should have been filed as a divorce **with** minor children.
+  You said your spouse filed a Complaint for Divorce **without children.**
   
-  When you enter your answers to your spouse's Complaint for Divorce later in this tool **explain about the**
-  % if (users[0].pregnant or other_parties[0].pregnant) and complaint_check_have_kids:
-  **minor child and pregnancy.** 
-  % elif users[0].pregnant or other_parties[0].pregnant:
-  **pregnancy.** 
-  % elif complaint_check_have_kids:
-  **minor child.** 
+  % if not defined("complaint_paragraphs"):
+  Later in this tool, you will be asked if you agree with each statement in your spouse's Complaint. 
   % endif
+  You should **disagree** with any statement in your spouse's complaint that:
+  
+  * says there are no minor children, *if there actually **is** a child who has you both as legal parents*
+  * is wrong about whether one of you is pregnant or not
+
+  ${collapse_template(unsure_legal_parent)}
+  ${collapse_template(wants_to_parent)}
+  ${collapse_template(nonbio_child_or_preg)}
+  ${collapse_template(ART_pregnancy)}
+
+  You may need to find a lawyer if you disagree with your spouse about these issues. ${MLH_GUIDE_FULL}
 ---
 if: tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and returning_to_finalize)
 id: case already filed jurisdiction check
@@ -2756,7 +2774,7 @@ fields:
     show if: other_statements_any
 ---
 template: other_statements_help
-subject: "What kind of other statements should go here?"
+subject: "What kind of statements can go here?"
 content: |
   This area is just for technical or procedural issues. Some examples of these types of issues are:
   
@@ -3725,13 +3743,6 @@ subject: |
   Why do I need to include both children in common and separate children?
 content: |
   If you or your spouse has a child that is not also the child of the other spouse, this child must also be named in some of the divorce documents.
----
-code: |
-  if tool_ID == "divorce_answer":
-    if complaint_type == "with_children":
-      children.there_are_any = True
-    else:
-      children.there_are_any = False
 ---
 id: any more children
 question: |
@@ -5181,9 +5192,9 @@ content: |
 ---
 template: ART_pregnancy
 subject: |
-  Pregnancy where conception was through assisted reproductive technology (ART). Do we have to include the pregnancy in the divorce forms even if there is a surrogacy agreement or a parentage issue?
+  Pregnancy where conception was through assisted reproductive technology (ART). 
 content: |
-  Yes. If the pregnancy is the result of a surrogacy agreement, include that information in your Answer if the plaintiff did not include it in their complaint. 
+  If the pregnancy is the result of a surrogacy agreement, that pregnancy should be included in your divorce forms. 
   
   If the pregnancy is a result of assisted reproduction that does not involve surrogacy **and** you believe that you or your spouse should not be a legal parent, stop using this tool and find a lawyer to help you. ${MLH_GUIDE_FULL}
 ---
@@ -7133,7 +7144,7 @@ fields:
 ## other divorce answer questions (that didn't naturally fit above)
 # --------------------------------------------------------------------
 ---
-id: file a counterclaim
+id: does user wants to file a counterclaim
 question: |
   Filing a Counterclaim  
 subquestion: |
@@ -7148,8 +7159,16 @@ subquestion: |
   ${collapse_template(no_counterclaim_exp)}
   ${collapse_template(cobra_counterclaim)}
 fields: 
-  - Do you want to create a counterclaim for divorce?: create_counterclaim
+  - Do you want to create a counterclaim for divorce?: want_counterclaim
     datatype: yesnoradio
+---
+id: create_counterclaim logic
+code: |
+  create_counterclaim = False
+  
+  if want_counterclaim and counterclaim_180_day_test_met.any_true() and counterclaim_10_day_test_met.any_true():
+    if (complaint_type == "with_children" and there_are_marital_children) or complaint_type == "no_children":
+      create_counterclaim = True
 ---
 template: cobra_counterclaim
 subject: |

@@ -103,13 +103,9 @@ code: |
     exit_no_MI_complaint
   complaint_type
   if complaint_type == "with_children":
-    if not complaint_check_agree_kids:
-      complaint_with_children_issue_continue
+    complaint_with_children_issue_continue
   else:
-    complaint_check_have_kids
-    users[0].pregnant
-    if complaint_check_have_kids or users[0].pregnant or other_parties[0].pregnant:
-      complaint_without_children_issue_continue
+    complaint_without_children_issue_continue
 
   if marriage.have_experienced_domestic_violence:
     if not marriage.have_experienced_domestic_violence_continue:
@@ -163,7 +159,7 @@ code: |
   nav.set_section("signpost_counterclaim")
  
   ### Start counterclaim section ###
-  if create_counterclaim:   
+  if want_counterclaim:   
     if not (counterclaim_180_day_test_met.any_true() and counterclaim_10_day_test_met.any_true()):
       if not counterclaim_jurisdiction_venue_problem_continue:
         exit_general
@@ -203,15 +199,14 @@ code: |
   
       nav.set_section("signpost_spousal_support")
       interview_order_spousal_support
-  
+
+      nav.set_section("signpost_children")
+      users[0].pregnant
       if complaint_type == "with_children":
-        nav.set_section("signpost_children")
         interview_order_children
         if not there_are_marital_children:
           if not continue_no_kids_no_cc:
             exit_general
-        else:
-          users[0].pregnant  ##### CHECK DO WE NEED THIS OR ARE WE ALWAYS GOING TO ASK ALREADY?
     
           nav.set_section("signpost_prior_cases")
           prior_family_cases.gather()
@@ -231,8 +226,10 @@ code: |
         interview_order_other_party_income
         interview_order_other_party_identifying_info
         other_parties[0].has_alias
-  
+
+  create_counterclaim
   ### End counterclaim section ###
+  
   nav.set_section("signpost_last_section")
   MLH_standard_outro_pages
 
