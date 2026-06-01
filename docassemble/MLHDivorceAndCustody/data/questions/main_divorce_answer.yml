@@ -31,7 +31,13 @@ sections:
 ---
 # TODO need survey url
 code: |
-  #survey_link_url_only = "https://www.surveymonkey.com/r/xxxxxx"
+  survey_link_url_only = "https://www.surveymonkey.com/r/VDGS78M"
+---
+template: survey_embed_script
+content: |
+  <script>
+  (function(t,e,s,n){var o,a,c;t.SMCX=t.SMCX||[],e.getElementById(n)||(o=e.getElementsByTagName(s),a=o[o.length-1],c=e.createElement(s),c.type="text/javascript",c.async=!0,c.id=n,c.src="https://widget.surveymonkey.com/collect/website/js/tRaiETqnLgj758hTBazgd1caHSCpdmdgZgGo5Fq6bqp0y91DaTmREHdBKAkwXGAT.js",a.parentNode.insertBefore(c,a))})(window,document,"script","smcx-sdk");
+  </script>
 ---
 code: |
   tool_ID = "divorce_answer"
@@ -44,12 +50,6 @@ code: |
     MLH_case_type_language = "The case type code for a divorce with no {marital children} is **DO.**"  
 depends on:
   - complaint_type
----
-# TODO need survey script
-template: survey_embed_script
-content: |
-  <script>
-  </script>
 ---
 # set intro landing screen variables
 code: |
@@ -204,17 +204,19 @@ code: |
       users[0].pregnant
       if complaint_type == "with_children":
         interview_order_children
+  
         if not there_are_marital_children:
           if not continue_no_kids_no_cc:
             exit_general
-    
+  
+        else:
           nav.set_section("signpost_prior_cases")
           prior_family_cases.gather()
-      
           nav.set_section("signpost_income_etc")
           users[0].insurance.gather()
           other_parties[0].insurance.gather()
-      else:
+  
+      elif complaint_type == "no_children":
         nav.set_section("signpost_income_etc")
   
       if (complaint_type == "with_children" and there_are_marital_children) or (complaint_type == "no_children" and user_wants_post_divorce_support):

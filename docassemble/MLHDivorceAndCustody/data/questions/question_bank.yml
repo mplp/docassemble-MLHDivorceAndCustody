@@ -418,48 +418,78 @@ content: |
 
   The revocation process does not apply to children conceived through assisted reproduction (for example, donor insemination). We suggest talking to a lawyer if there are parentage issues involving assisted reproduction. ${MLH_GUIDE_FULL}
 ---
+# id: complaint with children continue information
+# question: Complaint with children
+# continue button field: complaint_with_children_issue_continue
+# subquestion: |
+#   You said your spouse filed a Complaint for Divorce **with children.**
+#   
+#   % if not defined("complaint_paragraphs"):
+#   Later in this tool, you will be asked if you agree with each statement in your spouse's Complaint. 
+#   % endif
+#   You should **disagree** with any statement in your spouse's complaint that:
+#   
+#   * says a child is your and your spouse's shared child or says that a child has you both for legal parents, *if the child actually does not have you both as legal parents,*
+#   * leaves out a child that *does* have you both as legal parents, or
+#   * is wrong about whether one of you is pregnant or not.
+# 
+#   You may need to find a lawyer if you disagree with your spouse about these issues. ${MLH_GUIDE_FULL}
+# 
+#   ${collapse_template(unsure_legal_parent)}
+#   ${collapse_template(wants_to_parent)}
+#   ${collapse_template(nonbio_child_or_preg)}
+#   ${collapse_template(ART_pregnancy)}
+# ---
+# id: complaint no children continue information
+# question: Complaint without children
+# continue button field: complaint_without_children_answer_help
+# subquestion: |
+#   You said your spouse filed a Complaint for Divorce **without children.**
+#   
+#   % if not defined("complaint_paragraphs"):
+#   Later in this tool, you will be asked if you agree with each statement in your spouse's Complaint. 
+#   % endif
+#   You should **disagree** with any statement in your spouse's complaint that:
+#   
+#   * says there are no minor children, *if there actually **is** a child who has you both as legal parents* or
+#   * is wrong about whether one of you is pregnant or not.
+# 
+#   You may need to find a lawyer if you disagree with your spouse about these issues. ${MLH_GUIDE_FULL}
+# 
+#   ${collapse_template(unsure_legal_parent)}
+#   ${collapse_template(wants_to_parent)}
+#   ${collapse_template(nonbio_child_or_preg)}
+#   ${collapse_template(ART_pregnancy)}
+---
 id: complaint with children continue information
 question: Complaint with children
 continue button field: complaint_with_children_issue_continue
 subquestion: |
-  You said your spouse filed a Complaint for Divorce **with children.**
+  You said your spouse filed a Complaint for Divorce **with children.** It's important to check the {marital children} listed in your spouse's complaint. 
   
-  % if not defined("complaint_paragraphs"):
-  Later in this tool, you will be asked if you agree with each statement in your spouse's Complaint. 
-  % endif
-  You should **disagree** with any statement in your spouse's complaint that:
-  
-  * says a child is one of your and your spouse's shared minor children or says that a child has you both for legal parents, *if the child actually does not have you both as legal parents*
-  * leaves out a child that *does* have you both as legal parents, or
-  * is wrong about whether one of you is pregnant or not.
+  If you disagree about which children are {marital children}, it's a good idea to speak to a lawyer. ${MLH_GUIDE_FULL} Later in this tool you can explain if you disagree with the children listed or left out. 
+
+  More information about common parentage questions and issues:
 
   ${collapse_template(unsure_legal_parent)}
   ${collapse_template(wants_to_parent)}
   ${collapse_template(nonbio_child_or_preg)}
   ${collapse_template(ART_pregnancy)}
-  
-  You may need to find a lawyer if you disagree with your spouse about these issues. ${MLH_GUIDE_FULL}
 ---
 id: complaint no children continue information
 question: Complaint without children
 continue button field: complaint_without_children_issue_continue
 subquestion: |
-  You said your spouse filed a Complaint for Divorce **without children.**
+  You said your spouse filed a Complaint for Divorce **without children.** 
   
-  % if not defined("complaint_paragraphs"):
-  Later in this tool, you will be asked if you agree with each statement in your spouse's Complaint. 
-  % endif
-  You should **disagree** with any statement in your spouse's complaint that:
-  
-  * says there are no minor children, *if there actually **is** a child who has you both as legal parents*
-  * is wrong about whether one of you is pregnant or not
+  It's important that any minor {marital children} are listed as part of the divorce. Later in this tool you can explain if you think you and your spouse **do** have minor {marital children}. If that is the case, you may also want to speak to a lawyer. ${MLH_GUIDE_FULL}
+
+  More information about common parentage questions and issues:
 
   ${collapse_template(unsure_legal_parent)}
   ${collapse_template(wants_to_parent)}
   ${collapse_template(nonbio_child_or_preg)}
   ${collapse_template(ART_pregnancy)}
-
-  You may need to find a lawyer if you disagree with your spouse about these issues. ${MLH_GUIDE_FULL}
 ---
 if: tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and returning_to_finalize)
 id: case already filed jurisdiction check
@@ -4174,18 +4204,34 @@ subquestion: |
   Your ${ filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
   
   % endif
-  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to find a lawyer to help you.
-      
+  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf)
+  % if tool_ID == "divorce_complaint":
+  along with the forms you file to start your divorce case
+  % endif
+  . You may want to find a lawyer to help you.
+
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+  % elif tool_ID == "divorce_answer":
+  If the judge revokes your parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
+  % endif
   
   % elif children[i].bio_parent == "user":
   % if tool_ID in ["divorce_complaint", "divorce_answer"]:
   Your ${ filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
 
   % endif
-  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to find a lawyer to help you.
-      
+  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf)
+  % if tool_ID == "divorce_complaint":
+  along with the forms you file to start your divorce case
+  % endif
+  . You may want to find a lawyer to help you.
+
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
   If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+  % elif tool_ID == "divorce_answer":
+  If the judge revokes your spouse's parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
+  % endif
   % endif
 
   % elif children[i].parentage_established =="court_order":
@@ -4193,12 +4239,20 @@ subquestion: |
   % if children[i].bio_parent == "other_party":
   To do this, you can file a [Motion to Set Aside Order of Filiation](https://www.courts.michigan.gov/4a8194/siteassets/forms/scao-approved/cc437.pdf) in the same case that the Order of Filiation was entered in. You may want to find a lawyer to help you.
   
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+  % elif tool_ID == "divorce_answer":
+  If the judge revokes your parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
+  % endif
 
   % elif children[i].bio_parent == "user":
   To do this, file a [Motion to Set Aside Order of Filiation](https://www.courts.michigan.gov/4a8194/siteassets/forms/scao-approved/cc437.pdf) in the same case that the Order of Filiation was entered in. You may want to find a lawyer to help you.
 
-  If the judge revokes your spouse’s parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
+  If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+  % elif tool_ID == "divorce_answer":
+  If the judge revokes your spouse's parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
+  % endif
   % endif
   % endif
   
@@ -4209,9 +4263,16 @@ subquestion: |
   Your ${ filing_name } will say that you plan to file a Motion to Determine Child Born Out of Wedlock for ${ children[i] }.
 
   % endif
-  You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). You will need to start the divorce case before you can file the parentage motion.
+  You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). 
+  % if tool_ID == "divorce_complaint":
+  You will need to start the divorce case before you can file the parentage motion.
+  % endif
 
-  If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, and then re-downloading the Judgment of Divorce form.
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
+  If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+  % elif tool_ID == "divorce_answer":
+  If the judge revokes your parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
+  % endif
 
   If nobody files a Motion to Determine Child Born Out of Wedlock, you will remain a legal parent. This means the judge can award you custody and/or parenting time, and you may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
   
@@ -4220,9 +4281,16 @@ subquestion: |
   Your ${ filing_name } will say that you plan to file a Motion to Determine Child Born Out of Wedlock for ${ children[i] }.
 
   % endif
-  You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your spouse's legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). You will need to start the divorce case before you can file the parentage motion.
+  You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your spouse's legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). 
+  % if tool_ID == "divorce_complaint":
+  You will need to start the divorce case before you can file the parentage motion.
+  % endif
 
-  If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, and then re-downloading the Judgment of Divorce form.
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
+  If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+  % elif tool_ID == "divorce_answer":
+  If the judge revokes your spouse's parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
+  % endif
 
   If nobody files a Motion to Determine Child Born Out of Wedlock, your spouse will remain a legal parent. This means the judge can award them custody and/or parenting time, and they may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
   % endif
