@@ -418,48 +418,16 @@ content: |
 
   The revocation process does not apply to children conceived through assisted reproduction (for example, donor insemination). We suggest talking to a lawyer if there are parentage issues involving assisted reproduction. ${MLH_GUIDE_FULL}
 ---
-# id: complaint with children continue information
-# question: Complaint with children
-# continue button field: complaint_with_children_issue_continue
-# subquestion: |
-#   You said your spouse filed a Complaint for Divorce **with children.**
-#   
-#   % if not defined("complaint_paragraphs"):
-#   Later in this tool, you will be asked if you agree with each statement in your spouse's Complaint. 
-#   % endif
-#   You should **disagree** with any statement in your spouse's complaint that:
-#   
-#   * says a child is your and your spouse's shared child or says that a child has you both for legal parents, *if the child actually does not have you both as legal parents,*
-#   * leaves out a child that *does* have you both as legal parents, or
-#   * is wrong about whether one of you is pregnant or not.
-# 
-#   You may need to find a lawyer if you disagree with your spouse about these issues. ${MLH_GUIDE_FULL}
-# 
-#   ${collapse_template(unsure_legal_parent)}
-#   ${collapse_template(wants_to_parent)}
-#   ${collapse_template(nonbio_child_or_preg)}
-#   ${collapse_template(ART_pregnancy)}
-# ---
-# id: complaint no children continue information
-# question: Complaint without children
-# continue button field: complaint_without_children_answer_help
-# subquestion: |
-#   You said your spouse filed a Complaint for Divorce **without children.**
-#   
-#   % if not defined("complaint_paragraphs"):
-#   Later in this tool, you will be asked if you agree with each statement in your spouse's Complaint. 
-#   % endif
-#   You should **disagree** with any statement in your spouse's complaint that:
-#   
-#   * says there are no minor children, *if there actually **is** a child who has you both as legal parents* or
-#   * is wrong about whether one of you is pregnant or not.
-# 
-#   You may need to find a lawyer if you disagree with your spouse about these issues. ${MLH_GUIDE_FULL}
-# 
-#   ${collapse_template(unsure_legal_parent)}
-#   ${collapse_template(wants_to_parent)}
-#   ${collapse_template(nonbio_child_or_preg)}
-#   ${collapse_template(ART_pregnancy)}
+id: children_answer_help
+continue button field: children_answer_help
+question: Common questions about children and pregnancy
+subquestion: |
+  ${collapse_template(unsure_legal_parent)}
+  ${collapse_template(wants_to_parent)}
+  ${collapse_template(nonbio_child_or_preg)}
+  ${collapse_template(ART_pregnancy)}
+
+  You may want to speak to a lawyer if you disagree or are unsure about parentage issues. ${MLH_GUIDE_FULL}
 ---
 id: complaint with children continue information
 question: Complaint with children
@@ -7166,7 +7134,9 @@ fields:
     label above field: False
     required: False
   - note: |
-      Carefully read the paragraph.
+      Carefully read the paragraph. 
+
+      ${collapse_template(answer_re_kids_tips_container)}
   - "Answer whether you agree, disagree, or don’t know if the statements in that paragraph are true.": complaint_paragraphs[i].response
     input type: radio
     choices: 
@@ -7202,6 +7172,27 @@ fields:
       *(140 character limit)*
     js show if: |
       ['agree', 'disagree', 'unsure'].includes(val("complaint_paragraphs[i].response"))
+---
+template: answer_re_kids_tips_container
+subject: Is the paragraph about kids or pregnancy?
+content: |
+  % if complaint_type == "no_children":
+  You said your spouse filed a Complaint for Divorce **without children.** When reading paragraphs about children and pregnancy, make sure:
+  
+  * your spouse's statement about {marital children} is accurate
+  * any statements about pregnancy are correct.
+
+  If your spouse left out a child that *does* have you both as legal parents, or if any paragraph is incorrect, **disagree** and explain.
+  % elif complaint_type == "with_children":
+  You said your spouse filed a Complaint for Divorce **with children.** When reading paragraphs about children and pregnancy, make sure:
+  
+  * the correct children are listed as your shared {marital children}, with no children missing and no extra children added
+  * any statements about pregnancy are correct.
+
+  If any paragraph is incorrect, **disagree** and explain.
+  % endif
+  
+  [Tap here for answers to common questions about kids and pregnancy.](${url_action('children_answer_help')})
 ---
 # --------------------------------------------------------------------
 ## other divorce answer questions (that didn't naturally fit above)
