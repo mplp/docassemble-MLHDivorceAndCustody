@@ -350,7 +350,7 @@ fields:
 #      variable: complaint_type
 #      is: "with_children"
   - note: |
-      This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents.
+      This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents, and neither spouse is pregnant.
     show if:
       variable: complaint_type
       is: "no_children"
