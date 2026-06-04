@@ -999,7 +999,7 @@ id: confidential_contact_info_yn
 question: |
   Contact information confidentiality
 subquestion: |
-  All of the information that you enter in this tool, including your address and telephone information, will be included on forms that you file with the court and give to your spouse. If you fear for your safety if this information is known by your spouse or someone else, proceed with caution. **Do not use an address or telephone number that you want to keep confidential in this tool or on your court forms.**
+  All of the information that you enter in this tool, including your address and telephone number, will be included on forms that you file with the court and give to your spouse. If you fear for your safety if this information is known by your spouse or someone else, proceed with caution. **Do not use an address or telephone number that you want to keep confidential in this tool or on your court forms.**
 
   Keep in mind that your divorce file is a public record and anyone could ask to look at it and see your address. 
 fields:
