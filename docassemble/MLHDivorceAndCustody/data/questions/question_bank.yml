@@ -1998,10 +1998,24 @@ subquestion: |
   % if tool_ID in ["divorce_complaint", "JOD_only"]:
   **Please do not include vehicles.** You will be asked about vehicles on a separate page.
   % elif tool_ID == "divorce_answer":
-  Some examples are vehicles, furniture, clothes, or eletronic devices.
+  Personal property includes everything **except** real estate (houses and land). 
+  
+  Some examples of personal property are: 
+  
+  * vehicles
+  * bank accounts
+  * clothes
+  * furniture
+  * jewelry
+  * mobile homes
   % endif
 fields:
-  - label: Did you and your spouse {get} any {personal property} during the marriage?
+  - label: |
+      % if tool_ID in ["divorce_complaint", "JOD_only"]:
+      Did you and your spouse {get} any {personal property} during the marriage?
+      % elif tool_ID == "divorce_answer":
+      Did you and your spouse {get} any personal property during the marriage?
+      % endif
     field: marriage.personal_property_acquired
     datatype: yesnoradio
   - label: Have you and your spouse reached an agreement about how all personal property will be divided?
