@@ -19,7 +19,7 @@ objects:
 ---
 if: tool_ID == "custody_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, default_request_mc07, foc_10_full, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, noh_motion_consent, noh_motion_default, default_request_mc07, mrcs_foc12, foc_100_full, foc_10_full, proof_of_service, proof_of_service, fee_waiver_attachment, protected_pii_mc_97a_attachment], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
   #- al_court_bundle: ALDocumentBundle.using(elements=[], filename="Michigan Custody Complaint --all forms", title="All forms and instructions", enabled=True)
 ---
 # ====================================================================
@@ -3259,6 +3259,40 @@ attachment:
 ---
 objects:
   - proof_of_service: ALDocument.using(title="Proof of Service", filename="Proof of Service", enabled=True, has_addendum=False)
+---
+# --------------------------------------------------------------------
+## Judgment CC-MLH-412/413 and Attachments
+# --------------------------------------------------------------------
+---
+objects:  
+  - mrcs_foc12: ALDocument.using(title="Referral Order", filename="Referral Order - FOC 12.pdf", has_addendum=False, enabled=True)
+---
+attachment:
+  name: Referral Order
+  variable name: mrcs_foc12[i]
+  skip undefined: True
+  editable: False
+  pdf template file: docassemble.MLHMotionRegardingChildSupport:data/templates/ReferralOrder-FOC12.pdf
+  fields:
+    - trial_court_circuit: |
+          % if the_court.type == 'circuit':
+          ${ the_court.number }
+          % endif
+    - trial_court_county: |
+          ${ the_court.address.county.upper()  }
+    - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
+    - CASE NO: ${ docket_number }
+    - trial_court_phone_number: ${ the_court.phone }
+    - plaintiffs: |
+          ${ plaintiffs }  
+          ${ plaintiffs[0].address.line_one() }
+          ${ plaintiffs[0].address.line_two() }
+          ${ word("Does not have phone") if plaintiffs[0].no_phone_number else plaintiffs[0].phone_numbers() }
+    - defendants: |
+          ${ defendants }  
+          ${ defendants[0].address.line_one() }
+          ${ defendants[0].address.line_two() }
+          ${ word("Does not have phone") if defendants[0].no_phone_number else defendants[0].phone_numbers() }
 ---
 # --------------------------------------------------------------------
 ## Judgment CC-MLH-412/413 and Attachments
