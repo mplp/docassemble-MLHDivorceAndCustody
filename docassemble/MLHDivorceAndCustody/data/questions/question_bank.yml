@@ -3299,7 +3299,7 @@ content: |
   
   Fault on its own will not justify an award of spousal support, but this is one factor the judge can consider. 
   
-  If this applies to your marriage, briefly explain what actions or behavior of your spouse (${ OP_party_label }) contributed to the breakdown of the marriage. For example: “${ capitalize(OP_party_label) } has been controlling throughout the marriage. They did not allow the Plaintiff to work outside the home, so ${ user_party_label } lost the opportunity to build their career for ten years.”
+  If this applies to your marriage, briefly explain what actions or behavior of your spouse (${ OP_party_label }) contributed to the breakdown of the marriage. For example: “${ capitalize(OP_party_label) } has been controlling throughout the marriage. They did not allow ${ user_party_label } to work outside the home, so ${ user_party_label } lost the opportunity to build their career for ten years.”
 ---
 id: spousal support factor 2
 question: "{Factor} 2: The length of the marriage"
