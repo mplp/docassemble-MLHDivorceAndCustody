@@ -3217,7 +3217,7 @@ fields:
       If you and your spouse don't agree about spousal support, you may want to **find a lawyer to help you.** Asking for spousal support is complicated, and a lawyer can present evidence and make legal arguments for you at your court hearing. ${ MLH_GUIDE_FULL } 
 
       % if tool_ID in ["divorce_complaint", "divorce_answer"]:
-      But if hiring a lawyer is not an option for you, you can use this tool to include a request for spousal support in your ${ filing_name }. 
+      But if hiring a lawyer is not an option for you, you can use this tool to include a request for spousal support in your ${ word("Counterclaim") if tool_ID == "divorce_answer" else filing_name }. 
       % endif
     show if:
       variable: user_wants_post_divorce_support
