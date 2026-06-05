@@ -6680,7 +6680,7 @@ question: SSA Public Assistance
 subquestion: |
   Enter ${OP_label}'s Social Security Administration (SSA) case number here, if known.
 
-  SSA case numbers usually use a Social Security number (SSN). It's OK to enter here because the case number will only go on a nonpublic form.
+  SSA case numbers usually use a Social Security number (SSN). It's OK to enter here because the case number will only go on a nonpublic form (FOC 23).
 fields:
   - 'SSA Case #': op_pa_ssa_number
 
