@@ -7158,6 +7158,8 @@ fields:
       - "I disagree": disagree
       - "I do not know whether the statements are true": unsure
   - "Optional comment:": complaint_paragraphs[i].details
+    help: |
+      If you agree but you think your spouse left out an important detail, or if you want to clarify something, you can add more information here.
     required: False
     input type: area
     rows: 2
@@ -7175,6 +7177,8 @@ fields:
       variable: complaint_paragraphs[i].response
       is: disagree
   - "Optional comment:": complaint_paragraphs[i].details
+    help: |
+      If you don't know whether the statements are true, you may want to explain what you're unsure about.
     required: False
     input type: area
     rows: 2
