@@ -7242,8 +7242,21 @@ code: |
   create_counterclaim = False
   
   if want_counterclaim and counterclaim_180_day_test_met.any_true() and counterclaim_10_day_test_met.any_true():
-    if (complaint_type == "with_children" and there_are_marital_children) or complaint_type == "no_children":
-      create_counterclaim = True
+    create_counterclaim = True
+---
+id: counterclaim type
+code: |
+  if there_are_marital_children or users[0].pregnant or other_parties[0].pregnant:
+    counterclaim_type = "with_children"
+  else:
+    counterclaim_type = "no_children"
+---
+id: complaint_mismatch_warning
+if: (complaint_type == "with_children" and counterclaim_type == "no_children") or (complaint_type == "no_children" and counterclaim_type == "with_children")
+continue button field: complaint_mismatch_warning
+question: Your spouse's complaint does not match your situation
+subquestion: |
+  WARNINGS/INFORMATION HERE
 ---
 template: cobra_counterclaim
 subject: |

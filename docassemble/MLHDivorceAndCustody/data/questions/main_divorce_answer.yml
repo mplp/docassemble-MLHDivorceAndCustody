@@ -165,7 +165,6 @@ code: |
         exit_general
   
     else:
-  
       if marriage.have_pension_retirement:
         if marriage.pension_contributions_made:
           marriage.pension_retirement_accounts_keep_own
@@ -202,21 +201,19 @@ code: |
 
       nav.set_section("signpost_children")
       users[0].pregnant
-      if complaint_type == "with_children":
-        interview_order_children
+      interview_order_children
+      counterclaim_type
+      if (complaint_type == "with_children" and counterclaim_type == "no_children") or (complaint_type == "no_children" and counterclaim_type == "with_children"):
+        complaint_mismatch_warning
   
-        if not there_are_marital_children:
-          if not continue_no_kids_no_cc:
-            exit_general
-  
-        else:
-          nav.set_section("signpost_prior_cases")
-          prior_family_cases.gather()
-          nav.set_section("signpost_income_etc")
-          users[0].insurance.gather()
-          other_parties[0].insurance.gather()
-  
-      elif complaint_type == "no_children":
+      if there_are_marital_children:
+        nav.set_section("signpost_prior_cases")
+        prior_family_cases.gather()
+        nav.set_section("signpost_income_etc")
+        users[0].insurance.gather()
+        other_parties[0].insurance.gather()
+
+      elif not there_are_marital_children:
         nav.set_section("signpost_income_etc")
   
       if (complaint_type == "with_children" and there_are_marital_children) or (complaint_type == "no_children" and user_wants_post_divorce_support):
