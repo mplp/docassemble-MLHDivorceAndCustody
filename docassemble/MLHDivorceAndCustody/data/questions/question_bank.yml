@@ -7167,8 +7167,7 @@ fields:
       I disagree that the statements in this paragraph are true because:
     field: complaint_paragraphs[i].details
     input type: area
-    rows: 2
-    maxlength: 140
+    rows: 8
     show if:
       variable: complaint_paragraphs[i].response
       is: disagree
@@ -7177,16 +7176,10 @@ fields:
       If you don't know whether the statements are true, you may want to explain what you're unsure about.
     required: False
     input type: area
-    rows: 2
-    maxlength: 140
+    rows: 8
     show if:
       variable: complaint_paragraphs[i].response
-      is: unsure
-  - note: |
-      *(140 character limit)*
-    js show if: |
-      ['agree', 'disagree', 'unsure'].includes(val("complaint_paragraphs[i].response"))
----
+      is: unsure---
 template: answer_re_kids_tips_container
 subject: Is the paragraph about kids or pregnancy?
 content: |
