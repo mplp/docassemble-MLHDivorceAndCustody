@@ -6746,7 +6746,7 @@ fields:
 ---
 code: |
   users[0].ssn 
-  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
+  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))): #for FOC23
     users[0].eye_color
     users[0].height_feet
     users[0].race
@@ -6755,7 +6755,7 @@ code: |
 ---
 code: |
   other_parties[0].ssn
-  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
+  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))): #for FOC23
     other_parties[0].eye_color
     other_parties[0].height_feet
     other_parties[0].race
@@ -6875,7 +6875,7 @@ fields:
       is: Other
 ---
 id: user alias
-if: there_are_marital_children or user_wants_post_divorce_support
+if: there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
 question: Other names
 subquestion: |
   * Your name is ${users[0]}.
@@ -7011,7 +7011,7 @@ fields:
       is: Other
 ---
 id: other party alias
-if: there_are_marital_children or user_wants_post_divorce_support
+if: there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
 question: Other names
 subquestion: |
   * Your spouse's name is ${other_parties[0]}.
