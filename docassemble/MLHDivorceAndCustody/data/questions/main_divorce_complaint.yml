@@ -3,7 +3,7 @@ include:
   - docassemble.FeeWaiverRequest:shared_code.yml
   - divorce_custody_setup.yml
 ---
-# TODO subtitle?
+# TODO subtitle? & confirm description
 metadata:
   title: Do-It-Yourself Divorce
   short title: Do-It-Yourself Divorce
@@ -79,7 +79,7 @@ content: |
 ## interview_order
 # ====================================================================
 ---
-id: interview_order_michigan_divorce_complaint
+id: interview_order_michigan_judgment_of_divorce
 mandatory: True
 scan for variables: False
 code: |
