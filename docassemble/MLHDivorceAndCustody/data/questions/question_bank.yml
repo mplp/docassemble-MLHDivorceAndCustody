@@ -350,7 +350,7 @@ fields:
 #      variable: complaint_type
 #      is: "with_children"
   - note: |
-      This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents.
+      This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents, and neither spouse is pregnant.
     show if:
       variable: complaint_type
       is: "no_children"
@@ -999,7 +999,7 @@ id: confidential_contact_info_yn
 question: |
   Contact information confidentiality
 subquestion: |
-  All of the information that you enter in this tool, including your address and telephone information, will be included on forms that you file with the court and give to your spouse. If you fear for your safety if this information is known by your spouse or someone else, proceed with caution. **Do not use an address or telephone number that you want to keep confidential in this tool or on your court forms.**
+  All of the information that you enter in this tool, including your address and telephone number, will be included on forms that you file with the court and give to your spouse. If you fear for your safety if this information is known by your spouse or someone else, proceed with caution. **Do not use an address or telephone number that you want to keep confidential in this tool or on your court forms.**
 
   Keep in mind that your divorce file is a public record and anyone could ask to look at it and see your address. 
 fields:
@@ -1998,10 +1998,24 @@ subquestion: |
   % if tool_ID in ["divorce_complaint", "JOD_only"]:
   **Please do not include vehicles.** You will be asked about vehicles on a separate page.
   % elif tool_ID == "divorce_answer":
-  Some examples are vehicles, furniture, clothes, or eletronic devices.
+  Personal property includes everything **except** real estate (houses and land). 
+  
+  Some examples of personal property are: 
+  
+  * vehicles
+  * bank accounts
+  * clothes
+  * furniture
+  * jewelry
+  * mobile homes
   % endif
 fields:
-  - label: Did you and your spouse {get} any {personal property} during the marriage?
+  - label: |
+      % if tool_ID in ["divorce_complaint", "JOD_only"]:
+      Did you and your spouse {get} any {personal property} during the marriage?
+      % elif tool_ID == "divorce_answer":
+      Did you and your spouse {get} any personal property during the marriage?
+      % endif
     field: marriage.personal_property_acquired
     datatype: yesnoradio
   - label: Have you and your spouse reached an agreement about how all personal property will be divided?
@@ -3203,7 +3217,7 @@ fields:
       If you and your spouse don't agree about spousal support, you may want to **find a lawyer to help you.** Asking for spousal support is complicated, and a lawyer can present evidence and make legal arguments for you at your court hearing. ${ MLH_GUIDE_FULL } 
 
       % if tool_ID in ["divorce_complaint", "divorce_answer"]:
-      But if hiring a lawyer is not an option for you, you can use this tool to include a request for spousal support in your ${ filing_name }. 
+      But if hiring a lawyer is not an option for you, you can use this tool to include a request for spousal support in your ${ word("Counterclaim") if tool_ID == "divorce_answer" else filing_name }. 
       % endif
     show if:
       variable: user_wants_post_divorce_support
@@ -3285,7 +3299,7 @@ content: |
   
   Fault on its own will not justify an award of spousal support, but this is one factor the judge can consider. 
   
-  If this applies to your marriage, briefly explain what actions or behavior of your spouse (${ OP_party_label }) contributed to the breakdown of the marriage. For example: “${ capitalize(OP_party_label) } has been controlling throughout the marriage. They did not allow the Plaintiff to work outside the home, so ${ user_party_label } lost the opportunity to build their career for ten years.”
+  If this applies to your marriage, briefly explain what actions or behavior of your spouse (${ OP_party_label }) contributed to the breakdown of the marriage. For example: “${ capitalize(OP_party_label) } has been controlling throughout the marriage. They did not allow ${ user_party_label } to work outside the home, so ${ user_party_label } lost the opportunity to build their career for ten years.”
 ---
 id: spousal support factor 2
 question: "{Factor} 2: The length of the marriage"
@@ -4180,8 +4194,6 @@ subquestion: |
 
   % if tool_ID in ["divorce_complaint", "JOD_only"]:
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
-  % elif tool_ID == "divorce_answer":
-  If the judge revokes your parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
   % endif
   
   % elif children[i].bio_parent == "user":
@@ -4209,8 +4221,6 @@ subquestion: |
   
   % if tool_ID in ["divorce_complaint", "JOD_only"]:
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
-  % elif tool_ID == "divorce_answer":
-  If the judge revokes your parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
   % endif
 
   % elif children[i].bio_parent == "user":
@@ -4238,8 +4248,6 @@ subquestion: |
 
   % if tool_ID in ["divorce_complaint", "JOD_only"]:
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
-  % elif tool_ID == "divorce_answer":
-  If the judge revokes your parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
   % endif
 
   If nobody files a Motion to Determine Child Born Out of Wedlock, you will remain a legal parent. This means the judge can award you custody and/or parenting time, and you may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
@@ -4630,7 +4638,7 @@ content: |
   In this case, the week in Ohio counts as part of the time the child lived in Michigan. The child in the example has lived in Michigan from birth.
   % endif
 ---
-if: child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.currently_resides_in_locality != "MI"
+if: children[i].age_in_months() >= 6 and not childen[i].current_residence_is_home_state and children[i].currently_resides_in_locality != "MI"
 id: Michigan was previous home state prong
 question: ${ children[i] }'s legal "home state", part 3
 subquestion: |
@@ -4799,7 +4807,7 @@ subquestion: |
   ${children_previous_address.table}
 fields:
   - label: |
-      Are there any more previous address where ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } lived in the last five years?
+      Are there any more previous addresses where ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } lived in the last five years?
     field: children_previous_address.there_is_another
     datatype: yesnoradio
 ---
@@ -5225,7 +5233,7 @@ template: ART_pregnancy
 subject: |
   Pregnancy where conception was through assisted reproductive technology (ART). 
 content: |
-  If the pregnancy is the result of a surrogacy agreement, that pregnancy should be included in your divorce forms. 
+  If you or your spouse is pregnant as part of a surrogacy agreement, that information should be included in your divorce forms.
   
   If the pregnancy is a result of assisted reproduction that does not involve surrogacy **and** you believe that you or your spouse should not be a legal parent, stop using this tool and find a lawyer to help you. ${MLH_GUIDE_FULL}
 ---
@@ -6393,6 +6401,9 @@ fields:
     datatype: yesno
   - "Other means-tested public assistance": pa_other
     datatype: yesno
+validation code: |
+  if not (pa_food_assistance_program or pa_medicaid or pa_family_independence_program or pa_women_infants_children or pa_state_disability or pa_state_emergency_relief or pa_refugee_assistance or pa_supplemental_security or pa_other):
+    validation_error("You must select at least one type of public assistance. Please go back and change your answers if do not get and have not applied for public assistance.")
 ---
 if: pa_other
 id: public assistance other divorce/custody
@@ -6422,7 +6433,7 @@ code: |
   if pa_food_assistance_program:
     public_assistance_list.append("FAP")
   if pa_medicaid:
-    public_assistance_list.append("MA CDC")
+    public_assistance_list.append("MA")
   if pa_family_independence_program:
     public_assistance_list.append("FIP")
   if pa_women_infants_children:
@@ -6456,7 +6467,7 @@ code: |
   if op_pa_food_assistance_program:
     op_public_assistance_list.append("FAP")
   if op_pa_medicaid:
-    op_public_assistance_list.append("MA CDC")
+    op_public_assistance_list.append("MA")
   if op_pa_family_independence_program:
     op_public_assistance_list.append("FIP")
   if op_pa_women_infants_children:
@@ -6658,12 +6669,12 @@ fields:
         other_party_pa_status == "gets_assistance"
 
 ---
-id: public assistance SSA
+id: public assistance SSA OP
 question: SSA Public Assistance
 subquestion: |
   Enter ${OP_label}'s Social Security Administration (SSA) case number here, if known.
 
-  SSA case numbers usually use a Social Security number (SSN). It's OK to enter here because the case number will only go on a nonpublic form.
+  SSA case numbers usually use a Social Security number (SSN). It's OK to enter here because the case number will only go on a nonpublic form (FOC 23).
 fields:
   - 'SSA Case #': op_pa_ssa_number
 
@@ -7144,10 +7155,11 @@ fields:
       - "I disagree": disagree
       - "I do not know whether the statements are true": unsure
   - "Optional comment:": complaint_paragraphs[i].details
+    help: |
+      If you agree but you think your spouse left out an important detail, or if you want to clarify something, you can add more information here.
     required: False
     input type: area
-    rows: 2
-    maxlength: 140
+    rows: 8
     show if:
       variable: complaint_paragraphs[i].response
       is: agree
@@ -7161,6 +7173,8 @@ fields:
       variable: complaint_paragraphs[i].response
       is: disagree
   - "Optional comment:": complaint_paragraphs[i].details
+    help: |
+      If you don't know whether the statements are true, you may want to explain what you're unsure about.
     required: False
     input type: area
     rows: 2

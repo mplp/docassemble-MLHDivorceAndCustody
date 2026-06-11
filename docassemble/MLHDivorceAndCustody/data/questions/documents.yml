@@ -609,6 +609,7 @@ attachment:
       - case_number: ${ docket_number }
       - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
       - trial_court_phone_number: ${ the_court.phone }
+      - judge_name: ${ word("Judge ") + word(divorce_judge) }
       - plaintiff: ${ other_parties[0].name_full() }
       - defendant: ${ users[0].name_full() }
       - plaintiff_previous_name: |
@@ -675,6 +676,7 @@ attachment:
       - case_number__2: ${ docket_number }
       - trial_court_address_on_one_line: ${ the_court.address.on_one_line() }
       - trial_court_phone_number: ${ the_court.phone }
+      - judge_name: ${ word("Judge ") + word(divorce_judge) }
       - plaintiff: ${ other_parties[0].name_full() }
       - defendant: ${ users[0].name_full() }
       - plaintiff_previous_name: |
