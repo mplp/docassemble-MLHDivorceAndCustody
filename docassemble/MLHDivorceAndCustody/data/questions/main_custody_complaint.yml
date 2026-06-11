@@ -5,10 +5,10 @@ include:
 ---
 # TODO subtitle?
 metadata:
-  title: Do-It-Yourself Divorce
-  short title: Do-It-Yourself Divorce
+  title: Do-It-Yourself Custody Case (Unmarried Parents)
+  short title: Do-It-Yourself Custody Case (Unmarried Parents)
   description: |
-    Self-help interview to get documents needed to file for divorce in Michigan.
+    Self-help interview to get documents needed to start a custody case in Michigan.
   tags:
     - Family
   authors:
@@ -31,62 +31,49 @@ sections:
 ---
 # set static instructions variables
 code: |
-  survey_link_url_only = "https://www.surveymonkey.com/r/VSJYG9P"
+  survey_link_url_only = "https://www.surveymonkey.com/r/PLACEHOLDER"
 ---
 code: |
-  tool_ID = "divorce_complaint"
+  tool_ID = "custody_complaint"
 ---
 #should be able to pull this from framework but getting error so trying it here
 code: |
   optional_download_message = ""
 ---
 code: |
-  if there_are_marital_children:
-    docket_number = "                         -DM"
-  else:
-    docket_number = "                         -DO"
-depends on:
-  - there_are_marital_children
+    docket_number = "                         -DC"
 ---
 # sets MLH_case_type_language
 code: |
-  if there_are_marital_children:
-    MLH_case_type_language = "The case type code for a divorce with {marital children} is **DM.**"  
-  else:
-    MLH_case_type_language = "The case type code for a divorce with no {marital children} is **DO.**"  
-depends on:
-  - there_are_marital_children
+    MLH_case_type_language = "The case type code is **DC.**"   
 ---
 template: survey_embed_script
 content: |
   <script>
-  (function(t,e,s,n){var o,a,c;t.SMCX=t.SMCX||[],e.getElementById(n)||(o=e.getElementsByTagName(s),a=o[o.length-1],c=e.createElement(s),c.type="text/javascript",c.async=!0,c.id=n,c.src="https://widget.surveymonkey.com/collect/website/js/tRaiETqnLgj758hTBazgd3klEhgaKMHlXfvlsGbv5FZAlDWvFjduioTLlUVSyjRs.js",a.parentNode.insertBefore(c,a))})(window,document,"script","smcx-sdk");
+  ?????????
   </script>
 ---
 # set intro landing screen variables
 code: |
   MLH_form_type = "forms"
-  MLH_time_min = 40
-  MLH_time_max = 90
+  MLH_time_min = 30
+  MLH_time_max = 60
 ---
 template: MLH_welcome_message
 content: |
-  Welcome to the Do-It-Yourself Divorce tool.
+  Welcome to the Do-It-Yourself Custody Case tool.
 
-  This tool will help you prepare the forms you need to ask the court for a divorce. This tool may not be able to help you with every aspect of your divorce. In some cases, you may want to have a lawyer help you finish the divorce process. ${MLH_GUIDE_FULL}
+  This tool will help you prepare forms to ask the court for a custody, parenting time, and child support order if you are **not married** to the other parent of your child or children. 
 ---
 # ====================================================================
 ## interview_order
 # ====================================================================
 ---
-id: interview_order_michigan_divorce_complaint
+id: interview_order_michigan_custody_complaint
 mandatory: True
 scan for variables: False
 code: |
   set_persistent_interview_specific_logic
-  # for backward compatibility, can remove once enough time has passed because these are now (~May 2026) in set_persistent_interview_specific_logic:
-  property_review_template
-  debt_review_template
   
   nav.set_section("review_full")
   nav.set_section("signpost_intro")
@@ -94,44 +81,19 @@ code: |
   MLH_standard_intro_pages
 
   nav.set_section("signpost_qualify")
-  if marriage.pending_divorce:
-      if edit_existing_divorce:
-        existing_divorce_options
-      else:
-        exit_second_divorce
+  if married_other_parent_now:
+    current_marriage_exit
+  if married_other_parent_past:
+    past_marriage_exit
+  if not children_in_common:
+    custody_no_kids_exit
 
-  if not marriage.breakdown:
-    exit_no_marriage_breakdown
   if spouse_is_incompetent:
     exit_general
   if spouse_is_in_military and military_spouse_agrees_consent_judgment != "yes":
     exit_general
-
-  if marriage.have_experienced_domestic_violence:
-    if not marriage.have_experienced_domestic_violence_continue:
-      exit_general
-
-  if marriage.have_pension_retirement:
-    if marriage.pension_contributions_made:
-      marriage.pension_retirement_accounts_keep_own
-      if not marriage.pension_retirement_accounts_continue:
-        exit_general
-    else:
-      marriage.divide_separate_pension
-
-  if marriage.have_business:
-    exit_general
-
-  if marriage.pending_divorce:
-    if marriage.temporary_order:
-      marriage.temporary_order_changed
-  
-  if need_temporary_order:
-    if not temporary_order_continue:
-      exit_general
-
-  marriage.date
-  marriage.address.city
+ 
+  residence_warning
 
   nav.set_section("signpost_user")
 
@@ -268,44 +230,3 @@ code: |
     al_download_waiting_screen
   MLH_download
 ---
-
-# ====================================================================
-## interview_order - for testing divorce instructions
-# ====================================================================
-# To test, make the main interview order block not mandatory and the below block mandatory
-# ---
-# id: interview_order_instructions_test
-# mandatory: True
-# scan for variables: False
-# code: |
-#   tool_ID = "divorce_complaint"
-#   divorce_instructions_test
-#   instructions_test_download
-# ---
-# id: Choose a court
-# question: |
-#   Select test parameters.
-# subquestion: |
-# fields:
-#   - County: county_choice
-#     code: court_list._load_courts()["address_county"].unique()
-#   - With or without children: there_are_marital_children
-#     input type: radio
-#     code: |
-#       [ { False : 'Without' }, { True : 'With' } ]  
-# continue button field: divorce_instructions_test
-# 
-# ---
-# id: TestDownloadScreen
-# event: instructions_test_download
-# question: |
-#   Get your instructions!
-# subquestion: |
-#   You can **view**, **download**, or **e-mail** your ${ MLH_form_type } to yourself below.
-# 
-#   ${ al_user_bundle.download_list_html() }
-# 
-#   ${ al_user_bundle.send_button_html(show_editable_checkbox=True) }
-# ---
-# objects:
-#   - al_user_bundle: ALDocumentBundle.using(elements=[instructions], enabled=True)
