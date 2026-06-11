@@ -290,6 +290,64 @@ fields:
  - Do you want to continue to create your Answer form without a Counterclaim?: continue_no_kids_no_cc
    datatype: yesnoradio
 ---
+if: tool_ID == "custody_complaint"
+id: current_marriage_exit
+event: current_marriage_exit
+question: |
+  Married to the other parent
+subquestion: |
+  Sorry, you cannot use this tool to file a Complaint for Custody, Parenting Time, and Child Support if you are married to the Defendant.
+
+  One option may be filing for divorce. Visit [Filing for Divorce with Children](https://michiganlegalhelp.org/resources/family/filing-divorce-children) to learn more.
+
+  You may also want to contact a lawyer for help. ${MLH_GUIDE_FULL}
+
+  If you think you made a mistake, tap **Undo** and change the answer to this question.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
+if: tool_ID == "custody_complaint"
+id: past_marriage_exit
+event: past_marriage_exit
+question: |
+  Past marriage to the other parent
+subquestion: |
+  You cannot use this tool to prepare a Custody Complaint if you used to be married to the other parent. Depending on the circumstances, you may need to file a motion in the divorce case instead. You may want to speak to a lawyer. ${MLH_GUIDE_FULL}
+
+  If you already have a custody, parenting time, and child support order that you want to change, these articles may be useful:
+
+  * [Changing a Custody Order](https://michiganlegalhelp.org/resources/family/changing-custody-order)
+  * [Changing Parenting Time](https://michiganlegalhelp.org/resources/family/changing-parenting-time)
+  * [Changing a Child Support Order](https://michiganlegalhelp.org/resources/family/changing-child-support-order)
+
+  If you think you made a mistake, tap **Undo** and change the answer to this question.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
+if: tool_ID == "custody_complaint"
+id: custody_no_kids_exit
+event: custody_no_kids_exit
+question: |
+  No minor children with the defendant
+subquestion: |
+  Sorry, this tool is for filing a complaint for Custody, Parenting Time, and Child Support against the other parent of your {minor} child(ren).
+
+  If you think you made a mistake, tap **Undo** and change the answer to this question.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
 # --------------------------------------------------------------------
 ## introduction
 # --------------------------------------------------------------------
@@ -305,6 +363,24 @@ validation code: |
   if not marriage.pending_divorce:
     edit_existing_divorce = False
     returning_to_finalize = False
+---
+id: custody marriage screening
+question: Relationship with the other parent
+subquestion: |
+  You will be called the Plaintiff in this case because you are filing the Complaint for Custody, Parenting Time, and Child Support. The other parent of this child or these children is called the Defendant.
+fields: 
+  - Are you currently married to the Defendant?: married_other_parent_now
+    datatype: yesnoradio
+  - Have you ever been married to the Defendant?: married_other_parent_past
+    datatype: yesnoradio
+    show if: 
+      variable: married_other_parent_now
+      is: False
+  - Do you and the Defendant have one or more {minor} children together?: children_in_common
+    datatype: yesnoradio
+    show if: 
+      variable: married_other_parent_past
+      is: False
 ---
 if: tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and returning_to_finalize)
 id: Choose a court
@@ -649,38 +725,51 @@ fields:
     field: marriage.breakdown
     datatype: yesnoradio
 ---
-id: incompetent spouse
+id: incompetent spouse / OP
 question: |
-  Your spouse's legal competence
+  ${capitalize(OP_label)}'s legal competence
 fields:
-  - To the best of your knowledge, has a judge found your spouse to be legally incompetent?: spouse_is_incompetent
+  - To the best of your knowledge, has a judge found ${OP_label} to be legally incompetent?: spouse_is_incompetent
     datatype: yesnoradio    
   - note: |
-      If your spouse does not file an answer to your divorce complaint, you may be entering a default judgment of divorce against him or her. You may not enter a default judgment against a person who is not legally competent to understand the divorce proceedings.
+      Sorry, you cannot use this tool. If ${OP_label} does not file an answer to your complaint, you may be entering a default judgment against him or her. You may not enter a default judgment against a person who is not legally competent to understand the proceedings.
     show if:
       variable: spouse_is_incompetent
       is: True
 ---
 id: military spouse
 question: |
-  Spouse in the military?
+  Is ${OP_label} in the military?
 subquestion: |
   ${collapse_template(military_spouse_info)}
 fields:
-  - Is your spouse currently on active military duty in the United States armed forces?: spouse_is_in_military
+  - Is ${OP_label} currently on active military duty in the United States armed forces?: spouse_is_in_military
     datatype: yesnoradio
   - note: |
-      If your spouse is on active military duty, you may only use this tool to prepare your divorce forms if your spouse:
-      
+      If ${OP_label} is on active military duty, you may only use this tool to prepare your forms if ${OP_label}:
+
+      % if tool_ID == "divorce_complaint":      
       * agrees to the divorce, 
       * agrees to all the terms of the divorce, and 
       * will sign a Consent Judgment of Divorce. 
       
-      If your spouse is on active military duty and doesn't agree to the divorce or all the terms of the divorce, you may want to talk to a lawyer to help you complete your divorce.
+      If ${OP_label} is on active military duty and doesn't agree to the divorce or all the terms of the divorce, you may want to talk to a lawyer to help you complete your divorce.
+      % elif tool_ID == "custody_complaint":
+      * agrees to all of the custody, parenting time, and child support terms, and 
+      * will sign a consent order.      
+      
+      If you want to file a custody case against someone who is on active military duty and does not agree to all of the custody, parenting time, and child support terms, you cannot use this tool. You may want to talk to a lawyer to help you with your case.
+      % endif
     show if:
       variable: spouse_is_in_military
       is: True
-  - Will you and your spouse be filing a Consent Judgment of Divorce?: military_spouse_agrees_consent_judgment
+  - label: |
+      % if tool_ID == "divorce_complaint":
+      Will you and ${OP_label} be filing a Consent Judgment of Divorce?
+      % elif tool_ID == "custody_complaint":
+      Will you and ${OP_label} be filing a consent order?
+      % endif
+    field: military_spouse_agrees_consent_judgment
     datatype: radio
     choices:
       - Yes: yes
@@ -693,9 +782,22 @@ fields:
 template: military_spouse_info
 subject: What if I'm not sure?
 content: |
-  If your spouse is or may be on active military duty, you may only use this tool to prepare your divorce forms if your spouse agrees to the divorce, agrees to all of the terms of the divorce, and will sign a Consent Judgment of Divorce. 
+  If ${OP_label} is or may be on active military duty, you may only use this tool to prepare your ${ word("divorce forms") if tool_ID == "divorce_complaint" else word("custody forms") } if your spouse agrees to ${ word("the divorce, agrees to all of the terms of the divorce, and will sign a Consent Judgment of Divorce.") if tool_ID == "divorce_complaint" else word("all of the custody, parenting time, and child support terms, and will sign a consent order.") } 
   
-  Please return to use this tool when you have determined if your spouse is currently on active military duty. 
+  Please return to use this tool when you have determined if ${OP_label} is currently on active military duty. 
+---
+id: residence_warning
+continue button field: residence_warning
+question: Connection to Michigan
+subquestion: |
+  To file a custody case in Michigan, usually:
+
+  * one of the parents must live in Michigan, and
+  * all your {minor} children with the other parent must have lived for the last 6 months (or since birth) in Michigan.
+
+  We will ask specifically about these things later in this tool. 
+  
+  If these things are not true for your case, you may want to **stop now and speak with a lawyer.** ${MLH_GUIDE_FULL}
 ---
 id: need temp order
 question: Need a temporary order to secure marital property?

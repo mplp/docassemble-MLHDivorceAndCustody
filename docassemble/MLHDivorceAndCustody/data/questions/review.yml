@@ -531,7 +531,7 @@ review:
   - Edit:
       - spouse_is_in_military
     button: |
-      <h3 class="h5"> Spouse on active US military duty?</h3>
+      <h3 class="h5"> ${capitalize(OP_label)} on active US military duty?</h3>
         - ${word(yesno(spouse_is_in_military))}
   - Edit:
       - other_parties[0].has_attorney

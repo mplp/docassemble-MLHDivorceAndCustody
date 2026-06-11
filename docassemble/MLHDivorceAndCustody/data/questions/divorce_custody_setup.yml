@@ -85,7 +85,7 @@ code: |
   
   set_JOD_party_labels = True
 ---
-### divorce instructions variables
+### instructions variables
 # note: currently no JOD_only instructions, but using some of this in optional_download_message
 code: |
   if tool_ID in ["divorce_complaint", "JOD_only"]:
@@ -108,6 +108,10 @@ code: |
       resource_page_name = "Responding to Divorce without Children"
       has_whats_next_text = True
       whats_next_text_message = "Text 1450 to (734) 275-2201 to to get automated text messages about the next steps for filing an Answer in a divorce case."
+  elif tool_ID == "custody_answer":
+    resource_page_url_only = "https://michiganlegalhelp.org/node/2571"
+    resource_page_name = "Filing a Custody Case (Unmarried Parents)"
+    has_whats_next_text = False
 
   undefine("resource_page_link")
 
@@ -116,14 +120,17 @@ code: |
 code: |
   if tool_ID in ["divorce_complaint", "JOD_only", "divorce_answer"]:
     cover_sheet_header = "Your divorce forms are ready. Well done!"
+  elif tool_ID in ["custody_complaint", "custody_answer"]:
+    cover_sheet_header = "Your custody case forms are ready. Well done!"
   
-  if tool_ID in ["divorce_complaint", "divorce_answer"]:
+  if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"]:
     cover_sheet_complete_1 = f"Now that you have your { MLH_form_type }, use our instructions to learn about next steps. The following pages have instructions and other helpful information."
   elif tool_ID == "JOD_only":
     if user_ask_role == "plaintiff" or ((marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own) or (marriage.personal_property_need_items and len(marriage.accounts.filter(trigger_investment_reminder=True)) > 0) or (there_are_marital_children and (parentage_affidavit_revoke or parentage_order_revoke or parentage_marital_revoke)) or (there_are_marital_children and not MI_has_jurisdiction_all_kids)):
       cover_sheet_complete_1 = f"Now that you have your { MLH_form_type }, use our instructions to learn about next steps. Online instructions are linked below, and the following pages have other helpful information."
     else:
       cover_sheet_complete_1 = f"Now that you have your { MLH_form_type }, use our instructions to learn about next steps."
+  
 ---
 code:  |
   github_repo_name = 'docassemble-MLHDivorceAndCustody' if get_config('debug') else 'docassemble-UserFeedback'
