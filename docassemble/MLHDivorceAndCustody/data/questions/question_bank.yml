@@ -7179,7 +7179,8 @@ fields:
     rows: 8
     show if:
       variable: complaint_paragraphs[i].response
-      is: unsure---
+      is: unsure
+---
 template: answer_re_kids_tips_container
 subject: Is the paragraph about kids or pregnancy?
 content: |
