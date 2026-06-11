@@ -3114,6 +3114,14 @@ code: |
       children_lived_with_which_parent_past
       children_previous_address.gather() # calls "children's previous addresses" screen
 
+  if there_are_marital_children or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant)):
+  
+    if not there_are_marital_children and (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant)):
+      pregnant_no_kids_info
+      users[0].revoke_pregnancy
+      users[0].pregnancy_due_date
+      # surrogacy_check
+  
     legal_custody_who
     if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]:
       if (tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID in ["JOD_only", "divorce_answer"] and county_choice == "Muskegon"):  
@@ -3128,12 +3136,14 @@ code: |
       child_domicile_info
       if legal_custody_who == "both":
         hundred_mile_rule
-    child_support_basic
-    if tool_ID != "JOD_only":
-      allow_child_support_overpayment_correction
-      if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0:
-        guidepost_stepchildren
-        interview_order_stepchild_address
+  
+    if there_are_marital_children:
+      child_support_basic
+      if tool_ID != "JOD_only":
+        allow_child_support_overpayment_correction
+        if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0:
+          guidepost_stepchildren
+          interview_order_stepchild_address
   
   interview_order_children = True
 ---
@@ -5275,6 +5285,50 @@ action buttons:
     color: danger
     icon: right-from-bracket
 ---
+id: pregnant_no_kids_info
+continue button field: pregnant_no_kids_info
+question: You will file a counterclaim "with children"
+subquestion: |
+  You said you and your spouse do not have any living minor children, but ${word("you are both") if users[0].pregnant and other_parties[0].pregnant else word("you are") if users[0].pregnant else word("your spouse is")} pregnant.
+
+  When either spouse is pregnant during a Michigan divorce, the proper divorce counterclaim type is "with children". 
+
+  On the next few screens, we will ask some more questions about the ${word("pregnancies") if users[0].pregnant and other_parties[0].pregnant else word("pregnancy")} to fill out your forms.
+
+  [more info or FAQs here dealing with situations where pregnancy isn't marital, pregnancy may not come to term, etc.???]
+---
+id: pregnancy revocation
+question: Recvocation of parentage
+subquestion: |
+  Revocation context/explanation here. Can be customized for which party is pregnant or if both are.
+fields: 
+  - For your current pregnancy, do you plan to ask the court to revoke (cancel) your spouse's legal parentage as part of your divorce case?: users[0].revoke_pregnancy
+    datatype: yesnoradio
+    show if: 
+      code: |
+        users[0].pregnant
+  - For your spouse's current pregnancy, do you plan to ask the court to revoke (cancel) your legal parentage as part of your divorce case?: other_parties[0].revoke_pregnancy
+    datatype: yesnoradio
+    show if: 
+      code: |
+        other_parties[0].pregnant
+---
+id: pregnancy_due_date
+question: Approximate due date
+subquestion: |
+  help text here?
+fields: 
+  - Approximately when is the due date for your current pregnancy?: users[0].pregnancy_due_date
+    maxlength: 20
+    show if: 
+      code: |
+        users[0].pregnant
+  - Approximately when is the due date for your spouse's current pregnancy?: users[0].pregnancy_due_date
+    maxlength: 20
+    show if: 
+      code: |
+        users[0].pregnant
+---
 # --------------------------------------------------------------------
 ## prior cases
 # --------------------------------------------------------------------
@@ -7250,11 +7304,12 @@ code: |
     counterclaim_type = "with_children"
   else:
     counterclaim_type = "no_children"
+  # surrogacy check needed here?
 ---
 id: complaint_mismatch_warning
 if: (complaint_type == "with_children" and counterclaim_type == "no_children") or (complaint_type == "no_children" and counterclaim_type == "with_children")
 continue button field: complaint_mismatch_warning
-question: Your spouse's complaint does not match your situation
+question: Your spouse's complaint type does not match your situation
 subquestion: |
   WARNINGS/INFORMATION HERE
 ---

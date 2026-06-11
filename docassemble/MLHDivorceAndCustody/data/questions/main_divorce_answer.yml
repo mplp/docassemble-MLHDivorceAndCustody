@@ -216,7 +216,7 @@ code: |
       elif not there_are_marital_children:
         nav.set_section("signpost_income_etc")
   
-      if (complaint_type == "with_children" and there_are_marital_children) or (complaint_type == "no_children" and user_wants_post_divorce_support):
+      if counterclaim_type == "with_children" or user_wants_post_divorce_support:
         interview_order_user_employment
         interview_order_user_income
         interview_order_user_identifying_info

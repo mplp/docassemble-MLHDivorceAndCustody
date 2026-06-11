@@ -39,7 +39,7 @@ code: |
   elif tool_ID == "custody_complaint":
     UCCJEA_affidavit_mc416.enabled = True
   elif tool_ID == "divorce_answer":
-    UCCJEA_affidavit_mc416.enabled = create_counterclaim and complaint_type == "with_children"
+    UCCJEA_affidavit_mc416.enabled = create_counterclaim and counterclaim_type == "with_children"
   else:
     UCCJEA_affidavit_mc416.enabled = False
 
@@ -52,7 +52,9 @@ code: |
   UCCJEA_affidavit_mc416_addendum.enabled = False
 
   if UCCJEA_affidavit_mc416.enabled:
-    if (
+    if tool_ID == "divorce_answer" and not there_are_marital_children:
+      UCCJEA_affidavit_mc416_addendum.enabled = False
+    elif (
         len(children_previous_address) > 4
         or len(prior_family_cases.filter(add_to_MC416_4=True)) > 5
         or len(prior_family_cases.filter(not_name_change).filter(resolved=False)) > 1
@@ -65,7 +67,7 @@ code: |
   if tool_ID == "divorce_complaint":
     verified_statement_foc_23_full.enabled = (there_are_marital_children or user_wants_post_divorce_support)
   elif tool_ID == "divorce_answer":
-    verified_statement_foc_23_full.enabled = create_counterclaim and (user_wants_post_divorce_support or complaint_type == "with_children")
+    verified_statement_foc_23_full.enabled = create_counterclaim and (user_wants_post_divorce_support or counterclaim_type == "with_children")
   elif tool_ID == "custody_complaint":
     verified_statement_foc_23_full.enabled = True
   elif tool_ID == "custody_answer":
@@ -100,7 +102,7 @@ code: |
   if tool_ID in ["divorce_complaint", "custody_complaint"]:
     child_support_services_dhs_1201d.enabled = there_are_marital_children
   elif tool_ID == "divorce_answer":
-    child_support_services_dhs_1201d.enabled = complaint_type == "with_children"
+    child_support_services_dhs_1201d.enabled = create_counterclaim and counterclaim_type == "with_children"
 ---
 code: |
   uniform_spousal_support_order_foc10b.enabled = user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
@@ -578,13 +580,13 @@ objects:
     - counterclaim_411_full: ALDocumentBundle.using(elements=[counterclaim_for_divorce_with_children_cc_411, complaint_answer_attachment], filename="Counterclaim for Divorce - CC-MLH 411", title="Counterclaim for Divorce - CC-MLH 411")
 ---
 code: |
-    counterclaim_410_full.enabled = tool_ID in ["divorce_answer"] and complaint_type == "no_children" and create_counterclaim
+    counterclaim_410_full.enabled = tool_ID in ["divorce_answer"] and create_counterclaim and counterclaim_type == "no_children"
     if counterclaim_410_full.enabled:
         counterclaim_for_divorce_no_children_cc_410.enabled = True
         complaint_answer_attachment.enabled = user_wants_post_divorce_support
 ---
 code: |
-    counterclaim_411_full.enabled = tool_ID in ["divorce_answer"] and complaint_type == "with_children" and create_counterclaim
+    counterclaim_411_full.enabled = tool_ID in ["divorce_answer"] and create_counterclaim and counterclaim_type == "with_children"
     if counterclaim_411_full.enabled:
         counterclaim_for_divorce_with_children_cc_411.enabled = True
         complaint_answer_attachment.enabled = user_wants_post_divorce_support or ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom")
@@ -699,8 +701,17 @@ attachment:
       - defendant_pregnant: ${ users[0].pregnant }
       - no_party_pregnant: ${ (not other_parties[0].pregnant) and (not users[0].pregnant) }
       - marital_children_names_ages: |
+          % if there_are_marital_children:
           ${ comma_and_list([child.name.full() + ", age " + str(child.age_in_years()) for child in children if child.legal_parent == "both"]) + "." if any(child.legal_parent == "both" for child in children) else "" }
           ${ "I intend to file a Motion to Determine Child Born Out of Wedlock with regard to " + comma_and_list([child.name.full() for child in children if child.legal_parent == "both" and child.revoke_paternity_reminder]) + "." if any(child.legal_parent == "both" and child.revoke_paternity_reminder for child in children) else "" }
+          % else:
+          % if users[0].pregnant:
+          Defendant is pregnant. The approximate due date is: ${strip_end_punctuation(users[0].pregnancy_due_date)}. ${word("I plan to ask the court to revoke Plaintiff's parentage of any child born of this pregnancy.") if users[0].revoke_pregnancy else ""}
+          % endif
+          % if other_parties[0].pregnant:
+          Plaintiff is pregnant. The approximate due date is: ${strip_end_punctuation(other_parties[0].pregnancy_due_date)}. ${word("I plan to ask the court to revoke my parentage of any child born of this pregnancy.") if other_parties[0].revoke_pregnancy else ""}
+          % endif
+          % endif
       - parties_with_legal_custody__1: |
           % if legal_custody_who == "other_party":
           Plaintiff
@@ -2008,25 +2019,25 @@ attachment:
       - collection_percentage_10: ${ allow_child_support_overpayment_correction and child_support_overpayment_percentage == "ten" }
       - collection_percentage_50: ${ allow_child_support_overpayment_correction and child_support_overpayment_percentage == "fifty" }
       - users1_signature: |
-          % if MLH_esign:
+          % if MLH_esign and defined("allow_child_support_overpayment_correction"):
           /s/ ${ users[0].name_full() }
           % else:
           ${ '' }
           % endif
       - users1_name: |
-          % if MLH_esign:
+          % if MLH_esign and defined("allow_child_support_overpayment_correction"):
           ${ users[0].name_full() }
           % else:
           ${ '' }
           % endif
       - signature_date: |
-          % if MLH_esign:
+          % if MLH_esign and defined("allow_child_support_overpayment_correction"):
           ${ signature_date }
           % else:
           ${ '' }
           % endif
       - pursuant_to: |
-          % if MLH_esign:
+          % if MLH_esign and defined("allow_child_support_overpayment_correction"):
           ${ MLH_esign_tag }
           % else:
           ${ '' }
