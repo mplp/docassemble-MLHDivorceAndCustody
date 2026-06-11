@@ -202,7 +202,8 @@ code: |
       nav.set_section("signpost_children")
       users[0].pregnant
       interview_order_children
-      counterclaim_type
+  
+      counterclaim_type # may be set during interview_order_children
       if (complaint_type == "with_children" and counterclaim_type == "no_children") or (complaint_type == "no_children" and counterclaim_type == "with_children"):
         complaint_mismatch_warning
   
