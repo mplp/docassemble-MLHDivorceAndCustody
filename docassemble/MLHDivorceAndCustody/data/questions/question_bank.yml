@@ -3784,7 +3784,12 @@ code: |
 ---
 id: divorce with or without children tag
 code: |
-  if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
+  if tool_ID == "divorce_answer" and not create_counterclaim: 
+    if complaint_type == "with_children":
+      there_are_marital_children = True
+    else: 
+      there_are_marital_children = False
+  elif children.there_are_any and len(children.filter(legal_parent="both")) > 0:
     there_are_marital_children = True
   else: 
     there_are_marital_children = False
@@ -3846,7 +3851,9 @@ template: non_marital_children_explanation_template
 subject: |
   Why do I need to include both children in common and separate children?
 content: |
-  If you or your spouse has a child that is not also the child of the other spouse, this child must also be named in some of the divorce documents.
+  If you or your spouse has a child that is not also the child of the other spouse, in some cases this child must also be named in some divorce documents.
+
+  Depending on your situation, there may also be important information about parentage that we want to make sure you have.
 ---
 id: any more children
 question: |
@@ -3935,11 +3942,19 @@ template: children[i].gender_explanation
 subject: |
   How will this information be used?
 content: |
+  % if tool_ID == "divorce_answer":
+  If there are marital children, all children's sex, date of birth, and (for {marital children}) social security number may be placed on the *Verified Statement* form (FOC 23). These forms will **not** be publicly available. The Friend of the Court office and your {spouse} will have access to these forms.
+
+  Gender: FOC 23 only gives options of "F" for female or "M" for male. If you select "Nonbinary", we will put "NB", and a note that this stands for Nonbinary.
+
+  Age: {Marital children}'s age, but not their date of birth, may be included on other court forms.
+  % else:
   Children's sex, date of birth, and (for {marital children}) social security number are used on the *Verified Statement* form (FOC 23) and *Domestic Relations Judgment Information* form (FOC 100). These forms will **not** be publicly available. The Friend of the Court office and your {spouse} will have access to these forms.
 
   Gender: FOC 23 only gives options of "F" for female or "M" for male. If you select "Nonbinary", we will put "NB", and a note that this stands for Nonbinary.
 
   Age: {Marital children}'s age, but not their date of birth, will be included on other court forms.
+  % endif
 ---
 id: marital children's origin
 if: children[i].timing == "marital" and not children[i].adopted_during_marriage
@@ -7521,7 +7536,15 @@ if: (complaint_type == "with_children" and counterclaim_type == "no_children") o
 continue button field: complaint_mismatch_warning
 question: Your spouse's complaint type does not match your situation
 subquestion: |
+  % if counterclaim_type == "with_children":
+  You said you have {minor} {marital children}, but your {spouse} filed a divorce complaint **without children.**
+  
   One of you should file a motion to convert the divorce to a divorce with children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+  % elif counterclaim_type == "no_children":
+  You said you have no {minor} {marital children} and neither spouse is pregnant, but your {spouse} filed a divorce complaint **with children.**
+  
+  One of you should file a motion to convert the divorce to a divorce without children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+  % endif
 ---
 template: cobra_counterclaim
 subject: |
