@@ -99,16 +99,16 @@ code: |
       has_whats_next_text = True
       whats_next_text_message = "Text 1400 to (734) 275-2201 to get automated text messages about the next steps in a divorce case."
   elif tool_ID == "divorce_answer":
-    if there_are_marital_children:
+    if (not create_counterclaim and complaint_type == "with_children") or (create_counterclaim and counterclaim_type == "with_children"):
       resource_page_url_only = "https://michiganlegalhelp.org/node/1628"
       resource_page_name = "Responding to Divorce with Children"
       has_whats_next_text = False
     else:
       resource_page_url_only = "https://michiganlegalhelp.org/node/1627"
       resource_page_name = "Responding to Divorce without Children"
-      has_whats_next_text = True
+      has_whats_next_text = True ### should we turn this off if create_counterclaim and complaint_type == “with_children” i.e. plaintiff filed as with kid?
       whats_next_text_message = "Text 1450 to (734) 275-2201 to to get automated text messages about the next steps for filing an Answer in a divorce case."
-  elif tool_ID == "custody_answer":
+  elif tool_ID == "custody_complaint":
     resource_page_url_only = "https://michiganlegalhelp.org/node/2571"
     resource_page_name = "Filing a Custody Case (Unmarried Parents)"
     has_whats_next_text = False

@@ -203,9 +203,10 @@ code: |
       users[0].pregnant
       interview_order_children
   
-      counterclaim_type # may be set during interview_order_children
-      if (complaint_type == "with_children" and counterclaim_type == "no_children") or (complaint_type == "no_children" and counterclaim_type == "with_children"):
-        complaint_mismatch_warning
+      counterclaim_type # if not already set during interview_order_children
+      if (complaint_type == "with_children" and counterclaim_type == "no_children") or (complaint_type == "no_children" and counterclaim_type == "with_children" and there_are_marital_children):
+        complaint_mismatch_warning 
+        # if pregnancy-only mismatch, warning given in pregnant_cc_with_kids_info
   
       if there_are_marital_children:
         nav.set_section("signpost_prior_cases")

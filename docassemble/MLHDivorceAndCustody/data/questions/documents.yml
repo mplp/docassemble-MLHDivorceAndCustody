@@ -594,7 +594,7 @@ code: |
     counterclaim_411_full.enabled = tool_ID in ["divorce_answer"] and create_counterclaim and counterclaim_type == "with_children"
     if counterclaim_411_full.enabled:
         counterclaim_for_divorce_with_children_cc_411.enabled = True
-        complaint_answer_attachment.enabled = user_wants_post_divorce_support or ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom")
+        complaint_answer_attachment.enabled = user_wants_post_divorce_support or (counterclaim_includes_custody_info and ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom"))
 ---
 # --------------------------------------------------------------------
 ## Counterclaim for Divorce, CC-MLH 410
@@ -711,10 +711,10 @@ attachment:
           ${ "I intend to file a Motion to Determine Child Born Out of Wedlock with regard to " + comma_and_list([child.name.full() for child in children if child.legal_parent == "both" and child.revoke_paternity_reminder]) + "." if any(child.legal_parent == "both" and child.revoke_paternity_reminder for child in children) else "" }
           % else:
           % if users[0].pregnant:
-          Defendant is pregnant. The approximate due date is: ${users[0].pregnancy_due_date}. ${word("I plan to ask the court to revoke Plaintiff's parentage of any child born of this pregnancy.") if users[0].revoke_pregnancy else ""}
+          Defendant is pregnant. The approximate due date is: ${strip_end_punctuation(users[0].pregnancy_due_date)}. ${word("I plan to ask the court to revoke Plaintiff's parentage of any child born of this pregnancy.") if users[0].pregnant_how == "sex" and users[0].pregnancy_parentage != "marital" and users[0].revoke_pregnancy else ""}
           % endif
           % if other_parties[0].pregnant:
-          Plaintiff is pregnant. The approximate due date is: ${other_parties[0].pregnancy_due_date}. ${word("I plan to ask the court to revoke my parentage of any child born of this pregnancy.") if other_parties[0].revoke_pregnancy else ""}
+          Plaintiff is pregnant. The approximate due date is: ${strip_end_punctuation(other_parties[0].pregnancy_due_date)}. ${word("I plan to ask the court to revoke my parentage of any child born of this pregnancy.") if other_parties[0].pregnant_how in ["sex", "unsure"] and other_parties[0].pregnancy_parentage != "marital" and other_parties[0].revoke_pregnancy else ""}
           % endif
           % endif
       - parties_with_legal_custody__1: |
@@ -726,6 +726,8 @@ attachment:
           % elif legal_custody_who == "both":
           Both Parties
           % endif
+          % else:
+          N/A
           % endif
       - parties_with_legal_custody__2: |
           % if counterclaim_includes_custody_info:
@@ -736,6 +738,8 @@ attachment:
           % elif legal_custody_who == "both":
           both parties
           % endif
+          % else:
+          N/A
           % endif
       - legal_custody_type__1: |
           % if counterclaim_includes_custody_info:
@@ -744,6 +748,8 @@ attachment:
           % else:
           sole
           % endif
+          % else:
+          N/A
           % endif
       - parties_with_physical_custody__1: |
           % if counterclaim_includes_custody_info:
@@ -754,6 +760,8 @@ attachment:
           % elif physical_custody_who == "both":
           Both parties
           % endif
+          % else:
+          N/A
           % endif
       - parties_with_physical_custody__2: |
           % if counterclaim_includes_custody_info:
@@ -764,6 +772,8 @@ attachment:
           % elif physical_custody_who == "both":
           both parties
           % endif
+          % else:
+          N/A
           % endif
       - physical_custody_type__1: |
           % if counterclaim_includes_custody_info:
@@ -772,6 +782,8 @@ attachment:
           % else:
           sole
           % endif
+          % else:
+          N/A
           % endif
       - parties_with_parenting_time: |
           % if counterclaim_includes_custody_info:
@@ -782,6 +794,8 @@ attachment:
           % elif PT_who == "user":
           Defendant
           % endif
+          % else:
+          N/A
           % endif
       - parenting_time_request: |
           % if counterclaim_includes_custody_info:
@@ -812,6 +826,8 @@ attachment:
           % endif
           % endif
           % endif
+          % else:
+          N/A
           % endif
       - parties_with_legal_custody__3: |
           % if counterclaim_includes_custody_info:
@@ -822,6 +838,8 @@ attachment:
           % elif legal_custody_who == "both":
           Both parties
           % endif
+          % else:
+          N/A
           % endif
       - legal_custody_type__2: |
           % if counterclaim_includes_custody_info:
@@ -830,6 +848,8 @@ attachment:
           % else:
           sole
           % endif
+          % else:
+          N/A
           % endif
       - parties_with_physical_custody__3: |
           % if counterclaim_includes_custody_info:
@@ -840,6 +860,8 @@ attachment:
           % elif physical_custody_who == "both":
           Both parties
           % endif
+          % else:
+          N/A
           % endif
       - physical_custody_type__2: |
           % if counterclaim_includes_custody_info:
@@ -848,6 +870,8 @@ attachment:
           % else:
           sole
           % endif
+          % else:
+          N/A
           % endif
       - no_marriage_debts_or_property: ${ not (marriage.personal_property_acquired or marriage.debts.any or marriage.real_property.there_are_any or (marriage.have_pension_retirement and marriage.pension_contributions_made)) }
       - marriage_debts_or_property_equitable: ${ (marriage.personal_property_acquired and not marriage.personal_property_division_agreement) or (marriage.debts.any and ((not marriage.debts.pay_debts_in_own_names and not marriage.debts.agree_responsibility_debts_own_name) or (marriage.debts.any_in_both_names and not marriage.debts.agree_responsibility_debts_both_names))) or (marriage.real_property.there_are_any and not marriage.real_property_all_agreed) or (marriage.have_pension_retirement and marriage.pension_contributions_made and not marriage.pension_retirement_accounts_keep_own) }
