@@ -7200,6 +7200,7 @@ fields:
     required: False
     input type: area
     rows: 8
+    maxlength: 600
     show if:
       variable: complaint_paragraphs[i].response
       is: agree
@@ -7208,6 +7209,7 @@ fields:
     field: complaint_paragraphs[i].details
     input type: area
     rows: 8
+    maxlength: 600
     show if:
       variable: complaint_paragraphs[i].response
       is: disagree
@@ -7217,6 +7219,7 @@ fields:
     required: False
     input type: area
     rows: 8
+    maxlength: 600
     show if:
       variable: complaint_paragraphs[i].response
       is: unsure
