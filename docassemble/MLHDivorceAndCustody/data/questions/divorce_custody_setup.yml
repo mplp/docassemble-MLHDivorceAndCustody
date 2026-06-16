@@ -149,7 +149,7 @@ terms:
       - factors
       - spousal support factors
     definition: |
-      The spousal support **factors** are a set of 14 topics that judges usually consider when deciding if someone should get spousal support.
+      The spousal support **factors** are a set of 14 topics that judges consider when deciding if someone should get spousal support.
   - phrases:
       - get
     definition: |
@@ -227,11 +227,7 @@ terms:
     definition: |
       Personal property includes everything **except** real estate (houses and land). 
             
-      % if tool_ID in ["divorce_complaint," "JOD_only"]:
       Some examples of personal property are bank accounts, books, clothes, furniture, jewelry, and mobile homes.
-      % elif tool_ID == "divorce_answer":
-      Some examples of personal property are bank accounts, books, clothes, furniture, jewelry, cars, boats, and mobile homes.
-      % endif
   - phrases:
       - party
       - party's
@@ -261,7 +257,7 @@ subquestion: |
 
   ${ optional_download_message }
     
-  <h2 class="h3">Download or e-mail your ${ MLH_form_type }</h2>
+  ## Download or e-mail your ${ MLH_form_type }
 
   ${ action_button_html(url_action('review_full'), label='✎ Review / Edit', color='info') }
   
@@ -269,7 +265,7 @@ subquestion: |
 
   ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
   
-  <h2 class="h3">Take our quick survey!</h2>
+  ## Take our quick survey!
   Answer below or [open the survey in a new tab](${ survey_link_url_only }).
   ${ survey_embed_script }
 progress: 100

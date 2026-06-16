@@ -871,19 +871,19 @@ fields:
 # --------------------------------------------------------------------
 ---
 if: tool_ID == "JOD_only"
-id: users[0].previous_last_name 
+id: users[0].has_maiden_name
 question: |
-  Previous last name
+  Last name before ${"**first** " if users[0].marriage_number != "first" else ""}marriage
 fields:
-  - label: Was your last name something _other than_ ${users[0].name.last} before your marriage?
-    field: users[0].has_previous_name
+  - label: Was your last name something _other than_ ${users[0].name.last} before your ${"**first** " if users[0].marriage_number != "first" else ""}marriage?
+    field: users[0].has_maiden_name
     datatype: yesnoradio
-  - label: Please enter your last name before your marriage
-    field: users[0].previous_last_name
-    show if: users[0].has_previous_name
+  - label: Please enter your last name before your ${"**first** " if users[0].marriage_number != "first" else ""}marriage
+    field: users[0].maiden_name
+    show if: users[0].has_maiden_name
 validation code: |
-  if not users[0].has_previous_name:
-    users[0].invalidate_attr("previous_last_name")
+  if not users[0].has_maiden_name:
+    users[0].invalidate_attr("maiden_name")
 progress: 25
 ---
 if: tool_ID in ["divorce_complaint", "divorce_answer"]
@@ -910,6 +910,22 @@ fields:
 validation code: |
   if not users[0].has_previous_name:
     users[0].invalidate_attr("previous_last_name", "previous_first_name", "previous_middle_name")
+progress: 25
+---
+if: tool_ID in ["divorce_complaint", "divorce_answer"]
+id: users[0].has_maiden_name
+question: |
+  Last name before first marriage
+fields:
+  - label: Was your last name something _other than_ ${users[0].previous_last_name if users[0].has_previous_name else users[0].name.last} before your **first** marriage?
+    field: users[0].has_maiden_name
+    datatype: yesnoradio
+  - label: Please enter your last name before your **first** marriage
+    field: users[0].maiden_name
+    show if: users[0].has_maiden_name
+validation code: |
+  if not users[0].has_maiden_name:
+    users[0].invalidate_attr("maiden_name")
 progress: 25
 ---
 id: users[0].new_last_name_yn
@@ -1288,24 +1304,24 @@ fields:
       other_parties[0].name_fields(person_or_business="person")
 ---
 if: tool_ID == "JOD_only"
-id: other_parties[0].previous_last_name
+id: other_parties[0].has_maiden_name
 question: |
-  Previous last name
+  Spouse's last name before ${"**first** " if other_parties[0].marriage_number != "first" else ""}marriage
 fields:
-  - label: Was your spouse's last name something _other than_ ${other_parties[0].name.last} before your marriage?
-    field: other_parties[0].has_previous_name
+  - label: Was your spouse's last name something _other than_ ${other_parties[0].name.last} before their ${"**first** " if other_parties[0].marriage_number != "first" else ""}marriage?
+    field: other_parties[0].has_maiden_name
     datatype: yesnoradio
-  - label: Please enter your spouse's last name before your marriage
-    field: other_parties[0].previous_last_name
-    show if: other_parties[0].has_previous_name
+  - label: Please enter your spouse's last name before their ${"**first** " if other_parties[0].marriage_number != "first" else ""}marriage
+    field: other_parties[0].maiden_name
+    show if: other_parties[0].has_maiden_name
 validation code: |
-  if not other_parties[0].has_previous_name:
-    other_parties[0].invalidate_attr("previous_last_name")
+  if not other_parties[0].has_maiden_name:
+    other_parties[0].invalidate_attr("maiden_name")
 ---
 if: tool_ID in ["divorce_complaint", "divorce_answer"]
 id: other_parties[0].previous_name 
 question: |
-  Previous name
+  Spouse's previous name
 fields:
   - label: Did your spouse have a different name before this marriage?
     field: other_parties[0].has_previous_name
@@ -1326,6 +1342,21 @@ fields:
 validation code: |
   if not other_parties[0].has_previous_name:
     other_parties[0].invalidate_attr("previous_last_name", "previous_first_name", "previous_middle_name")
+---
+if: tool_ID in ["divorce_complaint", "divorce_answer"]
+id: other_parties[0].has_maiden_name
+question: |
+  Spouse's last name before first marriage
+fields:
+  - label: Was your spouse's last name something _other than_ ${other_parties[0].previous_last_name if other_parties[0].has_previous_name else other_parties[0].name.last} before their **first** marriage?
+    field: other_parties[0].has_maiden_name
+    datatype: yesnoradio
+  - label: Please enter your spouse's last name before their **first** marriage
+    field: other_parties[0].maiden_name
+    show if: other_parties[0].has_maiden_name
+validation code: |
+  if not other_parties[0].has_maiden_name:
+    other_parties[0].invalidate_attr("maiden_name")
 ---
 id: other_parties[0].gender
 sets: other_parties[0].gender
@@ -3544,6 +3575,7 @@ fields:
     choices:
       - ${ other_parties[0] } wants spousal support, but I do not agree to pay it.: someone_wants_spousal_support_no_agreement
       - I'm not sure if ${ other_parties[0] } is going to ask for spousal support.: OP_position_unknown
+        show if: tool_ID != "JOD_only"
       - ${ other_parties[0] } and I both agree that neither one of us will pay spousal support when the divorce is done, but either of us can ask for spousal support in the future.: agree_no_current_spousal_support_but_may_change
       - ${ other_parties[0] } and I both agree that neither one of us will ever pay spousal support to the other. We are both willing to give up our right to ever ask for spousal support, even if circumstances change.: agree_never_spousal_support
       - We agreed that I will pay spousal support to ${ other_parties[0] }.: user_agrees_to_pay_spousal_support
@@ -6819,15 +6851,19 @@ if: there_are_marital_children or user_wants_post_divorce_support
 question: Other names
 subquestion: |
   * Your name is ${users[0]}.
-  % if tool_ID == "JOD_only" and users[0].has_previous_name:
-  * Your previous last name was ${users[0].previous_last_name}.
-  % elif tool_ID in ["divorce_complaint", "divorce_answer"] and users[0].has_previous_name:
-  * Your previous name was ${users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name}.
+  % if tool_ID in ["divorce_complaint", "divorce_answer"]:
+  % if users[0].has_previous_name:
+  * Your name before **this** marriage was **${users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name}.**
   % endif
+  % if users[0].has_maiden_name:
+  * Your last name before your **first** marriage was **${users[0].maiden_name}.**
+  % endif
+  % endif
+  
 fields:
   - Have you ever been known by any other name(s) or aliases not listed above?: users[0].has_alias
     datatype: yesnoradio
-  - What are the other names you have been known by? Do not include maiden name here.: users[0].aliases
+  - What are the other names you have been known by?: users[0].aliases
     show if:
       variable: users[0].has_alias
       is: True
@@ -6954,16 +6990,20 @@ id: other party alias
 if: there_are_marital_children or user_wants_post_divorce_support
 question: Other names
 subquestion: |
-  * Your spouse's name is ${other_parties[0]}.
-  % if tool_ID == "JOD_only" and other_parties[0].has_previous_name:
-  * Their previous last name was ${other_parties[0].previous_last_name}.
-  % elif tool_ID in ["divorce_complaint", "divorce_answer"] and other_parties[0].has_previous_name:
-  * Their previous name was ${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}.
+  * Your spouse's name is **${other_parties[0]}.**
+  % if tool_ID in ["divorce_complaint", "divorce_answer"]:
+  % if other_parties[0].has_previous_name:
+  * Their name before **this** marriage was **${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}.**
   % endif
+  % if other_parties[0].has_maiden_name:
+  * Their last name before their **first** marriage was **${other_parties[0].maiden_name}.**
+  % endif
+  % endif
+  
 fields:
   - Has your spouse ever been known by any other name(s) or aliases not listed above?: other_parties[0].has_alias
     datatype: yesnoradio
-  - What are the other names your spouse has been known by? Do not include maiden name here.: other_parties[0].aliases
+  - What are the other names your spouse has been known by?: other_parties[0].aliases
     show if:
       variable: other_parties[0].has_alias
       is: True
