@@ -1,5 +1,6 @@
 ---
 include:
+  - docassemble.FeeWaiverRequest:shared_code.yml
   - divorce_custody_setup.yml
 ---
 # TODO subtitle? & confirm description
@@ -17,37 +18,38 @@ metadata:
 sections:
   - signpost_intro: "Introduction"
   - signpost_qualify: "Divorce Complaint"
-  - signpost_user: "Your Information"
-  - signpost_spouse: "Spouse's Information"
-  - signpost_respond: "Complaint Paragraphs"
-  - signpost_personal_property: "Counterclaim: Basics"
-  - signpost_spousal_support: "Counterclaim: Support"
-  - signpost_children: "Counterclaim: Children"
-  - signpost_judgment_information: "Judgment Information"
+  - signpost_user: "You and Your Spouse"
+  - signpost_respond: "Reply to Complaint"
+  - signpost_counterclaim: "Counterclaim Basics"
+  - signpost_spousal_support: "Spousal Support"
+  - signpost_children: "Children"
+  - signpost_prior_cases: "Past Cases"
+  - signpost_income_etc: "Income, Insurance, etc."
+  - signpost_last_section: "Final Questions"
   - signpost_done: "Get Your Forms"
   - review_full: "✎ <u>Review / Edit</u>"
 ---
 # TODO need survey url
 code: |
-  #survey_link_url_only = "https://www.surveymonkey.com/r/xxxxxx"
+  survey_link_url_only = "https://www.surveymonkey.com/r/VDGS78M"
+---
+template: survey_embed_script
+content: |
+  <script>
+  (function(t,e,s,n){var o,a,c;t.SMCX=t.SMCX||[],e.getElementById(n)||(o=e.getElementsByTagName(s),a=o[o.length-1],c=e.createElement(s),c.type="text/javascript",c.async=!0,c.id=n,c.src="https://widget.surveymonkey.com/collect/website/js/tRaiETqnLgj758hTBazgd1caHSCpdmdgZgGo5Fq6bqp0y91DaTmREHdBKAkwXGAT.js",a.parentNode.insertBefore(c,a))})(window,document,"script","smcx-sdk");
+  </script>
 ---
 code: |
   tool_ID = "divorce_answer"
 ---
 # sets MLH_case_type_language
 code: |
-  if there_are_marital_children:
+  if complaint_type == "with_children":
     MLH_case_type_language = "The case type code for a divorce with {marital children} is **DM.**"  
   else:
     MLH_case_type_language = "The case type code for a divorce with no {marital children} is **DO.**"  
 depends on:
-  - there_are_marital_children
----
-# TODO need survey script
-template: survey_embed_script
-content: |
-  <script>
-  </script>
+  - complaint_type
 ---
 # set intro landing screen variables
 code: |
@@ -59,11 +61,26 @@ template: MLH_welcome_message
 content: |
   Welcome to the Do-It-Yourself Answer and Counterclaim for Divorce tool.
 
-  Use this tool if you are served with a complaint for divorce and want to file a written answer. You must file an answer within the time stated on the summons, or a default may be entered against you. A default can make it more difficult for you to participate in your divorce case and ask the judge for the things you want.
+  Use this tool if you are served with a complaint for divorce and want to file a written answer. 
+---
+id: divorce answer intro part 2
+question: More about answers and counterclaims
+continue button field: divorce_answer_intro_2
+subquestion: |
+  ## Answer
+  An answer is an official response to your spouse's complaint for divorce. You must file an answer within the time stated on the summons, or a default may be entered against you. A default can make it more difficult for you to participate in your divorce case and ask the judge for the things you want.
+  
+  ## Counterclaim
+  A counterclaim is needed if you want to:
 
-  You can also use this tool if you want to file a counterclaim for divorce along with your answer. You should file a counterclaim for divorce if you want to make sure that your divorce goes forward. If you do not file a counterclaim for divorce, and your spouse does something to have the original divorce case dismissed, your divorce case will end. Then, if you still want to get divorced, you will have to start over by filing a new case.
+  * **change your last name** as part of the divorce,
+  * ask for **spousal support,** or
+  * make sure the divorce case **can be finished** if your spouse stops participating. 
 
-  The first part of this tool will ask you questions that will be used to create your answer to your spouse’s complaint. The second part of the tool will ask you questions that can be used to create a counterclaim for divorce. You will have the option to stop at the end of the answer section or to continue to the counterclaim questions.
+  ${collapse_template(cobra_counterclaim)}
+  
+  ## Your choice
+  The first part of this tool will ask you questions to create an *Answer.* Then you can choose whether to stop there or continue to create a *Counterclaim.*
 ---
 # ====================================================================
 ## interview_order
@@ -77,15 +94,18 @@ code: |
   nav.set_section("review_full")
   nav.set_section("signpost_intro")
   snapshot_start
+  MLH_intro_landing
+  divorce_answer_intro_2
   MLH_standard_intro_pages
 
   nav.set_section("signpost_qualify")
   if not complaint_received:
     exit_no_MI_complaint
   complaint_type
-  if not complaint_type_continue:
-    exit_general
-  users[0].pregnant #maybe taking this out
+  if complaint_type == "with_children":
+    complaint_with_children_issue_continue
+  else:
+    complaint_without_children_issue_continue
 
   if marriage.have_experienced_domestic_violence:
     if not marriage.have_experienced_domestic_violence_continue:
@@ -97,9 +117,9 @@ code: |
   the_foc
   
   party_lived_6_months_MI
-  if not party_lived_6_months_MI['user'] and not party_lived_6_months_MI['other_party']:
+  if not party_lived_6_months_MI.any_true():
     exit_jurisdiction
-  elif not (party_lived_6_months_MI['user'] and party_ten_days_in_county['user']) and not (party_lived_6_months_MI['other_party'] and party_ten_days_in_county['other_party']):
+  elif not party_ten_days_in_county.any_true():
     if not venue_issue_continue:
       exit_general
   
@@ -115,8 +135,6 @@ code: |
   users[0].birthdate
 
   interview_order_user_contact_info
-
-  nav.set_section("signpost_spouse")
 
   other_parties.gather()
   other_parties[0].name.first
@@ -138,71 +156,83 @@ code: |
   complaint_paragraphs.gather()  
   other_statements_any
 
-  if not create_counterclaim:
-    marriage.cobra_coverage
-  
+  nav.set_section("signpost_counterclaim")
+ 
   ### Start counterclaim section ###
-  else:   
-    if marriage.have_pension_retirement:
-      if not marriage.pension_retirement_accounts_continue:
+  if want_counterclaim:   
+    if not (counterclaim_180_day_test_met.any_true() and counterclaim_10_day_test_met.any_true()):
+      if not counterclaim_jurisdiction_venue_problem_continue:
         exit_general
-
-    # investments question??
-
-    if marriage.have_business:
-      if not continue_with_business:
-        exit_general
-
-    if marriage.real_property.there_are_any:
-      if not continue_real_property:
-        exit_general
-
-    if need_temporary_order:
-      if not temporary_order_continue:
-        exit_general
-
-    marriage.date
-    marriage.address.city
-    marriage.living_together_yn
-
-    marriage.personal_property_acquired
-    if marriage.debts.any:
-      marriage.debts.pay_debts_in_own_names
-      marriage.debts.any_in_both_names
-
-    nav.set_section("signpost_spousal_support")
-    interview_order_spousal_support
-    #if complaint_type != "with_children" and some spousal support condition(s)
-    #.has_alias questions ? (maybe foc 23? so if spousal support too)
-
-    ## counterclaim with children ##
-    nav.set_section("signpost_children")
-    interview_order_children
-    
-    if there_are_marital_children:
-      nav.set_section("signpost_prior_cases")
-      interview_order_prior_cases
   
-      nav.set_section("signpost_income_etc")
-      users[0].insurance.gather()
-      other_parties[0].insurance.gather()
-      if users[0].insurance.there_are_any or other_parties[0].insurance.there_are_any:
-        marriage.cobra_coverage
-      interview_order_user_employment
-      interview_order_user_income
-      interview_order_user_identifying_info
-      interview_order_other_party_employment
-      interview_order_other_party_income
-      interview_order_other_party_identifying_info
-      #.has_alias questions if not already included? (maybe foc 23?)
-      interview_order_income_tax
+    else:
   
-    if not there_are_marital_children:
-      marriage.cobra_coverage
-      interview_order_prior_cases
+      if marriage.have_pension_retirement:
+        if marriage.pension_contributions_made:
+          marriage.pension_retirement_accounts_keep_own
+          if not marriage.pension_retirement_accounts_continue:
+            exit_general
+        else:
+          marriage.divide_separate_pension
+  
+      if marriage.have_business:
+        if not continue_with_business:
+          exit_general
+  
+      if need_temporary_order:
+        if not temporary_order_continue:
+          exit_general
+  
+      marriage.date
+      marriage.address.city
+      marriage.living_together_yn
 
+      if marriage.real_property.there_are_any:
+        if not continue_real_property:
+          exit_general
+  
+      marriage.personal_property_acquired
+      if marriage.debts.any:
+        marriage.debts.pay_debts_in_own_names
+        marriage.debts.any_in_both_names
+  
+      users[0].new_last_name_yn
+  
+      nav.set_section("signpost_spousal_support")
+      interview_order_spousal_support
+
+      nav.set_section("signpost_children")
+      users[0].pregnant
+      if complaint_type == "with_children":
+        interview_order_children
+  
+        if not there_are_marital_children:
+          if not continue_no_kids_no_cc:
+            exit_general
+  
+        else:
+          nav.set_section("signpost_prior_cases")
+          prior_family_cases.gather()
+          nav.set_section("signpost_income_etc")
+          users[0].insurance.gather()
+          other_parties[0].insurance.gather()
+  
+      elif complaint_type == "no_children":
+        nav.set_section("signpost_income_etc")
+  
+      if (complaint_type == "with_children" and there_are_marital_children) or (complaint_type == "no_children" and user_wants_post_divorce_support):
+        interview_order_user_employment
+        interview_order_user_income
+        interview_order_user_identifying_info
+        users[0].has_alias
+        interview_order_other_party_employment
+        interview_order_other_party_income
+        interview_order_other_party_identifying_info
+        other_parties[0].has_alias
+
+  create_counterclaim
   ### End counterclaim section ###
   
+  nav.set_section("signpost_last_section")
   MLH_standard_outro_pages
 
   # just making sure these are defined

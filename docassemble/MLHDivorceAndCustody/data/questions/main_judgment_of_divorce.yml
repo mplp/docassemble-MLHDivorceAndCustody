@@ -145,14 +145,17 @@ code: |
   the_foc
   if user_ask_role == "plaintiff":
     party_lived_6_months_MI
-    if not (party_lived_6_months_MI['user'] and party_ten_days_in_county['user']) and not (party_lived_6_months_MI['other_party'] and party_ten_days_in_county['other_party']):
+    if not (party_lived_6_months_MI.any_true() and party_ten_days_in_county.any_true()):
       jurisdiction_warning
   docket_number
 
   if marriage.have_pension_retirement:
-    marriage.pension_retirement_accounts_keep_own
-    if not marriage.pension_retirement_accounts_continue:
-      exit_general
+    if marriage.pension_contributions_made:
+      marriage.pension_retirement_accounts_keep_own
+      if not marriage.pension_retirement_accounts_continue:
+        exit_general
+    else:
+      marriage.divide_separate_pension
 
   if marriage.have_business:
     exit_general
