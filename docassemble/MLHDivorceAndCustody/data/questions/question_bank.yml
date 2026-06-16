@@ -276,6 +276,20 @@ action buttons:
     color: danger
     icon: right-from-bracket
 ---
+if: tool_ID == "divorce_answer" and complaint_type == "with_children"
+id: exit_no_kids
+question: |
+  No marital children
+subquestion: |
+  You did not enter any {marital children}. Your spouse filed this divorce as a divorce with children. 
+  
+  If you and your spouse are the legal parents of a child, use the **Review / Edit** link to go back now and add the child or edit your answers. Then you can create your Counterclaim.
+
+  If there are no marital children, there may be complications in your case and you should speak with a lawyer. ${MLH_GUIDE_FULL} You can still continue and get your Answer form, but you cannot use this tool to create a Counterclaim. 
+fields:
+ - Do you want to continue to create your Answer form without a Counterclaim?: continue_no_kids_no_cc
+   datatype: yesnoradio
+---
 # --------------------------------------------------------------------
 ## introduction
 # --------------------------------------------------------------------
@@ -321,30 +335,129 @@ id: divorce complaint is with or without children
 question: Type of divorce complaint
 fields:
   - Which type of divorce complaint did you receive?: complaint_type
-    # maybe this should directly set there_are_marital_children?
     input type: radio
     choices:
       - Complaint for divorce without minor children: "no_children"
       - Complaint for divorce with minor children: "with_children"
   - note: |
-      This type of complaint is used if there is at least one {minor} child who has **both** you and your spouse as legal parents.
+      This type of complaint is used if there is at least one {minor} child who has **both** you and your spouse as legal parents or if a spouse is pregnant.
     show if:
       variable: complaint_type
       is: "with_children"
+#  - Do you have minor children with your spouse?: complaint_check_agree_kids
+#    datatype: yesnoradio
+#    show if:
+#      variable: complaint_type
+#      is: "with_children"
   - note: |
-      This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents.
+      This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents, and neither spouse is pregnant.
     show if:
       variable: complaint_type
       is: "no_children"
-  - Do you want to continue?: complaint_type_continue
-    datatype: yesnoradio
-    js show if: |
-      val("complaint_type") === "no_children" || val("complaint_type") === "with_children"
 validation code: |
   if complaint_type == "no_children":
     there_are_marital_children = False
-  else:
-    there_are_marital_children = True
+  else: # if with_children, set by child gathering process
+    undefine("there_are_marital_children")
+---
+#id: complaint type check with no children
+#if: complaint_type == "no_children"
+#question: Did your spouse file the right type of complaint?
+#subquestion: |
+#  You said your spouse filed a complaint for divorce **without children.** This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents.
+#
+#  ${collapse_template(legal_parentage_info)}
+#fields:
+#  - Is there any {minor} child who has both you and your spouse as legal parents?: complaint_check_have_kids
+#    input type: radio
+#    choices:
+#      - Yes, there is at least one child who has us both as legal parents.: True
+#      - No: False
+#  - note: |
+#      ${collapse_template(wants_to_parent)}
+#      ${collapse_template(unsure_legal_parent)}
+---
+template: legal_parentage_info
+subject: Situations where you might both be legal parents.
+content: |
+  You are both legal parents if any of the following apply:
+
+  *	You or your spouse gave birth to a child before you married, and the non-birthing parent became a legal parent by court order or Affidavit of Parentage. There has not been a court order revoking parentage. 
+  *	During the marriage, you or your spouse gave birth to a child conceived through sexual intercourse. There has **not** been a court order revoking the parentage of the husband or non-birthing spouse. 
+  *	During the marriage, you or your spouse gave birth to a child conceived through assisted reproductive technology (ART). There was no valid surrogacy agreement naming other parents, and no court order determining that one or both spouses are not legal parent(s). 
+  *	You and your spouse adopted a child together.
+  *	During the marriage, one of you adopted a child who was already the other spouse's child before the marriage.
+  *	You and your spouse became parents together through a valid surrogacy agreement.
+---
+template: wants_to_parent
+subject: What if there's a child I want to parent, but I'm not their legal parent or not sure if I am?
+content: |
+  If you are concerned about your ability to be a part of the child's life, talk to a lawyer. ${MLH_GUIDE_FULL}
+---
+template: unsure_legal_parent
+subject: What if I'm not sure if I'm a legal parent of a child with my spouse?
+content: |
+  If you're not sure you may want to talk to a lawyer. ${MLH_GUIDE_FULL}
+  
+  You are both legal parents if any of these apply to you:
+
+  *	You or your spouse gave birth to a child before you married, and the non-birthing parent became a legal parent by court order or Affidavit of Parentage. There has not been a court order revoking parentage. 
+  *	During the marriage, you or your spouse gave birth to a child conceived through sexual intercourse. There has **not** been a court order revoking the parentage of the husband or non-birthing spouse. 
+  *	During the marriage, you or your spouse gave birth to a child conceived through assisted reproductive technology (ART). There was no valid surrogacy agreement naming other parents, and no court order determining that one or both spouses are not legal parent(s). 
+  *	You and your spouse adopted a child together.
+  *	During the marriage, one of you adopted a child who was already the other spouse's child before the marriage.
+  *	You and your spouse became parents together through a valid surrogacy agreement.
+---
+template: nonbio_child_or_preg
+subject: |
+  What if one spouse had a child or got pregnant **with someone else** during the marriage?
+content: |
+  If either spouse conceives or gives birth to a child during the marriage, that child will be considered a child of the marriage unless a judge determines that the husband or non-birthing parent is not the other parent. 
+  
+  You may be able to file a motion in the divorce case asking the judge to revoke the legal parentage of the spouse who is not the child's biological parent. To learn more, read [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent) or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
+
+  The revocation process does not apply to children conceived through assisted reproduction (for example, donor insemination). We suggest talking to a lawyer if there are parentage issues involving assisted reproduction. ${MLH_GUIDE_FULL}
+---
+id: children_answer_help
+continue button field: children_answer_help
+question: Common questions about children and pregnancy
+subquestion: |
+  ${collapse_template(unsure_legal_parent)}
+  ${collapse_template(wants_to_parent)}
+  ${collapse_template(nonbio_child_or_preg)}
+  ${collapse_template(ART_pregnancy)}
+
+  You may want to speak to a lawyer if you disagree or are unsure about parentage issues. ${MLH_GUIDE_FULL}
+---
+id: complaint with children continue information
+question: Complaint with children
+continue button field: complaint_with_children_issue_continue
+subquestion: |
+  You said your spouse filed a Complaint for Divorce **with children.** It's important to check the {marital children} listed in your spouse's complaint. 
+  
+  If you disagree about which children are {marital children}, it's a good idea to speak to a lawyer. ${MLH_GUIDE_FULL} Later in this tool you can explain if you disagree with the children listed or left out. 
+
+  More information about common parentage questions and issues:
+
+  ${collapse_template(unsure_legal_parent)}
+  ${collapse_template(wants_to_parent)}
+  ${collapse_template(nonbio_child_or_preg)}
+  ${collapse_template(ART_pregnancy)}
+---
+id: complaint no children continue information
+question: Complaint without children
+continue button field: complaint_without_children_issue_continue
+subquestion: |
+  You said your spouse filed a Complaint for Divorce **without children.** 
+  
+  It's important that any minor {marital children} are listed as part of the divorce. Later in this tool you can explain if you think you and your spouse **do** have minor {marital children}. If that is the case, you may also want to speak to a lawyer. ${MLH_GUIDE_FULL}
+
+  More information about common parentage questions and issues:
+
+  ${collapse_template(unsure_legal_parent)}
+  ${collapse_template(wants_to_parent)}
+  ${collapse_template(nonbio_child_or_preg)}
+  ${collapse_template(ART_pregnancy)}
 ---
 if: tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and returning_to_finalize)
 id: case already filed jurisdiction check
@@ -384,24 +497,73 @@ fields:
 template: jurisdiction_check_help
 subject: Why does this matter?
 content: |
-  At the end of your divorce, you may need to testify (tell the judge under oath) whether you met the legal requirements to get divorced in ${ county_choice } County. 
-  
-  Usually, **either you or your spouse** must have:
+  At the end of your divorce, you may need to testify (tell the judge under oath) whether you met the legal requirements to get divorced in ${ county_choice } County. Usually:
 
-  * lived in Michigan for 180 days before ${word("you") if tool_ID in ["divorce_complaint", "JOD_only"] else word("your spouse")} filed for divorce, **and**
-  * lived in ${ county_choice } County for 10 days before ${word("you") if tool_ID in ["divorce_complaint", "JOD_only"] else word("your spouse")} filed for divorce.
+  * one spouse must have lived in Michigan for 180 days before ${word("you") if tool_ID in ["divorce_complaint", "JOD_only"] else word("your spouse")} filed for divorce, **and**
+  * one spouse must have lived in ${ county_choice } County for 10 days before ${word("you") if tool_ID in ["divorce_complaint", "JOD_only"] else word("your spouse")} filed for divorce.
 
-  The same person must meet both of the requirements.
+  The requirements can be met by different spouses.
+---
+if: tool_ID == "divorce_answer"
+id: divorce counterclaim jurisdiction/venue check
+question: Legal requirements for filing a counterclaim
+subquestion: |
+  ${collapse_template(jurisdiction_check_help_cc)}
+fields:
+  - label: |
+      Who has lived in **Michigan for the last 180 days or more,** since ${ today().minus(days=180) }?
+    field: counterclaim_180_day_test_met
+    datatype: checkboxes
+    choices:
+      - Me: user
+      - My spouse: other_party
+    none of the above: |
+      Neither of us
+  - label: |
+      Who has lived in **${ county_choice } County for the last 10 days or more?**
+    field: counterclaim_10_day_test_met
+    datatype: checkboxes
+    choices:
+      - Me: user
+      - My spouse: other_party
+    none of the above: |
+      Neither of us
+    js show if: |
+      val("counterclaim_180_day_test_met['user']") || val("counterclaim_180_day_test_met['other_party']")
+---
+template: jurisdiction_check_help_cc
+subject: Why does this matter?
+content: |
+  To file a counterclaim, you must meet the legal requirements to start a divorce in ${ county_choice } County:
+
+  * one spouse must have lived in Michigan for 180 days before you file your counterclaim, **and**
+  * one spouse must have lived in ${ county_choice } County for 10 days before you file your counterclaim.
+
+  The requirements can be met by different spouses.
+---
+id: no jurisdiction/venue for counterclaim
+if: not (counterclaim_180_day_test_met.any_true() and counterclaim_10_day_test_met.any_true())
+question: You cannot file a counterclaim in ${ county_choice } County
+subquestion: |
+  To file a counterclaim, you must meet the legal requirements to start a divorce in ${ county_choice } County:
+
+  * one spouse must have lived in Michigan for 180 days before you file your counterclaim, **and**
+  * one spouse must have lived in ${ county_choice } County for 10 days before you file your counterclaim.
+
+  You said you and your spouse do **not** meet these requirements. You can still continue and get your Answer form, but you cannot use this tool to create a Counterclaim. 
+fields:
+  - Do you want to continue to create your Answer form without a Counterclaim?: counterclaim_jurisdiction_venue_problem_continue
+    datatype: yesnoradio
 ---
 # used in JOD_only and divorce_complaint tools
 id: jurisdiction warning
 continue button field: jurisdiction_warning
 question: "**Warning!** There may be a jurisdiction issue."
 subquestion: |
-  To get a divorce in ${ county_choice } County, usually **one spouse** must **both**:
+  To get a divorce in ${ county_choice } County, usually:
 
-  * have lived in Michigan for 180 days before you filed for divorce, **and**
-  * have lived in ${ county_choice } County for 10 days before you filed for divorce.
+  * one spouse must have lived in Michigan for 180 days before you filed for divorce, **and**
+  * one spouse must have lived in ${ county_choice } County for 10 days before you filed for divorce.
 
   You said you and your spouse did **not** meet these requirements.
   
@@ -410,10 +572,10 @@ subquestion: |
 id: venue warning
 question: There may be an issue getting divorced in ${county_choice} County
 subquestion: |
-  Your answers indicate that ${county_choice} County may not be the proper venue (filing county) for this divorce case. To get a divorce in ${ county_choice } County, usually **one spouse** must **both**:
+  Your answers indicate that ${county_choice} County may not be the proper venue (filing county) for this divorce case. To get a divorce in ${ county_choice } County, usually:
 
-  * have lived in Michigan for 180 days before your spouse filed for divorce, **and**
-  * have lived in ${ county_choice } County for 10 days before your spouse filed for divorce.
+  * one spouse must have lived in Michigan for 180 days before your spouse filed for divorce, **and**
+  * one spouse must have lived in ${ county_choice } County for 10 days before your spouse filed for divorce.
 
   You said you and your spouse did **not** meet these requirements.
   
@@ -570,8 +732,42 @@ fields:
   - label: Do you or your spouse have a pension or retirement account?
     field: marriage.have_pension_retirement
     datatype: yesnoradio
+  - label: Were any contributions made to a pension or retirement account **during the marriage?**
+    field: marriage.pension_contributions_made
+    datatype: yesnoradio
+    show if: marriage.have_pension_retirement
 ---
-if: marriage.have_pension_retirement
+if: tool_ID in ["divorce_complaint", "JOD_only"] and marriage.have_pension_retirement and not marriage.pension_contributions_made
+id: pensions separate property division question
+question: |
+  Pension and/or retirement accounts
+subquestion: |
+  ${separate_pensions_message}
+fields:
+  - label: Do you plan to ask the judge to award you part of a pension or retirement account that was accumulated before the marriage?
+    field: marriage.divide_separate_pension
+    datatype: yesnoradio
+---
+if: tool_ID == "divorce_answer" and marriage.have_pension_retirement and not marriage.pension_contributions_made
+id: pensions separate property info only
+continue button field: marriage.divide_separate_pension
+question: |
+  Pension and/or retirement accounts
+subquestion: |
+  ${separate_pensions_message}
+---
+template: separate_pensions_message
+content: |
+  If either one of you has a pension or retirement account and contributions were made to it **only before** the marriage, it is considered **separate property.** 
+  
+  Usually the owner of the separate property keeps it in a divorce. But in special circumstances, a judge might divide separate property. If you want the judge to award you some of your spouse's separate property, you have to prove either:
+
+  * The division of marital property is not enough to provide suitable support for you and the children, if any, or
+  * You helped to get the separate property or to increase its value.
+
+  This can be hard to prove. If you want to ask the judge to divide separate property, consider talking to a lawyer. ${MLH_GUIDE_FULL}
+---
+if: marriage.have_pension_retirement and marriage.pension_contributions_made
 id: marriage.pension_retirement_accounts_keep_own
 question: |
   Pension and/or retirement accounts
@@ -585,38 +781,40 @@ fields:
       - label: I want the judge to divide our account(s)
         value: False
 ---
-if: tool_ID in ["divorce_complaint", "JOD_only"] and marriage.have_pension_retirement and marriage.pension_retirement_accounts_keep_own
+if: marriage.have_pension_retirement and marriage.pension_contributions_made and marriage.pension_retirement_accounts_keep_own
 id: pension_retirement_accounts_keep
 question: |
   Pension and/or retirement accounts
 subquestion: |
   You may have a right to part of your spouse's pension or retirement account, and your spouse may have a right to part of yours. This is an important decision that can impact your future. Sometimes it is hard to know the full value of a pension or retirement account, especially if an account includes future benefits. If you don't know all the details of each person's pension and retirement accounts, you may want to consider talking to a lawyer before you decide how you want to divide them.
+
+  % if tool_ID == "divorce_answer":
+  Even if your spouse has a lawyer, you may need to hire your own. Your spouse's lawyer does not represent you and has a duty to do what is best for your spouse. You can continue with the tool and get the forms you need to file an answer to your spouse's divorce complaint and to file a counterclaim for divorce. However, you may want to consider hiring a lawyer to help you finish your case. ${MLH_GUIDE_FULL}
+  % endif
 fields:
-  - label: Do you want to continue with the tool, knowing that you will not get a share of your spouse's pension or retirement account and will not be able to return to court in the future and ask for a change?
+  - label: |
+      % if tool_ID in ["divorce_complaint", "JOD_only"]:
+      Do you want to continue with the tool, knowing that you will not get a share of your spouse's pension or retirement account and will not be able to return to court in the future and ask for a change?
+      % elif tool_ID == "divorce_answer":
+      Do you want to continue?
+      % endif
     field: marriage.pension_retirement_accounts_continue
     datatype: yesnoradio
 ---
-if: tool_ID in ["divorce_complaint", "JOD_only"] and marriage.have_pension_retirement and not marriage.pension_retirement_accounts_keep_own
+if: marriage.have_pension_retirement and marriage.pension_contributions_made and not marriage.pension_retirement_accounts_keep_own
 id: pension_retirement_accounts_divide
 question: |
   Pension and/or retirement accounts
 subquestion: |
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
   **WARNING!** Dividing pensions or retirement accounts is not easy. You will likely need a special order called a QDRO or EDRO that this tool does not provide. You can still use this tool, but the Pension/Retirement Account Addendum to the Judgment of Divorce will be **incomplete.**
   
   You will need to find a lawyer to help you complete the Judgment of Divorce and prepare a QDRO or EDRO. ${MLH_GUIDE_FULL}
-fields:
-  - label: Do you want to continue?
-    field: marriage.pension_retirement_accounts_continue
-    datatype: yesnoradio
----
-if: tool_ID == "divorce_answer" and marriage.have_pension_retirement
-id: divorce answer pension warning
-question: |
-  Pension and/or retirement accounts
-subquestion: |
-  **WARNING!** This tool may not be right for you. Dividing pensions or retirement accounts is not simple. You may need to hire a lawyer to help you ask the judge to divide your pensions or retirement accounts. A lawyer can also draft the special order that is required. 
+  % elif tool_ID == "divorce_answer":
+  **WARNING!** Dividing pensions or retirement accounts is not simple. You may need to hire a lawyer to help you ask the judge to divide your pensions or retirement accounts. A lawyer can also draft the special order that is required. 
   
   Even if your spouse has a lawyer, you may need to hire your own. Your spouse’s lawyer does not represent you and has a duty to do what is best for your spouse. You can continue with the tool and get the forms you need to file an answer to your spouse's divorce complaint and to file a counterclaim for divorce. However, you may want to consider hiring a lawyer to help you finish your case. ${MLH_GUIDE_FULL}
+  % endif
 fields:
   - label: Do you want to continue?
     field: marriage.pension_retirement_accounts_continue
@@ -817,7 +1015,7 @@ id: confidential_contact_info_yn
 question: |
   Contact information confidentiality
 subquestion: |
-  All of the information that you enter in this tool, including your address and telephone information, will be included on forms that you file with the court and give to your spouse. If you fear for your safety if this information is known by your spouse or someone else, proceed with caution. **Do not use an address or telephone number that you want to keep confidential in this tool or on your court forms.**
+  All of the information that you enter in this tool, including your address and telephone number, will be included on forms that you file with the court and give to your spouse. If you fear for your safety if this information is known by your spouse or someone else, proceed with caution. **Do not use an address or telephone number that you want to keep confidential in this tool or on your court forms.**
 
   Keep in mind that your divorce file is a public record and anyone could ask to look at it and see your address. 
 fields:
@@ -957,7 +1155,7 @@ fields:
     code: court_list._load_courts()["address_county"].unique()
     show if: users[0].lives_in_Michigan
 ---
-if: tool_ID == "divorce_complaint" and users[0].lives_in_Michigan and users[0].has_lived_6_months_MI
+if: tool_ID == "divorce_complaint" and users[0].lives_in_Michigan
 id: 10-day test user
 question: Time in ${ users[0].address.county } County
 fields:
@@ -1289,7 +1487,7 @@ validation code: |
   if not other_parties[0].lives_in_Michigan and other_parties[0].address.state in ["Michigan", "MI"]:
     validation_error('If your spouse does not live in Michigan, tap "Undo" and update their address.', field="other_parties[0].lives_in_Michigan")  
 ---
-if: tool_ID == "divorce_complaint" and other_parties[0].has_lived_6_months_MI
+if: tool_ID == "divorce_complaint" and other_parties[0].lives_in_Michigan
 id: 10-day test OP
 question: Time in ${ other_parties[0].address.county } County
 fields:
@@ -1466,12 +1664,13 @@ fields:
         len(current_venue_options) == 0
 validation code: |
   # "jurisdiction_party" is used on Testimony page
-  if not (users[0].lives_in_Michigan and users[0].has_lived_6_months_MI):
-    jurisdiction_party = other_parties[0] #OP logically must be the jurisdictional basis
-  elif not (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI):
-    jurisdiction_party = users[0] #user logically must be the jurisdictional basis
+  # it should really now (June/2026) be "venue_party" but leaving alone for back-compatibility
+  if not users[0].lives_in_Michigan:
+    jurisdiction_party = other_parties[0] #OP logically must be the venue basis
+  elif not other_parties[0].lives_in_Michigan:
+    jurisdiction_party = users[0] #user logically must be the venue basis
   
-  elif users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI:
+  elif users[0].lives_in_Michigan and other_parties[0].lives_in_Michigan:
   
     # if parties don't share county, only one party can live in filing county
     if users[0].address.county != other_parties[0].address.county:
@@ -1521,6 +1720,7 @@ fields:
         val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && ${ json.dumps(other_parties[0].ten_days_in_county) } === false 
 validation code: |
   # "jurisdiction_party" is used on Testimony page
+  # it should really now (June/2026) be "venue_party" but leaving alone for back-compatibility
   if county_choice == users[0].address.county:
     jurisdiction_party = users[0]
   elif county_choice == other_parties[0].address.county:
@@ -1588,6 +1788,7 @@ fields:
         val("county_choice") === ${ json.dumps(other_parties[0].address.county) } && ${ json.dumps(users[0].ten_days_in_county) } === false 
 validation code: |
   # "jurisdiction_party" is used on Testimony page
+  # it should really now (June/2026) be "venue_party" but leaving alone for back-compatibility
   if county_choice == users[0].address.county:
     jurisdiction_party = users[0]
   elif county_choice == other_parties[0].address.county:
@@ -1600,11 +1801,11 @@ code: |
   current_venue_options = []
   all_potential_venue_options = []
   
-  if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
+  if users[0].lives_in_Michigan:
     all_potential_venue_options.append(users[0].address.county)
     if users[0].ten_days_in_county:
       current_venue_options.append(users[0].address.county)
-  if other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI:
+  if other_parties[0].lives_in_Michigan:
     if other_parties[0].address.county not in all_potential_venue_options:
       all_potential_venue_options.append(other_parties[0].address.county)
     if other_parties[0].ten_days_in_county and other_parties[0].address.county not in current_venue_options:
@@ -1709,7 +1910,7 @@ fields:
     datatype: integer
     min: 0
     js show if: |
-      ${ "true" if tool_ID in ["divorce_complaint", "JOD_only"] else "false" } && val("marriage.living_together_yn") === false && ${ "true" if there_are_marital_children else "false"}
+      ${ "true" if tool_ID in ["divorce_complaint", "JOD_only"] and there_are_marital_children else "false" } && val("marriage.living_together_yn") === false
 ---
 id: marriage.cobra_coverage
 question: |
@@ -1827,9 +2028,25 @@ question: |
 subquestion: |
   % if tool_ID in ["divorce_complaint", "JOD_only"]:
   **Please do not include vehicles.** You will be asked about vehicles on a separate page.
+  % elif tool_ID == "divorce_answer":
+  Personal property includes everything **except** real estate (houses and land). 
+  
+  Some examples of personal property are: 
+  
+  * vehicles
+  * bank accounts
+  * clothes
+  * furniture
+  * jewelry
+  * mobile homes
   % endif
 fields:
-  - label: Did you and your spouse {get} any {personal property} during the marriage?
+  - label: |
+      % if tool_ID in ["divorce_complaint", "JOD_only"]:
+      Did you and your spouse {get} any {personal property} during the marriage?
+      % elif tool_ID == "divorce_answer":
+      Did you and your spouse {get} any personal property during the marriage?
+      % endif
     field: marriage.personal_property_acquired
     datatype: yesnoradio
   - label: Have you and your spouse reached an agreement about how all personal property will be divided?
@@ -2397,6 +2614,11 @@ fields:
   - label: Do you or your spouse own real property that was bought or paid for while you were married?
     field: marriage.real_property.there_are_any
     datatype: yesnoradio
+  - label: Do you and your spouse agree on what should happen to **all** the real property that was bought or paid for while you were married?
+    field: marriage.real_property_all_agreed
+    datatype: yesnoradio
+    js show if: |
+      val("marriage.real_property.there_are_any") === true && ${ "true" if tool_ID == "divorce_answer" else "false" }
 ---
 if: marriage.real_property.there_are_any
 id: continue_real_property (divorce answer)
@@ -2577,6 +2799,8 @@ validation code: |
 id: other_statements
 question: |
   Other Statements Related to Case  
+subquestion: |
+  ${collapse_template(other_statements_help)}
 fields:
   - label: Are there any other statements related to your divorce case that you want to include in your answer?
     field: other_statements_any
@@ -2586,6 +2810,16 @@ fields:
     input type: area
     rows: 10
     show if: other_statements_any
+---
+template: other_statements_help
+subject: "What kind of statements can go here?"
+content: |
+  This area is just for technical or procedural issues. Some examples of these types of issues are:
+  
+  * You were not properly served with the divorce complaint or other forms.
+  * There is another divorce or separate maintenance case between you and your spouse already in progress.
+  
+  This is **not** a place to make arguments about what you think should happen in the divorce.
 ---
 # --------------------------------------------------------------------
 ## marriage.temporary_order
@@ -2745,7 +2979,7 @@ code: |
     if continue_confidential_address:
       users[0].address.address
       if tool_ID == "divorce_complaint" and not returning_to_finalize:
-        if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
+        if users[0].lives_in_Michigan:
           users[0].ten_days_in_county
     else:
       exit_general
@@ -2754,7 +2988,7 @@ code: |
     users[0].address.address
     if tool_ID in ["divorce_complaint", "JOD_only"]:
       if tool_ID == "divorce_complaint" and not returning_to_finalize:
-        if users[0].lives_in_Michigan and users[0].has_lived_6_months_MI:
+        if users[0].lives_in_Michigan:
           users[0].ten_days_in_county
       if users[0].address.country == "US":
         users[0].village_or_township_yn
@@ -2770,8 +3004,8 @@ code: |
 ---
 code: |
   other_parties[0].address.address
-  if tool_ID == "divorce_complaint":
-    if other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI:
+  if tool_ID == "divorce_complaint": #TODO: should this also be "and not returning_to_finalize"?
+    if other_parties[0].lives_in_Michigan:
       other_parties[0].ten_days_in_county
 
   interview_order_other_parties_address_info = True
@@ -2913,17 +3147,18 @@ code: |
 
     legal_custody_who
     if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]:
-      if (tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID == "JOD_only" and county_choice == "Muskegon"):  
+      if (tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID in ["JOD_only", "divorce_answer"] and county_choice == "Muskegon"):  
         Muskegon_specific_PT_info
         custom_PT_details
       else:
         specific_PT_how
         if specific_PT_how == "custom":
           custom_PT_details
-    hague_convention_info
-    child_domicile_info
-    if legal_custody_who == "both":
-      hundred_mile_rule
+    if tool_ID != "divorce_answer":
+      hague_convention_info
+      child_domicile_info
+      if legal_custody_who == "both":
+        hundred_mile_rule
     child_support_basic
     if tool_ID != "JOD_only":
       allow_child_support_overpayment_correction
@@ -2946,8 +3181,9 @@ code: |
   
   if user_wants_post_divorce_support:
     if continue_with_spousal_support_request:
-      if spousal_support_provisions == "OP_agrees_to_pay_spousal_support":
-        spousal_support_is_immutable
+      if tool_ID != "divorce_answer":
+        if spousal_support_provisions == "OP_agrees_to_pay_spousal_support":
+          spousal_support_is_immutable
       if tool_ID in ["divorce_complaint", "divorce_answer"]:
         spousal_support_factors_intro
         ss_factor_one_division_labor
@@ -2967,7 +3203,7 @@ code: |
     else:
       exit_general
 
-  elif not user_wants_post_divorce_support:
+  elif tool_ID != "divorce_answer" and not user_wants_post_divorce_support:
     if spousal_support_provisions == "user_agrees_to_pay_spousal_support":
       spousal_support_is_immutable
   
@@ -3012,7 +3248,7 @@ fields:
       If you and your spouse don't agree about spousal support, you may want to **find a lawyer to help you.** Asking for spousal support is complicated, and a lawyer can present evidence and make legal arguments for you at your court hearing. ${ MLH_GUIDE_FULL } 
 
       % if tool_ID in ["divorce_complaint", "divorce_answer"]:
-      But if hiring a lawyer is not an option for you, you can use this tool to include a request for spousal support in your ${ filing_name }. 
+      But if hiring a lawyer is not an option for you, you can use this tool to include a request for spousal support in your ${ word("Counterclaim") if tool_ID == "divorce_answer" else filing_name }. 
       % endif
     show if:
       variable: user_wants_post_divorce_support
@@ -3094,7 +3330,7 @@ content: |
   
   Fault on its own will not justify an award of spousal support, but this is one factor the judge can consider. 
   
-  If this applies to your marriage, briefly explain what actions or behavior of your spouse (${ OP_party_label }) contributed to the breakdown of the marriage. For example: “${ capitalize(OP_party_label) } has been controlling throughout the marriage. They did not allow the Plaintiff to work outside the home, so ${ user_party_label } lost the opportunity to build their career for ten years.”
+  If this applies to your marriage, briefly explain what actions or behavior of your spouse (${ OP_party_label }) contributed to the breakdown of the marriage. For example: “${ capitalize(OP_party_label) } has been controlling throughout the marriage. They did not allow ${ user_party_label } to work outside the home, so ${ user_party_label } lost the opportunity to build their career for ten years.”
 ---
 id: spousal support factor 2
 question: "{Factor} 2: The length of the marriage"
@@ -3982,18 +4218,34 @@ subquestion: |
   Your ${ filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
   
   % endif
-  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to find a lawyer to help you.
-      
+  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf)
+  % if tool_ID == "divorce_complaint":
+  along with the forms you file to start your divorce case
+  % endif
+  . You may want to find a lawyer to help you.
+
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+  % elif tool_ID == "divorce_answer":
+  If the judge revokes your parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
+  % endif
   
   % elif children[i].bio_parent == "user":
   % if tool_ID in ["divorce_complaint", "divorce_answer"]:
   Your ${ filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
 
   % endif
-  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf) along with the forms you file to start your divorce case. You may want to find a lawyer to help you.
-      
+  To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf)
+  % if tool_ID == "divorce_complaint":
+  along with the forms you file to start your divorce case
+  % endif
+  . You may want to find a lawyer to help you.
+
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
   If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+  % elif tool_ID == "divorce_answer":
+  If the judge revokes your spouse's parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
+  % endif
   % endif
 
   % elif children[i].parentage_established =="court_order":
@@ -4001,12 +4253,20 @@ subquestion: |
   % if children[i].bio_parent == "other_party":
   To do this, you can file a [Motion to Set Aside Order of Filiation](https://www.courts.michigan.gov/4a8194/siteassets/forms/scao-approved/cc437.pdf) in the same case that the Order of Filiation was entered in. You may want to find a lawyer to help you.
   
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+  % elif tool_ID == "divorce_answer":
+  If the judge revokes your parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
+  % endif
 
   % elif children[i].bio_parent == "user":
   To do this, file a [Motion to Set Aside Order of Filiation](https://www.courts.michigan.gov/4a8194/siteassets/forms/scao-approved/cc437.pdf) in the same case that the Order of Filiation was entered in. You may want to find a lawyer to help you.
 
-  If the judge revokes your spouse’s parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
+  If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+  % elif tool_ID == "divorce_answer":
+  If the judge revokes your spouse's parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
+  % endif
   % endif
   % endif
   
@@ -4017,9 +4277,16 @@ subquestion: |
   Your ${ filing_name } will say that you plan to file a Motion to Determine Child Born Out of Wedlock for ${ children[i] }.
 
   % endif
-  You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). You will need to start the divorce case before you can file the parentage motion.
+  You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). 
+  % if tool_ID == "divorce_complaint":
+  You will need to start the divorce case before you can file the parentage motion.
+  % endif
 
-  If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, and then re-downloading the Judgment of Divorce form.
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
+  If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+  % elif tool_ID == "divorce_answer":
+  If the judge revokes your parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
+  % endif
 
   If nobody files a Motion to Determine Child Born Out of Wedlock, you will remain a legal parent. This means the judge can award you custody and/or parenting time, and you may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
   
@@ -4028,9 +4295,16 @@ subquestion: |
   Your ${ filing_name } will say that you plan to file a Motion to Determine Child Born Out of Wedlock for ${ children[i] }.
 
   % endif
-  You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your spouse's legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). You will need to start the divorce case before you can file the parentage motion.
+  You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your spouse's legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). 
+  % if tool_ID == "divorce_complaint":
+  You will need to start the divorce case before you can file the parentage motion.
+  % endif
 
-  If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, and then re-downloading the Judgment of Divorce form.
+  % if tool_ID in ["divorce_complaint", "JOD_only"]:
+  If the judge revokes your spouse's parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
+  % elif tool_ID == "divorce_answer":
+  If the judge revokes your spouse's parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
+  % endif
 
   If nobody files a Motion to Determine Child Born Out of Wedlock, your spouse will remain a legal parent. This means the judge can award them custody and/or parenting time, and they may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
   % endif
@@ -4402,7 +4676,7 @@ content: |
   In this case, the week in Ohio counts as part of the time the child lived in Michigan. The child in the example has lived in Michigan from birth.
   % endif
 ---
-if: child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.currently_resides_in_locality != "MI"
+if: children[i].age_in_months() >= 6 and not childen[i].current_residence_is_home_state and children[i].currently_resides_in_locality != "MI"
 id: Michigan was previous home state prong
 question: ${ children[i] }'s legal "home state", part 3
 subquestion: |
@@ -4669,7 +4943,7 @@ fields:
       ${ collapse_template(custody_definitions) }
       ${ collapse_template(PT_definitions) }
 ---
-if: PT_type in ["specific", "supervised"] and not ((tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID == "JOD_only" and county_choice == "Muskegon"))
+if: PT_type in ["specific", "supervised"] and not ((tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID in ["JOD_only", "divorce_answer"] and county_choice == "Muskegon"))
 id: specific parenting time options
 question: |
   Specific Parenting Time Schedules
@@ -4694,7 +4968,7 @@ fields:
       - "Use a sample schedule from my county’s Friend of the Court office (If you choose this option, you can either find the schedule on your court website or ask the Friend of the Court how to get one).": FOC_sample
 
 ---
-if: PT_type in ["specific", "supervised"] and ((tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID == "JOD_only" and county_choice == "Muskegon"))
+if: PT_type in ["specific", "supervised"] and ((tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID in ["JOD_only", "divorce_answer"] and county_choice == "Muskegon"))
 id: specific parenting time info
 continue button field: Muskegon_specific_PT_info
 question: |
@@ -4738,6 +5012,10 @@ content: |
   % if not user_logged_in():
   You must create an account and log in to save your answers.
   % endif
+  % elif tool_ID == "divorce_answer":
+  Use the custody and parenting time terms that you want the judge to order. 
+  
+  These are not necessarily the custody and parenting time arrangements you will end up with in your divorce. They are just what you are asking the judge to order.
   % endif
 ---
 template: custody_definitions
@@ -4783,7 +5061,7 @@ content: |
 
 ---
 id: custom parenting time schedule
-if: (tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID == "JOD_only" and county_choice == "Muskegon") or specific_PT_how == "custom"
+if: (tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID in ["JOD_only", "divorce_answer"] and county_choice == "Muskegon") or specific_PT_how == "custom"
 question: Parenting Time Schedule
 subquestion: |
   What parenting time schedule do you want the judge to order?
@@ -4950,13 +5228,23 @@ question: |
   Pregnancy
 subquestion: |
   ${collapse_template(users[0].pregnant_explanation_template)}
+  % if tool_ID == "divorce_answer":
+  ${collapse_template(nonbio_pregnancy)}
+  ${collapse_template(ART_pregnancy)}
+  % endif
 fields:
-  - label: Are you pregnant?
+  - label: To the best of your knowledge, are you pregnant?
     field: users[0].pregnant
     datatype: yesnoradio
-  - label: Is your spouse pregnant?
+  - label: To the best of your knowledge, is your spouse pregnant?
     field: other_parties[0].pregnant
     datatype: yesnoradio
+  - note: |
+      ${collapse_template(not_sure_pregnant)}
+---
+template: not_sure_pregnant
+subject: What if I'm not sure?
+content: If you're not sure, answer as best you can. If you have no reason to think someone is pregnant, you can say "No".
 ---
 generic object: ALIndividual
 template: x.pregnant_explanation_template
@@ -4970,6 +5258,28 @@ content: |
   % elif tool_ID == "divorce_answer":
   It is important for the judge to know about any children born or conceived before the divorce is final.
   % endif
+---
+template: nonbio_pregnancy
+subject: |
+  What if one of us is pregnant with someone else's child? Do we still have to include the pregnancy in the divorce forms?
+content: |
+  Yes. If either spouse gives birth to or conceives a child during the marriage, that child is considered a child of the marriage unless a judge determines that the husband or non-birthing parent is not the child's other parent. Make sure you acknowledge the pregnancy in your Answer.
+  
+  To deal with the parentage issue, you can file a motion in the divorce case asking the judge to revoke the legal parentage of the spouse who is not the child's biological parent. To learn more, read [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent) or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
+---
+template: ART_pregnancy
+subject: |
+  Pregnancy where conception was through assisted reproductive technology (ART). 
+content: |
+  If you or your spouse is pregnant as part of a surrogacy agreement, that information should be included in your divorce forms.
+  
+  If the pregnancy is a result of assisted reproduction that does not involve surrogacy **and** you believe that you or your spouse should not be a legal parent, stop using this tool and find a lawyer to help you. ${MLH_GUIDE_FULL}
+---
+id: pregnancy answer info
+continue button field: continue_answer_pregnancy
+question: It's important to let the judge know about pregnancy
+subquestion: |
+  Important! If you or your spouse is pregnant, it is important to say so in your Answer. If your spouse already stated this in their complaint, then you can simply agree with their statement in your Answer. Otherwise, you will need to state that you or your spouse is pregnant. All children born or conceived during your marriage must be included in the divorce so that custody, parenting time, and support provisions are made for that child. 
 ---
 generic object: ALIndividual
 if: (users[0].pregnant or other_parties[0].pregnant) and there_are_marital_children
@@ -5026,9 +5336,8 @@ columns:
   - County: row_item.county
 edit:
   - status
-  - involved_custody_pt_support
-  - separate_maintenance_pending_kickout
   - included_custody_PT_order  
+  - separate_maintenance_pending_kickout
 delete buttons: True
 confirm: True
 ---
@@ -5195,7 +5504,8 @@ code: |
   if tool_ID == "JOD_only" and there_are_marital_children:
     prior_family_cases[i].status
   
-  elif tool_ID != "JOD_only":
+  elif tool_ID in ["divorce_complaint", "divorce_answer"]:
+    # only called in divorce_answer if complaint_type == "with_children"
     prior_family_cases[i].status
     if there_are_marital_children:
       if prior_family_cases[i].state != "MI":
@@ -5204,10 +5514,14 @@ code: |
       if prior_family_cases[i].type == "separate_maintenance":
         if prior_family_cases[i].status in ["ended_with_order", "dismissed"]:
           prior_family_cases[i].involved_custody_pt_support
-          if prior_family_cases[i].status == "ended_with_order":
+          if tool_ID == "divorce_complaint" and prior_family_cases[i].status == "ended_with_order":
             prior_family_cases[i].convert_separate_maintenance_notice
         elif prior_family_cases[i].status in ["pending", "stayed"]:
-          prior_family_cases[i].separate_maintenance_pending_kickout
+          if tool_ID == "divorce_complaint":
+            prior_family_cases[i].separate_maintenance_pending_kickout
+          elif tool_ID == "divorce_answer":
+            prior_family_cases[i].involved_custody_pt_support
+            prior_family_cases[i].report_separate_maintenance_notice
   
       elif prior_family_cases[i].type != "separate_maintenance":
         prior_family_cases[i].included_custody_PT_order
@@ -5378,18 +5692,20 @@ fields:
 validation code: |
   prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
 ---
+sets: prior_family_cases[i].included_custody_PT_order
 id: prior family separate maintenance case additional info
-if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].status in ["ended_with_order", "dismissed"]
+if: there_are_marital_children and prior_family_cases[i].type == "separate_maintenance" and (tool_ID == "divorce_answer" or (tool_ID == "divorce_complaint" and prior_family_cases[i].status in ["ended_with_order", "dismissed"]))
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }", the Separate Maintenance case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
-  - Did the separate maintenance case involve custody, parenting time, or child support?: prior_family_cases[i].involved_custody_pt_support
+  - label: ${word("Did") if prior_family_cases[i].status in ["dismissed", "ended_with_order"] else word ("Does")} the separate maintenance case involve custody, parenting time, or child support?
+    field: prior_family_cases[i].involved_custody_pt_support
     datatype: yesnoradio
   - Was a **custody or parenting time** *order* entered?: prior_family_cases[i].included_custody_PT_order
     datatype: yesnoradio
     js show if: |
-      ${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true
+      ${ "true" if prior_family_cases[i].status != "dismissed" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true
   - Was a temporary custody or parenting time order entered in that case when the case was pending?: prior_family_cases[i].included_custody_PT_order
     datatype: yesnoradio
     js show if: |
@@ -5399,19 +5715,24 @@ fields:
     max: |
      ${ today() }
     js show if: |
-      (${ "true" if prior_family_cases[i].status == "dismissed" else "false" } || (${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true)) && val("prior_family_cases[i].included_custody_PT_order") === true
+      val("prior_family_cases[i].involved_custody_pt_support") === true && val("prior_family_cases[i].included_custody_PT_order") === true
   - Is the custody or parenting time order **currently in effect?**: prior_family_cases[i].has_current_custody_PT_order
     datatype: yesnoradio
     js show if: |
-      ${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true && val("prior_family_cases[i].included_custody_PT_order") === true
+      ${ "true" if tool_ID != "divorce_answer" and prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true && val("prior_family_cases[i].included_custody_PT_order") === true
   - Is there a **child support** order in this case that is **currently in effect?**: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
     js show if: |
-      ${ "true" if prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true
+      ${ "true" if tool_ID != "divorce_answer" and prior_family_cases[i].status == "ended_with_order" else "false" } && val("prior_family_cases[i].involved_custody_pt_support") === true
 validation code: |
   prior_family_cases[i].add_to_MC416_4 = True if prior_family_cases[i].involved_custody_pt_support and prior_family_cases[i].included_custody_PT_order else False
+  
+  if not prior_family_cases[i].involved_custody_pt_support:
+    prior_family_cases[i].included_custody_PT_order = False 
+# 2nd validation code (and "sets" modifier above) is here so that on the table/revisit screen, we can just call included_custody_PT_order rather than needing to call both included and involved and potentially triggering this screen twice
 ---
 id: separate maintenance conversion notice
+if: tool_ID == "divorce_complaint"
 continue button field: prior_family_cases[i].convert_separate_maintenance_notice
 question: You **might** be able to convert your separate maintenance to a divorce instead of filing a new divorce
 subquestion: |
@@ -5424,7 +5745,7 @@ subquestion: |
   * call the clerk's office of the court where you had the separate maintenance case, or 
   * talk to a lawyer. 
 ---
-if: there_are_marital_children and prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].status in ["pending", "stayed"]
+if: tool_ID == "divorce_complaint" and there_are_marital_children and prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].status in ["pending", "stayed"]
 id: separate maintenance pending kickout
 event: prior_family_cases[i].separate_maintenance_pending_kickout
 question: Sorry, this tool cannot help you.
@@ -5435,6 +5756,18 @@ subquestion: |
   * If you are the "defendant" (if your spouse originally filed) in the separate maintenance case, you need to file a counterclaim for divorce in your separate maintenance case. 
   
   You may want to contact a lawyer for help. ${ MLH_GUIDE_FULL }
+---
+id: separate maintenance divorce answer notice
+if: tool_ID == "divorce_answer" and prior_family_cases[i].type == "separate_maintenance" and prior_family_cases[i].status in ["pending", "stayed"]
+continue button field: prior_family_cases[i].report_separate_maintenance_notice
+question: Add information about the separate maintenance case to your Answer
+subquestion: |
+  You said there is currently an open separate maintenance case with your spouse. You should let the judge know about this case by mentioning it in your Answer. To do this:
+
+  1. Tap ${ action_button_html(url_action('review_full'), label='✎ Review / Edit', color='info') }
+  2. Tap the section called "Your Response to the Divorce Complaint".
+  3. Tap the **Edit** button next to "Your Other Statements".
+  4. Add information about the separate maintenance case.
 ---
 # LHI "Prior Family Cases DLG" (start at row 132)
 id: other prior family case or order additional info (completed case)
@@ -5452,11 +5785,11 @@ fields:
   - Is the custody or parenting time order **currently in effect?**: prior_family_cases[i].has_current_custody_PT_order
     datatype: yesnoradio
     js show if: |
-      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && val("prior_family_cases[i].included_custody_PT_order") === true
+      ${ "true" if tool_ID in ["divorce_complaint", "custody_complaint"] else "false" } && val("prior_family_cases[i].included_custody_PT_order") === true
   - Is there a **child support** order from this case that is **currently in effect?**: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
     show if: 
-      code: tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] 
+      code: tool_ID in ["divorce_complaint", "custody_complaint"] 
 validation code: |
   if prior_family_cases[i].type in ["paternity", "custody", "guardianship"]: 
     prior_family_cases[i].add_to_MC416_4 = True
@@ -5475,7 +5808,7 @@ fields:
   - Is the custody or parenting time order **currently in effect?**: prior_family_cases[i].has_current_custody_PT_order
     datatype: yesnoradio
     js show if: |
-      ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] else "false" } && val("prior_family_cases[i].included_custody_PT_order") === true
+      ${ "true" if tool_ID in ["divorce_complaint", "custody_complaint"] else "false" } && val("prior_family_cases[i].included_custody_PT_order") === true
   - Date of the custody or parenting time order:: prior_family_cases[i].custody_PT_order_date
     datatype: ThreePartsDate
     max: |
@@ -5485,7 +5818,7 @@ fields:
   - Is there a **child support** order in this case that is **currently in effect?**: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
     show if: 
-      code: tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint"] 
+      code: tool_ID in ["divorce_complaint", "custody_complaint"] 
 validation code: |
   prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
 ---
@@ -5869,7 +6202,8 @@ code: |
     if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
       users[0].occupation
     users[0].job.employer.name.first
-  users[0].has_professional_license
+  if tool_ID in ["divorce_complaint", "JOD_only"]:
+    users[0].has_professional_license
 
   interview_order_user_employment = True
 ---
@@ -5902,10 +6236,11 @@ code: |
 code: |
   other_parties[0].has_job
   if other_parties[0].has_job:
-    if tool_ID == "divorce_complaint" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
+    if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
       other_parties[0].occupation
     other_parties[0].job.employer.name.first
-  other_parties[0].has_professional_license
+  if tool_ID in ["divorce_complaint", "JOD_only"]:
+    other_parties[0].has_professional_license
 
   interview_order_other_party_employment = True
 ---
@@ -6104,6 +6439,9 @@ fields:
     datatype: yesno
   - "Other means-tested public assistance": pa_other
     datatype: yesno
+validation code: |
+  if not (pa_food_assistance_program or pa_medicaid or pa_family_independence_program or pa_women_infants_children or pa_state_disability or pa_state_emergency_relief or pa_refugee_assistance or pa_supplemental_security or pa_other):
+    validation_error("You must select at least one type of public assistance. Please go back and change your answers if do not get and have not applied for public assistance.")
 ---
 if: pa_other
 id: public assistance other divorce/custody
@@ -6133,7 +6471,7 @@ code: |
   if pa_food_assistance_program:
     public_assistance_list.append("FAP")
   if pa_medicaid:
-    public_assistance_list.append("MA CDC")
+    public_assistance_list.append("MA")
   if pa_family_independence_program:
     public_assistance_list.append("FIP")
   if pa_women_infants_children:
@@ -6167,7 +6505,7 @@ code: |
   if op_pa_food_assistance_program:
     op_public_assistance_list.append("FAP")
   if op_pa_medicaid:
-    op_public_assistance_list.append("MA CDC")
+    op_public_assistance_list.append("MA")
   if op_pa_family_independence_program:
     op_public_assistance_list.append("FIP")
   if op_pa_women_infants_children:
@@ -6369,12 +6707,12 @@ fields:
         other_party_pa_status == "gets_assistance"
 
 ---
-id: public assistance SSA
+id: public assistance SSA OP
 question: SSA Public Assistance
 subquestion: |
   Enter ${OP_label}'s Social Security Administration (SSA) case number here, if known.
 
-  SSA case numbers usually use a Social Security number (SSN). It's OK to enter here because the case number will only go on a nonpublic form.
+  SSA case numbers usually use a Social Security number (SSN). It's OK to enter here because the case number will only go on a nonpublic form (FOC 23).
 fields:
   - 'SSA Case #': op_pa_ssa_number
 
@@ -6825,13 +7163,13 @@ id: intro to complaint paragraph response
 continue button field: complaint_paragraphs_intro
 question: Answering the Complaint
 subquestion: |
-  For the next section of the tool, look at the complaint for divorce that you received. For each numbered paragraph and subparagraph decide whether you:
+  For the next section of the tool, look at the complaint for divorce that you received. For each numbered paragraph, decide whether you:
   
   * **Agree** that the statements are true, or
   * **Disagree** that the statements are true, or
   * **Do not know** if the statements are true.
 
-  You should respond to **every paragraph and subparagraph** in the order that they appear in your complaint.
+  You should respond to **every paragraph** in the order that they appear in your complaint.
 ---
 id: collect a paragraph response
 question: |
@@ -6853,7 +7191,9 @@ fields:
     label above field: False
     required: False
   - note: |
-      Carefully read the paragraph.
+      Carefully read the paragraph. 
+
+      ${collapse_template(answer_re_kids_tips_container)}
   - "Answer whether you agree, disagree, or don’t know if the statements in that paragraph are true.": complaint_paragraphs[i].response
     input type: radio
     choices: 
@@ -6861,6 +7201,8 @@ fields:
       - "I disagree": disagree
       - "I do not know whether the statements are true": unsure
   - "Optional comment:": complaint_paragraphs[i].details
+    help: |
+      If you agree but you think your spouse left out an important detail, or if you want to clarify something, you can add more information here.
     required: False
     input type: area
     rows: 2
@@ -6878,6 +7220,8 @@ fields:
       variable: complaint_paragraphs[i].response
       is: disagree
   - "Optional comment:": complaint_paragraphs[i].details
+    help: |
+      If you don't know whether the statements are true, you may want to explain what you're unsure about.
     required: False
     input type: area
     rows: 2
@@ -6890,11 +7234,32 @@ fields:
     js show if: |
       ['agree', 'disagree', 'unsure'].includes(val("complaint_paragraphs[i].response"))
 ---
+template: answer_re_kids_tips_container
+subject: Is the paragraph about kids or pregnancy?
+content: |
+  % if complaint_type == "no_children":
+  You said your spouse filed a Complaint for Divorce **without children.** When reading paragraphs about children and pregnancy, make sure:
+  
+  * your spouse's statement about {marital children} is accurate
+  * any statements about pregnancy are correct.
+
+  If your spouse left out a child that *does* have you both as legal parents, or if any paragraph is incorrect, **disagree** and explain.
+  % elif complaint_type == "with_children":
+  You said your spouse filed a Complaint for Divorce **with children.** When reading paragraphs about children and pregnancy, make sure:
+  
+  * the correct children are listed as your shared {marital children}, with no children missing and no extra children added
+  * any statements about pregnancy are correct.
+
+  If any paragraph is incorrect, **disagree** and explain.
+  % endif
+  
+  [Tap here for answers to common questions about kids and pregnancy.](${url_action('children_answer_help')})
+---
 # --------------------------------------------------------------------
 ## other divorce answer questions (that didn't naturally fit above)
 # --------------------------------------------------------------------
 ---
-id: file a counterclaim
+id: does user wants to file a counterclaim
 question: |
   Filing a Counterclaim  
 subquestion: |
@@ -6902,15 +7267,33 @@ subquestion: |
 
   A counterclaim is needed if you want to:
 
-  * **change your last name** as part of the divorce
-  * ask for **spousal support**
-  * ask the court to **address any other issue** or order something that your spouse did not request in their Complaint for Divorce
+  * **change your last name** as part of the divorce,
+  * ask for **spousal support,** or
   * make sure the divorce case **can be finished** if your spouse stops participating. 
 
   ${collapse_template(no_counterclaim_exp)}
+  ${collapse_template(cobra_counterclaim)}
 fields: 
-  - Do you want to create a counterclaim for divorce?: create_counterclaim
+  - Do you want to create a counterclaim for divorce?: want_counterclaim
     datatype: yesnoradio
+---
+id: create_counterclaim logic
+code: |
+  create_counterclaim = False
+  
+  if want_counterclaim and counterclaim_180_day_test_met.any_true() and counterclaim_10_day_test_met.any_true():
+    if (complaint_type == "with_children" and there_are_marital_children) or complaint_type == "no_children":
+      create_counterclaim = True
+---
+template: cobra_counterclaim
+subject: |
+  What if I want to ask for my spouse to pay for my health insurance (COBRA coverage) after the divorce?
+content: |
+  Another reason to file a counterclaim is if you want your spouse to pay for your health insurance after the divorce under COBRA. 
+  
+  COBRA is a law that provides a way to temporarily continue group health coverage under your spouse's plan after divorce. Typically, the spouse who gets continuing health insurance through COBRA pays for it. Insurance through COBRA often costs more than when that person was covered as a spouse. 
+  
+  In some circumstances a judge may order one spouse to pay for the **other** spouse's COBRA coverage after the divorce. However, **our counterclaim form does not include this type of request.** If you want to ask for this, find a lawyer to help you. ${MLH_GUIDE_FULL}
 ---
 template: no_counterclaim_exp
 subject: |
@@ -6922,5 +7305,4 @@ content: |
 
   * **change your last name** as part of the divorce
   * ask for **spousal support**
-  * ask the court to **address other issues** your spouse did not raise
 ---
