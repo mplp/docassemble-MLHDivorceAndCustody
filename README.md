@@ -7,7 +7,6 @@ Michigan Legal Help
 Lemma Legal
 
 ## Changelog:
-* 6/16/26  1.1.1 fix previous last name/maiden name logic; edit spousal support response options; update heading level styling
 * 4/30/26  1.1.0 multiple changes to wording and order of questions; fix some bugs; add testable but incomplete divorce answer
 * 4/10/26  1.0.3 fix small font on form; fix & standardize Ottawa case initiation form reference; fix child support calculator link; update title of tool
 * 4/6/26   1.0.2 patch Ottawa County court selection issue; fix minor code typos

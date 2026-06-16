@@ -255,7 +255,7 @@ subquestion: |
 
   ${ optional_download_message }
     
-  ## Download or e-mail your ${ MLH_form_type }
+  <h2 class="h3">Download or e-mail your ${ MLH_form_type }</h2>
 
   ${ action_button_html(url_action('review_full'), label='✎ Review / Edit', color='info') }
   
@@ -263,7 +263,7 @@ subquestion: |
 
   ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
   
-  ## Take our quick survey!
+  <h2 class="h3">Take our quick survey!</h2>
   Answer below or [open the survey in a new tab](${ survey_link_url_only }).
   ${ survey_embed_script }
 progress: 100

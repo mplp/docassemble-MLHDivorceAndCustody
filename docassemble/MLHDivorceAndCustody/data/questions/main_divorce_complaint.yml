@@ -134,12 +134,10 @@ code: |
 
   users.gather()
   users[0].name.first
-  users[0].marriage_number
   users[0].has_previous_name
-  if users[0].marriage_number != "first":
-    users[0].has_maiden_name
   users[0].gender
   users[0].new_last_name_yn
+  users[0].marriage_number
   users[0].birthdate
   users[0].birthplace
 
@@ -149,11 +147,9 @@ code: |
 
   other_parties.gather()
   other_parties[0].name.first
-  other_parties[0].marriage_number
   other_parties[0].has_previous_name
-  if other_parties[0].marriage_number != "first":
-    other_parties[0].has_maiden_name
   other_parties[0].gender
+  other_parties[0].marriage_number
   other_parties[0].birthdate
   other_parties[0].birthplace
 
