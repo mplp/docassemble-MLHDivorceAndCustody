@@ -4226,8 +4226,6 @@ subquestion: |
 
   % if tool_ID in ["divorce_complaint", "JOD_only"]:
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
-  % elif tool_ID == "divorce_answer":
-  If the judge revokes your parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
   % endif
   
   % elif children[i].bio_parent == "user":
@@ -4255,8 +4253,6 @@ subquestion: |
   
   % if tool_ID in ["divorce_complaint", "JOD_only"]:
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
-  % elif tool_ID == "divorce_answer":
-  If the judge revokes your parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
   % endif
 
   % elif children[i].bio_parent == "user":
@@ -4284,8 +4280,6 @@ subquestion: |
 
   % if tool_ID in ["divorce_complaint", "JOD_only"]:
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
-  % elif tool_ID == "divorce_answer":
-  If the judge revokes your parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
   % endif
 
   If nobody files a Motion to Determine Child Born Out of Wedlock, you will remain a legal parent. This means the judge can award you custody and/or parenting time, and you may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
@@ -4845,7 +4839,7 @@ subquestion: |
   ${children_previous_address.table}
 fields:
   - label: |
-      Are there any more previous address where ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } lived in the last five years?
+      Are there any more previous addresses where ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } lived in the last five years?
     field: children_previous_address.there_is_another
     datatype: yesnoradio
 ---
@@ -7205,8 +7199,8 @@ fields:
       If you agree but you think your spouse left out an important detail, or if you want to clarify something, you can add more information here.
     required: False
     input type: area
-    rows: 2
-    maxlength: 140
+    rows: 8
+    maxlength: 600
     show if:
       variable: complaint_paragraphs[i].response
       is: agree
@@ -7214,8 +7208,8 @@ fields:
       I disagree that the statements in this paragraph are true because:
     field: complaint_paragraphs[i].details
     input type: area
-    rows: 2
-    maxlength: 140
+    rows: 8
+    maxlength: 600
     show if:
       variable: complaint_paragraphs[i].response
       is: disagree
@@ -7224,15 +7218,11 @@ fields:
       If you don't know whether the statements are true, you may want to explain what you're unsure about.
     required: False
     input type: area
-    rows: 2
-    maxlength: 140
+    rows: 8
+    maxlength: 600
     show if:
       variable: complaint_paragraphs[i].response
       is: unsure
-  - note: |
-      *(140 character limit)*
-    js show if: |
-      ['agree', 'disagree', 'unsure'].includes(val("complaint_paragraphs[i].response"))
 ---
 template: answer_re_kids_tips_container
 subject: Is the paragraph about kids or pregnancy?
