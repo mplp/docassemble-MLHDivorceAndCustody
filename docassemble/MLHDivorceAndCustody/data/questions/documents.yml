@@ -2474,7 +2474,20 @@ attachment:
       - plaintiffs0_gender_male: ${plaintiffs[0].gender == "male"}
       - plaintiffs0_gender_female: ${plaintiffs[0].gender == "female"}
       - plaintiffs0_gender_other: ${plaintiffs[0].gender == "nonbinary"}
-      - plaintiffs0_previous_last_name: ${plaintiffs[0].maiden_name if plaintiffs[0].has_maiden_name else ""}
+      - plaintiffs0_previous_last_name: |
+          % if tool_ID == "JOD_only" and plaintiffs[0].has_maiden_name:
+          ${plaintiffs[0].maiden_name}
+          % elif tool_ID == "divorce_complaint":
+          % if plaintiffs[0].marriage_number == "first" and plaintiffs[0].has_previous_name:
+          ${plaintiffs[0].previous_last_name}
+          % elif plaintiffs[0].marriage_number != "first":
+          % if plaintiffs[0].has_maiden_name:
+          ${plaintiffs[0].maiden_name}
+          % elif plaintiffs[0].has_previous_name:
+          ${plaintiffs[0].previous_last_name}
+          % endif
+          % endif
+          % endif
       - plaintiffs0_address_city: |
           % if user_ask_role == "plaintiff" and confidential_contact_info_yn:
           Confidential
@@ -2508,7 +2521,20 @@ attachment:
       - defendants0_gender_male: ${defendants[0].gender == "male"}
       - defendants0_gender_female: ${defendants[0].gender == "female"}
       - defendants0_gender_other: ${defendants[0].gender == "nonbinary"}
-      - defendants0_previous_last_name: ${defendants[0].maiden_name if defendants[0].has_maiden_name else ""}
+      - defendants0_previous_last_name: |
+          % if tool_ID == "JOD_only" and defendants[0].has_maiden_name:
+          ${defendants[0].maiden_name}
+          % elif tool_ID == "divorce_complaint":
+          % if defendants[0].marriage_number == "first" and defendants[0].has_previous_name:
+          ${defendants[0].previous_last_name}
+          % elif defendants[0].marriage_number != "first":
+          % if defendants[0].has_maiden_name:
+          ${defendants[0].maiden_name}
+          % elif defendants[0].has_previous_name:
+          ${defendants[0].previous_last_name}
+          % endif
+          % endif
+          % endif
       - defendants0_address_city: |
           % if user_ask_role == "defendant" and confidential_contact_info_yn:
           Confidential
