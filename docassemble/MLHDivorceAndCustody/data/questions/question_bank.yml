@@ -7541,7 +7541,11 @@ subquestion: |
   
   One of you should file a motion to convert the case to a divorce with children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
   % elif counterclaim_type == "no_children":
+  % if (users[0].pregnant and users[0].pregnant_how == "ART" and users[0].surrogate_pregnancy) or (other_parties[0].pregnant and other_parties[0].pregnant_how == "ART" and other_parties[0].surrogate_pregnancy):
+  You said you have no {minor} {marital children} and the pregnancy is the result of a valid surrogacy agreement. But your {spouse} filed a divorce complaint **with children.**
+  % else: 
   You said you have no {minor} {marital children} and neither spouse is pregnant, but your {spouse} filed a divorce complaint **with children.**
+  % endif
   
   One of you should file a motion to convert the case to a divorce without children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
   % endif
