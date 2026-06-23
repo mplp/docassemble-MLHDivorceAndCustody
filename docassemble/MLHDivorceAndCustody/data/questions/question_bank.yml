@@ -5516,7 +5516,7 @@ subquestion: |
   % if complaint_type == "no_children":
   ## Your spouse's divorce complaint type appears to be incorrect
   
-  You said your spouse filed a complaint for divorce **without children.** One of you should file a motion to convert the divorce to a divorce with children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+  You said your spouse filed a complaint for divorce **without children.** One of you should file a motion to convert the case to a divorce with children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
   % endif
 
   ${collapse_template(what_if_no_child_born)}
@@ -7523,7 +7523,7 @@ code: |
     if there_are_marital_children:
       counterclaim_includes_custody_info = True
     elif not there_are_marital_children:
-      if (not users[0].pregnant or (users[0].pregnant_how == "sex" and users[0].pregnancy_parentage == "nomarital" and users[0].revoke_pregnancy)) and (not other_parties[0].pregnant or (other_parties[0].pregnant_how != "ART" and other_parties[0].pregnancy_parentage == "nonmarital" and other_parties[0].revoke_pregnancy)):
+      if (not users[0].pregnant or (users[0].pregnant_how == "sex" and users[0].pregnancy_parentage == "nonmarital" and users[0].revoke_pregnancy)) and (not other_parties[0].pregnant or (other_parties[0].pregnant_how != "ART" and other_parties[0].pregnancy_parentage == "nonmarital" and other_parties[0].revoke_pregnancy)):
         counterclaim_includes_custody_info = False
       else:
         counterclaim_includes_custody_info = True
@@ -7539,11 +7539,11 @@ subquestion: |
   % if counterclaim_type == "with_children":
   You said you have {minor} {marital children}, but your {spouse} filed a divorce complaint **without children.**
   
-  One of you should file a motion to convert the divorce to a divorce with children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+  One of you should file a motion to convert the case to a divorce with children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
   % elif counterclaim_type == "no_children":
   You said you have no {minor} {marital children} and neither spouse is pregnant, but your {spouse} filed a divorce complaint **with children.**
   
-  One of you should file a motion to convert the divorce to a divorce without children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+  One of you should file a motion to convert the case to a divorce without children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
   % endif
 ---
 template: cobra_counterclaim
