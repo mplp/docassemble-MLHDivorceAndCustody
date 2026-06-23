@@ -1311,7 +1311,19 @@ review:
         - interview_order_children
     button: |
       ### Pregnancy
-        - You **${word("are") if users[0].pregnant else word("are not")}** pregnant.
+        - You **${word("are") if users[0].pregnant else word("are not")}** pregnant. 
+        % if users[0].pregnant:
+            - Your approximate due date is:
+            - Your pregnancy was conceived by ${word("sex.") if users[0].pregnant_how == "sex" else word("assisted reproduction")}
+        % if users[0].pregnant_how == "ART":
+            - Your pregnancy **${word("is") if users[0].surrogate_pregnancy else word("is not")}** the result of a valid surrogacy agreement.
+        % elif users[0].pregnant_how == "sex":
+            - Your spouse **${word("is") if users[0].pregnancy_parentage == "marital" else word("is not") if users[0].pregnancy_parentage == "nonmarital" else word("may or may not be")}** the child's other biological parent.
+        % if users[0].pregnancy_parentage in ["nonmarital", "unsure"]:
+            - You **${word("do") if users[0].revoke_pregnancy else word("don't")}** plan to ask the judge to revoke your spouse's parentage.
+        % endif
+        % endif
+        % endif
         - Your spouse **${word("is") if other_parties[0].pregnant else word("is not")}** pregnant.
     show if: tool_ID == "divorce_answer"
 #

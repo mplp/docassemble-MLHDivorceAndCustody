@@ -3223,7 +3223,7 @@ code: |
             pregnant_cc_with_kids_info
         else:
           pregnant_cc_with_kids_info
-          users[0].questions_about_custody_only_pregnant
+          users[0].questions_about_custody_only_pregnant # In some circs, users[0].revoke_pregnancy is triggered indirectly here. TODO: make this more explicit in interview order. Same for OPs.
       if other_parties[0].pregnant:
         other_parties[0].pregnancy_due_date
         if other_parties[0].pregnant_how == "ART":
@@ -5558,7 +5558,7 @@ question: Questions about custody and parenting time
 subquestion: |
   Because of the pregnancy, your counterclaim for divorce must include specific requests about custody, parenting time, and child support. You will be asked questions about these issues to fill out your forms correctly.
   
-  % if users[0].pregnant_how == "sex" and users[0].pregnancy_parentage == "unsure" and users[0].revoke_pregnancy:
+  % if users[0].pregnant_how == "sex" and users[0].pregnancy_parentage == "unsure" and users[0].revoke_pregnancy:  # note this currently is what triggers revoke_pregnancy in some circs!
   You must answer these questions even though you plan to ask for revocation of parentage, in case tests show you are both biological parents. If the court revokes parentage and there are no {marital children}, you or your spouse will need to file a motion to convert the case to a divorce without minor children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
   % endif
 ---
@@ -5568,7 +5568,7 @@ question: Questions about custody and parenting time
 subquestion: |
   Because of the pregnancy, your counterclaim for divorce must include specific requests about custody, parenting time, and child support. You will be asked questions about these issues to fill out your forms correctly.
   
-  % if other_parties[0].pregnant_how in ["sex", "unsure"] and other_parties[0].pregnancy_parentage == "unsure" and other_parties[0].revoke_pregnancy:
+  % if other_parties[0].pregnant_how in ["sex", "unsure"] and other_parties[0].pregnancy_parentage == "unsure" and other_parties[0].revoke_pregnancy: # note this currently is what triggers revoke_pregnancy in some circs!
   You must answer these questions even though you plan to ask for revocation of parentage, in case tests show you are both biological parents. If the court revokes parentage and there are no {marital children}, you or your spouse will need to file a motion to convert the case to a divorce without minor children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
   % endif
 ---
