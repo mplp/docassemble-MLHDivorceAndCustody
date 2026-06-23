@@ -921,8 +921,8 @@ review:
       - want_counterclaim
       - undefine:
           - counterclaim_jurisdiction_venue_problem_continue
-          - continue_no_kids_no_cc
           - create_counterclaim
+          - there_are_marital_children
     button: |
       ### Counterclaim
         - You **${word("do") if want_counterclaim else word("do not")} want** to create a **counterclaim** along with your answer.
@@ -1013,8 +1013,9 @@ review:
         - the_court
         - the_foc
         - stepchildren_for_addendum
-        - continue_no_kids_no_cc
         - create_counterclaim
+        - counterclaim_type
+        - complaint_mismatch_warning
       - recompute:
         - children_previous_address.gathered_reset
         - interview_order_children
@@ -1071,8 +1072,9 @@ review:
         - the_court
         - the_foc
         - stepchildren_for_addendum
-        - continue_no_kids_no_cc
         - create_counterclaim
+        - counterclaim_type
+        - complaint_mismatch_warning
       - recompute:
         - children_previous_address.gathered_reset
         - interview_order_children
@@ -1201,7 +1203,7 @@ review:
         **use sample from Friend of the Court.**
         % endif
         % endif   
-    show if: there_are_marital_children
+    show if: there_are_marital_children or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
   - Edit:
       - custom_PT_details
     button: |
@@ -1289,6 +1291,29 @@ review:
       ### Pregnancy
         - You **${word("are") if users[0].pregnant else word("are not")}** pregnant.
         - Your spouse **${word("is") if other_parties[0].pregnant else word("is not")}** pregnant.
+    show if: tool_ID != "divorce_answer"
+  - Edit:
+      - users[0].pregnant
+      - invalidate:
+        - pregnant_no_kids_info
+        - users[0].pregnancy_due_date
+        - pregnant_surrogacy_info
+        - pregnancy_only_ART_info
+        - pregnant_cc_with_kids_info
+        - users[0].questions_about_custody_only_pregnant
+        - users[0].revoke_pregnancy
+        - other_parties[0].pregnancy_due_date
+        - other_parties[0].questions_about_custody_only_pregnant
+        - other_parties[0].revoke_pregnancy
+        - counterclaim_type
+        - complaint_mismatch_warning
+      - recompute: 
+        - interview_order_children
+    button: |
+      ### Pregnancy
+        - You **${word("are") if users[0].pregnant else word("are not")}** pregnant.
+        - Your spouse **${word("is") if other_parties[0].pregnant else word("is not")}** pregnant.
+    show if: tool_ID == "divorce_answer"
 #
 # ---------- prior cases ----------
   - raw html: |
@@ -1696,7 +1721,6 @@ review:
   - Edit:
       - complaint_type
       - invalidate:
-        - continue_no_kids_no_cc
         - create_counterclaim
     button: |
       ### Type of divorce complaint
