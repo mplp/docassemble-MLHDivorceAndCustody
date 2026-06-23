@@ -258,13 +258,13 @@ review:
         - Foreign identity documents: ${ word("not answered") if users[0].foreign_identity_documents == "" else users[0].foreign_identity_documents }
       % endif
       % endif
-    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
+    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support" or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
   - Edit:
       - users[0].has_alias
     button: |
       ### Your other names/aliases
         - ${ word("None") if not users[0].has_alias else users[0].aliases }
-    show if: there_are_marital_children or user_wants_post_divorce_support
+    show if: there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
   - Edit:
       - users[0].eye_color
       - users[0].height_feet
@@ -307,7 +307,7 @@ review:
         - ${ phone_number_formatted(users[0].job.employer.phone) if users[0].job.employer.phone != "" else word("no phone given")}
         - FEIN: ${ users[0].job.FEIN if users[0].job.FEIN != "" else word("unknown")}
       % endif
-    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
+    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support" or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
   - Edit:
       - users[0].occupation
     button: |
@@ -358,7 +358,7 @@ review:
     button: |
       ### Your public assistance programs
         - ${ comma_and_list(public_assistance_list) }
-    show if: pa_status == "gets_assistance" or (pa_status == "applied" and (there_are_marital_children or user_wants_post_divorce_support))
+    show if: pa_status == "gets_assistance" or (pa_status == "applied" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))))
   - Edit:
       - pa_mdhhs_case_number
       - recompute:
@@ -545,7 +545,7 @@ review:
   - Edit:
       - spouse_is_in_military
     button: |
-      ### Spouse on active US military duty?
+      ### ${capitalize(OP_label)} on active US military duty?
         - ${word(yesno(spouse_is_in_military))}
   - Edit:
       - other_parties[0].has_attorney
@@ -597,13 +597,13 @@ review:
         - Foreign identity documents: ${ word("not answered") if other_parties[0].foreign_identity_documents == "" else other_parties[0].foreign_identity_documents }
       % endif
       % endif
-    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
+    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support" or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
   - Edit:
       - other_parties[0].has_alias
     button: |
       ### ${other_parties[0]}'s other names/aliases
         - ${ word("None") if not other_parties[0].has_alias else other_parties[0].aliases }
-    show if: there_are_marital_children or user_wants_post_divorce_support
+    show if: there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
   - Edit:
       - other_parties[0].eye_color
       - other_parties[0].height_feet
@@ -645,7 +645,7 @@ review:
         - ${ phone_number_formatted(other_parties[0].job.employer.phone) if other_parties[0].job.employer.phone != "" else word("no phone given")}
         - FEIN: ${ other_parties[0].job.FEIN if other_parties[0].job.FEIN != "" else word("unknown")}
       % endif
-    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support"
+    show if: there_are_marital_children or user_wants_post_divorce_support or spousal_support_provisions == "user_agrees_to_pay_spousal_support" or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
   - Edit:
       - other_parties[0].occupation
     button: |
@@ -670,7 +670,7 @@ review:
       ### ${other_parties[0]}'s income
         - Paycheck amount: ${ word("not answered") if other_parties[0].income.value == 0.0 else word(currency(other_parties[0].income.value)) }
         - Paycheck frequency: ${ word("not answered") if other_parties[0].income.times_per_year == None else word("once a week") if other_parties[0].income.times_per_year == "52" else word("every two weeks") if other_parties[0].income.times_per_year == "26" else word("twice a month") if other_parties[0].income.times_per_year == "24" else word("once a month") }
-    show if: there_are_marital_children or user_wants_post_divorce_support and other_parties[0].has_job #for FOC23; never asked for JOD-only
+    show if: there_are_marital_children or user_wants_post_divorce_support and other_parties[0].has_job  or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant)) #for FOC23; never asked for JOD-only
   - Edit:
       - other_party_pa_status
       - invalidate:
@@ -694,7 +694,7 @@ review:
     button: |
       ### ${other_parties[0]}'s public assistance programs
         - ${ comma_and_list(op_public_assistance_list) }
-    show if: (there_are_marital_children or user_wants_post_divorce_support) and other_party_pa_status in ["gets_assistance", "applied"]
+    show if: (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))) and other_party_pa_status in ["gets_assistance", "applied"]
   - Edit:
       - op_pa_mdhhs_case_number
       - recompute:

@@ -276,19 +276,63 @@ action buttons:
     color: danger
     icon: right-from-bracket
 ---
-if: tool_ID == "divorce_answer" and complaint_type == "with_children"
-id: exit_no_kids
+if: tool_ID == "custody_complaint"
+id: current_marriage_exit
+event: current_marriage_exit
 question: |
-  No marital children
+  Married to the other parent
 subquestion: |
-  You did not enter any {marital children}. Your spouse filed this divorce as a divorce with children. 
-  
-  If you and your spouse are the legal parents of a child, use the **Review / Edit** link to go back now and add the child or edit your answers. Then you can create your Counterclaim.
+  Sorry, you cannot use this tool to file a Complaint for Custody, Parenting Time, and Child Support if you are married to the Defendant.
 
-  If there are no marital children, there may be complications in your case and you should speak with a lawyer. ${MLH_GUIDE_FULL} You can still continue and get your Answer form, but you cannot use this tool to create a Counterclaim. 
-fields:
- - Do you want to continue to create your Answer form without a Counterclaim?: continue_no_kids_no_cc
-   datatype: yesnoradio
+  One option may be filing for divorce. Visit [Filing for Divorce with Children](https://michiganlegalhelp.org/resources/family/filing-divorce-children) to learn more.
+
+  You may also want to contact a lawyer for help. ${MLH_GUIDE_FULL}
+
+  If you think you made a mistake, tap **Undo** and change the answer to this question.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
+if: tool_ID == "custody_complaint"
+id: past_marriage_exit
+event: past_marriage_exit
+question: |
+  Past marriage to the other parent
+subquestion: |
+  You cannot use this tool to prepare a Custody Complaint if you used to be married to the other parent. Depending on the circumstances, you may need to file a motion in the divorce case instead. You may want to speak to a lawyer. ${MLH_GUIDE_FULL}
+
+  If you already have a custody, parenting time, and child support order that you want to change, these articles may be useful:
+
+  * [Changing a Custody Order](https://michiganlegalhelp.org/resources/family/changing-custody-order)
+  * [Changing Parenting Time](https://michiganlegalhelp.org/resources/family/changing-parenting-time)
+  * [Changing a Child Support Order](https://michiganlegalhelp.org/resources/family/changing-child-support-order)
+
+  If you think you made a mistake, tap **Undo** and change the answer to this question.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
+if: tool_ID == "custody_complaint"
+id: custody_no_kids_exit
+event: custody_no_kids_exit
+question: |
+  No minor children with the defendant
+subquestion: |
+  Sorry, this tool is for filing a complaint for Custody, Parenting Time, and Child Support against the other parent of your {minor} child(ren).
+
+  If you think you made a mistake, tap **Undo** and change the answer to this question.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
 ---
 # --------------------------------------------------------------------
 ## introduction
@@ -305,6 +349,24 @@ validation code: |
   if not marriage.pending_divorce:
     edit_existing_divorce = False
     returning_to_finalize = False
+---
+id: custody marriage screening
+question: Relationship with the other parent
+subquestion: |
+  You will be called the Plaintiff in this case because you are filing the Complaint for Custody, Parenting Time, and Child Support. The other parent of this child or these children is called the Defendant.
+fields: 
+  - Are you currently married to the Defendant?: married_other_parent_now
+    datatype: yesnoradio
+  - Have you ever been married to the Defendant?: married_other_parent_past
+    datatype: yesnoradio
+    show if: 
+      variable: married_other_parent_now
+      is: False
+  - Do you and the Defendant have one or more {minor} children together?: children_in_common
+    datatype: yesnoradio
+    show if: 
+      variable: married_other_parent_past
+      is: False
 ---
 if: tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and returning_to_finalize)
 id: Choose a court
@@ -344,38 +406,11 @@ fields:
     show if:
       variable: complaint_type
       is: "with_children"
-#  - Do you have minor children with your spouse?: complaint_check_agree_kids
-#    datatype: yesnoradio
-#    show if:
-#      variable: complaint_type
-#      is: "with_children"
   - note: |
       This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents, and neither spouse is pregnant.
     show if:
       variable: complaint_type
       is: "no_children"
-validation code: |
-  if complaint_type == "no_children":
-    there_are_marital_children = False
-  else: # if with_children, set by child gathering process
-    undefine("there_are_marital_children")
----
-#id: complaint type check with no children
-#if: complaint_type == "no_children"
-#question: Did your spouse file the right type of complaint?
-#subquestion: |
-#  You said your spouse filed a complaint for divorce **without children.** This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents.
-#
-#  ${collapse_template(legal_parentage_info)}
-#fields:
-#  - Is there any {minor} child who has both you and your spouse as legal parents?: complaint_check_have_kids
-#    input type: radio
-#    choices:
-#      - Yes, there is at least one child who has us both as legal parents.: True
-#      - No: False
-#  - note: |
-#      ${collapse_template(wants_to_parent)}
-#      ${collapse_template(unsure_legal_parent)}
 ---
 template: legal_parentage_info
 subject: Situations where you might both be legal parents.
@@ -649,38 +684,51 @@ fields:
     field: marriage.breakdown
     datatype: yesnoradio
 ---
-id: incompetent spouse
+id: incompetent spouse / OP
 question: |
-  Your spouse's legal competence
+  ${capitalize(OP_label)}'s legal competence
 fields:
-  - To the best of your knowledge, has a judge found your spouse to be legally incompetent?: spouse_is_incompetent
+  - To the best of your knowledge, has a judge found ${OP_label} to be legally incompetent?: spouse_is_incompetent
     datatype: yesnoradio    
   - note: |
-      If your spouse does not file an answer to your divorce complaint, you may be entering a default judgment of divorce against him or her. You may not enter a default judgment against a person who is not legally competent to understand the divorce proceedings.
+      Sorry, you cannot use this tool. If ${OP_label} does not file an answer to your complaint, you may be entering a default judgment against him or her. You may not enter a default judgment against a person who is not legally competent to understand the proceedings.
     show if:
       variable: spouse_is_incompetent
       is: True
 ---
 id: military spouse
 question: |
-  Spouse in the military?
+  Is ${OP_label} in the military?
 subquestion: |
   ${collapse_template(military_spouse_info)}
 fields:
-  - Is your spouse currently on active military duty in the United States armed forces?: spouse_is_in_military
+  - Is ${OP_label} currently on active military duty in the United States armed forces?: spouse_is_in_military
     datatype: yesnoradio
   - note: |
-      If your spouse is on active military duty, you may only use this tool to prepare your divorce forms if your spouse:
-      
+      If ${OP_label} is on active military duty, you may only use this tool to prepare your forms if ${OP_label}:
+
+      % if tool_ID == "divorce_complaint":      
       * agrees to the divorce, 
       * agrees to all the terms of the divorce, and 
       * will sign a Consent Judgment of Divorce. 
       
-      If your spouse is on active military duty and doesn't agree to the divorce or all the terms of the divorce, you may want to talk to a lawyer to help you complete your divorce.
+      If ${OP_label} is on active military duty and doesn't agree to the divorce or all the terms of the divorce, you may want to talk to a lawyer to help you complete your divorce.
+      % elif tool_ID == "custody_complaint":
+      * agrees to all of the custody, parenting time, and child support terms, and 
+      * will sign a consent order.      
+      
+      If you want to file a custody case against someone who is on active military duty and does not agree to all of the custody, parenting time, and child support terms, you cannot use this tool. You may want to talk to a lawyer to help you with your case.
+      % endif
     show if:
       variable: spouse_is_in_military
       is: True
-  - Will you and your spouse be filing a Consent Judgment of Divorce?: military_spouse_agrees_consent_judgment
+  - label: |
+      % if tool_ID == "divorce_complaint":
+      Will you and ${OP_label} be filing a Consent Judgment of Divorce?
+      % elif tool_ID == "custody_complaint":
+      Will you and ${OP_label} be filing a consent order?
+      % endif
+    field: military_spouse_agrees_consent_judgment
     datatype: radio
     choices:
       - Yes: yes
@@ -693,9 +741,22 @@ fields:
 template: military_spouse_info
 subject: What if I'm not sure?
 content: |
-  If your spouse is or may be on active military duty, you may only use this tool to prepare your divorce forms if your spouse agrees to the divorce, agrees to all of the terms of the divorce, and will sign a Consent Judgment of Divorce. 
+  If ${OP_label} is or may be on active military duty, you may only use this tool to prepare your ${ word("divorce forms") if tool_ID == "divorce_complaint" else word("custody forms") } if your spouse agrees to ${ word("the divorce, agrees to all of the terms of the divorce, and will sign a Consent Judgment of Divorce.") if tool_ID == "divorce_complaint" else word("all of the custody, parenting time, and child support terms, and will sign a consent order.") } 
   
-  Please return to use this tool when you have determined if your spouse is currently on active military duty. 
+  Please return to use this tool when you have determined if ${OP_label} is currently on active military duty. 
+---
+id: residence_warning
+continue button field: residence_warning
+question: Connection to Michigan
+subquestion: |
+  To file a custody case in Michigan, usually:
+
+  * one of the parents must live in Michigan, and
+  * all your {minor} children with the other parent must have lived for the last 6 months (or since birth) in Michigan.
+
+  We will ask specifically about these things later in this tool. 
+  
+  If these things are not true for your case, you may want to **stop now and speak with a lawyer.** ${MLH_GUIDE_FULL}
 ---
 id: need temp order
 question: Need a temporary order to secure marital property?
@@ -3145,6 +3206,40 @@ code: |
       children_lived_with_which_parent_past
       children_previous_address.gather() # calls "children's previous addresses" screen
 
+  if there_are_marital_children or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant)):
+  
+    if not there_are_marital_children and (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant)):
+      pregnant_no_kids_info
+      if users[0].pregnant:
+        users[0].pregnancy_due_date
+        if users[0].pregnant_how == "ART":
+          if users[0].surrogate_pregnancy:
+            pregnant_surrogacy_info
+          else:
+            pregnancy_only_ART_info
+            pregnant_cc_with_kids_info
+            users[0].questions_about_custody_only_pregnant
+        elif users[0].pregnant_how == "sex" and users[0].pregnancy_parentage == "nonmarital" and users[0].revoke_pregnancy:
+            pregnant_cc_with_kids_info
+        else:
+          pregnant_cc_with_kids_info
+          users[0].questions_about_custody_only_pregnant
+      if other_parties[0].pregnant:
+        other_parties[0].pregnancy_due_date
+        if other_parties[0].pregnant_how == "ART":
+          if other_parties[0].surrogate_pregnancy:
+            pregnant_surrogacy_info
+          else:
+            pregnancy_only_ART_info
+            pregnant_cc_with_kids_info
+            other_parties[0].questions_about_custody_only_pregnant
+        elif other_parties[0].pregnant_how in ["sex", "unsure"] and other_parties[0].pregnancy_parentage == "nonmarital" and other_parties[0].revoke_pregnancy:
+            pregnant_cc_with_kids_info
+        else:
+          pregnant_cc_with_kids_info
+          other_parties[0].questions_about_custody_only_pregnant
+      
+  if there_are_marital_children or (tool_ID == "divorce_answer" and counterclaim_type == "with_children" and counterclaim_includes_custody_info):
     legal_custody_who
     if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]:
       if (tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID in ["JOD_only", "divorce_answer"] and county_choice == "Muskegon"):  
@@ -3159,12 +3254,14 @@ code: |
       child_domicile_info
       if legal_custody_who == "both":
         hundred_mile_rule
-    child_support_basic
-    if tool_ID != "JOD_only":
-      allow_child_support_overpayment_correction
-      if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0:
-        guidepost_stepchildren
-        interview_order_stepchild_address
+  
+    if there_are_marital_children:
+      child_support_basic
+      if tool_ID != "JOD_only":
+        allow_child_support_overpayment_correction
+        if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0:
+          guidepost_stepchildren
+          interview_order_stepchild_address
   
   interview_order_children = True
 ---
@@ -3719,7 +3816,12 @@ code: |
 ---
 id: divorce with or without children tag
 code: |
-  if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
+  if tool_ID == "divorce_answer" and not create_counterclaim: 
+    if complaint_type == "with_children":
+      there_are_marital_children = True
+    else: 
+      there_are_marital_children = False
+  elif children.there_are_any and len(children.filter(legal_parent="both")) > 0:
     there_are_marital_children = True
   else: 
     there_are_marital_children = False
@@ -3781,7 +3883,9 @@ template: non_marital_children_explanation_template
 subject: |
   Why do I need to include both children in common and separate children?
 content: |
-  If you or your spouse has a child that is not also the child of the other spouse, this child must also be named in some of the divorce documents.
+  If you or your spouse has a child that is not also the child of the other spouse, in some cases this child must also be named in some divorce documents.
+
+  Depending on your situation, there may also be important information about parentage that we want to make sure you have.
 ---
 id: any more children
 question: |
@@ -3870,11 +3974,19 @@ template: children[i].gender_explanation
 subject: |
   How will this information be used?
 content: |
+  % if tool_ID == "divorce_answer":
+  If there are marital children, all children's sex, date of birth, and (for {marital children}) social security number may be placed on the *Verified Statement* form (FOC 23). These forms will **not** be publicly available. The Friend of the Court office and your {spouse} will have access to these forms.
+
+  Gender: FOC 23 only gives options of "F" for female or "M" for male. If you select "Nonbinary", we will put "NB", and a note that this stands for Nonbinary.
+
+  Age: {Marital children}'s age, but not their date of birth, may be included on other court forms.
+  % else:
   Children's sex, date of birth, and (for {marital children}) social security number are used on the *Verified Statement* form (FOC 23) and *Domestic Relations Judgment Information* form (FOC 100). These forms will **not** be publicly available. The Friend of the Court office and your {spouse} will have access to these forms.
 
   Gender: FOC 23 only gives options of "F" for female or "M" for male. If you select "Nonbinary", we will put "NB", and a note that this stands for Nonbinary.
 
   Age: {Marital children}'s age, but not their date of birth, will be included on other court forms.
+  % endif
 ---
 id: marital children's origin
 if: children[i].timing == "marital" and not children[i].adopted_during_marriage
@@ -3921,7 +4033,7 @@ template: why_ask_child_origin
 subject: |
   Why are you asking this?
 content: |
-  Depending on your answer, we may need to give you more information about parentage.
+  Depending on your answer, we may need to give you more information about parentage and/or fill out your forms differently.
 ---
 template: help_assisted_repro
 subject: |
@@ -5300,6 +5412,165 @@ action buttons:
     new window: True
     color: danger
     icon: right-from-bracket
+---
+id: user pregnancy followup
+question: More about your pregnancy
+subquestion: |
+  ${collapse_template(why_ask_child_origin)}
+fields:
+  - Approximately when is the due date for your current pregnancy?: users[0].pregnancy_due_date
+    maxlength: 20
+    show if: 
+      code: |
+        users[0].pregnant
+  - How did your current pregnancy happen?: users[0].pregnant_how
+    input type: radio
+    choices:
+      - Sexual intercourse: sex
+      - Assisted reproduction: ART
+  - Did the pregnancy happen as part of a valid surrogacy agreement?: users[0].surrogate_pregnancy
+    datatype: yesnoradio
+    show if:
+      variable: users[0].pregnant_how
+      is: ART
+  - Select the answer that describes the pregnancy: users[0].pregnancy_parentage
+    input type: radio
+    choices:
+      - Both my spouse and I are the biological parents.: marital
+      - There's a chance that ${other_parties[0]} is not a biological parent.: unsure
+      - I know for sure that ${other_parties[0]} is not a biological parent.: nonmarital
+    show if:
+      variable: users[0].pregnant_how
+      is: sex
+---
+id: OP pregnancy followup
+question: More about your spouse's pregnancy
+subquestion: |
+  ${collapse_template(why_ask_child_origin)}
+fields:
+  - Approximately when is the due date for your spouse's current pregnancy?: other_parties[0].pregnancy_due_date
+    maxlength: 20
+    show if: 
+      code: |
+        other_parties[0].pregnant
+  - How did your spouse's current pregnancy happen?: other_parties[0].pregnant_how
+    input type: radio
+    choices:
+      - Sexual intercourse: sex
+      - Assisted reproduction: ART
+      - "I'm not sure": unsure
+  - Did the pregnancy happen as part of a valid surrogacy agreement?: other_parties[0].surrogate_pregnancy
+    datatype: yesnoradio
+    show if:
+      variable: other_parties[0].pregnant_how
+      is: ART
+  - note: |
+      ${collapse_template(surrogacy_how_know)}
+    show if:
+      variable: other_parties[0].pregnant_how
+      is: ART
+  - Select the answer that describes the pregnancy: other_parties[0].pregnancy_parentage
+    input type: radio
+    choices:
+      - Both my spouse and I are the biological parents.: marital
+      - "There's a chance that I am not a biological parent.": unsure
+      - "I know for sure that I am not a biological parent.": nonmarital
+    js show if: |
+      val("other_parties[0].pregnant_how") === "sex" || val("other_parties[0].pregnant_how") === "unsure"
+---
+template: surrogacy_how_know
+subject: How would I know if there is a valid surrogacy agreement?
+content: |
+  If your spouse entered into a valid surrogacy agreement, you would have been required to sign it.
+---
+id: only pregnancy surrogacy info
+continue button field: pregnant_surrogacy_info
+question: Pregnancy through surrogacy
+subquestion: |
+  If the surrogacy agreement was not mentioned in your spouse’s Complaint for Divorce, make sure to mention it in your Answer.
+---
+if: users[0].pregnant_how == "sex"
+id: user pregnancy revocation followup
+question: "Your pregnancy: revocation of parentage"
+subquestion: |
+  If a spouse in a marriage **conceives or gives birth** to a child during a marriage, that child is a marital child. 
+  
+  If you believe that your spouse may **not** be a biological parent, you may want to file a motion to revoke parentage as part of the divorce case after the child is born. If you file this motion, the judge will order genetic testing to determine if your spouse is a biological parent. If no one files a motion to revoke parentage, your spouse will be considered a legal parent of the child and may get custody and parenting time, and/or be ordered to pay child support.
+fields:
+  - "For your current pregnancy, do you plan to file a motion to revoke your spouse's parentage? (If you answer Yes, your counterclaim for divorce will say you plan to file this motion.)": users[0].revoke_pregnancy
+    datatype: yesnoradio  
+---
+if: other_parties[0].pregnant_how in ["sex", "unsure"]
+id: OP pregnancy revocation followup
+question: "Spouse's pregnancy: revocation of parentage"
+subquestion: |
+  If a spouse in a marriage **conceives or gives birth** to a child during a marriage, that child is a marital child. 
+  
+  If you believe that you may **not** be a biological parent, you may want to file a motion to revoke parentage as part of the divorce case after the child is born. If you file this motion, the judge will order genetic testing to determine if you are a biological parent. If no one files a motion to revoke parentage, you will be considered a legal parent of the child and may get custody and parenting time, and/or be ordered to pay child support.
+fields:
+  - "For your spouse's current pregnancy, do you plan to file a motion to revoke your parentage? (If you answer Yes, your counterclaim for divorce will say you plan to file this motion.)": other_parties[0].revoke_pregnancy
+    datatype: yesnoradio  
+---
+id: only pregnancy ART info
+question: Pregnancy through assisted reproduction
+continue button field: pregnancy_only_ART_info
+subquestion: |
+  In general, if a child is conceived during a marriage through assisted reproduction, both spouses are the legal parents. In rare cases one spouse might challenge parentage in court. 
+  
+  If you believe that you or your spouse should not be a legal parent of the child, **stop here and find a lawyer** to help you with your divorce. ${MLH_GUIDE_FULL}
+  
+  If you do not believe there are any parentage issues, continue with this tool.   
+---
+id: only pregnancy unsure bio parents info
+question:  
+In case both you and your spouse are the biological parents of the child, your counterclaim should still include specific requests for custody, parenting time, and support. You will be asked questions about these issues to fill out your forms correctly. If the court ends up revoking parentage, you or your spouse will need to file a motion to convert the case to a divorce without minor children. (Also include help text re: what if no child is born)
+---
+id: pregnant_no_kids_info
+continue button field: pregnant_no_kids_info
+question: More questions about pregnancy
+subquestion: |
+  You said ${word("you and your spouse are both") if users[0].pregnant and other_parties[0].pregnant else word("you are") if users[0].pregnant else word("your spouse is")} pregnant, and you and your spouse have no {minor} {marital children}.
+
+  To choose the right divorce counterclaim form, we need to ask a few more questions about the ${word("pregnancies") if users[0].pregnant and other_parties[0].pregnant else word("pregnancy")}.
+---
+id: pregnant counterclaim with kids info
+continue button field: pregnant_cc_with_kids_info
+question: You will file a counterclaim "with children"
+subquestion: |
+  Because of the pregnancy, the divorce must be handled as a divorce **with minor children,** even if no children have been born yet. 
+
+  % if complaint_type == "no_children":
+  ## Your spouse's divorce complaint type appears to be incorrect
+  
+  You said your spouse filed a complaint for divorce **without children.** One of you should file a motion to convert the case to a divorce with children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+  % endif
+
+  ${collapse_template(what_if_no_child_born)}
+---
+template: what_if_no_child_born
+subject: What if no child is born?
+content: |
+  If the pregnancy ends and no child is born, you or your spouse will need to file a motion to convert the case to a divorce without children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+---
+id: only pregnancy questions about custody and PT user
+continue button field: users[0].questions_about_custody_only_pregnant
+question: Questions about custody and parenting time
+subquestion: |
+  Because of the pregnancy, your counterclaim for divorce must include specific requests about custody, parenting time, and child support. You will be asked questions about these issues to fill out your forms correctly.
+  
+  % if users[0].pregnant_how == "sex" and users[0].pregnancy_parentage == "unsure" and users[0].revoke_pregnancy:
+  You must answer these questions even though you plan to ask for revocation of parentage, in case tests show you are both biological parents. If the court revokes parentage and there are no {marital children}, you or your spouse will need to file a motion to convert the case to a divorce without minor children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+  % endif
+---
+id: only pregnancy questions about custody and PT OP
+continue button field: other_parties[0].questions_about_custody_only_pregnant
+question: Questions about custody and parenting time
+subquestion: |
+  Because of the pregnancy, your counterclaim for divorce must include specific requests about custody, parenting time, and child support. You will be asked questions about these issues to fill out your forms correctly.
+  
+  % if other_parties[0].pregnant_how in ["sex", "unsure"] and other_parties[0].pregnancy_parentage == "unsure" and other_parties[0].revoke_pregnancy:
+  You must answer these questions even though you plan to ask for revocation of parentage, in case tests show you are both biological parents. If the court revokes parentage and there are no {marital children}, you or your spouse will need to file a motion to convert the case to a divorce without minor children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+  % endif
 ---
 # --------------------------------------------------------------------
 ## prior cases
@@ -6718,7 +6989,7 @@ fields:
 ---
 code: |
   users[0].ssn 
-  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
+  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))): #for FOC23
     users[0].eye_color
     users[0].height_feet
     users[0].race
@@ -6727,7 +6998,7 @@ code: |
 ---
 code: |
   other_parties[0].ssn
-  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
+  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))): #for FOC23
     other_parties[0].eye_color
     other_parties[0].height_feet
     other_parties[0].race
@@ -6847,7 +7118,7 @@ fields:
       is: Other
 ---
 id: user alias
-if: there_are_marital_children or user_wants_post_divorce_support
+if: there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
 question: Other names
 subquestion: |
   * Your name is ${users[0]}.
@@ -6987,7 +7258,7 @@ fields:
       is: Other
 ---
 id: other party alias
-if: there_are_marital_children or user_wants_post_divorce_support
+if: there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
 question: Other names
 subquestion: |
   * Your spouse's name is **${other_parties[0]}.**
@@ -7272,8 +7543,42 @@ code: |
   create_counterclaim = False
   
   if want_counterclaim and counterclaim_180_day_test_met.any_true() and counterclaim_10_day_test_met.any_true():
-    if (complaint_type == "with_children" and there_are_marital_children) or complaint_type == "no_children":
-      create_counterclaim = True
+    create_counterclaim = True
+---
+id: counterclaim type
+code: |
+  if there_are_marital_children or (users[0].pregnant and (users[0].pregnant_how != "ART" or not users[0].surrogate_pregnancy)) or (other_parties[0].pregnant and (other_parties[0].pregnant_how != "ART" or not other_parties[0].surrogate_pregnancy)):
+    counterclaim_type = "with_children"
+
+    if there_are_marital_children:
+      counterclaim_includes_custody_info = True
+    elif not there_are_marital_children:
+      if (not users[0].pregnant or (users[0].pregnant_how == "sex" and users[0].pregnancy_parentage == "nonmarital" and users[0].revoke_pregnancy)) and (not other_parties[0].pregnant or (other_parties[0].pregnant_how != "ART" and other_parties[0].pregnancy_parentage == "nonmarital" and other_parties[0].revoke_pregnancy)):
+        counterclaim_includes_custody_info = False
+      else:
+        counterclaim_includes_custody_info = True
+  
+  else:
+    counterclaim_type = "no_children"
+---
+id: complaint_mismatch_warning
+if: (complaint_type == "with_children" and counterclaim_type == "no_children") or (complaint_type == "no_children" and counterclaim_type == "with_children")
+continue button field: complaint_mismatch_warning
+question: Your spouse's complaint type does not match your situation
+subquestion: |
+  % if counterclaim_type == "with_children":
+  You said you have {minor} {marital children}, but your {spouse} filed a divorce complaint **without children.**
+  
+  One of you should file a motion to convert the case to a divorce with children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+  % elif counterclaim_type == "no_children":
+  % if (users[0].pregnant and users[0].pregnant_how == "ART" and users[0].surrogate_pregnancy) or (other_parties[0].pregnant and other_parties[0].pregnant_how == "ART" and other_parties[0].surrogate_pregnancy):
+  You said you have no {minor} {marital children} and the pregnancy is the result of a valid surrogacy agreement. But your {spouse} filed a divorce complaint **with children.**
+  % else: 
+  You said you have no {minor} {marital children} and neither spouse is pregnant, but your {spouse} filed a divorce complaint **with children.**
+  % endif
+  
+  One of you should file a motion to convert the case to a divorce without children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+  % endif
 ---
 template: cobra_counterclaim
 subject: |

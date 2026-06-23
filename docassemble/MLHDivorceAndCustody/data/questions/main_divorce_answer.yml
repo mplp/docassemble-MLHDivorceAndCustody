@@ -165,7 +165,6 @@ code: |
         exit_general
   
     else:
-  
       if marriage.have_pension_retirement:
         if marriage.pension_contributions_made:
           marriage.pension_retirement_accounts_keep_own
@@ -202,24 +201,24 @@ code: |
 
       nav.set_section("signpost_children")
       users[0].pregnant
-      if complaint_type == "with_children":
-        interview_order_children
+      interview_order_children
   
-        if not there_are_marital_children:
-          if not continue_no_kids_no_cc:
-            exit_general
+      counterclaim_type # if not already set during interview_order_children
+      if (complaint_type == "with_children" and counterclaim_type == "no_children") or (complaint_type == "no_children" and counterclaim_type == "with_children" and there_are_marital_children):
+        complaint_mismatch_warning 
+        # if pregnancy-only mismatch, warning given in pregnant_cc_with_kids_info
   
-        else:
-          nav.set_section("signpost_prior_cases")
-          prior_family_cases.gather()
-          nav.set_section("signpost_income_etc")
-          users[0].insurance.gather()
-          other_parties[0].insurance.gather()
-  
-      elif complaint_type == "no_children":
+      if there_are_marital_children:
+        nav.set_section("signpost_prior_cases")
+        prior_family_cases.gather()
+        nav.set_section("signpost_income_etc")
+        users[0].insurance.gather()
+        other_parties[0].insurance.gather()
+
+      elif not there_are_marital_children:
         nav.set_section("signpost_income_etc")
   
-      if (complaint_type == "with_children" and there_are_marital_children) or (complaint_type == "no_children" and user_wants_post_divorce_support):
+      if counterclaim_type == "with_children" or user_wants_post_divorce_support:
         interview_order_user_employment
         interview_order_user_income
         interview_order_user_identifying_info
@@ -238,6 +237,8 @@ code: |
   # just making sure these are defined
   plaintiffs
   defendants
+  if create_counterclaim:
+    stepchildren_for_addendum
 
   al_user_bundle.generate_downloads_task
   nav.set_section("signpost_done")
