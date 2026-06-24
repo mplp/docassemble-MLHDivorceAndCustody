@@ -1313,8 +1313,8 @@ review:
       ### Pregnancy
         - You **${word("are") if users[0].pregnant else word("are not")}** pregnant. 
         % if users[0].pregnant:
-            - Your approximate due date is:
-            - Your pregnancy was conceived by ${word("sex.") if users[0].pregnant_how == "sex" else word("assisted reproduction")}
+            - Your approximate due date is: ${users[0].pregnancy_due_date}
+            - Your pregnancy was conceived by ${word("sex.") if users[0].pregnant_how == "sex" else word("assisted reproduction.")}
         % if users[0].pregnant_how == "ART":
             - Your pregnancy **${word("is") if users[0].surrogate_pregnancy else word("is not")}** the result of a valid surrogacy agreement.
         % elif users[0].pregnant_how == "sex":
@@ -1325,6 +1325,18 @@ review:
         % endif
         % endif
         - Your spouse **${word("is") if other_parties[0].pregnant else word("is not")}** pregnant.
+        % if other_parties[0].pregnant:
+            - Their approximate due date is: ${other_parties[0].pregnancy_due_date}
+            - Their pregnancy was conceived by: ${word("sex.") if other_parties[0].pregnant_how == "sex" else word("assisted reproduction.") if other_parties[0].pregnant_how == "ART" else word("unknown if by sex or assisted reproduction.")}
+        % if other_parties[0].pregnant_how == "ART":
+            - Their pregnancy **${word("is") if other_parties[0].surrogate_pregnancy else word("is not")}** the result of a valid surrogacy agreement.
+        % elif other_parties[0].pregnant_how in ["sex", "unsure"]:
+            - You **${word("are") if other_parties[0].pregnancy_parentage == "marital" else word("are not") if other_parties[0].pregnancy_parentage == "nonmarital" else word("may or may not be")}** the child's other biological parent.
+        % if other_parties[0].pregnancy_parentage in ["nonmarital", "unsure"]:
+            - You **${word("do") if other_parties[0].revoke_pregnancy else word("don't")}** plan to ask the judge to revoke your parentage.
+        % endif
+        % endif
+        % endif
     show if: tool_ID == "divorce_answer"
 #
 # ---------- prior cases ----------
