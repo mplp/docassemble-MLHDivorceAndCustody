@@ -721,10 +721,10 @@ attachment:
           ${ "I intend to file a Motion to Determine Child Born Out of Wedlock with regard to " + comma_and_list([child.name.full() for child in children if child.legal_parent == "both" and child.revoke_paternity_reminder]) + "." if any(child.legal_parent == "both" and child.revoke_paternity_reminder for child in children) else "" }
           % else:
           % if users[0].pregnant:
-          Defendant is pregnant. The approximate due date is: ${strip_end_punctuation(users[0].pregnancy_due_date)}. ${word("I plan to ask the court to revoke Plaintiff's parentage of any child born of this pregnancy.") if users[0].pregnant_how == "sex" and users[0].pregnancy_parentage != "marital" and users[0].revoke_pregnancy else ""}
+          Defendant is pregnant. The approximate due date is: ${strip_end_punctuation(users[0].pregnancy_due_date)}. ${word("I plan to ask the court to revoke Plaintiff's parentage of any child born of this pregnancy.") if users[0].pregnant_how == "sex" and users[0].pregnancy_parentage != "marital" and users[0].revoke_pregnancy else word("Defendant's pregnancy is part of a valid surrogacy agreement under MCL 722.1901 et seq.") if users[0].pregnant_how == "ART" and users[0].surrogate_pregnancy else ""}
           % endif
           % if other_parties[0].pregnant:
-          Plaintiff is pregnant. The approximate due date is: ${strip_end_punctuation(other_parties[0].pregnancy_due_date)}. ${word("I plan to ask the court to revoke my parentage of any child born of this pregnancy.") if other_parties[0].pregnant_how in ["sex", "unsure"] and other_parties[0].pregnancy_parentage != "marital" and other_parties[0].revoke_pregnancy else ""}
+          Plaintiff is pregnant. The approximate due date is: ${strip_end_punctuation(other_parties[0].pregnancy_due_date)}. ${word("I plan to ask the court to revoke my parentage of any child born of this pregnancy.") if other_parties[0].pregnant_how in ["sex", "unsure"] and other_parties[0].pregnancy_parentage != "marital" and other_parties[0].revoke_pregnancy else word("Plaintiff's pregnancy is part of a valid surrogacy agreement under MCL 722.1901 et seq.") if other_parties[0].pregnant_how == "ART" and other_parties[0].surrogate_pregnancy else ""}
           % endif
           % endif
       - parties_with_legal_custody__1: |
