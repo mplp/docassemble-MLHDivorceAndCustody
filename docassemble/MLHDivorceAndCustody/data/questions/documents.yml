@@ -140,7 +140,7 @@ code: |
   noh_divorce.enabled = (tool_ID == "divorce_complaint") or (tool_ID == "JOD_only" and user_ask_role == "plaintiff")
 ---
 code: |
-  noh_motion_default.enabled = (tool_ID == "divorce_complaint") or (tool_ID == "JOD_only" and user_ask_role == "plaintiff")
+  noh_motion_default.enabled = tool_ID in ["divorce_complaint", "JOD_only", "custody_complaint"]
 ---
 code: |
   noh_motion_consent.enabled = (tool_ID == "divorce_complaint") or (tool_ID == "JOD_only")
