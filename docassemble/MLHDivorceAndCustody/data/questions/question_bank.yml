@@ -2083,6 +2083,7 @@ subquestion: |
   % endif
 continue button field: marriage.personal_property_info
 ---
+sets: marriage.personal_property_division_agreement
 id: marriage.personal_property
 question: |
   Personal property
@@ -6681,6 +6682,16 @@ fields:
 # note, if they choose "applied, but not receiving", only ask for specific type of aid if there are children or possibly if they're asking for spousal support. (Note that for complaint we do ask the income questions even if there's no kids or spousal support.)
 ---
 id: public assistance types divorce/custody user
+sets: 
+  - pa_food_assistance_program
+  - pa_medicaid
+  - pa_family_independence_program
+  - pa_women_infants_children
+  - pa_state_disability
+  - pa_state_emergency_relief
+  - pa_refugee_assistance
+  - pa_supplemental_security
+  - pa_other
 question: |
   Public Assistance
 subquestion: |
