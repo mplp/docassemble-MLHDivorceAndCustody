@@ -13,6 +13,7 @@ modules:
   - .jod_functions
 ---
 features:
+  js: survey_monkey_script.js
   labels above fields: True
   css: mlh-divorce-and-custody.css
   # note css line copied from Jack's main judgment yml-- Ask Jack -- maybe just a placeholder?
@@ -255,7 +256,7 @@ terms:
       A paragraph of text in the deed that describes exactly where the property is located and where the boundaries are. It uses precise measurements instead of just the street address.
 ---
 #directly copied from framework, but adding code for previously cached files for background assembly. May be OK to have this code in Framework version (may just do nothing if there are no cached files).
-id: DownloadScreen
+id: DownloadScreen 
 event: MLH_download
 question: |
   Get your ${ MLH_form_type }
@@ -274,6 +275,7 @@ subquestion: |
   
   ## Take our quick survey!
   Answer below or [open the survey in a new tab](${ survey_link_url_only }).
-  ${ survey_embed_script }
+
+  <div data-smid="tRaiETqnLgj758hTBazgd8qZ8ON_2FyjUqTzYvfSuztE4hyTngEkIeKEiezipnuyLG" id="survey_monkey1"></div>
 progress: 100
 ---
