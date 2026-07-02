@@ -1744,7 +1744,9 @@ validation code: |
   
     #if both users live in the filing county
     elif users[0].address.county == other_parties[0].address.county:
-      if users[0].ten_days_in_county: ## following LHI, choose user if they qualify
+      if users[0].ten_days_in_county and other_parties[0].ten_days_in_county:
+        jurisdiction_party = "both"
+      elif users[0].ten_days_in_county: 
         jurisdiction_party = users[0]
       elif other_parties[0].ten_days_in_county:
         jurisdiction_party = other_parties[0]
