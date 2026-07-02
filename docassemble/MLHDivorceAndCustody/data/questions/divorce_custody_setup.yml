@@ -62,9 +62,8 @@ code: |
 
   set_prior_family_case_types
   
-  # for framework court loader logic
-  filing_court = "circuit_only"
-  ottawa_circuit_location = "West Olive"
+  # for fee waiver attachment block logic when venue is Ottawa
+  unknown_circuit_location = False
 
   # loading this for review screen
   debt_review_template
