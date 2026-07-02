@@ -65,6 +65,7 @@ code: |
   # for framework court loader logic
   filing_court = "circuit_only"
   ottawa_circuit_location = "West Olive"
+  unknown_circuit_location = False
 
   # loading this for review screen
   debt_review_template
