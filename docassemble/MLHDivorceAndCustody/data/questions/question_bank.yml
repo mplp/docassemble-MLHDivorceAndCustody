@@ -973,7 +973,7 @@ validation code: |
     users[0].invalidate_attr("previous_last_name", "previous_first_name", "previous_middle_name")
 progress: 25
 ---
-if: tool_ID in ["divorce_complaint", "divorce_answer"]
+if: tool_ID == "divorce_complaint"
 id: users[0].has_maiden_name
 question: |
   Last name before first marriage
@@ -1404,7 +1404,7 @@ validation code: |
   if not other_parties[0].has_previous_name:
     other_parties[0].invalidate_attr("previous_last_name", "previous_first_name", "previous_middle_name")
 ---
-if: tool_ID in ["divorce_complaint", "divorce_answer"]
+if: tool_ID == "divorce_complaint"
 id: other_parties[0].has_maiden_name
 question: |
   Spouse's last name before first marriage
@@ -7128,7 +7128,7 @@ subquestion: |
   % if users[0].has_previous_name:
   * Your name before **this** marriage was **${users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name}.**
   % endif
-  % if users[0].has_maiden_name:
+  % if tool_ID == "divorce_complaint" and users[0].has_maiden_name:
   * Your last name before your **first** marriage was **${users[0].maiden_name}.**
   % endif
   % endif
@@ -7268,7 +7268,7 @@ subquestion: |
   % if other_parties[0].has_previous_name:
   * Their name before **this** marriage was **${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}.**
   % endif
-  % if other_parties[0].has_maiden_name:
+  % if tool_ID == "divorce_complaint" and other_parties[0].has_maiden_name:
   * Their last name before their **first** marriage was **${other_parties[0].maiden_name}.**
   % endif
   % endif
