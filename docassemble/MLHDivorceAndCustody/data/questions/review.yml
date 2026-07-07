@@ -947,7 +947,7 @@ review:
   - note: |
       ### Children
       % for child in children.filter(legal_parent="both"):
-        #### **${ child }** (DOB: ${format_date(child.birthdate, format='M/d/yyyy')})
+      #### **${ child }** (DOB: ${format_date(child.birthdate, format='M/d/yyyy')})
 
         - Gender: ${ child.gender }
         - SSN: ${ child.ssn_last_four }
@@ -1231,7 +1231,7 @@ review:
       % else:
       - If you end up receiving too much child support due to an error by the State of Michigan, you **do not authorize** the State to take a percentage from future child support payments until the mistake is corrected. 
       % endif
-    show if: there_are_marital_children
+    show if: there_are_marital_children or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
   - Edit:
       - income_tax_method
       - invalidate:

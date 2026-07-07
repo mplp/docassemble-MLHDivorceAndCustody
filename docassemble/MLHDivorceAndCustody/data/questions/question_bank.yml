@@ -485,7 +485,7 @@ continue button field: complaint_without_children_issue_continue
 subquestion: |
   You said your spouse filed a Complaint for Divorce **without children.** 
   
-  It's important that any minor {marital children} are listed as part of the divorce. Later in this tool you can explain if you think you and your spouse **do** have minor {marital children}. If that is the case, you may also want to speak to a lawyer. ${MLH_GUIDE_FULL}
+  If you think you and your spouse **do have** {minor} {marital children}, you may want to speak to a lawyer. ${MLH_GUIDE_FULL} Later in this tool you can explain if you think any minor marital children were left out--it's important to include them in your Answer.
 
   More information about common parentage questions and issues:
 
@@ -973,7 +973,7 @@ validation code: |
     users[0].invalidate_attr("previous_last_name", "previous_first_name", "previous_middle_name")
 progress: 25
 ---
-if: tool_ID in ["divorce_complaint", "divorce_answer"]
+if: tool_ID == "divorce_complaint"
 id: users[0].has_maiden_name
 question: |
   Last name before first marriage
@@ -1404,7 +1404,7 @@ validation code: |
   if not other_parties[0].has_previous_name:
     other_parties[0].invalidate_attr("previous_last_name", "previous_first_name", "previous_middle_name")
 ---
-if: tool_ID in ["divorce_complaint", "divorce_answer"]
+if: tool_ID == "divorce_complaint"
 id: other_parties[0].has_maiden_name
 question: |
   Spouse's last name before first marriage
@@ -5523,10 +5523,6 @@ subquestion: |
   
   If you do not believe there are any parentage issues, continue with this tool.   
 ---
-id: only pregnancy unsure bio parents info
-question:  
-In case both you and your spouse are the biological parents of the child, your counterclaim should still include specific requests for custody, parenting time, and support. You will be asked questions about these issues to fill out your forms correctly. If the court ends up revoking parentage, you or your spouse will need to file a motion to convert the case to a divorce without minor children. (Also include help text re: what if no child is born)
----
 id: pregnant_no_kids_info
 continue button field: pregnant_no_kids_info
 question: More questions about pregnancy
@@ -5558,20 +5554,20 @@ id: only pregnancy questions about custody and PT user
 continue button field: users[0].questions_about_custody_only_pregnant
 question: Questions about custody and parenting time
 subquestion: |
-  Because of the pregnancy, your counterclaim for divorce must include specific requests about custody, parenting time, and child support. You will be asked questions about these issues to fill out your forms correctly.
+  Because of the pregnancy, your counterclaim for divorce must include specific requests about custody, parenting time, and child support. 
   
   % if users[0].pregnant_how == "sex" and users[0].pregnancy_parentage == "unsure" and users[0].revoke_pregnancy:  # note this currently is what triggers revoke_pregnancy in some circs!
-  You must answer these questions even though you plan to ask for revocation of parentage, in case tests show you are both biological parents. If the court revokes parentage and there are no {marital children}, you or your spouse will need to file a motion to convert the case to a divorce without minor children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+  This information is needed even though you plan to ask for revocation of parentage, in case tests show you are both biological parents. If the court revokes parentage and there are no {marital children}, you or your spouse will need to file a motion to convert the case to a divorce without minor children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
   % endif
 ---
 id: only pregnancy questions about custody and PT OP
 continue button field: other_parties[0].questions_about_custody_only_pregnant
 question: Questions about custody and parenting time
 subquestion: |
-  Because of the pregnancy, your counterclaim for divorce must include specific requests about custody, parenting time, and child support. You will be asked questions about these issues to fill out your forms correctly.
+  Because of the pregnancy, your counterclaim for divorce must include specific requests about custody, parenting time, and child support. 
   
   % if other_parties[0].pregnant_how in ["sex", "unsure"] and other_parties[0].pregnancy_parentage == "unsure" and other_parties[0].revoke_pregnancy: # note this currently is what triggers revoke_pregnancy in some circs!
-  You must answer these questions even though you plan to ask for revocation of parentage, in case tests show you are both biological parents. If the court revokes parentage and there are no {marital children}, you or your spouse will need to file a motion to convert the case to a divorce without minor children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+  This information is needed even though you plan to ask for revocation of parentage, in case tests show you are both biological parents. If the court revokes parentage and there are no {marital children}, you or your spouse will need to file a motion to convert the case to a divorce without minor children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
   % endif
 ---
 # --------------------------------------------------------------------
@@ -7128,7 +7124,7 @@ subquestion: |
   % if users[0].has_previous_name:
   * Your name before **this** marriage was **${users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name}.**
   % endif
-  % if users[0].has_maiden_name:
+  % if tool_ID == "divorce_complaint" and users[0].has_maiden_name:
   * Your last name before your **first** marriage was **${users[0].maiden_name}.**
   % endif
   % endif
@@ -7268,7 +7264,7 @@ subquestion: |
   % if other_parties[0].has_previous_name:
   * Their name before **this** marriage was **${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}.**
   % endif
-  % if other_parties[0].has_maiden_name:
+  % if tool_ID == "divorce_complaint" and other_parties[0].has_maiden_name:
   * Their last name before their **first** marriage was **${other_parties[0].maiden_name}.**
   % endif
   % endif
@@ -7498,7 +7494,7 @@ fields:
       is: unsure
 ---
 template: answer_re_kids_tips_container
-subject: Is the paragraph about kids or pregnancy?
+subject: Is the paragraph about kids or pregnancy? Tap here.
 content: |
   % if complaint_type == "no_children":
   You said your spouse filed a Complaint for Divorce **without children.** When reading paragraphs about children and pregnancy, make sure:
