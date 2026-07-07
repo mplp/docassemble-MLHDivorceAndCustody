@@ -7494,7 +7494,7 @@ fields:
       is: unsure
 ---
 template: answer_re_kids_tips_container
-subject: Is the paragraph about kids or pregnancy? Tap here for more info.
+subject: Is the paragraph about kids or pregnancy? Tap here.
 content: |
   % if complaint_type == "no_children":
   You said your spouse filed a Complaint for Divorce **without children.** When reading paragraphs about children and pregnancy, make sure:
