@@ -7,6 +7,7 @@ Michigan Legal Help
 Lemma Legal
 
 ## Changelog:
+* 7/9/26   1.1.2 add on-screen workaround when stuck on document generation page
 * 6/16/26  1.1.1 fix previous last name/maiden name logic; edit spousal support response options; update heading level styling
 * 4/30/26  1.1.0 multiple changes to wording and order of questions; fix some bugs; add testable but incomplete divorce answer
 * 4/10/26  1.0.3 fix small font on form; fix & standardize Ottawa case initiation form reference; fix child support calculator link; update title of tool
