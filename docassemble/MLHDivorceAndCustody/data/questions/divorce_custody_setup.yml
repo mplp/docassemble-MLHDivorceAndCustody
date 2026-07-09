@@ -276,6 +276,6 @@ subquestion: |
   ## Take our quick survey!
   Answer below or [open the survey in a new tab](${ survey_link_url_only }).
 
-  <div data-smid="tRaiETqnLgj758hTBazgd8qZ8ON_2FyjUqTzYvfSuztE4hyTngEkIeKEiezipnuyLG" id="survey_monkey1"></div>
+  <div id="survey_monkey1" data-smid="tRaiETqnLgj758hTBazgd8qZ8ON_2FyjUqTzYvfSuztE4hyTngEkIeKEiezipnuyLG"></div>
 progress: 100
 ---
