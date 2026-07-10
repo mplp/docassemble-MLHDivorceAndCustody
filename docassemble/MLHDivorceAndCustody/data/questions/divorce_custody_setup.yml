@@ -258,7 +258,7 @@ subquestion: |
   
   ## Have you been waiting more than 5 minutes?
 
-  If you've been waiting on this screen for **more than five minutes** you can [tap here to restart the form-building process](${ url_action('restart_document_generation')}).
+  If you've been waiting on this screen for **more than five minutes** you can [tap here to restart the form-building process](${ url_action('restart_document_generation')}). You won't lose any of your answers.
 event: al_download_waiting_screen
 reload: True
 ---
@@ -268,7 +268,7 @@ question: Restart the form-building process
 subquestion: |
   Tap the **${MLH_continue_button_label}** button to try building your forms again. 
   
-  **It may take several minutes** to build your forms after you tap **${MLH_continue_button_label}**.
+  **It may take several minutes** for your forms to be ready after you tap **${MLH_continue_button_label}**.
 validation code: |
   undefine('al_user_bundle._downloadable_files', 'al_user_bundle.generate_downloads_task')
 ---
