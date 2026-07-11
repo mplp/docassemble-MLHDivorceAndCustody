@@ -13,7 +13,7 @@ modules:
   - .jod_functions
 ---
 features:
-  js: survey_monkey_script.js
+  javascript: survey_monkey_script.js
   labels above fields: True
   css: mlh-divorce-and-custody.css
   # note css line copied from Jack's main judgment yml-- Ask Jack -- maybe just a placeholder?
