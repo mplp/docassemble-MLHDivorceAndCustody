@@ -258,6 +258,33 @@ terms:
     definition: |
       A paragraph of text in the deed that describes exactly where the property is located and where the boundaries are. It uses precise measurements instead of just the street address.
 ---
+# override standard AL version to add message about infinite spinner
+id: waiting screen
+question: |
+  Please wait while we make your forms
+subquestion: |
+  It **can take several minutes** to create your forms. We know this can feel like a long time. **Please stay on this screen.**
+  
+  <div class="spinner-border text-primary d-flex justify-content-center" role="status">
+      <span class="sr-only visually-hidden">Making documents...</span>
+  </div><br>
+  
+  ## Have you been waiting more than 5 minutes?
+
+  If you've been waiting on this screen for **more than five minutes** you can [tap here to restart the form-building process](${ url_action('restart_document_generation')}). You won't lose any of your answers.
+event: al_download_waiting_screen
+reload: True
+---
+id: restart generation process
+continue button field: restart_document_generation
+question: Restart the form-building process
+subquestion: |
+  Tap the **${MLH_continue_button_label}** button to try building your forms again. 
+  
+  **It may take several minutes** for your forms to be ready after you tap **${MLH_continue_button_label}**.
+validation code: |
+  undefine('al_user_bundle._downloadable_files', 'al_user_bundle.generate_downloads_task')
+---
 #directly copied from framework, but adding code for previously cached files for background assembly. May be OK to have this code in Framework version (may just do nothing if there are no cached files).
 id: DownloadScreen
 event: MLH_download
