@@ -1027,7 +1027,7 @@ template: users[0].can_i_change_my_name_later_template
 subject: |
   Can I change my name later?
 content: |
-  If you do not want to get your name changed as part of your divorce, you can still ask for a name change later. To do this, file a Petition to Change Name any time after your divorce is final. There is a filing fee for this petition unless you qualify to have your fees waived. There are also other costs related to the petition that cannot be waived.
+  If you do not want to get your name changed as part of your divorce, you can still ask for a name change later. To do this, file a Petition to Change Name any time after your divorce is final. There is a filing fee and other costs for this petition unless you qualify to have your fees waived.
 ---
 id: users[0].gender
 sets: users[0].gender
