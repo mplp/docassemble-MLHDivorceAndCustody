@@ -924,6 +924,7 @@ review:
           - counterclaim_jurisdiction_venue_problem_continue
           - create_counterclaim
           - there_are_marital_children
+          - set_dynamic_instructions_variables
     button: |
       ### Counterclaim
         - You **${word("do") if want_counterclaim else word("do not")} want** to create a **counterclaim** along with your answer.
@@ -946,7 +947,7 @@ review:
   - note: |
       ### Children
       % for child in children.filter(legal_parent="both"):
-        #### **${ child }** (DOB: ${format_date(child.birthdate, format='M/d/yyyy')})
+      #### **${ child }** (DOB: ${format_date(child.birthdate, format='M/d/yyyy')})
 
         - Gender: ${ child.gender }
         - SSN: ${ child.ssn_last_four }
@@ -1230,7 +1231,7 @@ review:
       % else:
       - If you end up receiving too much child support due to an error by the State of Michigan, you **do not authorize** the State to take a percentage from future child support payments until the mistake is corrected. 
       % endif
-    show if: there_are_marital_children
+    show if: there_are_marital_children or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
   - Edit:
       - income_tax_method
       - invalidate:
@@ -1308,8 +1309,8 @@ review:
         - other_parties[0].revoke_pregnancy
         - counterclaim_type
         - complaint_mismatch_warning
-      - recompute: 
         - interview_order_children
+        - set_dynamic_instructions_variables
     button: |
       ### Pregnancy
         - You **${word("are") if users[0].pregnant else word("are not")}** pregnant. 
@@ -1747,6 +1748,7 @@ review:
       - complaint_type
       - invalidate:
         - create_counterclaim
+        - set_dynamic_instructions_variables
     button: |
       ### Type of divorce complaint
         - Complaint for divorce ${word("with minor children") if complaint_type == "with_children" else word("without minor children")}

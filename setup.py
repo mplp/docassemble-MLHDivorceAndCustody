@@ -44,9 +44,9 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
     return out
 
 setup(name='docassemble.MLHDivorceAndCustody',
-      version='1.1.1.1',
+      version='2.0.0',
       description=('Michigan divorce and child support tools'),
-      long_description='# docassemble.MLHDivorceAndCustody\r\n\r\nMichigan divorce and custody tools\r\n\r\n## Authors:\r\nMichigan Legal Help\r\nLemma Legal\r\n\r\n## Changelog:\r\n* 6/16/26  1.1.1 fix previous last name/maiden name logic; edit spousal support response options; update heading level styling\r\n* 4/30/26  1.1.0 multiple changes to wording and order of questions; fix some bugs; add testable but incomplete divorce answer\r\n* 4/10/26  1.0.3 fix small font on form; fix & standardize Ottawa case initiation form reference; fix child support calculator link; update title of tool\r\n* 4/6/26   1.0.2 patch Ottawa County court selection issue; fix minor code typos\r\n* 4/1/26   1.0.1 fix issue with children not displaying in complaint #7\r\n* 3/31/26  1.0.0 initial launch of divorce complaint and judgment of divorce tools',
+      long_description='# docassemble.MLHDivorceAndCustody\r\n\r\nMichigan divorce and custody tools\r\n\r\n## Authors:\r\nMichigan Legal Help\r\nLemma Legal\r\n\r\n## Changelog:\r\n* 7/21/26  2.0.0 Launch divorce answer tool; update venue logic and other changes for existing tools\r\n* 7/9/26   1.1.2 add on-screen workaround when stuck on document generation page\r\n* 6/16/26  1.1.1 fix previous last name/maiden name logic; edit spousal support response options; update heading level styling\r\n* 4/30/26  1.1.0 multiple changes to wording and order of questions; fix some bugs; add testable but incomplete divorce answer\r\n* 4/10/26  1.0.3 fix small font on form; fix & standardize Ottawa case initiation form reference; fix child support calculator link; update title of tool\r\n* 4/6/26   1.0.2 patch Ottawa County court selection issue; fix minor code typos\r\n* 4/1/26   1.0.1 fix issue with children not displaying in complaint #7\r\n* 3/31/26  1.0.0 initial launch of divorce complaint and judgment of divorce tools',
       long_description_content_type='text/markdown',
       author='Michigan Legal Help',
       author_email='ekressmiller@lsscm.org',

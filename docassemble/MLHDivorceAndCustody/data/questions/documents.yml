@@ -5,17 +5,17 @@
 if: tool_ID == "JOD_only"
 objects:
   - al_user_bundle: ALDocumentBundle.using(elements=[instructions, foc_100_full, record_of_divorce, foc_10_full, uniform_spousal_support_order_foc10b, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Divorce --all forms", title="All forms and instructions", enabled=True)
-  - al_court_bundle: ALDocumentBundle.using(elements=[foc_100_full, record_of_divorce, foc_10_full, uniform_spousal_support_order_foc10b, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Divorce --all forms", title="All forms and instructions", enabled=True)
+  - al_court_bundle: ALDocumentBundle.using(elements=[foc_100_full, record_of_divorce, foc_10_full, uniform_spousal_support_order_foc10b, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Divorce --all forms", title="All forms", enabled=True)
 ---
 if: tool_ID == "divorce_complaint"
 objects:
   - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, complaint_407_full, complaint_408_full, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, record_of_divorce, default_request_mc07, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
-  - al_court_bundle: ALDocumentBundle.using(elements=[summons_mc01, complaint_407_full, complaint_408_full, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, record_of_divorce, default_request_mc07, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
+  - al_court_bundle: ALDocumentBundle.using(elements=[summons_mc01, complaint_407_full, complaint_408_full, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, foc_100_full, record_of_divorce, default_request_mc07, foc_10_full, uniform_spousal_support_order_foc10b, fee_waiver_attachment, protected_pii_mc_97a_attachment, noh_motion_consent, noh_motion_default, noh_divorce, proof_of_service, proof_of_service, judgment_and_addenda_bundle], filename="Michigan Judgment of Divorce --all forms", title="All forms", enabled=True)
 ---
 if: tool_ID == "divorce_answer"
 objects:
   - al_user_bundle: ALDocumentBundle.using(elements=[instructions, answer_to_complaint_for_divorce_cc_409, counterclaim_410_full, counterclaim_411_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, UCCJEA_affidavit_mc416_full, proof_of_service], filename="Michigan Divorce Answer --all forms", title="All forms and instructions", enabled=True)
-  #- al_court_bundle: ALDocumentBundle.using(elements=[], filename="Michigan Divorce Answer --all forms", title="All forms and instructions", enabled=True)
+  - al_court_bundle: ALDocumentBundle.using(elements=[answer_to_complaint_for_divorce_cc_409, counterclaim_410_full, counterclaim_411_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, UCCJEA_affidavit_mc416_full, proof_of_service], filename="Michigan Divorce Answer --all forms", title="All forms", enabled=True)
 ---
 if: tool_ID == "custody_complaint"
 objects:
@@ -1468,8 +1468,11 @@ attachment:
           % endif
           ${ users[0].address.line_one() }
           ${ users[0].address.line_two() }
+      - judge_name: |
+          % if tool_ID == "divorce_answer":
+          ${ word("Judge ") + word(divorce_judge) }
+          % endif
       # Unused fields (in addition to most of the the notary part)
-      #- judge_name:
       #- need_temporary_order_protect_kids:
       #- need_temporary_order_protect_kids_explanation:
       #- nonparties_with_custody_PT_claims:
@@ -1962,7 +1965,10 @@ attachment:
       - docket_number__4: ${docket_number}
       - docket_number__5: ${docket_number}
       - docket_number__6: ${docket_number}
-      # - judge_name: not used in divorce_complaint, will need to add for answers
+      - judge_name: |
+          % if tool_ID == "divorce_answer":
+          ${ word("Judge ") + word(divorce_judge) }
+          % endif
       - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
       - defendants0_name_full: ${defendants[0].name_full()}
       - users0_name_full: ${users[0].name_full()}
