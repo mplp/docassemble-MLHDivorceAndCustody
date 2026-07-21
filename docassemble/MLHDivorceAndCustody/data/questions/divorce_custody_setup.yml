@@ -273,6 +273,8 @@ subquestion: |
   ${ al_user_bundle.download_list_html(use_previously_cached_files=True) }
 
   ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
+
+  ${ sign_in_message }
 under: |
   ## Take our quick survey!
   Answer below or [open the survey in a new tab](${ survey_link_url_only }).
