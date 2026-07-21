@@ -13,7 +13,6 @@ modules:
   - .jod_functions
 ---
 features:
-  javascript: survey_monkey_script.js
   labels above fields: True
   css: mlh-divorce-and-custody.css
   # note css line copied from Jack's main judgment yml-- Ask Jack -- maybe just a placeholder?
@@ -286,8 +285,7 @@ subquestion: |
 validation code: |
   undefine('al_user_bundle._downloadable_files', 'al_user_bundle.generate_downloads_task')
 ---
-# Directly copied from framework, but adding code for previously cached files for background assembly.
-# Also has customization for the JS survey because of multiple interviews in the same repo.
+#directly copied from framework, but adding code for previously cached files for background assembly. May be OK to have this code in Framework version (may just do nothing if there are no cached files).
 id: DownloadScreen
 event: MLH_download
 question: |
@@ -304,18 +302,9 @@ subquestion: |
   ${ al_user_bundle.download_list_html(use_previously_cached_files=True) }
 
   ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
-
-  ${ sign_in_message }
-under: |
+  
   ## Take our quick survey!
   Answer below or [open the survey in a new tab](${ survey_link_url_only }).
-
-  % if tool_ID == "divorce_complaint":
-  <div id="survey_monkey1" data-smid="tRaiETqnLgj758hTBazgd3klEhgaKMHlXfvlsGbv5FZAlDWvFjduioTLlUVSyjRs"></div>
-  % elif tool_ID == "JOD_only":
-  <div id="survey_monkey1" data-smid="tRaiETqnLgj758hTBazgd3klEhgaKMHlXfvlsGbv5FaYfLmgWJ2K2UosZbMxcMcu"></div>
-  % elif tool_ID == "divorce_answer":
-  <div id="survey_monkey1" data-smid="tRaiETqnLgj758hTBazgd1caHSCpdmdgZgGo5Fq6bqp0y91DaTmREHdBKAkwXGAT"></div>
-  % endif
+  ${ survey_embed_script }
 progress: 100
 ---
