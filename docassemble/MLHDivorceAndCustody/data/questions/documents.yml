@@ -1468,8 +1468,11 @@ attachment:
           % endif
           ${ users[0].address.line_one() }
           ${ users[0].address.line_two() }
+      - judge_name: |
+          % if tool_ID == "divorce_answer":
+          ${ word("Judge ") + word(divorce_judge) }
+          % endif
       # Unused fields (in addition to most of the the notary part)
-      #- judge_name:
       #- need_temporary_order_protect_kids:
       #- need_temporary_order_protect_kids_explanation:
       #- nonparties_with_custody_PT_claims:
@@ -1962,7 +1965,10 @@ attachment:
       - docket_number__4: ${docket_number}
       - docket_number__5: ${docket_number}
       - docket_number__6: ${docket_number}
-      # - judge_name: not used in divorce_complaint, will need to add for answers
+      - judge_name: |
+          % if tool_ID == "divorce_answer":
+          ${ word("Judge ") + word(divorce_judge) }
+          % endif
       - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
       - defendants0_name_full: ${defendants[0].name_full()}
       - users0_name_full: ${users[0].name_full()}
