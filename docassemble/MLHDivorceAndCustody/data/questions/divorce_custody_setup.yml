@@ -255,8 +255,9 @@ terms:
     definition: |
       A paragraph of text in the deed that describes exactly where the property is located and where the boundaries are. It uses precise measurements instead of just the street address.
 ---
-#directly copied from framework, but adding code for previously cached files for background assembly. May be OK to have this code in Framework version (may just do nothing if there are no cached files).
-id: DownloadScreen 
+# Directly copied from framework, but adding code for previously cached files for background assembly.
+# Also has customization for the JS survey because of multiple interviews in the same repo.
+id: DownloadScreen
 event: MLH_download
 question: |
   Get your ${ MLH_form_type }
@@ -272,10 +273,16 @@ subquestion: |
   ${ al_user_bundle.download_list_html(use_previously_cached_files=True) }
 
   ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
-  
+under: |
   ## Take our quick survey!
   Answer below or [open the survey in a new tab](${ survey_link_url_only }).
 
-  <div id="survey_monkey1" data-smid="tRaiETqnLgj758hTBazgd8qZ8ON_2FyjUqTzYvfSuztE4hyTngEkIeKEiezipnuyLG"></div>
+  % if tool_ID == "divorce_complaint":
+  <div id="survey_monkey1" data-smid="tRaiETqnLgj758hTBazgd3klEhgaKMHlXfvlsGbv5FZAlDWvFjduioTLlUVSyjRs"></div>
+  % elif tool_ID == "JOD_only":
+  <div id="survey_monkey1" data-smid="tRaiETqnLgj758hTBazgd3klEhgaKMHlXfvlsGbv5FaYfLmgWJ2K2UosZbMxcMcu"></div>
+  % elif tool_ID == "divorce_answer":
+  <div id="survey_monkey1" data-smid="tRaiETqnLgj758hTBazgd1caHSCpdmdgZgGo5Fq6bqp0y91DaTmREHdBKAkwXGAT"></div>
+  % endif
 progress: 100
 ---
