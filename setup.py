@@ -46,7 +46,7 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
 setup(name='docassemble.MLHDivorceAndCustody',
       version='0.0.0',
       description=('Michigan divorce and child support tools'),
-      long_description='# docassemble.MLHDivorceAndCustody\r\n\r\nMichigan divorce and custody tools\r\n\r\n## Authors:\r\nMichigan Legal Help\r\nLemma Legal\r\n\r\n## Changelog:\r\n* 3/31/26  1.0.0 initial launch of divorce complaint and judgment of divorce tools',
+      long_description='# docassemble.MLHDivorceAndCustody\r\n\r\nMichigan divorce and custody tools\r\n\r\n## Authors:\r\nMichigan Legal Help\r\nLemma Legal\r\n\r\n## Changelog:\r\n* 7/21/26  0.0.0 add divorce answer and custody complaint form down screens\r\n* 3/31/26  0.0.0 initial launch of divorce complaint and judgment of divorce tools',
       long_description_content_type='text/markdown',
       author='Emily Miller',
       author_email='ekressmiller@lsscm.org',
