@@ -3,7 +3,6 @@ include:
   - docassemble.FeeWaiverRequest:shared_code.yml
   - divorce_custody_setup.yml
 ---
-# TODO subtitle? & confirm description
 metadata:
   title: Do-It-Yourself Answer and Counterclaim for Divorce
   short title: Do-It-Yourself Answer and Counterclaim for Divorce
@@ -29,7 +28,6 @@ sections:
   - signpost_done: "Get Your Forms"
   - review_full: "✎ <u>Review / Edit</u>"
 ---
-# TODO need survey url
 code: |
   survey_link_url_only = "https://www.surveymonkey.com/r/VDGS78M"
 ---

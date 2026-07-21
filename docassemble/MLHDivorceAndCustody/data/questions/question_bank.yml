@@ -7535,6 +7535,7 @@ subquestion: |
 fields: 
   - Do you want to create a counterclaim for divorce?: want_counterclaim
     datatype: yesnoradio
+progress: 50
 ---
 id: create_counterclaim logic
 code: |
