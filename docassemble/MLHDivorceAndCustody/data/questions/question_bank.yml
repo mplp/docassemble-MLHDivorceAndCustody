@@ -276,20 +276,6 @@ action buttons:
     color: danger
     icon: right-from-bracket
 ---
-if: tool_ID == "divorce_answer" and complaint_type == "with_children"
-id: exit_no_kids
-question: |
-  No marital children
-subquestion: |
-  You did not enter any {marital children}. Your spouse filed this divorce as a divorce with children. 
-  
-  If you and your spouse are the legal parents of a child, use the **Review / Edit** link to go back now and add the child or edit your answers. Then you can create your Counterclaim.
-
-  If there are no marital children, there may be complications in your case and you should speak with a lawyer. ${MLH_GUIDE_FULL} You can still continue and get your Answer form, but you cannot use this tool to create a Counterclaim. 
-fields:
- - Do you want to continue to create your Answer form without a Counterclaim?: continue_no_kids_no_cc
-   datatype: yesnoradio
----
 if: tool_ID == "custody_complaint"
 id: current_marriage_exit
 event: current_marriage_exit
@@ -420,38 +406,11 @@ fields:
     show if:
       variable: complaint_type
       is: "with_children"
-#  - Do you have minor children with your spouse?: complaint_check_agree_kids
-#    datatype: yesnoradio
-#    show if:
-#      variable: complaint_type
-#      is: "with_children"
   - note: |
-      This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents.
+      This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents, and neither spouse is pregnant.
     show if:
       variable: complaint_type
       is: "no_children"
-validation code: |
-  if complaint_type == "no_children":
-    there_are_marital_children = False
-  else: # if with_children, set by child gathering process
-    undefine("there_are_marital_children")
----
-#id: complaint type check with no children
-#if: complaint_type == "no_children"
-#question: Did your spouse file the right type of complaint?
-#subquestion: |
-#  You said your spouse filed a complaint for divorce **without children.** This type of complaint is used if there are **no** {minor} children who have both you and your spouse as legal parents.
-#
-#  ${collapse_template(legal_parentage_info)}
-#fields:
-#  - Is there any {minor} child who has both you and your spouse as legal parents?: complaint_check_have_kids
-#    input type: radio
-#    choices:
-#      - Yes, there is at least one child who has us both as legal parents.: True
-#      - No: False
-#  - note: |
-#      ${collapse_template(wants_to_parent)}
-#      ${collapse_template(unsure_legal_parent)}
 ---
 template: legal_parentage_info
 subject: Situations where you might both be legal parents.
@@ -526,7 +485,7 @@ continue button field: complaint_without_children_issue_continue
 subquestion: |
   You said your spouse filed a Complaint for Divorce **without children.** 
   
-  It's important that any minor {marital children} are listed as part of the divorce. Later in this tool you can explain if you think you and your spouse **do** have minor {marital children}. If that is the case, you may also want to speak to a lawyer. ${MLH_GUIDE_FULL}
+  If you think you and your spouse **do have** {minor} {marital children}, you may want to speak to a lawyer. ${MLH_GUIDE_FULL} Later in this tool you can explain if you think any minor marital children were left out--it's important to include them in your Answer.
 
   More information about common parentage questions and issues:
 
@@ -1014,7 +973,7 @@ validation code: |
     users[0].invalidate_attr("previous_last_name", "previous_first_name", "previous_middle_name")
 progress: 25
 ---
-if: tool_ID in ["divorce_complaint", "divorce_answer"]
+if: tool_ID == "divorce_complaint"
 id: users[0].has_maiden_name
 question: |
   Last name before first marriage
@@ -1068,7 +1027,7 @@ template: users[0].can_i_change_my_name_later_template
 subject: |
   Can I change my name later?
 content: |
-  If you do not want to get your name changed as part of your divorce, you can still ask for a name change later. To do this, file a Petition to Change Name any time after your divorce is final. There is a filing fee for this petition unless you qualify to have your fees waived. There are also other costs related to the petition that cannot be waived.
+  If you do not want to get your name changed as part of your divorce, you can still ask for a name change later. To do this, file a Petition to Change Name any time after your divorce is final. There is a filing fee and other costs for this petition unless you qualify to have your fees waived.
 ---
 id: users[0].gender
 sets: users[0].gender
@@ -1117,7 +1076,7 @@ id: confidential_contact_info_yn
 question: |
   Contact information confidentiality
 subquestion: |
-  All of the information that you enter in this tool, including your address and telephone information, will be included on forms that you file with the court and give to your spouse. If you fear for your safety if this information is known by your spouse or someone else, proceed with caution. **Do not use an address or telephone number that you want to keep confidential in this tool or on your court forms.**
+  All of the information that you enter in this tool, including your address and telephone number, will be included on forms that you file with the court and give to your spouse. If you fear for your safety if this information is known by your spouse or someone else, proceed with caution. **Do not use an address or telephone number that you want to keep confidential in this tool or on your court forms.**
 
   Keep in mind that your divorce file is a public record and anyone could ask to look at it and see your address. 
 fields:
@@ -1445,7 +1404,7 @@ validation code: |
   if not other_parties[0].has_previous_name:
     other_parties[0].invalidate_attr("previous_last_name", "previous_first_name", "previous_middle_name")
 ---
-if: tool_ID in ["divorce_complaint", "divorce_answer"]
+if: tool_ID == "divorce_complaint"
 id: other_parties[0].has_maiden_name
 question: |
   Spouse's last name before first marriage
@@ -1785,7 +1744,9 @@ validation code: |
   
     #if both users live in the filing county
     elif users[0].address.county == other_parties[0].address.county:
-      if users[0].ten_days_in_county: ## following LHI, choose user if they qualify
+      if users[0].ten_days_in_county and other_parties[0].ten_days_in_county:
+        jurisdiction_party = "both"
+      elif users[0].ten_days_in_county: 
         jurisdiction_party = users[0]
       elif other_parties[0].ten_days_in_county:
         jurisdiction_party = other_parties[0]
@@ -2131,10 +2092,24 @@ subquestion: |
   % if tool_ID in ["divorce_complaint", "JOD_only"]:
   **Please do not include vehicles.** You will be asked about vehicles on a separate page.
   % elif tool_ID == "divorce_answer":
-  Some examples are vehicles, furniture, clothes, or eletronic devices.
+  Personal property includes everything **except** real estate (houses and land). 
+  
+  Some examples of personal property are: 
+  
+  * vehicles
+  * bank accounts
+  * clothes
+  * furniture
+  * jewelry
+  * mobile homes
   % endif
 fields:
-  - label: Did you and your spouse {get} any {personal property} during the marriage?
+  - label: |
+      % if tool_ID in ["divorce_complaint", "JOD_only"]:
+      Did you and your spouse {get} any {personal property} during the marriage?
+      % elif tool_ID == "divorce_answer":
+      Did you and your spouse {get} any personal property during the marriage?
+      % endif
     field: marriage.personal_property_acquired
     datatype: yesnoradio
   - label: Have you and your spouse reached an agreement about how all personal property will be divided?
@@ -3233,6 +3208,40 @@ code: |
       children_lived_with_which_parent_past
       children_previous_address.gather() # calls "children's previous addresses" screen
 
+  if there_are_marital_children or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant)):
+  
+    if not there_are_marital_children and (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant)):
+      pregnant_no_kids_info
+      if users[0].pregnant:
+        users[0].pregnancy_due_date
+        if users[0].pregnant_how == "ART":
+          if users[0].surrogate_pregnancy:
+            pregnant_surrogacy_info
+          else:
+            pregnancy_only_ART_info
+            pregnant_cc_with_kids_info
+            users[0].questions_about_custody_only_pregnant
+        elif users[0].pregnant_how == "sex" and users[0].pregnancy_parentage == "nonmarital" and users[0].revoke_pregnancy:
+            pregnant_cc_with_kids_info
+        else:
+          pregnant_cc_with_kids_info
+          users[0].questions_about_custody_only_pregnant # In some circs, users[0].revoke_pregnancy is triggered indirectly here. TODO: make this more explicit in interview order. Same for OPs.
+      if other_parties[0].pregnant:
+        other_parties[0].pregnancy_due_date
+        if other_parties[0].pregnant_how == "ART":
+          if other_parties[0].surrogate_pregnancy:
+            pregnant_surrogacy_info
+          else:
+            pregnancy_only_ART_info
+            pregnant_cc_with_kids_info
+            other_parties[0].questions_about_custody_only_pregnant
+        elif other_parties[0].pregnant_how in ["sex", "unsure"] and other_parties[0].pregnancy_parentage == "nonmarital" and other_parties[0].revoke_pregnancy:
+            pregnant_cc_with_kids_info
+        else:
+          pregnant_cc_with_kids_info
+          other_parties[0].questions_about_custody_only_pregnant
+      
+  if there_are_marital_children or (tool_ID == "divorce_answer" and counterclaim_type == "with_children" and counterclaim_includes_custody_info):
     legal_custody_who
     if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]:
       if (tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID in ["JOD_only", "divorce_answer"] and county_choice == "Muskegon"):  
@@ -3247,12 +3256,14 @@ code: |
       child_domicile_info
       if legal_custody_who == "both":
         hundred_mile_rule
-    child_support_basic
-    if tool_ID != "JOD_only":
-      allow_child_support_overpayment_correction
-      if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0:
-        guidepost_stepchildren
-        interview_order_stepchild_address
+  
+    if there_are_marital_children:
+      child_support_basic
+      if tool_ID != "JOD_only":
+        allow_child_support_overpayment_correction
+        if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0:
+          guidepost_stepchildren
+          interview_order_stepchild_address
   
   interview_order_children = True
 ---
@@ -3336,7 +3347,7 @@ fields:
       If you and your spouse don't agree about spousal support, you may want to **find a lawyer to help you.** Asking for spousal support is complicated, and a lawyer can present evidence and make legal arguments for you at your court hearing. ${ MLH_GUIDE_FULL } 
 
       % if tool_ID in ["divorce_complaint", "divorce_answer"]:
-      But if hiring a lawyer is not an option for you, you can use this tool to include a request for spousal support in your ${ filing_name }. 
+      But if hiring a lawyer is not an option for you, you can use this tool to include a request for spousal support in your ${ word("Counterclaim") if tool_ID == "divorce_answer" else filing_name }. 
       % endif
     show if:
       variable: user_wants_post_divorce_support
@@ -3418,7 +3429,7 @@ content: |
   
   Fault on its own will not justify an award of spousal support, but this is one factor the judge can consider. 
   
-  If this applies to your marriage, briefly explain what actions or behavior of your spouse (${ OP_party_label }) contributed to the breakdown of the marriage. For example: “${ capitalize(OP_party_label) } has been controlling throughout the marriage. They did not allow the Plaintiff to work outside the home, so ${ user_party_label } lost the opportunity to build their career for ten years.”
+  If this applies to your marriage, briefly explain what actions or behavior of your spouse (${ OP_party_label }) contributed to the breakdown of the marriage. For example: “${ capitalize(OP_party_label) } has been controlling throughout the marriage. They did not allow ${ user_party_label } to work outside the home, so ${ user_party_label } lost the opportunity to build their career for ten years.”
 ---
 id: spousal support factor 2
 question: "{Factor} 2: The length of the marriage"
@@ -3807,7 +3818,12 @@ code: |
 ---
 id: divorce with or without children tag
 code: |
-  if children.there_are_any and len(children.filter(legal_parent="both")) > 0:
+  if tool_ID == "divorce_answer" and not create_counterclaim: 
+    if complaint_type == "with_children":
+      there_are_marital_children = True
+    else: 
+      there_are_marital_children = False
+  elif children.there_are_any and len(children.filter(legal_parent="both")) > 0:
     there_are_marital_children = True
   else: 
     there_are_marital_children = False
@@ -3869,7 +3885,9 @@ template: non_marital_children_explanation_template
 subject: |
   Why do I need to include both children in common and separate children?
 content: |
-  If you or your spouse has a child that is not also the child of the other spouse, this child must also be named in some of the divorce documents.
+  If you or your spouse has a child that is not also the child of the other spouse, in some cases this child must also be named in some divorce documents.
+
+  Depending on your situation, there may also be important information about parentage that we want to make sure you have.
 ---
 id: any more children
 question: |
@@ -3958,11 +3976,19 @@ template: children[i].gender_explanation
 subject: |
   How will this information be used?
 content: |
+  % if tool_ID == "divorce_answer":
+  If there are marital children, all children's sex, date of birth, and (for {marital children}) social security number may be placed on the *Verified Statement* form (FOC 23). These forms will **not** be publicly available. The Friend of the Court office and your {spouse} will have access to these forms.
+
+  Gender: FOC 23 only gives options of "F" for female or "M" for male. If you select "Nonbinary", we will put "NB", and a note that this stands for Nonbinary.
+
+  Age: {Marital children}'s age, but not their date of birth, may be included on other court forms.
+  % else:
   Children's sex, date of birth, and (for {marital children}) social security number are used on the *Verified Statement* form (FOC 23) and *Domestic Relations Judgment Information* form (FOC 100). These forms will **not** be publicly available. The Friend of the Court office and your {spouse} will have access to these forms.
 
   Gender: FOC 23 only gives options of "F" for female or "M" for male. If you select "Nonbinary", we will put "NB", and a note that this stands for Nonbinary.
 
   Age: {Marital children}'s age, but not their date of birth, will be included on other court forms.
+  % endif
 ---
 id: marital children's origin
 if: children[i].timing == "marital" and not children[i].adopted_during_marriage
@@ -4009,7 +4035,7 @@ template: why_ask_child_origin
 subject: |
   Why are you asking this?
 content: |
-  Depending on your answer, we may need to give you more information about parentage.
+  Depending on your answer, we may need to give you more information about parentage and/or fill out your forms differently.
 ---
 template: help_assisted_repro
 subject: |
@@ -4285,7 +4311,7 @@ fields:
     js show if: |
       val("children[i].legal_parent") == "both"
   - note: |
-      If you answer **Yes,** your ${ filing_name } will state that you plan to file a motion asking to revoke your parentage.
+      If you answer **Yes,** your ${ word("Counterclaim for Divorce") if tool_ID == "divorce_answer" else filing_name } will state that you plan to file a motion asking to revoke your parentage.
     js show if: |
       val("children[i].legal_parent") == "both" && ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer"] and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" } 
 validation code: |
@@ -4303,7 +4329,7 @@ subquestion: |
   
   % if children[i].bio_parent == "other_party":
   % if tool_ID in ["divorce_complaint", "divorce_answer"]:
-  Your ${ filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
+  Your ${ word("Counterclaim for Divorce") if tool_ID == "divorce_answer" else filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
   
   % endif
   To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf)
@@ -4314,13 +4340,11 @@ subquestion: |
 
   % if tool_ID in ["divorce_complaint", "JOD_only"]:
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
-  % elif tool_ID == "divorce_answer":
-  If the judge revokes your parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
   % endif
   
   % elif children[i].bio_parent == "user":
   % if tool_ID in ["divorce_complaint", "divorce_answer"]:
-  Your ${ filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
+  Your ${ word("Counterclaim for Divorce") if tool_ID == "divorce_answer" else filing_name } will say that you plan to file a Motion to Revoke Acknowledgement of Parentage for ${ children[i] }.
 
   % endif
   To do this, file a [Complaint/Motion and Affidavit to Revoke Acknowledgment of Parentage](https://www.courts.michigan.gov/49302a/siteassets/forms/scao-approved/cc435_new.pdf)
@@ -4343,8 +4367,6 @@ subquestion: |
   
   % if tool_ID in ["divorce_complaint", "JOD_only"]:
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
-  % elif tool_ID == "divorce_answer":
-  If the judge revokes your parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
   % endif
 
   % elif children[i].bio_parent == "user":
@@ -4362,7 +4384,7 @@ subquestion: |
   
   % if children[i].bio_parent == "other_party":
   % if tool_ID in ["divorce_complaint", "divorce_answer"]:
-  Your ${ filing_name } will say that you plan to file a Motion to Determine Child Born Out of Wedlock for ${ children[i] }.
+  Your ${ word("Counterclaim for Divorce") if tool_ID == "divorce_answer" else filing_name } will say that you plan to file a Motion to Determine Child Born Out of Wedlock for ${ children[i] }.
 
   % endif
   You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). 
@@ -4372,15 +4394,13 @@ subquestion: |
 
   % if tool_ID in ["divorce_complaint", "JOD_only"]:
   If the judge revokes your parentage before your divorce is final, you will need to update the Judgment of Divorce before presenting it to the judge. You can do this by returning to this tool and changing your answer to the question that asks if parentage of ${children[i]} was revoked, then re-downloading the Judgment of Divorce form.
-  % elif tool_ID == "divorce_answer":
-  If the judge revokes your parentage before your divorce is final, someone will need to update the Judgment of Divorce before presenting it to the judge.
   % endif
 
   If nobody files a Motion to Determine Child Born Out of Wedlock, you will remain a legal parent. This means the judge can award you custody and/or parenting time, and you may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
   
   % elif children[i].bio_parent == "user":
   % if tool_ID in ["divorce_complaint", "divorce_answer"]:
-  Your ${ filing_name } will say that you plan to file a Motion to Determine Child Born Out of Wedlock for ${ children[i] }.
+  Your ${ word("Counterclaim for Divorce") if tool_ID == "divorce_answer" else filing_name } will say that you plan to file a Motion to Determine Child Born Out of Wedlock for ${ children[i] }.
 
   % endif
   You, your spouse, or the child's other biological parent can file a motion as part of your divorce case asking the judge to revoke (undo) your spouse's legal parentage. To prepare this motion, use the [Do-It-Yourself Revoke Parentage Established by Marriage tool](https://michiganlegalhelp.org/resources/family/do-it-yourself-revoke-parentage-established-marriage). 
@@ -4764,7 +4784,7 @@ content: |
   In this case, the week in Ohio counts as part of the time the child lived in Michigan. The child in the example has lived in Michigan from birth.
   % endif
 ---
-if: child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.currently_resides_in_locality != "MI"
+if: children[i].age_in_months() >= 6 and not childen[i].current_residence_is_home_state and children[i].currently_resides_in_locality != "MI"
 id: Michigan was previous home state prong
 question: ${ children[i] }'s legal "home state", part 3
 subquestion: |
@@ -4933,7 +4953,7 @@ subquestion: |
   ${children_previous_address.table}
 fields:
   - label: |
-      Are there any more previous address where ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } lived in the last five years?
+      Are there any more previous addresses where ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } lived in the last five years?
     field: children_previous_address.there_is_another
     datatype: yesnoradio
 ---
@@ -5359,7 +5379,7 @@ template: ART_pregnancy
 subject: |
   Pregnancy where conception was through assisted reproductive technology (ART). 
 content: |
-  If the pregnancy is the result of a surrogacy agreement, that pregnancy should be included in your divorce forms. 
+  If you or your spouse is pregnant as part of a surrogacy agreement, that information should be included in your divorce forms.
   
   If the pregnancy is a result of assisted reproduction that does not involve surrogacy **and** you believe that you or your spouse should not be a legal parent, stop using this tool and find a lawyer to help you. ${MLH_GUIDE_FULL}
 ---
@@ -5394,6 +5414,161 @@ action buttons:
     new window: True
     color: danger
     icon: right-from-bracket
+---
+id: user pregnancy followup
+question: More about your pregnancy
+subquestion: |
+  ${collapse_template(why_ask_child_origin)}
+fields:
+  - Approximately when is the due date for your current pregnancy?: users[0].pregnancy_due_date
+    maxlength: 20
+    show if: 
+      code: |
+        users[0].pregnant
+  - How did your current pregnancy happen?: users[0].pregnant_how
+    input type: radio
+    choices:
+      - Sexual intercourse: sex
+      - Assisted reproduction: ART
+  - Did the pregnancy happen as part of a valid surrogacy agreement?: users[0].surrogate_pregnancy
+    datatype: yesnoradio
+    show if:
+      variable: users[0].pregnant_how
+      is: ART
+  - Select the answer that describes the pregnancy: users[0].pregnancy_parentage
+    input type: radio
+    choices:
+      - Both my spouse and I are the biological parents.: marital
+      - There's a chance that ${other_parties[0]} is not a biological parent.: unsure
+      - I know for sure that ${other_parties[0]} is not a biological parent.: nonmarital
+    show if:
+      variable: users[0].pregnant_how
+      is: sex
+---
+id: OP pregnancy followup
+question: More about your spouse's pregnancy
+subquestion: |
+  ${collapse_template(why_ask_child_origin)}
+fields:
+  - Approximately when is the due date for your spouse's current pregnancy?: other_parties[0].pregnancy_due_date
+    maxlength: 20
+    show if: 
+      code: |
+        other_parties[0].pregnant
+  - How did your spouse's current pregnancy happen?: other_parties[0].pregnant_how
+    input type: radio
+    choices:
+      - Sexual intercourse: sex
+      - Assisted reproduction: ART
+      - "I'm not sure": unsure
+  - Did the pregnancy happen as part of a valid surrogacy agreement?: other_parties[0].surrogate_pregnancy
+    datatype: yesnoradio
+    show if:
+      variable: other_parties[0].pregnant_how
+      is: ART
+  - note: |
+      ${collapse_template(surrogacy_how_know)}
+    show if:
+      variable: other_parties[0].pregnant_how
+      is: ART
+  - Select the answer that describes the pregnancy: other_parties[0].pregnancy_parentage
+    input type: radio
+    choices:
+      - Both my spouse and I are the biological parents.: marital
+      - "There's a chance that I am not a biological parent.": unsure
+      - "I know for sure that I am not a biological parent.": nonmarital
+    js show if: |
+      val("other_parties[0].pregnant_how") === "sex" || val("other_parties[0].pregnant_how") === "unsure"
+---
+template: surrogacy_how_know
+subject: How would I know if there is a valid surrogacy agreement?
+content: |
+  If your spouse entered into a valid surrogacy agreement, you would have been required to sign it.
+---
+id: only pregnancy surrogacy info
+continue button field: pregnant_surrogacy_info
+question: Pregnancy through surrogacy
+subquestion: |
+  If the surrogacy agreement was not mentioned in your spouse’s Complaint for Divorce, make sure to mention it in your Answer.
+---
+if: users[0].pregnant_how == "sex"
+id: user pregnancy revocation followup
+question: "Your pregnancy: revocation of parentage"
+subquestion: |
+  If a spouse in a marriage **conceives or gives birth** to a child during a marriage, that child is a marital child. 
+  
+  If you believe that your spouse may **not** be a biological parent, you may want to file a motion to revoke parentage as part of the divorce case after the child is born. If you file this motion, the judge will order genetic testing to determine if your spouse is a biological parent. If no one files a motion to revoke parentage, your spouse will be considered a legal parent of the child and may get custody and parenting time, and/or be ordered to pay child support.
+fields:
+  - "For your current pregnancy, do you plan to file a motion to revoke your spouse's parentage? (If you answer Yes, your counterclaim for divorce will say you plan to file this motion.)": users[0].revoke_pregnancy
+    datatype: yesnoradio  
+---
+if: other_parties[0].pregnant_how in ["sex", "unsure"]
+id: OP pregnancy revocation followup
+question: "Spouse's pregnancy: revocation of parentage"
+subquestion: |
+  If a spouse in a marriage **conceives or gives birth** to a child during a marriage, that child is a marital child. 
+  
+  If you believe that you may **not** be a biological parent, you may want to file a motion to revoke parentage as part of the divorce case after the child is born. If you file this motion, the judge will order genetic testing to determine if you are a biological parent. If no one files a motion to revoke parentage, you will be considered a legal parent of the child and may get custody and parenting time, and/or be ordered to pay child support.
+fields:
+  - "For your spouse's current pregnancy, do you plan to file a motion to revoke your parentage? (If you answer Yes, your counterclaim for divorce will say you plan to file this motion.)": other_parties[0].revoke_pregnancy
+    datatype: yesnoradio  
+---
+id: only pregnancy ART info
+question: Pregnancy through assisted reproduction
+continue button field: pregnancy_only_ART_info
+subquestion: |
+  In general, if a child is conceived during a marriage through assisted reproduction, both spouses are the legal parents. In rare cases one spouse might challenge parentage in court. 
+  
+  If you believe that you or your spouse should not be a legal parent of the child, **stop here and find a lawyer** to help you with your divorce. ${MLH_GUIDE_FULL}
+  
+  If you do not believe there are any parentage issues, continue with this tool.   
+---
+id: pregnant_no_kids_info
+continue button field: pregnant_no_kids_info
+question: More questions about pregnancy
+subquestion: |
+  You said ${word("you and your spouse are both") if users[0].pregnant and other_parties[0].pregnant else word("you are") if users[0].pregnant else word("your spouse is")} pregnant, and you and your spouse have no {minor} {marital children}.
+
+  To choose the right divorce counterclaim form, we need to ask a few more questions about the ${word("pregnancies") if users[0].pregnant and other_parties[0].pregnant else word("pregnancy")}.
+---
+id: pregnant counterclaim with kids info
+continue button field: pregnant_cc_with_kids_info
+question: You will file a counterclaim "with children"
+subquestion: |
+  Because of the pregnancy, the divorce must be handled as a divorce **with minor children,** even if no children have been born yet. 
+
+  % if complaint_type == "no_children":
+  ## Your spouse's divorce complaint type appears to be incorrect
+  
+  You said your spouse filed a complaint for divorce **without children.** One of you should file a motion to convert the case to a divorce with children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+  % endif
+
+  ${collapse_template(what_if_no_child_born)}
+---
+template: what_if_no_child_born
+subject: What if no child is born?
+content: |
+  If the pregnancy ends and no child is born, you or your spouse will need to file a motion to convert the case to a divorce without children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+---
+id: only pregnancy questions about custody and PT user
+continue button field: users[0].questions_about_custody_only_pregnant
+question: Questions about custody and parenting time
+subquestion: |
+  Because of the pregnancy, your counterclaim for divorce must include specific requests about custody, parenting time, and child support. 
+  
+  % if users[0].pregnant_how == "sex" and users[0].pregnancy_parentage == "unsure" and users[0].revoke_pregnancy:  # note this currently is what triggers revoke_pregnancy in some circs!
+  This information is needed even though you plan to ask for revocation of parentage, in case tests show you are both biological parents. If the court revokes parentage and there are no {marital children}, you or your spouse will need to file a motion to convert the case to a divorce without minor children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+  % endif
+---
+id: only pregnancy questions about custody and PT OP
+continue button field: other_parties[0].questions_about_custody_only_pregnant
+question: Questions about custody and parenting time
+subquestion: |
+  Because of the pregnancy, your counterclaim for divorce must include specific requests about custody, parenting time, and child support. 
+  
+  % if other_parties[0].pregnant_how in ["sex", "unsure"] and other_parties[0].pregnancy_parentage == "unsure" and other_parties[0].revoke_pregnancy: # note this currently is what triggers revoke_pregnancy in some circs!
+  This information is needed even though you plan to ask for revocation of parentage, in case tests show you are both biological parents. If the court revokes parentage and there are no {marital children}, you or your spouse will need to file a motion to convert the case to a divorce without minor children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+  % endif
 ---
 # --------------------------------------------------------------------
 ## prior cases
@@ -6527,6 +6702,9 @@ fields:
     datatype: yesno
   - "Other means-tested public assistance": pa_other
     datatype: yesno
+validation code: |
+  if not (pa_food_assistance_program or pa_medicaid or pa_family_independence_program or pa_women_infants_children or pa_state_disability or pa_state_emergency_relief or pa_refugee_assistance or pa_supplemental_security or pa_other):
+    validation_error("You must select at least one type of public assistance. Please go back and change your answers if do not get and have not applied for public assistance.")
 ---
 if: pa_other
 id: public assistance other divorce/custody
@@ -6556,7 +6734,7 @@ code: |
   if pa_food_assistance_program:
     public_assistance_list.append("FAP")
   if pa_medicaid:
-    public_assistance_list.append("MA CDC")
+    public_assistance_list.append("MA")
   if pa_family_independence_program:
     public_assistance_list.append("FIP")
   if pa_women_infants_children:
@@ -6590,7 +6768,7 @@ code: |
   if op_pa_food_assistance_program:
     op_public_assistance_list.append("FAP")
   if op_pa_medicaid:
-    op_public_assistance_list.append("MA CDC")
+    op_public_assistance_list.append("MA")
   if op_pa_family_independence_program:
     op_public_assistance_list.append("FIP")
   if op_pa_women_infants_children:
@@ -6792,12 +6970,12 @@ fields:
         other_party_pa_status == "gets_assistance"
 
 ---
-id: public assistance SSA
+id: public assistance SSA OP
 question: SSA Public Assistance
 subquestion: |
   Enter ${OP_label}'s Social Security Administration (SSA) case number here, if known.
 
-  SSA case numbers usually use a Social Security number (SSN). It's OK to enter here because the case number will only go on a nonpublic form.
+  SSA case numbers usually use a Social Security number (SSN). It's OK to enter here because the case number will only go on a nonpublic form (FOC 23).
 fields:
   - 'SSA Case #': op_pa_ssa_number
 
@@ -6809,7 +6987,7 @@ fields:
 ---
 code: |
   users[0].ssn 
-  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
+  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))): #for FOC23
     users[0].eye_color
     users[0].height_feet
     users[0].race
@@ -6818,7 +6996,7 @@ code: |
 ---
 code: |
   other_parties[0].ssn
-  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
+  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))): #for FOC23
     other_parties[0].eye_color
     other_parties[0].height_feet
     other_parties[0].race
@@ -6938,7 +7116,7 @@ fields:
       is: Other
 ---
 id: user alias
-if: there_are_marital_children or user_wants_post_divorce_support
+if: there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
 question: Other names
 subquestion: |
   * Your name is ${users[0]}.
@@ -6946,7 +7124,7 @@ subquestion: |
   % if users[0].has_previous_name:
   * Your name before **this** marriage was **${users[0].previous_first_name + " " + users[0].previous_middle_name + " " + users[0].previous_last_name}.**
   % endif
-  % if users[0].has_maiden_name:
+  % if tool_ID == "divorce_complaint" and users[0].has_maiden_name:
   * Your last name before your **first** marriage was **${users[0].maiden_name}.**
   % endif
   % endif
@@ -7078,7 +7256,7 @@ fields:
       is: Other
 ---
 id: other party alias
-if: there_are_marital_children or user_wants_post_divorce_support
+if: there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
 question: Other names
 subquestion: |
   * Your spouse's name is **${other_parties[0]}.**
@@ -7086,7 +7264,7 @@ subquestion: |
   % if other_parties[0].has_previous_name:
   * Their name before **this** marriage was **${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}.**
   % endif
-  % if other_parties[0].has_maiden_name:
+  % if tool_ID == "divorce_complaint" and other_parties[0].has_maiden_name:
   * Their last name before their **first** marriage was **${other_parties[0].maiden_name}.**
   % endif
   % endif
@@ -7286,10 +7464,12 @@ fields:
       - "I disagree": disagree
       - "I do not know whether the statements are true": unsure
   - "Optional comment:": complaint_paragraphs[i].details
+    help: |
+      If you agree but you think your spouse left out an important detail, or if you want to clarify something, you can add more information here.
     required: False
     input type: area
-    rows: 2
-    maxlength: 140
+    rows: 8
+    maxlength: 600
     show if:
       variable: complaint_paragraphs[i].response
       is: agree
@@ -7297,26 +7477,24 @@ fields:
       I disagree that the statements in this paragraph are true because:
     field: complaint_paragraphs[i].details
     input type: area
-    rows: 2
-    maxlength: 140
+    rows: 8
+    maxlength: 600
     show if:
       variable: complaint_paragraphs[i].response
       is: disagree
   - "Optional comment:": complaint_paragraphs[i].details
+    help: |
+      If you don't know whether the statements are true, you may want to explain what you're unsure about.
     required: False
     input type: area
-    rows: 2
-    maxlength: 140
+    rows: 8
+    maxlength: 600
     show if:
       variable: complaint_paragraphs[i].response
       is: unsure
-  - note: |
-      *(140 character limit)*
-    js show if: |
-      ['agree', 'disagree', 'unsure'].includes(val("complaint_paragraphs[i].response"))
 ---
 template: answer_re_kids_tips_container
-subject: Is the paragraph about kids or pregnancy?
+subject: Is the paragraph about kids or pregnancy? Tap here.
 content: |
   % if complaint_type == "no_children":
   You said your spouse filed a Complaint for Divorce **without children.** When reading paragraphs about children and pregnancy, make sure:
@@ -7357,14 +7535,49 @@ subquestion: |
 fields: 
   - Do you want to create a counterclaim for divorce?: want_counterclaim
     datatype: yesnoradio
+progress: 50
 ---
 id: create_counterclaim logic
 code: |
   create_counterclaim = False
   
   if want_counterclaim and counterclaim_180_day_test_met.any_true() and counterclaim_10_day_test_met.any_true():
-    if (complaint_type == "with_children" and there_are_marital_children) or complaint_type == "no_children":
-      create_counterclaim = True
+    create_counterclaim = True
+---
+id: counterclaim type
+code: |
+  if there_are_marital_children or (users[0].pregnant and (users[0].pregnant_how != "ART" or not users[0].surrogate_pregnancy)) or (other_parties[0].pregnant and (other_parties[0].pregnant_how != "ART" or not other_parties[0].surrogate_pregnancy)):
+    counterclaim_type = "with_children"
+
+    if there_are_marital_children:
+      counterclaim_includes_custody_info = True
+    elif not there_are_marital_children:
+      if (not users[0].pregnant or (users[0].pregnant_how == "sex" and users[0].pregnancy_parentage == "nonmarital" and users[0].revoke_pregnancy)) and (not other_parties[0].pregnant or (other_parties[0].pregnant_how != "ART" and other_parties[0].pregnancy_parentage == "nonmarital" and other_parties[0].revoke_pregnancy)):
+        counterclaim_includes_custody_info = False
+      else:
+        counterclaim_includes_custody_info = True
+  
+  else:
+    counterclaim_type = "no_children"
+---
+id: complaint_mismatch_warning
+if: (complaint_type == "with_children" and counterclaim_type == "no_children") or (complaint_type == "no_children" and counterclaim_type == "with_children")
+continue button field: complaint_mismatch_warning
+question: Your spouse's complaint type does not match your situation
+subquestion: |
+  % if counterclaim_type == "with_children":
+  You said you have {minor} {marital children}, but your {spouse} filed a divorce complaint **without children.**
+  
+  One of you should file a motion to convert the case to a divorce with children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+  % elif counterclaim_type == "no_children":
+  % if (users[0].pregnant and users[0].pregnant_how == "ART" and users[0].surrogate_pregnancy) or (other_parties[0].pregnant and other_parties[0].pregnant_how == "ART" and other_parties[0].surrogate_pregnancy):
+  You said you have no {minor} {marital children} and the pregnancy is the result of a valid surrogacy agreement. But your {spouse} filed a divorce complaint **with children.**
+  % else: 
+  You said you have no {minor} {marital children} and neither spouse is pregnant, but your {spouse} filed a divorce complaint **with children.**
+  % endif
+  
+  One of you should file a motion to convert the case to a divorce without children. You can use a generic [Notice of Hearing and Motion form](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc326.pdf).
+  % endif
 ---
 template: cobra_counterclaim
 subject: |
