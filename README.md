@@ -7,6 +7,7 @@ Michigan Legal Help
 Lemma Legal
 
 ## Changelog:
+* 7/23/26  2.0.1 Fix "childen" typo causing errors
 * 7/21/26  2.0.0 Launch divorce answer tool; update venue logic and other changes for existing tools
 * 7/9/26   1.1.2 add on-screen workaround when stuck on document generation page
 * 6/16/26  1.1.1 fix previous last name/maiden name logic; edit spousal support response options; update heading level styling

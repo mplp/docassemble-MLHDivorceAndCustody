@@ -4784,7 +4784,7 @@ content: |
   In this case, the week in Ohio counts as part of the time the child lived in Michigan. The child in the example has lived in Michigan from birth.
   % endif
 ---
-if: children[i].age_in_months() >= 6 and not childen[i].current_residence_is_home_state and children[i].currently_resides_in_locality != "MI"
+if: children[i].age_in_months() >= 6 and not children[i].current_residence_is_home_state and children[i].currently_resides_in_locality != "MI"
 id: Michigan was previous home state prong
 question: ${ children[i] }'s legal "home state", part 3
 subquestion: |
