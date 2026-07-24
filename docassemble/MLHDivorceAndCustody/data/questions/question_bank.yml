@@ -7040,7 +7040,7 @@ template: why_need_SSN
 subject: |
   Why are you asking for a social security number?
 content: |
-  Social security numbers are only used in child support documents. If you don't want to type it here, you can hand write the number on the documents after you print them.
+  Social security numbers are used on some **nonpublic** forms related to children, spousal support, or financial disclosures to your spouse. The Friend of the Court office and/or your {spouse} will have access to these forms. If you don't want to enter an SSN here, you can hand write the number on the documents later.
 ---
 id: user eye color, hair color, weight
 question: |
