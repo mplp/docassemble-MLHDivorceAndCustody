@@ -1507,7 +1507,7 @@ review:
       % endif
       % if tool_ID in ["divorce_complaint", "JOD_only"] and marriage.have_pension_retirement and not marriage.pension_contributions_made:
       <h3 class="h5"> Do you plan to ask for part of your spouse's separate pension or retirement account?</h3>
-        - ${word(yesno(marriage.pension_retirement_accounts_keep_own))}
+        - ${word(yesno(marriage.divide_separate_pension))}
       % endif
   - Edit:
       - need_temporary_order
