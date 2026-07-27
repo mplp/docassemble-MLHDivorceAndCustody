@@ -235,19 +235,19 @@ attachment:
       - trial_court_phone_number: ${ the_court.phone }
       - plaintiff: ${ plaintiffs[0].name_full() }
       - defendant: ${ defendants[0].name_full() }
-      - plaintiff_residency: | # as is this field stays blank if the user enters a confidential address.
+      - plaintiff_residency: | # Field Needs Work; As is this field stays blank if the user enters a confidential address.
           ${ users[0].address.county + " County, " + state_name(users[0].address.state) if users[0].address.country == "US" else country_name(users[0].address.country) }
-      - defendant_residency: |
+      - defendant_residency: | # Field Needs Work
           ${ other_parties[0].address.county + " County, " + state_name(other_parties[0].address.state) if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
       - children_live_with_plaintiff: |
           ${ children_now_live_with_which_parent in ["users[0]", "both"] }
       - children_live_with_defendant: |
           ${ children_now_live_with_which_parent in ["other_parties[0]", "both"] }
-      - children_live_in_county: ${ county_choice }
+      - children_live_in_county: # field needs work
       - marital_children_names_ages: |
           ${ comma_and_list([child.name.full() + ", age " + str(child.age_in_years()) for child in children if child.legal_parent == "both"]) + "." if any(child.legal_parent == "both" for child in children) else "" }
           ${ "I intend to file a Motion to Determine Child Born Out of Wedlock with regard to " + comma_and_list([child.name.full() for child in children if child.legal_parent == "both" and child.revoke_paternity_reminder]) + "." if any(child.legal_parent == "both" and child.revoke_paternity_reminder for child in children) else "" }
-      - children_paternity_affidavit: ${ comma_and_list([child.name.full() for child in children.filter(legal_parent="both")]) }
+      - children_paternity_affidavit: ${ comma_and_list([child.name.full() for child in children.filter(legal_parent="both")]) } # field needs work
       - parties_with_legal_custody__1: |
           % if legal_custody_who == "user":
           Plaintiff
@@ -411,19 +411,19 @@ attachment:
           ${ defendants[0].address.line_one() }
           ${ defendants[0].address.line_two() }
           ${ word("Does not have phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
-      - children_line_1: ${ children_line_1 }
+      - children_line_1: ${ children_line_1 } # field needs work, not sure how we're choosing included chldren
       - children_line_2: ${ children_line_2 }
-      - awards_legal_custody: True
+      - awards_legal_custody: True # in LHI, only checked if MI is home state
       - legal_custody_plaintiff: ${ (legal_custody_who == "user" and user_ask_role == "plaintiff") or (legal_custody_who == "other_party" and user_ask_role == "defendant") }
       - legal_custody_defendant: ${ (legal_custody_who == "user" and user_ask_role == "defendant") or (legal_custody_who == "other_party" and user_ask_role == "plaintiff") }
       - legal_custody_joint: ${ legal_custody_who == "both" }
-      - awards_physical_custody: True
+      - awards_physical_custody: True # in LHI, only checked if MI is home state
       - physical_custody_plaintiff: |
           ${ (physical_custody_who == "user" and user_ask_role == "plaintiff") or (physical_custody_who == "other_party" and user_ask_role == "defendant") }
       - physical_custody_defendant: |
           ${ (physical_custody_who == "user" and user_ask_role == "defendant") or (physical_custody_who == "other_party" and user_ask_role == "plaintiff") }
       - physical_custody_joint: ${ physical_custody_who == "both" }
-      - 100_mile_rule_applies: |
+      - 100_mile_rule_applies: | # fields need work -- will the MI_has_jurisdiction_all_kids thing apply here? possibly need to apply it to more fields. LHI uses home state is MI on most of these fields
           ${ MI_has_jurisdiction_all_kids and legal_custody_who == "both" and not already_over_100_miles and not allow_over_100_miles }
       - 100_mile_NA_already_exceeded: |
           ${ MI_has_jurisdiction_all_kids and legal_custody_who == "both" and already_over_100_miles }
