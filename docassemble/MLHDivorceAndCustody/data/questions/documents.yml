@@ -1567,7 +1567,7 @@ attachment:
       - users1_gross_weekly_income: |
           % if users[0].has_job:
           % if users[0].income.total() > 0:
-          $ ${ round(plaintiffs[0].income.total() / 52, 2) }
+          $ ${ round(users[0].income.total() / 52, 2) }
           % endif
           % endif
       - users1_applied_public_assistance_yes: ${True if pa_status in ["gets_assistance", "applied"] else False }
