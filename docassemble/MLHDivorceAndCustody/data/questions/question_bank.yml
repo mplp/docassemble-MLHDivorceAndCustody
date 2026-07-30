@@ -6474,7 +6474,7 @@ code: |
 # used for FOC23 and fee waiver; never asked for JOD_only
 # note some of this code is in the fee waiver shared_code.yml
 code: |
-  if there_are_marital_children or user_wants_post_divorce_support: #for FOC23
+  if there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children"): #for FOC23
     if users[0].has_job:
       users[0].income.value
   if pa_status == "gets_assistance":
@@ -6488,7 +6488,7 @@ code: |
       pa_ssa_number
     pa_case_numbers_foc_23
     public_assistance_list
-  if pa_status == "applied" and (there_are_marital_children or user_wants_post_divorce_support):
+  if pa_status == "applied" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children")):
     pa_food_assistance_program 
     if pa_other:
       pa_other_types
