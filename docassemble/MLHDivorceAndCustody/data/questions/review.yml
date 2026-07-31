@@ -341,8 +341,6 @@ review:
         - public_assistance_list
         - pa_case_numbers_foc_23
         - pa_mdhhs
-        - insert_pii_form
-        - insert_mc_97a
       - recompute:
         - interview_order_user_income
     button: |
@@ -356,8 +354,6 @@ review:
         - pa_case_numbers_foc_23
         - public_assistance_list
         - pa_mdhhs
-        - insert_pii_form
-        - insert_mc_97a
       - recompute:
         - interview_order_user_income
     button: |
