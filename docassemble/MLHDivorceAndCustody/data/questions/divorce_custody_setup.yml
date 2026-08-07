@@ -53,10 +53,12 @@ code: |
     elif tool_ID == "JOD_only":
       filing_name = "Judgment of Divorce"
   elif tool_ID == "custody_complaint":
+    filing_name = "Custody Complaint"
     user_ask_role = "plaintiff"
     OP_label = "the Defendant"
     case_label = "custody"
   elif tool_ID == "custody_answer":
+    filing_name = "Custody Answer"
     user_ask_role = "defendant"
     OP_label = "the Plaintiff"
     case_label = "custody"
