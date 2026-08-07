@@ -2076,7 +2076,9 @@ subquestion : |
   * real property (real estate: houses and land), and 
   * personal property (everything else).
 
+  % if tool_ID != "divorce_answer":
   We'll ask about marital personal property first.
+  % endif
 ---
 id: marriage.personal_property_info
 question: |
@@ -4793,7 +4795,7 @@ content: |
   In this case, the week in Ohio counts as part of the time the child lived in Michigan. The child in the example has lived in Michigan from birth.
   % endif
 ---
-if: children[i].age_in_months() >= 6 and not childen[i].current_residence_is_home_state and children[i].currently_resides_in_locality != "MI"
+if: children[i].age_in_months() >= 6 and not children[i].current_residence_is_home_state and children[i].currently_resides_in_locality != "MI"
 id: Michigan was previous home state prong
 question: ${ children[i] }'s legal "home state", part 3
 subquestion: |
@@ -6471,7 +6473,7 @@ fields:
 code: |
   users[0].has_job
   if users[0].has_job:
-    if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
+    if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children")): #for FOC23
       users[0].occupation
     users[0].job.employer.name.first
   if tool_ID in ["divorce_complaint", "JOD_only"]:
@@ -6483,7 +6485,7 @@ code: |
 # used for FOC23 and fee waiver; never asked for JOD_only
 # note some of this code is in the fee waiver shared_code.yml
 code: |
-  if there_are_marital_children or user_wants_post_divorce_support: #for FOC23
+  if there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children"): #for FOC23
     if users[0].has_job:
       users[0].income.value
   if pa_status == "gets_assistance":
@@ -6497,7 +6499,7 @@ code: |
       pa_ssa_number
     pa_case_numbers_foc_23
     public_assistance_list
-  if pa_status == "applied" and (there_are_marital_children or user_wants_post_divorce_support):
+  if pa_status == "applied" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children")):
     pa_food_assistance_program 
     if pa_other:
       pa_other_types
@@ -6508,7 +6510,7 @@ code: |
 code: |
   other_parties[0].has_job
   if other_parties[0].has_job:
-    if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support): #for FOC23
+    if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children")): #for FOC23
       other_parties[0].occupation
     other_parties[0].job.employer.name.first
   if tool_ID in ["divorce_complaint", "JOD_only"]:
@@ -7049,7 +7051,7 @@ template: why_need_SSN
 subject: |
   Why are you asking for a social security number?
 content: |
-  Social security numbers are only used in child support documents. If you don't want to type it here, you can hand write the number on the documents after you print them.
+  Social security numbers are used on some **nonpublic** forms related to children, spousal support, or financial disclosures to your spouse. The Friend of the Court office and/or your {spouse} will have access to these forms. If you don't want to enter an SSN here, you can hand write the number on the documents later.
 ---
 id: user eye color, hair color, weight
 question: |
