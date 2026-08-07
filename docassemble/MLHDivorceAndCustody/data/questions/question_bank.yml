@@ -6473,10 +6473,10 @@ fields:
 code: |
   users[0].has_job
   if users[0].has_job:
-    if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children")): #for FOC23
+    if tool_ID in ["custody_complaint", "custody_answer"] or (tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children"))): #for FOC23
       users[0].occupation
     users[0].job.employer.name.first
-  if tool_ID in ["divorce_complaint", "JOD_only"]:
+  if tool_ID in ["divorce_complaint", "JOD_only", "custody_complaint"]: # for FOC100
     users[0].has_professional_license
 
   interview_order_user_employment = True
@@ -6485,7 +6485,7 @@ code: |
 # used for FOC23 and fee waiver; never asked for JOD_only
 # note some of this code is in the fee waiver shared_code.yml
 code: |
-  if there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children"): #for FOC23
+  if tool_ID in ["custody_complaint", "custody_answer"] or there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children"): #for FOC23
     if users[0].has_job:
       users[0].income.value
   if pa_status == "gets_assistance":
@@ -6499,7 +6499,7 @@ code: |
       pa_ssa_number
     pa_case_numbers_foc_23
     public_assistance_list
-  if pa_status == "applied" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children")):
+  if pa_status == "applied" and (tool_ID in ["custody_complaint", "custody_answer"] or there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children")):
     pa_food_assistance_program 
     if pa_other:
       pa_other_types
@@ -6510,17 +6510,17 @@ code: |
 code: |
   other_parties[0].has_job
   if other_parties[0].has_job:
-    if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children")): #for FOC23
+    if tool_ID in ["custody_complaint", "custody_answer"] or (tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children"))): #for FOC23
       other_parties[0].occupation
     other_parties[0].job.employer.name.first
-  if tool_ID in ["divorce_complaint", "JOD_only"]:
+  if tool_ID in ["divorce_complaint", "JOD_only", "custody_complaint"]: #For FOC100
     other_parties[0].has_professional_license
 
   interview_order_other_party_employment = True
 ---
 # LHI: "Plaintiff Income" or "Defendant Income"
 # never asked for JOD_only
-# in divorce complaint, only asked if children or spousal support request by user (FOC23)
+# in divorce complaint, only asked if children or spousal support request by user (FOC23) (analagously only asked in divorce answer when creating FOC23)
 code: |
   if other_parties[0].has_job:
     other_parties[0].income.value
@@ -6551,7 +6551,12 @@ question: Your employment
 subquestion: |
   Answer the following questions about your employment as fully as you can. If you don’t have all the information or if you are afraid to disclose this information to ${ OP_label }, you can leave some answers blank, but the court may require answers later.
       
-  All of the information you supply in this tool, including your employment information, will be included on forms that you will file with the court and deliver to ${ OP_label }. If you are afraid that sharing your employment information will put you at risk of harm, you should contact a lawyer to help you with your case. For more information, see [Domestic Violence and Divorce](https://michiganlegalhelp.org/resources/family/domestic-violence-and-divorce).   
+  All of the information you supply in this tool, including your employment information, will be included on forms that you will file with the court and deliver to ${ OP_label }. If you are afraid that sharing your employment information will put you at risk of harm, you should contact a lawyer to help you with your case. 
+  % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
+  For more information, see [Domestic Violence and Divorce](https://michiganlegalhelp.org/resources/family/domestic-violence-and-divorce).   
+  % else: 
+   To learn about domestic violence and personal protection orders, read [Filing for a Personal Protection Order - Domestic Relationship](https://michiganlegalhelp.org/resources/personal-safety/filing-personal-protection-order-domestic-relationship).
+  % endif
 fields:
   - Are you currently employed?: users[0].has_job
     datatype: yesnoradio
@@ -6811,7 +6816,7 @@ code: |
 id: other party employment
 question: ${ other_parties[0] }'s employment
 subquestion: |
-  Answer these questions as fully as you can. If you don’t have all the information, you can leave some answers blank, but the court may require answers later.
+  Answer these questions as fully as you can. If you don't have all the information, you can leave some answers blank, but the court may require answers later.
 fields:
   - To the best of your knowledge, is ${ other_parties[0] } currently employed?: other_parties[0].has_job
     required: False
@@ -6998,7 +7003,7 @@ fields:
 ---
 code: |
   users[0].ssn 
-  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))): #for FOC23
+  if tool_ID in ["custody_complaint", "custody_answer"] or (tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant)))): #for FOC23
     users[0].eye_color
     users[0].height_feet
     users[0].race
@@ -7007,7 +7012,7 @@ code: |
 ---
 code: |
   other_parties[0].ssn
-  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))): #for FOC23
+  if tool_ID in ["custody_complaint", "custody_answer"] or (tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant)))): #for FOC23
     other_parties[0].eye_color
     other_parties[0].height_feet
     other_parties[0].race
@@ -7127,7 +7132,7 @@ fields:
       is: Other
 ---
 id: user alias
-if: there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
+if: tool_ID in ["custody_complaint", "custody_answer"] or there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
 question: Other names
 subquestion: |
   * Your name is ${users[0]}.
@@ -7153,7 +7158,7 @@ question: |
   % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
   Your spouse's identity documents
   % else:
-  The plaintiff's identity documents
+  ${ other_parties[0] }'s identity documents
   % endif
 subquestion: |
   ${ collapse_template(why_need_SSN)}
@@ -7190,7 +7195,7 @@ question: |
   % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
   Your spouse's physical description
   % else:
-  The plaintiff's physical description
+  ${ other_parties[0] }'s physical description
   % endif
 fields:
   - What color eyes does ${ OP_label } have?: other_parties[0].eye_color
@@ -7246,7 +7251,7 @@ question: |
   % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
   Your spouse's race
   % else:
-  The plaintiff's race
+  ${ other_parties[0] }'s race
   % endif
 fields:
   - What is ${ OP_label }'s race?: other_parties[0].race
@@ -7267,10 +7272,14 @@ fields:
       is: Other
 ---
 id: other party alias
-if: there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
+if: tool_ID in ["custody_complaint", "custody_answer"] or there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
 question: Other names
 subquestion: |
+  % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
   * Your spouse's name is **${other_parties[0]}.**
+  % else:
+  *The other parent's name is **${other_parties[0]}.**
+  % endif
   % if tool_ID in ["divorce_complaint", "divorce_answer"]:
   % if other_parties[0].has_previous_name:
   * Their name before **this** marriage was **${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}.**
@@ -7281,9 +7290,9 @@ subquestion: |
   % endif
   
 fields:
-  - Has your spouse ever been known by any other name(s) or aliases not listed above?: other_parties[0].has_alias
+  - ${word("Has your spouse") if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"] else word("Have they")} ever been known by any other name(s) or aliases not listed above?: other_parties[0].has_alias
     datatype: yesnoradio
-  - What are the other names your spouse has been known by?: other_parties[0].aliases
+  - What are the other names they have been known by?: other_parties[0].aliases
     show if:
       variable: other_parties[0].has_alias
       is: True

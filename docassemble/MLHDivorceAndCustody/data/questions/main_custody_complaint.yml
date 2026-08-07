@@ -18,12 +18,10 @@ metadata:
 sections:
   - signpost_intro: "Introduction"
   - signpost_qualify: "Is this tool right for you?"
-  - signpost_user: "Your Information"
-  - signpost_spouse: "Other Parent Information"
+  - signpost_parent_basics: "Parents' Basic Info"
   - signpost_children: "Children"
   - signpost_prior_cases: "Past Cases"
   - signpost_income_etc: "Income, Insurance, etc."
-  - signpost_property: "Property and Debt"
   - signpost_last_section: "Final Questions"
   - signpost_done: "Get Your Forms"
   - review_full: "✎ <u>Review / Edit</u>"
@@ -100,21 +98,17 @@ code: |
  
   residence_warning
 
-  nav.set_section("signpost_user")
+  nav.set_section("signpost_parent_basics")
 
   users.gather()
   users[0].name.first
-  users[0].gender
-  users[0].birthdate
+  users[0].has_alias
 
   interview_order_user_contact_info
 
-  nav.set_section("signpost_spouse")
-
   other_parties.gather()
   other_parties[0].name.first
-  other_parties[0].gender
-  other_parties[0].birthdate
+  other_parties[0].has_alias
 
   interview_order_other_parties_address_info
 
@@ -144,15 +138,16 @@ code: |
   users[0].insurance.gather()
   other_parties[0].insurance.gather()
 
-  #FOC23+FOC100
   interview_order_user_employment
   interview_order_user_income
+  users[0].birthdate
+  users[0].gender
   interview_order_user_identifying_info
-  users[0].has_alias
   interview_order_other_party_employment
   interview_order_other_party_income
+  other_parties[0].birthdate
+  other_parties[0].gender
   interview_order_other_party_identifying_info
-  other_parties[0].has_alias
 
   nav.set_section("signpost_last_section")
   check_for_required_venue
