@@ -334,6 +334,22 @@ action buttons:
     color: danger
     icon: right-from-bracket
 ---
+if: tool_ID == "custody_complaint"
+id: controlling_custody_case_exit
+event: controlling_custody_case_exit
+question: |
+  Existing family law case
+subquestion: |
+  Sorry, you cannot use this tool to create a complaint for custody, parenting time, and child support if there are any existing family law cases between you and the other parent.
+
+  If you think you made a mistake, tap **Undo** and change the answer to this question.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
 # --------------------------------------------------------------------
 ## introduction
 # --------------------------------------------------------------------
@@ -5629,6 +5645,15 @@ edit:
 delete buttons: True
 confirm: True
 ---
+id: custody complaint family cases screener
+#TODO: is this wording correct? do we mean US cases only?
+question: Existing family law cases
+subquestion: |
+  This question is about your minor children who are the subject of this case.
+fields: 
+ - "Are there any existing paternity, child support, parenting time, or custody cases in any state between you and the Defendant?": controlling_custody_case
+   datatype: yesnoradio
+---
 # LHI Prior Court Cases Part 1
 # TODO: question for Amy: should the help text for family division cases exclude custody, paternity, and child support for custody interviews? (See Prior Court Cases Part 1 Dialog in Brett's materials.)
 id: prior family cases
@@ -6555,7 +6580,7 @@ subquestion: |
   % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
   For more information, see [Domestic Violence and Divorce](https://michiganlegalhelp.org/resources/family/domestic-violence-and-divorce).   
   % else: 
-   To learn about domestic violence and personal protection orders, read [Filing for a Personal Protection Order - Domestic Relationship](https://michiganlegalhelp.org/resources/personal-safety/filing-personal-protection-order-domestic-relationship).
+  To learn about domestic violence and personal protection orders, read [Filing for a Personal Protection Order - Domestic Relationship](https://michiganlegalhelp.org/resources/personal-safety/filing-personal-protection-order-domestic-relationship).
   % endif
 fields:
   - Are you currently employed?: users[0].has_job

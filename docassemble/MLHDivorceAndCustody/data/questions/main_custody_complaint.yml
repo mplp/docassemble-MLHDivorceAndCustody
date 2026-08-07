@@ -82,10 +82,10 @@ code: |
     current_marriage_exit
   if married_other_parent_past:
     past_marriage_exit
-  if not children_in_common:
+  if not children_in_common: #if using preexisting child gathering method, could set this to be children.there_are_any
     custody_no_kids_exit
-
-  # prior custody cases screenout
+  if controlling_custody_case:
+    controlling_custody_case_exit
 
   if spouse_is_incompetent:
     exit_general
