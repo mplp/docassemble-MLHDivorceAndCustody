@@ -128,6 +128,7 @@ code: |
 
   users.gather()
   users[0].name.first
+  users[0].has_previous_name
   users[0].gender
   users[0].birthdate
 
@@ -135,6 +136,9 @@ code: |
 
   other_parties.gather()
   other_parties[0].name.first
+  other_parties[0].has_previous_name
+  other_parties[0].gender
+  other_parties[0].birthdate
 
   interview_order_other_parties_address_info
 
@@ -179,8 +183,6 @@ code: |
       marriage.address.city
       marriage.living_together_yn
 
-      marriage.marital_property_info
-      reiterate_marital_property
       if marriage.real_property.there_are_any:
         if not marriage.real_property_all_agreed:
           if not continue_real_property:
@@ -190,10 +192,8 @@ code: |
       if marriage.debts.any:
         marriage.debts.pay_debts_in_own_names
         marriage.debts.any_in_both_names
-
-      users[0].has_previous_name
+  
       users[0].new_last_name_yn
-      other_parties[0].has_previous_name
   
       nav.set_section("signpost_spousal_support")
       interview_order_spousal_support
@@ -225,8 +225,6 @@ code: |
         interview_order_other_party_employment
         interview_order_other_party_income
         interview_order_other_party_identifying_info
-        other_parties[0].gender
-        other_parties[0].birthdate
         other_parties[0].has_alias
 
   create_counterclaim
