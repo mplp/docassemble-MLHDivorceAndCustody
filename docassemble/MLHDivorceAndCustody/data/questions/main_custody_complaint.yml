@@ -104,12 +104,12 @@ code: |
   users[0].name.first
   users[0].has_alias
 
-  interview_order_user_contact_info
-
   other_parties.gather()
   other_parties[0].name.first
   other_parties[0].has_alias
+  interview_order_children
 
+  interview_order_user_contact_info
   interview_order_other_parties_address_info
 
   if not ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI) or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI)):

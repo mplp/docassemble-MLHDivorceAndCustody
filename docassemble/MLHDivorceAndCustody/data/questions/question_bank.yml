@@ -3818,28 +3818,58 @@ fields:
 # --------------------------------------------------------------------
 ---
 code: |
-  children[i].basic_info
-  children[i].adopted_during_marriage
-  children[i].origin
-
-  if children[i].origin == "marital_third_party_conceived" and children[i].how_conceived == "assisted_reproduction":
-    children[i].complicated_issue_kickout
+  ### divorce flow ###
+  if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
+    children[i].basic_info
+    children[i].adopted_during_marriage
+    children[i].origin
   
-  children[i].legal_parent
-
-  if children[i].legal_parent == "both":
-    children[i].more_info
-
-  if children[i].legal_parent != "both":
-    if tool_ID != "JOD_only":
+    if children[i].origin == "marital_third_party_conceived" and children[i].how_conceived == "assisted_reproduction":
+      children[i].complicated_issue_kickout
+    
+    children[i].legal_parent
+  
+    if children[i].legal_parent == "both":
       children[i].more_info
-    children[i].not_included_in_divorce_info
   
-  elif ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived" and children[i].legal_parent == "both")) and children[i].parentage_plan_to_revoke:
-    children[i].parentage_revocation_info
+    if children[i].legal_parent != "both":
+      if tool_ID != "JOD_only":
+        children[i].more_info
+      children[i].not_included_in_divorce_info
+    
+    elif ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived" and children[i].legal_parent == "both")) and children[i].parentage_plan_to_revoke:
+      children[i].parentage_revocation_info
+  
+    elif children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "assisted_reproduction":
+      children[i].complicated_issue_kickout
 
-  elif children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "assisted_reproduction":
-    children[i].complicated_issue_kickout
+  ### custody flow ###
+  elif tool_ID in ["custody_complaint", "custody_answer"]:
+    children[i].basic_info
+    children[i].adopted_during_marriage
+  
+    children[i].timing = "premarital"
+  
+    children[i].origin
+  
+    if children[i].origin == "marital_third_party_conceived" and children[i].how_conceived == "assisted_reproduction":
+      children[i].complicated_issue_kickout
+    
+    children[i].legal_parent
+  
+    if children[i].legal_parent == "both":
+      children[i].more_info
+  
+    if children[i].legal_parent != "both":
+      if tool_ID != "JOD_only":
+        children[i].more_info
+      children[i].not_included_in_divorce_info
+    
+    elif ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived" and children[i].legal_parent == "both")) and children[i].parentage_plan_to_revoke:
+      children[i].parentage_revocation_info
+  
+    elif children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "assisted_reproduction":
+      children[i].complicated_issue_kickout
 
   children[i].complete = True
 ---
@@ -3952,9 +3982,12 @@ fields:
     choices: 
       - They were born before we got married.: premarital
       - They were born after we got married.: marital
+    show if:       
+      code: |
+        tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]
   - Did you and ${other_parties[0]} **adopt** ${ children[i] } together?: children[i].adopted_during_marriage
     datatype: yesnoradio
-  # if adopted_during_marriage, the first question is unnecessary. Put first for interview flow.
+  # if adopted_during_marriage, the first question is unnecessary. We put it first anyway for interview flow.
   # TODO? need help text saying don't include children who were born to or adopted by either spouse prior to marriage
 validation code: |
   children[i].revoke_paternity_reminder = False # sets for ALL kids, overridden on later screens as needed
@@ -4091,7 +4124,7 @@ code: |
     children[i].legal_parent = "both"
   
 ---
-id: premarital children's origin
+id: premarital or nonmarital children's origin
 if: children[i].timing == "premarital" 
 question: |
   About ${children[i]}
@@ -4099,13 +4132,13 @@ fields:
   - Which of these applies to ${children[i]}?: children[i].origin
     datatype: radio
     choices:
-      - My current spouse and I had ${children[i]} **together**.: premarital_with_spouse
+      - ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("My current spouse")} and I had ${children[i]} **together**.: premarital_with_spouse
         help: |
           This includes children conceived through sex, assisted reproduction, or a surrogacy agreement.
-      - My current spouse or I had ${children[i]} **with someone else**.: premarital_with_another
+      - ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("My current spouse")} or I had ${children[i]} **with someone else**.: premarital_with_another
         help: |
           This includes children who were conceived through sex, assisted reproduction, or a surrogacy agreement, or who were adopted.
-      - My current spouse or I had ${children[i]} **alone**, through a **single-parent adoption** or through **assisted reproduction *without*** another parent.: premarital_alone
+      - ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("My current spouse")} or I had ${children[i]} **alone**, through a **single-parent adoption** or through **assisted reproduction *without*** another parent.: premarital_alone
         help: |
           This answer is only for someone who became a single parent **on purpose** through:
           
@@ -4125,7 +4158,7 @@ fields:
     datatype: radio
     choices:
       - I did.: user
-      - My spouse did.: other_party
+      - ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("your spouse")} did.: other_party
     show if:
       variable: children[i].origin
       is: premarital_with_another
@@ -4138,7 +4171,7 @@ if: children[i].timing == "premarital" and children[i].origin == "premarital_wit
 question: ${children[i]}'s legal parents 
 subquestion: ${ collapse_template(why_ask_child_origin) }
 fields:
-  - Did your spouse become a legal parent of ${children[i]}?: children[i].parentage_established
+  - Did ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("your spouse")} become a legal parent of ${children[i]}?: children[i].parentage_established
     datatype: radio
     choices:
       - Yes: yes
@@ -4149,7 +4182,7 @@ fields:
     show if:
       variable: children[i].parentage_established
       is: no
-  - Are both your and your spouse's names listed on ${children[i]}'s birth certificate as parents?: children[i].both_on_birth_cert
+  - Are both your and ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("your spouse")}'s names listed on ${children[i]}'s birth certificate as parents?: children[i].both_on_birth_cert
     datatype: yesnoradio
     show if: 
       variable: children[i].parentage_established
@@ -4187,7 +4220,7 @@ fields:
       variable: children[i].parentage_established
       is: no
   - note: |
-  - Are both your and your spouse's names listed on ${children[i]}'s birth certificate as parents?: children[i].both_on_birth_cert
+  - Are both your and ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("your spouse")}'s names listed on ${children[i]}'s birth certificate as parents?: children[i].both_on_birth_cert
     datatype: yesnoradio
     show if: 
       variable: children[i].parentage_established
@@ -4216,7 +4249,7 @@ fields:
     datatype: radio
     choices:
       - I did.: user
-      - My spouse did.: other_party
+      - ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("My spouse")} did.: other_party
   - Did you become ${children[i]}'s legal parent through adoption, Affidavit of Parentage, or another court order (like a *Judgment of Parentage*)?: children[i].legal_parent
     datatype: radio
     choices:
@@ -4225,7 +4258,7 @@ fields:
     show if:
       variable: children[i].bio_parent
       is: other_party
-  - Did your spouse become ${children[i]}'s legal parent through adoption, Affidavit of Parentage, or another court order (like a *Judgment of Parentage*)?: children[i].legal_parent
+  - Did ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("your spouse")} become ${children[i]}'s legal parent through adoption, Affidavit of Parentage, or another court order (like a *Judgment of Parentage*)?: children[i].legal_parent
     datatype: radio
     choices:
       - Yes: both
@@ -4262,7 +4295,7 @@ if: children[i].timing == "premarital" and children[i].origin == "premarital_wit
 question: ${children[i]}'s legal parents 
 subquestion: ${ collapse_template(why_ask_child_origin) }
 fields:
-  - Did your spouse become ${children[i]}'s legal parent?: children[i].parentage_established
+  - Did ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("your spouse")} become ${children[i]}'s legal parent?: children[i].parentage_established
     datatype: radio
     choices:
       - "**No**": no
@@ -4301,20 +4334,20 @@ id: parentage revocation questions, user is bio parent
 if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived")) and children[i].bio_parent == "user"
 question: Legal parentage status for ${children[i]}
 fields:
-  - Has your spouse's parentage been revoked (canceled) by a court order? This would only happen if you, your spouse, or ${children[i]}’s other biological parent filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].legal_parent
+  - Has ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("your spouse")}'s parentage been revoked (canceled) by a court order? This would only happen if you, ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("your spouse")}, or ${children[i]}’s other biological parent filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].legal_parent
     datatype: radio
     choices:
       - Yes: user
       - No: both
-  - Do you plan to ask the court to revoke (cancel) your spouse's legal parentage of ${children[i]} as part of your divorce case?: children[i].parentage_plan_to_revoke
+  - Do you plan to ask the court to revoke (cancel) ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("your spouse")}'s legal parentage of ${children[i]} as part of your divorce case?: children[i].parentage_plan_to_revoke
     datatype: radio
     choices:
-      - Yes, I want to ask the court to revoke my spouse's parentage.: True
-      - No, I want my spouse to continue as legal parent.: False
+      - Yes, I want to ask the court to revoke ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("your spouse")}'s parentage.: True
+      - No, I want ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("your spouse")} to continue as legal parent.: False
     js show if: |
       val("children[i].legal_parent") == "both"
   - note: |
-      If you answer **Yes,** your ${ filing_name } will state that you plan to file a motion asking to revoke your spouse's parentage.
+      If you answer **Yes,** your ${ filing_name } will state that you plan to file a motion asking to revoke ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("your spouse")}'s parentage.
     js show if: |
       val("children[i].legal_parent") == "both" && ${ "true" if tool_ID in ["divorce_complaint", "divorce_answer"] and (children[i].origin == "marital_third_party_conceived" or (children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit")) else "false" }  
 validation code: |
@@ -4325,7 +4358,7 @@ id: parentage revocation questions, spouse is bio parent
 if: ((children[i].origin == "premarital_with_another" and children[i].parentage_established in ["affidavit", "court_order"] and children[i].how_conceived == "sex") or (children[i].origin == "marital_third_party_conceived")) and children[i].bio_parent == "other_party"
 question: Legal parentage status for ${children[i]}
 fields:
-  - Has your parentage been revoked (canceled) by a court order? This would only happen if you, your spouse, or ${children[i]}’s other biological parent filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].legal_parent
+  - Has your parentage been revoked (canceled) by a court order? This would only happen if you, ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("your spouse")}, or ${children[i]}’s other biological parent filed a complaint or motion to revoke parentage, and the judge granted it.: children[i].legal_parent
     datatype: radio
     choices:
       - Yes: other_party
@@ -7303,7 +7336,7 @@ subquestion: |
   % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
   * Your spouse's name is **${other_parties[0]}.**
   % else:
-  *The other parent's name is **${other_parties[0]}.**
+  * The other parent's name is **${other_parties[0]}.**
   % endif
   % if tool_ID in ["divorce_complaint", "divorce_answer"]:
   % if other_parties[0].has_previous_name:
