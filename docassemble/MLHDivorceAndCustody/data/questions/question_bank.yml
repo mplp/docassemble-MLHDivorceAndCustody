@@ -914,14 +914,23 @@ id: marriage.have_experienced_domestic_violence_continue
 question: |
   Domestic violence
 subquestion: |
-  % if tool_ID == "JOD_only":
-  Domestic violence is often at its worst when a relationship ends. It is important to take steps to be as safe as possible.
+  Domestic violence is often at its worst when a relationship ends. 
+  % if tool_ID in ["JOD_only", "divorce_answer", "custody_answer"]:
+  It is important to take steps to be as safe as possible.
   % elif tool_ID == "divorce_complaint":
-  Domestic violence is often at its worst when a relationship ends. It is important to take steps to be as safe as possible before you start a divorce. 
+  It is important to take steps to be as safe as possible before you start a divorce. 
+  % elif tool_ID == "custody_complaint":
+  It is important to take steps to be as safe as possible before you start a custody case. 
   % endif
+  % if tool_ID in ["JOD_only", "divorce_answer", "divorce_complaint"]:
   If there has been verbal, emotional, or physical abuse in your marriage, you may want to find a lawyer. Your local legal aid office or domestic violence agency may be able to help you. 
   
   To learn about how domestic violence can affect a divorce case and what you can do to keep safe, read [Domestic Violence and Divorce](https://michiganlegalhelp.org/resources/family/domestic-violence-and-divorce). To find a lawyer and contact information for local domestic violence agencies, use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help).
+  % else:
+  If there has been verbal, emotional, or physical abuse in your relationship, you may want to find a lawyer. Your local legal aid office or domestic violence agency may be able to help you. 
+  
+  To learn about domestic violence and personal protection orders, read [Filing for a Personal Protection Order - Domestic Relationship](https://michiganlegalhelp.org/resources/personal-safety/filing-personal-protection-order-domestic-relationship). To find a lawyer and contact information for local domestic violence agencies, use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help).
+  % endif
 fields:
   - label: Do you want to continue with the tool now?
     field: marriage.have_experienced_domestic_violence_continue
@@ -4613,7 +4622,7 @@ question: |
 subquestion: |
   You said that you think a temporary custody order is needed to protect ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } because of abuse, mistreatment, threats, or neglect.
 
-  Getting a temporary custody order is not simple. You can still use this tool to prepare your forms and begin the divorce process, but this tool will not help you ask for or get a temporary custody order.
+  Getting a temporary custody order is not simple. You can still use this tool to prepare your forms and begin the ${word("divorce") if tool_ID in ["divorce_complaint", "JOD_only", "divorce_answer"] else word("custody")} process, but this tool will not help you ask for or get a temporary custody order.
   
   You may want to speak to a lawyer. ${MLH_GUIDE_FULL}
 fields:
@@ -5839,9 +5848,9 @@ code: |
     prior_family_case_types_ordered.pop("custody")
   if tool_ID == "custody_complaint":
     prior_family_case_types_ordered.pop("divorce")
+    prior_family_case_types_ordered.pop("separate_maintenance")
 
   set_prior_family_case_types = True
-#TODO: when build custody, should new separate maintenance option be removed from one or both tools?
 ---
 variable name: prior_family_case_types
 data: !!omap
