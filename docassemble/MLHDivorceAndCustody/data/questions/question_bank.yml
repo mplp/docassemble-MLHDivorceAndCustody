@@ -2067,7 +2067,9 @@ subquestion : |
   * real property (real estate: houses and land), and 
   * personal property (everything else).
 
+  % if tool_ID != "divorce_answer":
   We'll ask about marital personal property first.
+  % endif
 ---
 id: marriage.personal_property_info
 question: |

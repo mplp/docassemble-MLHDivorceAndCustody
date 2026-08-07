@@ -7,6 +7,7 @@ Michigan Legal Help
 Lemma Legal
 
 ## Changelog:
+* 8/7/26   2.0.7 minor updates to Divorce Answer property guidance, interview order, and instruction language.
 * 8/3/26   2.0.6 fix "marriage.pension_retirement_accounts_keep_own" being called when undefined
 * 7/31/26  2.0.5 minor review screen edits to address "exceptions"
 * 7/30/26  2.0.4 various small fixes for answer tool when someone's pregnant but no kids
