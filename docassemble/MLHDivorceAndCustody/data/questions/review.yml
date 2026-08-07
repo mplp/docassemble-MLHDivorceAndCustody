@@ -1366,7 +1366,7 @@ review:
       ### Any prior family division cases?
       % endif
         - ${word(yesno(prior_family_cases.there_are_any))}
-    show if: len(prior_family_cases.complete_elements()) < 1
+    show if: there_are_marital_children and len(prior_family_cases.complete_elements()) < 1
   - Edit:
       - prior_family_cases.revisit
       - invalidate:
@@ -1377,7 +1377,8 @@ review:
         - court_index
         - the_court
         - the_foc
-    show if: prior_family_cases.there_are_any
+    #show if: prior_family_cases.there_are_any
+    show if: (tool_ID != "JOD_only" and prior_family_cases.there_are_any) or (tool_ID == "JOD_only" and there_are_marital_children and prior_family_cases.there_are_any)
     button: |
       % if tool_ID == "JOD_only":
       ### Custody or support cases
