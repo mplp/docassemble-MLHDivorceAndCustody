@@ -468,9 +468,9 @@ id: complaint with children continue information
 question: Complaint with children
 continue button field: complaint_with_children_issue_continue
 subquestion: |
-  You said your spouse filed a Complaint for Divorce **with children.** It's important to check the {marital children} listed in your spouse's complaint. 
+  You said your spouse filed a Complaint for Divorce **with children.** It's important to check the {marital children} listed in your spouse's complaint.
   
-  If you disagree about which children are {marital children}, it's a good idea to speak to a lawyer. ${MLH_GUIDE_FULL} Later in this tool you can explain if you disagree with the children listed or left out. 
+  Later in this tool you can explain if you disagree with the children listed or left out. 
 
   More information about common parentage questions and issues:
 
@@ -478,6 +478,8 @@ subquestion: |
   ${collapse_template(wants_to_parent)}
   ${collapse_template(nonbio_child_or_preg)}
   ${collapse_template(ART_pregnancy)}
+
+  If you disagree about which children are {marital children}, it's a good idea to speak to a lawyer. ${MLH_GUIDE_FULL}
 ---
 id: complaint no children continue information
 question: Complaint without children
@@ -485,7 +487,7 @@ continue button field: complaint_without_children_issue_continue
 subquestion: |
   You said your spouse filed a Complaint for Divorce **without children.** 
   
-  If you think you and your spouse **do have** {minor} {marital children}, you may want to speak to a lawyer. ${MLH_GUIDE_FULL} Later in this tool you can explain if you think any minor marital children were left out--it's important to include them in your Answer.
+  Later in this tool you can explain if you think any minor marital children were left out--it's important to include them in your Answer.
 
   More information about common parentage questions and issues:
 
@@ -493,6 +495,8 @@ subquestion: |
   ${collapse_template(wants_to_parent)}
   ${collapse_template(nonbio_child_or_preg)}
   ${collapse_template(ART_pregnancy)}
+
+  If you think you and your spouse **do have** {minor} {marital children}, you may want to speak to a lawyer. ${MLH_GUIDE_FULL}
 ---
 if: tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and returning_to_finalize)
 id: case already filed jurisdiction check
@@ -502,9 +506,9 @@ subquestion: |
 fields:
   - label: |
       % if tool_ID in ["JOD_only", "divorce_complaint"]:
-      Who lived in **Michigan for 180 days before you filed** for divorce? 
+      Who lived in **Michigan for 180 days before you filed** for divorce? *(check all that apply)*
       % elif tool_ID == "divorce_answer":
-      Who lived in **Michigan for 180 days before your spouse filed** for divorce? 
+      Who lived in **Michigan for 180 days before your spouse filed** for divorce? *(check all that apply)*
       % endif
     field: party_lived_6_months_MI
     datatype: checkboxes
@@ -515,9 +519,9 @@ fields:
       Neither of us
   - label: |
       % if tool_ID in ["JOD_only", "divorce_complaint"]:
-      Who lived in **${ county_choice } County for 10 days before you filed** for divorce? 
+      Who lived in **${ county_choice } County for 10 days before you filed** for divorce? *(check all that apply)*
       % elif tool_ID == "divorce_answer":
-      Who lived in **${ county_choice } County for 10 days before your spouse filed** for divorce? 
+      Who lived in **${ county_choice } County for 10 days before your spouse filed** for divorce? *(check all that apply)*
       % endif
     field: party_ten_days_in_county
     datatype: checkboxes
@@ -546,7 +550,7 @@ subquestion: |
   ${collapse_template(jurisdiction_check_help_cc)}
 fields:
   - label: |
-      Who has lived in **Michigan for the last 180 days or more,** since ${ today().minus(days=180) }?
+      Who has lived in **Michigan for the last 180 days or more,** since ${ today().minus(days=180) }? *(check all that apply)*
     field: counterclaim_180_day_test_met
     datatype: checkboxes
     choices:
@@ -555,7 +559,7 @@ fields:
     none of the above: |
       Neither of us
   - label: |
-      Who has lived in **${ county_choice } County for the last 10 days or more?**
+      Who has lived in **${ county_choice } County for the last 10 days or more?** *(check all that apply)*
     field: counterclaim_10_day_test_met
     datatype: checkboxes
     choices:
