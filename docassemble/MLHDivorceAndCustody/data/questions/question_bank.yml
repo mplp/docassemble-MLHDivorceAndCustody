@@ -479,7 +479,7 @@ subquestion: |
   ${collapse_template(nonbio_child_or_preg)}
   ${collapse_template(ART_pregnancy)}
 
-  If you disagree about which children are {marital children}, it's a good idea to speak to a lawyer. If you would like help from a lawyer, you can use ${MLH_GUIDE} to search for a lawyer or legal services.
+  If you would like help from a lawyer, you can use ${MLH_GUIDE} to search for a lawyer or legal services.
 ---
 id: complaint no children continue information
 question: Complaint without children
@@ -496,7 +496,7 @@ subquestion: |
   ${collapse_template(nonbio_child_or_preg)}
   ${collapse_template(ART_pregnancy)}
 
-  If you think you and your spouse **do have** {minor} {marital children}, you may want to speak to a lawyer. If you would like help from a lawyer, you can use ${MLH_GUIDE} to search for a lawyer or legal services.
+  If you would like help from a lawyer, you can use ${MLH_GUIDE} to search for a lawyer or legal services.
 ---
 if: tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and returning_to_finalize)
 id: case already filed jurisdiction check
