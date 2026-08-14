@@ -4423,6 +4423,25 @@ subquestion: |
   If nobody files a Motion to Determine Child Born Out of Wedlock, your spouse will remain a legal parent. This means the judge can award them custody and/or parenting time, and they may be responsible for paying child support. A motion to revoke parentage can also be filed after your divorce is final, but the judge may be less likely to grant the motion when the child is older. To learn more, go to the page that applies to you on the Michigan Legal Help website: [Revoking Marriage-Based Parentage: For the Mother or Birthing Parent](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-mother-or-birthing-parent), or [Revoking Marriage-Based Parentage: For the Husband or Spouse](https://michiganlegalhelp.org/resources/family/revoking-marriage-based-parentage-husband-or-spouse).
   % endif
   % endif
+
+  ${collapse_template(when_revoke_parentage)}
+---
+template: when_revoke_parentage
+subject: "When should I file to revoke parentage?"
+content: |
+  It's best to file **as soon as possible** after the divorce case is filed. If you wait until after the divorce is final to file a request to revoke parentage, then the child will already be included in the custody, parenting time, and child support sections of the Judgment of Divorce and child support order, and you may have to take extra steps to get those changed. 
+  
+  There are also time limits for filing a request to revoke parentage. 
+  % if children[i].origin == "premarital_with_another" and children[i].parentage_established == "affidavit":
+  It should be filed before the child turns 3, or within 1 year after the date that the acknowledgment of parentage was signed, whichever is later. 
+  % elif children[i].origin == "premarital_with_another" and children[i].parentage_established == "court_order":
+  It should be filed before the child turns 3, or within 1 year after the date a judge signed the Order of Filiation, whichever is later.
+  % elif children[i].origin == "marital_third_party_conceived":
+  It should be filed before the child turns 3.
+  % endif
+  If you file after that time, it is less likely that the court can grant your request. 
+
+  If the time limit for filing already passed, you can file a motion and affidavit asking for a time extension. But you must prove that you did not file within the time limit because of mistake of fact, newly discovered evidence that could not have been found earlier by due diligence, fraud, misrepresentation, misconduct, or duress.
 ---
 id: parentage revocation logic for reminders document
 code: |
