@@ -3847,13 +3847,17 @@ code: |
 if: tool_ID in ["custody_complaint", "custody_answer"]
 code: |
   children[i].basic_info
-  children[i].bio_parent
-  if not children[i].affidavit_of_parentage or children[i].affidvait_revoked:
-    children[i].not_included_in_case_info
-  else:
-    if children[i].marital_birth and not (children[i].spouse_excluded_divorce or children[i].spouse_excluded_order):
+  
+  if children[i].is_shared_child and children[i].want_in_custody_case:
+    children[i].affidavit_of_parentage
+    if not children[i].affidavit_of_parentage or children[i].affidavit_revoked:
       children[i].not_included_in_case_info
-
+    else:
+      if children[i].marital_birth and not (children[i].spouse_excluded_divorce or children[i].spouse_excluded_order):
+        children[i].not_included_in_case_info
+  else:
+    children[i].not_included_in_case_info
+  
   children[i].more_info
 
   children[i].complete = True
@@ -4528,6 +4532,58 @@ fields:
     js show if: |
       (val("children[i].bio_parent") == "user" || val("children[i].bio_parent") == "other_party") && ${ json.dumps(children[i].origin) } === "marital_third_party_conceived"
 ---
+id: should this child be part of the custody case -- basics
+if: tool_ID in ["custody_complaint", "custody_answer"]
+question: About ${children[i]}
+subquestion: |
+  ${ collapse_template(why_ask_child_origin) }
+fields:
+  - "Are you and ${ other_parties[0] } both parents of ${children[i]}?": children[i].is_shared_child
+    datatype: radio
+    choices: 
+      - "Yes, we are both ${children[i]}'s parents.": True
+      - "No, only one of us is ${children[i]}'s parent.": False
+  - "Should ${children[i]} be included in this custody case?": children[i].want_in_custody_case
+    datatype: yesnoradio
+    show if: children[i].is_shared_child
+  - note: ${collapse_template(children[i].include_custody_case_help)}
+    show if: children[i].is_shared_child
+validation code: |
+  if children[i].is_shared_child and children[i].want_in_custody_case:
+    children[i].legal_parent = "both"
+  else:
+    children[i].legal_parent = "not_both"
+---
+template: children[i].include_custody_case_help                        
+subject: What if I'm not sure?
+content: |
+  Usually, you should answer **Yes** if you need a custody, parenting time, or child support order for ${children[i]}. 
+---
+id: custody case parentage basics
+if: tool_ID in ["custody_complaint", "custody_answer"]
+question: ${children[i]}'s parentage
+subquestion: |
+  ${ collapse_template(why_ask_child_origin) }
+fields:
+  - "Is there an Affidavit of Parentage signed by you and ${ other_parties[0] }?": children[i].affidavit_of_parentage
+    datatype: yesnoradio
+  - Who gave birth to ${children[i]}?: children[i].bio_parent
+    datatype: radio
+    choices:
+      - I did.: user
+      - "${ other_parties[0] } did.": other_party
+    show if: children[i].affidavit_of_parentage
+  - "Has your parentage been revoked (canceled) by a court order? This would only happen if someone filed a complaint or motion to revoke parentage, and the judge granted it.": children[i].affidavit_revoked
+    datatype: yesnoradio
+    show if:
+      variable: children[i].bio_parent
+      is: other_party
+  - "Has ${ other_parties[0] }'s parentage been revoked (canceled) by a court order? This would only happen if someone filed a complaint or motion to revoke parentage, and the judge granted it.": children[i].affidvait_revoked
+    datatype: yesnoradio
+    show if:
+      variable: children[i].bio_parent
+      is: user
+---
 id: who is birth parent (custody)
 if: tool_ID in ["custody_complaint", "custody_answer"]
 question: ${word("Your") if children[i].bio_parent == "user" else word("${ other_parties[0] }'s")} marital status when ${children[i]} was born or conceived
@@ -4563,29 +4619,45 @@ fields:
       variable: spouse_excluded_divorce
       is: False 
 ---
-id: custody case parentage basics
-if: tool_ID in ["custody_complaint", "custody_answer"]
-question: ${children[i]}'s parentage
+id: info about children who can't be included in custody case
+continue button field: children[i].not_included_in_case_info
+question: Important!
 subquestion: |
-  ${ collapse_template(why_ask_child_origin) }
-fields:
-  - Who gave birth to ${children[i]}?: children[i].bio_parent
-    datatype: radio
-    choices:
-      - I did.: user
-      - "${ other_parties[0] } did.": other_party
-  - "Is there an Affidavit of Parentage signed by you and ${ other_parties[0] }?": children[i].affidvait_of_parentage
-    datatype: yesnoradio
-  - "Has your parentage been revoked (canceled) by a court order? This would only happen if someone filed a complaint or motion to revoke parentage, and the judge granted it.": children[i].affidvait_revoked
-    datatype: yesnoradio
-    show if:
-      variable: children[i].bio_parent
-      is: other_party
-  - "Has ${ other_parties[0] }'s parentage been revoked (canceled) by a court order? This would only happen if someone filed a complaint or motion to revoke parentage, and the judge granted it.": children[i].affidvait_revoked
-    datatype: yesnoradio
-    show if:
-      variable: children[i].bio_parent
-      is: user
+  % if not children[i].is_shared_child:
+  You said ${children[i]} is **not** your shared child with ${ other_parties[0] }. Because of this, ${children[i].familiar()} won't be included in the custody, parenting time, and child support parts of your custody case. However, information about them will be included on some forms.
+  % elif not children[i].want_in_custody_case:
+  You said ${children[i]} should not be included in the custody case. ${children[i].familiar()} won't be included in the custody, parenting time, and child support parts of your custody case. However, information about them will be included on some forms.
+  % elif not children[i].affidavit_of_parentage:
+  You said you and ${ other_parties[0] } did not sign an affidavit of parentage for ${children[i]}. This means that you can't use this tool to create a custody complaint for ${children[i].familiar()}. 
+
+  ${children[i].familiar()} won't be included in the custody, parenting time, and child support parts of your custody case. However, information about them will be included on some forms.
+
+  If you need more help you may want to speak to a lawyer. ${MLH_GUIDE_FULL}
+  % elif children[i].affidavit_revoked:
+  You said you the affidavit of parentage for ${children[i]} was revoked. This means that you can't use this tool to create a custody complaint for ${children[i].familiar()}. 
+
+  ${children[i].familiar()} won't be included in the custody, parenting time, and child support parts of your custody case. However, information about them will be included on some forms.
+
+  If you need more help you may want to speak to a lawyer. ${MLH_GUIDE_FULL}
+  % elif children[i].marital_birth and not (children[i].spouse_excluded_divorce or children[i].spouse_excluded_order):
+  % if children[i].bio_parent == "user":
+  You said:
+  
+  * you were married when ${children[i]} was conceived or born, and
+  * your spouse's parentage has not been revoked.
+  % else:
+  You said:
+  
+  * ${ other_parties[0] } was married when ${children[i]} was conceived or born, and
+  * their spouse's parentage has not been revoked.
+  % endif 
+  
+  ${children[i].familiar()} won't be included in the custody, parenting time, and child support parts of your custody case. However, information about them will be included on some forms.
+
+  If you need more help you may want to speak to a lawyer. ${MLH_GUIDE_FULL}
+  % endif
+validation code: |
+  children[i].legal_parent = "not_both"
 ---
 ######## start children qualification/address/home state questions #######
 # LHI "(Marital) Minor Children Information" (first part)
