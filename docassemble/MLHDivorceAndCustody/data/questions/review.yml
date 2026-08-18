@@ -10,6 +10,7 @@ review:
       % else:
       ${ review_empty_explainer }
       % endif
+      
   - Edit:
       - returning_to_finalize
       - invalidate:
@@ -35,7 +36,10 @@ review:
 #
   - raw html: |
       ${ start_accordion("""<h2>Marriage Information</h2>""") }
-    show if: marriage.attribute_defined("have_experienced_domestic_violence")
+    show if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"] and marriage.attribute_defined("have_experienced_domestic_violence")
+  - raw html: |
+      ${ start_accordion("""<h2>History with the Defendant</h2>""") }
+    show if: tool_ID in ["custody_complaint", "custody_answer"] and marriage.attribute_defined("have_experienced_domestic_violence")
   - Edit:
       - marriage.date
     button: |
@@ -77,6 +81,11 @@ review:
     button: |
       ### Has there been domestic violence or threats by ${OP_label}?
         - ${word(yesno(marriage.have_experienced_domestic_violence))}
+  - Edit:
+      - controlling_custody_case
+    button: |
+      ### Is there an existing paternity, child support, parenting time, or custody case in any state between you and the Defendant?
+        - ${word(yesno(controlling_custody_case))}
 #
 #
 # ---------- users[0] ----------
@@ -169,18 +178,27 @@ review:
         - the_foc
       # Note validation logic on users[0].address.address question
     button: |
-      % if tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and confidential_contact_info_yn):
+      % if tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID in ["divorce_complaint", "custody_complaint"] and confidential_contact_info_yn):
       ### Your ${"safe mailing address" if confidential_contact_info_yn else "address"}
         - ${users[0].address.on_one_line()}
       % elif not confidential_contact_info_yn:
       ### Your address:
         - ${users[0].address.on_one_line()}
+      % if tool_ID in ["custody_complaint", "custody_answer"]:
+      ### Do you live in Michigan?
+        - ${word(yesno(users[0].lives_in_Michigan))}
+      % if users[0].lives_in_Michigan:
+      ### Your County:
+        - ${users[0].address.county}
+      % endif
+      % else:
       % if users[0].lives_in_Michigan:
       ### Have you lived in Michigan for 180+ days?
         - ${word(yesno(users[0].has_lived_6_months_MI))}
       ### Have you lived in ${users[0].address.county} County for the last 10 days?
         - ${word(yesno(users[0].ten_days_in_county))}
       % endif
+      % endif      
       % endif
   - Edit:
       - users[0].lives_in_Michigan 
@@ -200,10 +218,15 @@ review:
       ### Do you live in Michigan?
         - ${word(yesno(users[0].lives_in_Michigan))}   
       % if users[0].lives_in_Michigan:
+      % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
       ### Have you lived in Michigan for 180+ days?
         - ${word(yesno(users[0].has_lived_6_months_MI))}
       ### Have you lived in ${users[0].address.county} County for the last 10 days?
         - ${word(yesno(users[0].ten_days_in_county))}
+      % else:
+      ### Your County:
+        - ${users[0].address.county}
+      % endif
       % endif
     show if: confidential_contact_info_yn
   - Edit:
@@ -211,7 +234,7 @@ review:
     button: |
       ### Your County
         - ${users[0].address.county}
-    show if: (tool_ID == "divorce_complaint" and not users[0].lives_in_Michigan) or tool_ID == "JOD_only"
+    show if: (tool_ID in ["divorce_complaint", "custody_complaint"] and not users[0].lives_in_Michigan) or tool_ID == "JOD_only"
   - Edit:
       - users[0].village_or_township_yn
     button: |
@@ -424,12 +447,19 @@ review:
 # ---------- other_parties[0] ----------
 #
   - raw html: |
+      ${ next_accordion("""<h2>The Defendant's Basic Information</h2>""") }
+    show if: tool_ID in ["custody_complaint", "custody_anwer"] and other_parties[0].name.attribute_defined("first")
+  - raw html: |
       ${ next_accordion("""<h2>Spouse's Basic Information</h2>""") }
-    show if: other_parties[0].name.attribute_defined("first")
+    show if: tool_ID in ["divorce_complaint", "divorce_anwer", "JOD_only"] and other_parties[0].name.attribute_defined("first")
   - Edit:
       - other_parties[0].name.first
     button: |
+      % if tool_ID in ["custody_complaint", "custody_anwer"]:
+      ### The Defendant's name
+      % else:
       ### Spouse's name
+      % endif
         - ${other_parties[0]}
   - Edit:
       - other_parties[0].has_maiden_name
@@ -508,11 +538,24 @@ review:
       ### Has your spouse lived in ${other_parties[0].address.county} County for the last 10 days?
         - ${word(yesno(other_parties[0].ten_days_in_county))}
       % endif
+      % elif tool_ID == "custody_complaint":
+      ### Defendant's address
+        - ${other_parties[0].address.on_one_line()}
+      ### Does Defendant live in Michigan?
+        - ${word(yesno(other_parties[0].lives_in_Michigan))}
+      % if other_parties[0].lives_in_Michigan:
+      ### Defendant's County
+        - ${other_parties[0].address.county}
+      % endif
       % endif
   - Edit:
       - other_parties[0].mailing_address.yesno
     button: |
+      % if tool_ID in ["custody_complaint", "custody_anwer"]:
+      ### Defendant has a different mailing address
+      % else:
       ### Your spouse has a different mailing address
+      % endif
         - ${word(yesno(other_parties[0].mailing_address.yesno))}
       % if other_parties[0].mailing_address.yesno:
       ### Spouse's mailing address
@@ -521,9 +564,13 @@ review:
   - Edit:
       - other_parties[0].address.county
     button: |
+      % if tool_ID in ["custody_complaint", "custody_anwer"]:
+      ### Defendant's County
+      % else:
       ### Spouse's County
+      % endif
         - ${other_parties[0].address.county}
-    show if: (tool_ID == "divorce_complaint" and not other_parties[0].lives_in_Michigan) or tool_ID == "JOD_only"
+    show if: (tool_ID in ["divorce_complaint", "custody_complaint"] and not other_parties[0].lives_in_Michigan) or tool_ID == "JOD_only"
   - Edit:
       - other_parties[0].village_or_township_yn
     button: |
@@ -533,7 +580,11 @@ review:
   - Edit:
       - other_parties[0].no_phone_number
     button: |
+      % if tool_ID in ["custody_complaint", "custody_anwer"]:
+      ### Defendant's phone number
+      % else:
       ### Spouse's phone number
+      % endif
         - ${word("Unknown") if other_parties[0].no_phone_number else phone_number_formatted(other_parties[0].phone_number)}
         % if tool_ID != "JOD_only" and not other_parties[0].no_phone_number:
         - Type: ${ other_parties[0].phone_type }
@@ -541,7 +592,11 @@ review:
   - Edit:
       - other_parties[0].email
     button: |
+      % if tool_ID in ["custody_complaint", "custody_anwer"]:
+      ### Defendant's email address
+      % else:
       ### Spouse's email address
+      % endif
       % if other_parties[0].email == "":
         - None
       % else:
@@ -550,7 +605,7 @@ review:
   - Edit:
       - spouse_is_in_military
     button: |
-      ### ${capitalize(OP_label)} on active US military duty?
+      ### Is ${capitalize(OP_label)} on active US military duty?
         - ${word(yesno(spouse_is_in_military))}
   - Edit:
       - other_parties[0].has_attorney
@@ -947,7 +1002,10 @@ review:
 #
   - raw html: |
       ${ next_accordion("""<h2>Children and Pregnancy</h2>""") }
-    show if: defined('children.there_are_any')
+    show if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"] and defined('children.there_are_any')
+  - raw html: |
+      ${ next_accordion("""<h2>Children</h2>""") }
+    show if: tool_ID in ["custody_complaint", "custody_answer"] and defined('children.there_are_any') and defined('custody_child_explanation')
   - note: |
       ### Children
       % for child in children.filter(legal_parent="both"):
@@ -1035,6 +1093,7 @@ review:
       ### Any minor children?
         - ${word(yesno(children.there_are_any))}
       % endif
+    show if: tool_ID == "custody_complaint" and custody_child_explanation or tool_ID != "custody_complaint"
   - Edit:
       - child_demographics_review_screen
     button: |

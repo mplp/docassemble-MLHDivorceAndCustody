@@ -1282,6 +1282,7 @@ question: |
 fields:
   - What county do you live in?: users[0].address.county
 ---
+if: tool_ID in ["divorce_complaint", "JOD_only"]
 id: users[0].village_or_township
 question: |
   Village or township
@@ -1612,7 +1613,7 @@ fields:
   - What county does your spouse live in?: other_parties[0].address.county
     code: court_list._load_courts()["address_county"].unique()
 ---
-if: (tool_ID == "JOD_only" and other_parties[0].address.state != "MI") or (tool_ID == "divorce_complaint" and not other_parties[0].lives_in_Michigan)
+if: (tool_ID == "JOD_only" and other_parties[0].address.state != "MI") or (tool_ID in ["divorce_complaint", "custody_complaint"] and not other_parties[0].lives_in_Michigan)
 id: other_parties[0].address.county
 continue button field: just_check_op_county
 question: |
@@ -1620,6 +1621,7 @@ question: |
 fields:
   - What county does your spouse live in?: other_parties[0].address.county
 ---
+if: tool_ID in ["divorce_complaint", "JOD_only"]
 id: other_parties[0].village_or_township
 question: |
   Spouse's village or township
@@ -3219,6 +3221,7 @@ code: |
   prior_family_cases.reset_gathered(mark_incomplete=True)
   prior_family_cases.gathered_deep_reset = True
 ---
+if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]
 table: children.table
 rows: children
 columns:
@@ -3227,6 +3230,16 @@ columns:
       format_date(row_item.birthdate, format='M/d/yyyy') if defined("row_item.birthdate") and row_item.birthdate != None else "---"
   - Legal parent: |
       "Both spouses" if row_item.legal_parent == "both" else users[0] if row_item.legal_parent == "user" else other_parties[0] if row_item.legal_parent == "other_party" else ""
+delete buttons: True
+confirm: True
+---
+if: tool_ID in ["custody_complaint", "custody_answer"]
+table: children.table
+rows: children
+columns:
+  - Name: row_item.name
+  - Birthdate (if given): |
+      format_date(row_item.birthdate, format='M/d/yyyy') if defined("row_item.birthdate") and row_item.birthdate != None else "---"
 delete buttons: True
 confirm: True
 ---
@@ -4078,7 +4091,7 @@ validation code: |
 ---
 template: non_marital_children_explanation_template
 subject: |
-  Why do I need to include both children in common and separate children?
+  Why include both shared and separate children?
 content: |
   % if tool_ID in ["custody_complaint", "custody_answer"]:
   All children of either parent must be listed on some of the custody case forms. This is true even though separate children will not be included in any custody, parenting time, or child support order.
@@ -4091,11 +4104,11 @@ content: |
 id: custody clarify child collection
 continue button field: custody_child_explanation
 question: |
-  You will enter information about **all** children
+  Next, add information about **all** children
 subquestion: |
   Next, you will be asked for information about your and ${other_parties[0]}'s children. You should list all children, including:
   
-  * all your and ${other_parties[0]}'s **shared {minor} children,**
+  * your and ${other_parties[0]}'s **shared {minor} children,**
   * any other minor children that you have, and 
   * any other minor children that ${other_parties[0]} has.
 
@@ -4108,7 +4121,7 @@ subquestion: |
   % if tool_ID in ["custody_complaint", "custody_answer"]:
   Please list:
   
-  * all your and ${other_parties[0]}'s **shared {minor} children,**
+  * your and ${other_parties[0]}'s **shared {minor} children,**
   * any other minor children that you have, and 
   * any other minor children that ${other_parties[0]} has.
   % else:
@@ -4744,7 +4757,7 @@ fields:
     show if:
       variable: children[i].bio_parent
       is: other_party
-  - "Has ${ other_parties[0] }'s parentage been revoked (canceled) by a court order? This would only happen if someone filed a complaint or motion to revoke parentage, and the judge granted it.": children[i].affidvait_revoked
+  - "Has ${ other_parties[0] }'s parentage been revoked (canceled) by a court order? This would only happen if someone filed a complaint or motion to revoke parentage, and the judge granted it.": children[i].affidavit_revoked
     datatype: yesnoradio
     show if:
       variable: children[i].bio_parent
@@ -4752,7 +4765,7 @@ fields:
 ---
 id: who is birth parent (custody)
 if: tool_ID in ["custody_complaint", "custody_answer"]
-question: ${word("Your") if children[i].bio_parent == "user" else word("${ other_parties[0] }'s")} marital status when ${children[i]} was born or conceived
+question: ${word("Your") if children[i].bio_parent == "user" else word(other_parties[0]) + word("'s")} marital status when ${children[i]} was born or conceived
 subquestion: |
   ${ collapse_template(why_ask_child_origin) }
 fields:
@@ -4782,7 +4795,7 @@ fields:
     field: children[i].spouse_excluded_order
     datatype: yesnoradio
     show if: 
-      variable: spouse_excluded_divorce
+      variable: children[i].spouse_excluded_divorce
       is: False 
 ---
 id: info about children who can't be included in custody case
