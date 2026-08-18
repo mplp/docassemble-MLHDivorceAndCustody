@@ -75,7 +75,7 @@ review:
       - follow up:
         - marriage.have_experienced_domestic_violence_continue
     button: |
-      ### Has there been domestic violence or threats by your spouse?
+      ### Has there been domestic violence or threats by ${OP_label}?
         - ${word(yesno(marriage.have_experienced_domestic_violence))}
 #
 #

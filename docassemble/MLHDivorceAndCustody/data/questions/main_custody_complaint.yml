@@ -82,7 +82,7 @@ code: |
     current_marriage_exit
   if married_other_parent_past:
     past_marriage_exit
-  if not children_in_common: #if using preexisting child gathering method, could set this to be children.there_are_any
+  if not children.there_are_any:
     custody_no_kids_exit
   if controlling_custody_case:
     controlling_custody_case_exit
@@ -112,11 +112,10 @@ code: |
 
   interview_order_other_parties_address_info
 
-  if not ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI) or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI)):
+  if not (users[0].lives_in_Michigan or other_parties[0].lives_in_Michigan):
      exit_jurisdiction
 
   if other_parties[0].address.country == "US":
-    other_parties[0].village_or_township_yn  
     other_parties[0].address.county # skipped if already asked on lives_in_Michigan screen
   else:
     international_service_warning
@@ -128,7 +127,6 @@ code: |
 
   nav.set_section("signpost_children")
   interview_order_children
-  interview_order_pregnancy
 
   nav.set_section("signpost_prior_cases")
   prior_family_cases.gather()
