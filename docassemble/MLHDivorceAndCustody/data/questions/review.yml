@@ -1737,7 +1737,7 @@ review:
     button: |
       ### Real property bought or paid for during the marriage?
         - ${word(yesno(marriage.real_property.there_are_any))}
-    show if: tool_ID == "divorce_answer"
+    show if: tool_ID == "divorce_answer" or not defined("marriage.real_property.revisit")
 # ---------- case information ----------
   - raw html: |
       ${ next_accordion("""<h2>The Divorce Case</h2>""") }
