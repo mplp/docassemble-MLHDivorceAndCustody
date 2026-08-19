@@ -2688,9 +2688,6 @@ fields:
     datatype: yesnoradio
     js show if: |
       val("marriage.real_property.there_are_any") === true && ${ "true" if tool_ID == "divorce_answer" else "false" }
-validation code: |
-  if not marriage.real_property.there_are_any: 
-    marriage.real_property.clear()
 ---
 if: marriage.real_property.there_are_any
 id: continue_real_property (divorce answer)
