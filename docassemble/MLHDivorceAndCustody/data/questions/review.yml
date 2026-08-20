@@ -1093,7 +1093,48 @@ review:
       ### Any minor children?
         - ${word(yesno(children.there_are_any))}
       % endif
-    show if: tool_ID == "custody_complaint" and custody_child_explanation or tool_ID != "custody_complaint"
+    show if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]
+  - Edit:
+      - children.revisit
+      - invalidate:
+        - set_marital_children_or_not
+        - children_line_1
+        - children_line_2
+        - set_child_home_choices
+        - guidepost_subject_children
+        - kids_had_other_custodian
+        - third_party_custody_claim
+        - need_temporary_order_kids
+        - temporary_order_kids_exit
+        - interview_order_home_state
+        - set_children_home_state_info
+        - other_case_controls_child_support
+        - children_live_with_parent
+        - children_now_live_with_which_parent
+        - children_lived_with_which_parent_past
+        - interview_order_stepchild_address
+        - insurance_in_addendum
+        - interview_order_user_employment
+        - interview_order_user_income
+        - check_for_required_venue
+        - venue
+        - court_index
+        - the_court
+        - the_foc
+        - stepchildren_for_addendum
+      - recompute:
+        - children_previous_address.gathered_reset
+        - interview_order_children
+        - prior_family_cases.gathered_deep_reset
+      # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
+    button: |
+      % if children.there_are_any:
+      ### **Add or remove** a child
+      % else:
+      ### Any minor children?
+        - ${word(yesno(children.there_are_any))}
+      % endif
+    show if: tool_ID in ["custody_complaint", "custody_answer"] and custody_child_explanation
   - Edit:
       - child_demographics_review_screen
     button: |

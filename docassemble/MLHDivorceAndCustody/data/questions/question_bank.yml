@@ -3274,13 +3274,12 @@ code: |
 
     interview_order_home_state              
 
-    if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
-      if not children_live_with_parent:
-        children_live_with_third_party_kickout
-      if children_now_live_with_which_parent == "depends_on_child":
-        for child in children:
-          if child.legal_parent == "both":
-            child.lives_with
+    if not children_live_with_parent:
+      children_live_with_third_party_kickout
+    if children_now_live_with_which_parent == "depends_on_child":
+      for child in children:
+        if child.legal_parent == "both":
+          child.lives_with
               
 
     if tool_ID in ["divorce_complaint", "divorce_answer"]:
@@ -3357,99 +3356,53 @@ code: |
   enable_child_demographics_review_screen
   enable_child_legal_parent_review_screen
 
-  set_marital_children_or_not
+  there_are_marital_children # misnomer in custody cases, but widely used throughout logic
   set_child_home_choices
   set_parentage_reminder_logic
-  
-  if there_are_marital_children:
 
-    guidepost_marital_children
-    if tool_ID in ["divorce_complaint", "divorce_answer"]:
-      if kids_had_other_custodian:
-        other_custodian_kickout
-      if third_party_custody_claim:
-        third_party_custody_kickout
-      if need_temporary_order_kids:
-        if temporary_order_kids_exit:
-          exit_general
+  guidepost_subject_children
+  if kids_had_other_custodian:
+    other_custodian_kickout
+  if third_party_custody_claim:
+    third_party_custody_kickout
+  if need_temporary_order_kids:
+    if temporary_order_kids_exit:
+      exit_general
 
-    interview_order_home_state              
+  interview_order_home_state              
 
-    if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
-      if not children_live_with_parent:
-        children_live_with_third_party_kickout
-      if children_now_live_with_which_parent == "depends_on_child":
-        for child in children:
-          if child.legal_parent == "both":
-            child.lives_with
-              
+  if not children_live_with_parent:
+    children_live_with_third_party_kickout
+  if children_now_live_with_which_parent == "depends_on_child":
+    for child in children:
+      if child.legal_parent == "both":
+        child.lives_with
 
-    if tool_ID in ["divorce_complaint", "divorce_answer"]:
-      if not confidential_contact_info_yn and (children_now_live_with_which_parent in ["depends_on_child", "users[0]"]):
-        child_address_not_confidential_warning
-      children_lived_with_which_parent_past
-      children_previous_address.gather() # calls "children's previous addresses" screen
+  if not confidential_contact_info_yn and (children_now_live_with_which_parent in ["depends_on_child", "users[0]"]):
+    child_address_not_confidential_warning
+  children_lived_with_which_parent_past
+  children_previous_address.gather() # calls "children's previous addresses" screen
 
-  if there_are_marital_children or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant)):
-  
-    if not there_are_marital_children and (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant)):
-      pregnant_no_kids_info
-      if users[0].pregnant:
-        users[0].pregnancy_due_date
-        if users[0].pregnant_how == "ART":
-          if users[0].surrogate_pregnancy:
-            pregnant_surrogacy_info
-          else:
-            pregnancy_only_ART_info
-            pregnant_cc_with_kids_info
-            users[0].questions_about_custody_only_pregnant
-        elif users[0].pregnant_how == "sex" and users[0].pregnancy_parentage == "nonmarital" and users[0].revoke_pregnancy:
-            pregnant_cc_with_kids_info
-        else:
-          pregnant_cc_with_kids_info
-          users[0].questions_about_custody_only_pregnant # In some circs, users[0].revoke_pregnancy is triggered indirectly here. TODO: make this more explicit in interview order. Same for OPs.
-      if other_parties[0].pregnant:
-        other_parties[0].pregnancy_due_date
-        if other_parties[0].pregnant_how == "ART":
-          if other_parties[0].surrogate_pregnancy:
-            pregnant_surrogacy_info
-          else:
-            pregnancy_only_ART_info
-            pregnant_cc_with_kids_info
-            other_parties[0].questions_about_custody_only_pregnant
-        elif other_parties[0].pregnant_how in ["sex", "unsure"] and other_parties[0].pregnancy_parentage == "nonmarital" and other_parties[0].revoke_pregnancy:
-            pregnant_cc_with_kids_info
-        else:
-          pregnant_cc_with_kids_info
-          other_parties[0].questions_about_custody_only_pregnant
-      
-  if there_are_marital_children or (tool_ID == "divorce_answer" and counterclaim_type == "with_children" and counterclaim_includes_custody_info):
-    legal_custody_who
-    if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]:
-      if (tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID in ["JOD_only", "divorce_answer"] and county_choice == "Muskegon"):  
-        Muskegon_specific_PT_info
+  legal_custody_who
+  if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]:
+    if (tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID in ["JOD_only", "divorce_answer"] and county_choice == "Muskegon"):  
+      Muskegon_specific_PT_info
+      custom_PT_details
+    else:
+      specific_PT_how
+      if specific_PT_how == "custom":
         custom_PT_details
-      else:
-        specific_PT_how
-        if specific_PT_how == "custom":
-          custom_PT_details
-    if tool_ID != "divorce_answer":
-      hague_convention_info
-      child_domicile_info
-      if legal_custody_who == "both":
-        hundred_mile_rule
-  
-    if there_are_marital_children:
-      child_support_basic
-      if tool_ID != "JOD_only":
-        allow_child_support_overpayment_correction
-        if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0:
-          guidepost_stepchildren
-          interview_order_stepchild_address
-  
-  else:
-    children.gathered = True
-    children.revisit = True
+  if tool_ID == "custody_complaint":
+    hague_convention_info
+    child_domicile_info
+    if legal_custody_who == "both":
+      hundred_mile_rule
+
+  child_support_basic
+  allow_child_support_overpayment_correction
+  if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party') + children.filter(legal_parent='custody_other')) > 0:
+    guidepost_stepchildren
+    interview_order_stepchild_address
   
   interview_order_children = True
 ---
@@ -4021,6 +3974,7 @@ code: |
 
   children[i].complete = True
 ---
+if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]
 id: divorce with or without children tag
 code: |
   if tool_ID == "divorce_answer" and not create_counterclaim: 
@@ -4034,6 +3988,11 @@ code: |
     there_are_marital_children = False
 
   set_marital_children_or_not = True
+---
+if: tool_Id in ["custody_complaint", "custody_answer"]
+id: set there_are_marital_children for custody cases
+code: there_are_marital_children = True
+# this is misnamed for custody purposes, but retaining since it's so widely used in the logic
 ---
 id: children intro
 continue button field: children_intro
@@ -4659,7 +4618,7 @@ code: |
   parentage_order_revoke = False
   parentage_marital_revoke = False
 
-  if there_are_marital_children:
+  if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"] and there_are_marital_children:
     for child in children.filter(legal_parent="both"):
       if child.origin == "premarital_with_another" and child.parentage_established == "affidavit" and child.how_conceived == "sex" and child.parentage_plan_to_revoke:
         parentage_affidavit_revoke = True
@@ -4731,7 +4690,7 @@ validation code: |
   if children[i].is_shared_child and children[i].want_in_custody_case:
     children[i].legal_parent = "both"
   else:
-    children[i].legal_parent = "not_both"
+    children[i].legal_parent = "custody_other"
 ---
 template: children[i].include_custody_case_help                        
 subject: What if I'm not sure?
@@ -4836,7 +4795,7 @@ subquestion: |
   If you need more help you may want to speak to a lawyer. ${MLH_GUIDE_FULL}
   % endif
 validation code: |
-  children[i].legal_parent = "not_both"
+  children[i].legal_parent = "custody_other"
 ---
 ######## start children qualification/address/home state questions #######
 # LHI "(Marital) Minor Children Information" (first part)
@@ -4854,6 +4813,14 @@ subquestion: |
   % else:
   The divorce may decide issues of custody and child support for ${ comma_and_list(children.filter(legal_parent='both')) }
   % endif
+---
+id: guidepost_subject_children
+continue button field: guidepost_subject_children
+question: More information about the children who are the subject of the case
+subquestion: |
+  The next few questions are all about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() } who will be the subject of your custody case: 
+  
+  **${ comma_and_list(children.filter(legal_parent='both')) }**.
 ---
 id: where children live
 question: |
@@ -4893,14 +4860,21 @@ validation code: | ## for review screen functionality ##
     invalidate("child.lives_with")
 ---
 code: |
-  child_lives_with_choices = [
-                  ['users[0]', 'Me'],
-                  ['other_parties[0]', 'My spouse'],
-                  ['both', 'Both']
-                             ]
+  if tool_ID in ["custody_complaint", "custody_answer"]:
+    child_lives_with_choices = [
+                    ['users[0]', 'Me'],
+                    ['other_parties[0]', '${other_parties[0]}'],
+                    ['both', 'Both']
+                               ]
+  else:
+    child_lives_with_choices = [
+                    ['users[0]', 'Me'],
+                    ['other_parties[0]', 'My Spouse'],
+                    ['both', 'Both']
+                               ]
   
   if children.there_are_any and len(children.filter(legal_parent="both")) > 1:
-    child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with my spouse.'])
+    child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("my spouse")}.'])
 
   set_child_home_choices = True
 ---
@@ -4909,7 +4883,16 @@ id: kickout if children don't live with parents
 event: children_live_with_third_party_kickout
 question: This tool is not right for you
 subquestion: |
-  We're sorry. You cannot use this tool if any of your and ${ other_parties[0] }'s minor children are living with someone besides you or your spouse.
+  We're sorry. You cannot use this tool if
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } (the children who you want to include as the subject of the custody case) are living with someone besides you or your spouse.
+
+  % if len(children.filter(legal_parent="both")) > 1:
+  If you want to start a custody case with just some of these children instead, you can change which children you include in your custody papers by using the **Review / Edit** link.
+  % endif
+  % else:
+  any of your and ${ other_parties[0] }'s minor children are living with someone besides you or your spouse.
+  % endif
   
   You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
 ---
@@ -4918,7 +4901,16 @@ if: kids_had_other_custodian
 event: other_custodian_kickout
 question: This tool is not right for you
 subquestion: |
-  We're sorry. You cannot use this tool if any of your and ${ other_parties[0] }'s minor children have lived with a legal custodian other than a parent during the past five years.
+  We're sorry. You cannot use this tool if
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } (the children who you want to include as the subject of the custody case) have lived with a legal custodian other than a parent during the past five years.
+
+  % if len(children.filter(legal_parent="both")) > 1:
+  If you want to start a custody case with just some of these children instead, you can change which children you include in your custody papers by using the **Review / Edit** link.
+  % endif
+  % else:
+  any of your and ${ other_parties[0] }'s minor children have lived with a legal custodian other than a parent during the past five years.
+  % endif
   
   You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
 ---
@@ -4927,7 +4919,16 @@ if: third_party_custody_claim
 event: third_party_custody_kickout
 question: This tool is not right for you
 subquestion: |
-  We're sorry. You cannot use this tool if there are any other adults (besides you and ${ other_parties[0] }) who may have a legal right to custody or parenting time of any of your and ${ other_parties[0] }'s minor children.
+  We're sorry. You cannot use this tool if there are any other adults (besides you and ${ other_parties[0] }) who may have a legal right to custody or parenting time of 
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } (the children you want to include as the subject of the custody case). 
+
+  % if len(children.filter(legal_parent="both")) > 1:
+  If you want to start a custody case with just some of these children instead, you can change which children you include in your custody papers by using the **Review / Edit** link.
+  % endif
+  % else:
+  any of your and ${ other_parties[0] }'s minor children.
+  % endif
   
   You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
 ---
@@ -4935,12 +4936,19 @@ id: children disqualifiers
 question: |
   Minor children -- special situations
 subquestion: |
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  These questions are about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() } who will be the subject of yor custody case: **${ comma_and_list(children.filter(legal_parent='both')) }**.
+  % else:
   These questions are about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() }: **${ comma_and_list(children.filter(legal_parent='both')) }**.
-
+  % endif
 fields:
   - label: |
       % if len(children.filter(legal_parent="both")) > 1:
+      % if tool_ID in ["custody_complaint", "custody_answer"]:
+      Have any of the children listed above lived with a legal custodian, other than a parent, during the past five years? (For example, because of a child protective services case, a minor guardianship, or a third-party custody order.)      
+      % else:
       Have any of your and ${ other_parties[0] }'s children lived with a legal custodian, other than a parent, during the past five years? (For example, because of a child protective services case, a minor guardianship, or a third-party custody order.)
+      % endif
       % else:
       Has your child ${ children.filter(legal_parent='both') } lived with a legal custodian, other than a parent, during the past five years? (For example, because of a child protective services case, a minor guardianship, or a third-party custody order.)
       % endif
@@ -4948,7 +4956,7 @@ fields:
     datatype: yesnoradio
   - label: |
       % if len(children.filter(legal_parent="both")) > 1:
-      Are there any other adults (besides you and your spouse) who may have a legal right to custody or parenting time of any of the minor children?
+      Are there any other adults (besides you and your spouse) who may have a legal right to custody or parenting time of any of these minor children?
       % else:
       Are there any other adults (besides you and your spouse) who may have a legal right to custody or parenting time for ${ children.filter(legal_parent='both') }?
       % endif
@@ -4959,7 +4967,7 @@ fields:
     datatype: yesnoradio
   - label: |
       % if len(children.filter(legal_parent="both")) > 1:
-      Do you believe that a temporary custody order is needed to protect the children because they have been abused, mistreated, threatened, or neglected?
+      Do you believe that a temporary custody order is needed to protect these children because they have been abused, mistreated, threatened, or neglected?
       % else:
       Do you believe that a temporary custody order is needed to protect ${ children.filter(legal_parent='both') } because they have been abused, mistreated, threatened, or neglected?
       % endif
@@ -5350,13 +5358,13 @@ fields:
     datatype: radio
     choices:
       - Only me: user
-      - Only my spouse: other_party
+      - "Only ${other_parties[0]}": other_party
       - "Both of us, jointly": both
   - Who should have physical custody?: physical_custody_who
     datatype: radio
     choices:
       - Only me: user
-      - Only my spouse: other_party
+      - "Only ${other_parties[0]}": other_party
       - "Both of us, jointly": both
   - note: |
       Because you have selected joint physical custody, both parents will have parenting time.
@@ -5471,21 +5479,21 @@ content: |
   1. If you **already went to the final hearing** and the judge made decisions about custody and {parenting time}, you should match what the judge ordered.
   
   2. Otherwise:
-      * if you and your spouse **agree** on a question, use your agreed answer.
-      * if you and your spouse **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
+      * if you and ${OP_label} **agree** on a question, use your agreed answer.
+      * if you and ${OP_label} **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
   
-  % elif tool_ID == "divorce_complaint":
-  * If you and your spouse **agree** on a question, use your agreed answer.
-  * If you and your spouse **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
+  % elif tool_ID in ["divorce_complaint", "custody_complaint"]:
+  * If you and ${OP_label} **agree** on a question, use your agreed answer.
+  * If you and ${OP_label} **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
 
-  You may have to come back to this tool later and change the custody and parenting time terms if you and your spouse change your agreement or if the judge orders something different.  
+  You may have to come back to this tool later and change the custody and parenting time terms if you and ${OP_label} change your agreement or if the judge orders something different.  
   % if not user_logged_in():
   You must create an account and log in to save your answers.
   % endif
   % elif tool_ID == "divorce_answer":
   Use the custody and parenting time terms that you want the judge to order. 
   
-  These are not necessarily the custody and parenting time arrangements you will end up with in your divorce. They are just what you are asking the judge to order.
+  These are not necessarily the custody and parenting time arrangements you will end up with in your ${word("final order") if tool_ID in ["custody_complaint", "custody_answer"] else word("divorce")}. They are just what you are asking the judge to order.
   % endif
 ---
 template: custody_definitions
@@ -5525,7 +5533,7 @@ content: |
 
   Types of parenting time:
   
-  * **Reasonable** parenting time means that specific dates, times, and other conditions are left for the parents to work out. If you believe that you and your spouse can agree on parenting time arrangements, you may ask for reasonable parenting time. However, if the judge orders reasonable parenting time, and you and your spouse can’t agree, the judge may not be able to enforce the order or judgment. You will need to return to court and ask for a specific parenting time schedule in order for the judge to enforce the judgment.
+  * **Reasonable** parenting time means that specific dates, times, and other conditions are left for the parents to work out. If you believe that you and ${other_parties[0]} can agree on parenting time arrangements, you may ask for reasonable parenting time. However, if the judge orders reasonable parenting time, and you and ${other_parties[0]} can’t agree, the judge may not be able to enforce the order or judgment. You will need to return to court and ask for a specific parenting time schedule in order for the judge to enforce the judgment.
   * **Specific** parenting time means that all of the dates, times, and conditions for visits are included in the court order. Many counties have standard parenting time schedules that you can use in your case. You can contact the Friend of the Court in the county where your case will be filed and ask if there is a standard parenting time schedule. You can also find sample schedules in the [Michigan Parenting Time Guideline](https://www.courts.michigan.gov/4a537f/siteassets/court-administration/standardsguidelines/foc/pt_gdlns.pdf).
   * **Specific and supervised** parenting time means that all of the dates, times, and conditions for visits are included in the court order. The judge will order parenting time to be supervised by a third party – such as a relative, friend, or supervised parenting time center. Supervised parenting time may be appropriate if the {noncustodial parent} is a risk to the children. The supervisor must be willing to supervise parenting time. (This option does not apply if both parents share physical custody.)
 
@@ -5537,7 +5545,7 @@ subquestion: |
   What parenting time schedule do you want the judge to order?
   
    - Write in complete sentences and include all important details, including days and times.
-   - Refer to yourself and your spouse by your full names, or as Plaintiff and Defendant.
+   - Refer to yourself and ${other_parties[0]} by your full names, or as Plaintiff and Defendant.
    - Do **not** use words like “I”, “we”, “him”, or “her”.
 
   Review the [Michigan Parenting Time Guideline](https://www.courts.michigan.gov/4a537f/siteassets/court-administration/standardsguidelines/foc/pt_gdlns.pdf) for help creating a schedule that fits your family’s needs. 
@@ -5555,9 +5563,9 @@ subquestion: |
 
   An abducted child is returned to where the child was a **habitual resident.** This means the country where the child has been living. It doesn’t necessarily mean the country where the child or the child’s parents are citizens. After the child is returned to the country of habitual residence, custody decisions are made in the courts there. The Hague Convention does not decide who should have custody of the child. It only decides where the custody case will happen.
 
-  It can be much harder to return a kidnapped child from a country that has not signed on to the Hague Convention. Because of this, Michigan law requires your Judgment of Divorce to include a paragraph that prevents parenting time in a non-Hague Convention country. The Judgment includes a place where you and your spouse can agree to allow parenting time in a specific country that is not a Hague Convention country, but you cannot do this using this tool.
+  It can be much harder to return a kidnapped child from a country that has not signed on to the Hague Convention. Because of this, Michigan law requires your ${word("Order Regarding Custody, Parenting Time and Child Support") if tool_ID in ["custody_complaint", "custody_answer"] else word("Judgment of Divorce")} to include a paragraph that prevents parenting time in a non-Hague Convention country. The ${word("Order") if tool_ID in ["custody_complaint", "custody_answer"] else word("Judgment")} includes a place where you and ${other_parties[0]} can agree to allow parenting time in a specific country that is not a Hague Convention country, but you cannot do this using this tool.
 
-  The Hague Convention is complicated, and it is an important tool for a parent whose spouse abducts their child and keeps the child in another country. If you want your spouse to have parenting time in a country that is **not** a party to the Hague Convention, you may want to consider talking to a lawyer to make sure you understand the risks involved.
+  The Hague Convention is complicated, and it is an important tool for a parent if the other parent abducts their child and keeps the child in another country. If you want ${other_parties[0]} to have parenting time in a country that is **not** a party to the Hague Convention, you may want to consider talking to a lawyer to make sure you understand the risks involved.
 
 ---
 # LHI Domicile and Residence of Minor Children Part 1
@@ -5565,16 +5573,18 @@ id: generic domicile provisions
 continue button field: child_domicile_info
 question: Domicile and Residence of Minor Children 
 subquestion: |
+  % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
   If your Judgment of Divorce has custody provisions, the following will apply:
 
+  % endif
   % if len(children.complete_elements()) > 1:
   * If you have sole or joint physical custody of your children and you move, you must give the Friend of the Court the child’s new address in writing.
-  * The minor children may not be moved from the state of Michigan without the judge’s prior approval. Even if you and your spouse agree that the children can move out of state, you must get a court order first.
-  * Neither you nor your spouse may move more than 100 miles away from where you lived at the beginning of the case (within Michigan) except in certain situations. This is called the “100-mile rule.” **If one parent is granted sole legal custody of the minor children, the 100-mile rule will not apply.**
+  * The minor children may not be moved from the state of Michigan without the judge's prior approval. Even if you and ${other_parties[0]} agree that the children can move out of state, you must get a court order first.
+  * Neither you nor ${other_parties[0]} may move more than 100 miles away from where you lived at the beginning of the case (within Michigan) except in certain situations. This is called the “100-mile rule.” **If one parent is granted sole legal custody of the minor children, the 100-mile rule will not apply.**
   % else:
   * If you have sole or joint physical custody of your child and you move, you must give the Friend of the Court the child’s new address in writing.
-  * The minor child may not be moved from the state of Michigan without the judge’s prior approval. Even if you and your spouse agree that the child can move out of state, you must get a court order first.
-  * Neither you nor your spouse may move more than 100 miles away from where you lived at the beginning of the case (within Michigan) except in certain situations. This is referred to as the “100-mile rule.” **If one parent is granted sole legal custody of the minor child, the 100-mile rule will not apply.**
+  * The minor child may not be moved from the state of Michigan without the judge's prior approval. Even if you and ${other_parties[0]} agree that the child can move out of state, you must get a court order first.
+  * Neither you nor ${other_parties[0]} may move more than 100 miles away from where you lived at the beginning of the case (within Michigan) except in certain situations. This is referred to as the “100-mile rule.” **If one parent is granted sole legal custody of the minor child, the 100-mile rule will not apply.**
   % endif
 
 ---
@@ -5583,27 +5593,27 @@ id: 100 mile rule
 continue button field: hundred_mile_rule
 question: 100-Mile Rule
 fields:
-  - Do you and your spouse currently live more than 100 miles away from each other?: already_over_100_miles
+  - Do you and ${other_parties[0]} currently live more than 100 miles away from each other?: already_over_100_miles
     datatype: yesnoradio
   - note: |
-      **The 100-mile rule will not apply in your case** because you and your spouse live more than 100 miles away from each other at the start of your divorce case. 
+      **The 100-mile rule will not apply in your case** because you and ${other_parties[0]} live more than 100 miles away from each other at the start of your ${word("custody") if tool_ID in ["custody_complaint", "custody_answer"] else word("divorce")} case. 
     show if:
       variable: already_over_100_miles
       is: True
-  - "Do you and your spouse agree that either of you may move more than 100 miles from where you currently live, as long as you still live within the state of Michigan?": allow_over_100_miles
+  - "Do you and ${other_parties[0]} agree that either of you may move more than 100 miles from where you currently live, as long as you still live within the state of Michigan?": allow_over_100_miles
     datatype: yesnoradio
     show if:
       variable: already_over_100_miles
       is: False
   - note: |
-      **The 100-mile rule will not apply in your case** if you and your spouse agree that it will not apply. 
+      **The 100-mile rule will not apply in your case** if you and ${other_parties[0]} agree that it will not apply. 
     show if:
       variable: allow_over_100_miles
       is: True
   - note: |
-      According to your answers, the minor child will have a legal residence with each parent, (meaning you and your spouse will be granted joint legal custody), and **the 100-mile rule will apply in your case.** 
+      According to your answers, the minor child will have a legal residence with each parent, (meaning you and ${other_parties[0]} will be granted joint legal custody), and **the 100-mile rule will apply in your case.** 
       
-      Your Judgment of Divorce will state that "neither {party} shall move more than 100 miles away from where they lived at the beginning of this case, and the child(ren) have a legal residence with each parent." For more information, read [Moving with Children After Separation or Divorce](https://michiganlegalhelp.org/resources/family/moving-children-after-separation-or-divorce).
+      Your ${word("Order Regarding Custody, Parenting Time and Child Support") if tool_ID in ["custody_complaint", "custody_answer"] else word("Judgment of Divorce")} will state that "neither {party} shall move more than 100 miles away from where they lived at the beginning of this case, and the child(ren) have a legal residence with each parent." For more information, read [Moving with Children After Separation or Divorce](https://michiganlegalhelp.org/resources/family/moving-children-after-separation-or-divorce).
     show if:
       variable: allow_over_100_miles
       is: False
@@ -5614,7 +5624,7 @@ continue button field: child_support_basic
 question: Child Support
 subquestion: |
   % if tool_ID == "divorce_complaint":
-  Your Complaint for Divorce will ask the judge to order child support. 
+  Your Complaint for ${word("Custody") if tool_ID in ["custody_complaint", "custody_answer"] else word("Divorce")} will ask the judge to order child support. 
   % endif
   Michigan law requires judges to order child support based on the Michigan Child Support Formula. In many counties, the Friend of the Court will calculate child support for you. The amount of child support is based on the income of each parent, the number of overnights that each parent has with the child, and a number of other factors. You can use the [MiChildSupport Calculator](https://pcal.state.mi.us/welcome) on the Michigan Department of Health and Human Services website to find out what the support amount might be in your case.
 
@@ -5660,7 +5670,11 @@ question: |
 subquestion: |
   Use the buttons below to add or remove a child. 
 
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  Please list **all minor children** that you or ${other_parties[0]} have, either separately or together.
+  % else:
   Please list **all minor children** that you or your {spouse} have, either separately or together.
+  % endif
 
   % if len(children.complete_elements()) > 0:
   You have already told us about:
@@ -6494,24 +6508,32 @@ code: |
 id: guidepost_stepchildren
 continue button field: guidepost_stepchildren
 question: |
-  % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 1:
+  % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party') + children.filter(legal_parent='custody_other')) > 1:
   Other children
   % else:
-  More information about **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**
+  More information about **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party') + children.filter(legal_parent='custody_other')) }**
   % endif
 subquestion: |
-  % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 1:
+  % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party') + children.filter(legal_parent='custody_other')) > 1:
   The next few questions are about the minor children:
   
-  **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**.
-  
-  These children only have one of you as their legal parent. This divorce case will not directly affect these children, but information about them is required on some of the forms.   
+  **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party') + children.filter(legal_parent='custody_other')) }**.
+
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  The custody case will not directly affect these children, but information about them is required on some of the forms.
+  % else:
+  These children only have one of you as their legal parent. This divorce case will not directly affect these children, but information about them is required on some of the forms.  
+  % endif
   % else:
   The next few questions are about the minor child: 
   
-  **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**.
-  
-  This child only has one of you as their legal parent. This divorce case will not directly affect ${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }, but information about them is required on some of the forms.
+  **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party') + children.filter(legal_parent='custody_other')) }**.
+
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  The custody case will not directly affect ${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party') + children.filter(legal_parent='custody_other')) }, but information about them is required on some of the forms.
+  % else:
+  This child only has one of you as their legal parent. This divorce case will not directly affect  ${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }, but information about them is required on some of the forms.
+  % endif
   % endif
 ---
 if: children[i].legal_parent == "user"
@@ -6631,6 +6653,59 @@ fields:
     show if:
       variable: children[i].stepchild_address_confidential
       is: False
+---
+if: children[i].legal_parent == "custody_other"
+id: shared child (not included in custody case) home
+question: ${ children[i] }'s home address
+fields:
+  - Who does ${ children[i] } live with?: children[i].stepchild_lives_with
+    datatype: radio
+    choices:
+      - Me: user
+      - "${other_parties[0]}": other_party
+      - Someone else: other
+  - Do you want to keep this child's address confidential?: children[i].stepchild_address_confidential
+    datatype: yesnoradio
+    js show if: |
+      val("children[i].stepchild_lives_with") === "other"
+  - label: Street Address or PO Box
+    field: children[i].address.address
+    address autocomplete: True
+    required: False
+    js show if: |
+      val("children[i].stepchild_lives_with") === "other" && val("children[i].stepchild_address_confidential") === false
+  - label: Apartment, suite, etc
+    field: children[i].address.unit
+    required: False
+    js show if: |
+      val("children[i].stepchild_lives_with") === "other" && val("children[i].stepchild_address_confidential") === false
+  - label: City
+    field: children[i].address.city
+    required: False
+    js show if: |
+      val("children[i].stepchild_lives_with") === "other" && val("children[i].stepchild_address_confidential") === false
+  - label: State or Province (two-letter abbreviation for U.S. states)
+    field: children[i].address.state
+    default: MI
+    input type: datalist
+    code: |
+      states_list()
+    required: False
+    js show if: |
+      val("children[i].stepchild_lives_with") === "other" && val("children[i].stepchild_address_confidential") === false
+  - label: Zip or Postal Code
+    field: children[i].address.zip
+    required: False
+    js show if: |
+      val("children[i].stepchild_lives_with") === "other" && val("children[i].stepchild_address_confidential") === false
+  - label: Country or Territory
+    field: children[i].address.country
+    default: "US"
+    code: |
+      countries_list()
+    required: False
+    js show if: |
+      val("children[i].stepchild_lives_with") === "other" && val("children[i].stepchild_address_confidential") === false
 ---
 code: |
   stepchildren_for_addendum = []
