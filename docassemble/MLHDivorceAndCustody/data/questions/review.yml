@@ -168,6 +168,8 @@ review:
         - interview_order_user_contact_info
       - invalidate:
         - interview_order_children # for Muskegon PT logic
+        - calculate_custody_venue_options
+        - interview_order_custody_where_kids_live
         - venue
         - current_venue_options
         - all_potential_venue_options
@@ -206,6 +208,8 @@ review:
         - users[0].ten_days_in_county
       - invalidate:
         - interview_order_children # because of Muskegon PT logic
+        - calculate_custody_venue_options
+        - interview_order_custody_where_kids_live
         - venue
         - current_venue_options
         - all_potential_venue_options
@@ -516,6 +520,8 @@ review:
         - just_check_op_county
       - invalidate:
         - interview_order_children # because of Muskegon PT logic
+        - calculate_custody_venue_options
+        - interview_order_custody_where_kids_live
         - venue
         - current_venue_options
         - all_potential_venue_options
@@ -1097,7 +1103,6 @@ review:
   - Edit:
       - children.revisit
       - invalidate:
-        - set_marital_children_or_not
         - children_line_1
         - children_line_2
         - set_child_home_choices
@@ -1108,7 +1113,7 @@ review:
         - temporary_order_kids_exit
         - interview_order_home_state
         - set_children_home_state_info
-        - other_case_controls_child_support
+        - interview_order_custody_where_kids_live
         - children_live_with_parent
         - children_now_live_with_which_parent
         - children_lived_with_which_parent_past
@@ -1116,6 +1121,7 @@ review:
         - insurance_in_addendum
         - interview_order_user_employment
         - interview_order_user_income
+        - calculate_custody_venue_options
         - check_for_required_venue
         - venue
         - court_index
