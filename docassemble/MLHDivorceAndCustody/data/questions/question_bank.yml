@@ -5008,7 +5008,10 @@ code: |
                                ]
   
   if children.there_are_any and len(children.filter(legal_parent="both")) > 1:
-    child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("my spouse")}.'])
+    if tool_ID in ["custody_complaint", "custody_answer"]:
+      child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with ' + word(other_parties[0])])
+    else:
+      child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with my spouse.'])
 
   set_child_home_choices = True
 ---

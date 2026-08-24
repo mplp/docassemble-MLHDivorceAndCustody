@@ -1239,8 +1239,8 @@ review:
       ### Edit a child's **legal parent** info
     show if: children.there_are_any and tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]
   - Edit:
-      - child_custody_case_status_review_screen
       - invalidate:
+        - interview_order_children
         - children_line_1
         - children_line_2
         - set_child_home_choices
@@ -1266,10 +1266,11 @@ review:
         - the_court
         - the_foc
         - stepchildren_for_addendum
+      - child_custody_case_status_review_screen
       - recompute:
         - children_previous_address.gathered_reset
         - interview_order_children
-        - prior_family_cases.gathered_deep_reset
+        - prior_family_cases.gathered_reset
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
       ### Edit a child's **parentage or custody case status**
