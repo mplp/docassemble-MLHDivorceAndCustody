@@ -1024,13 +1024,13 @@ review:
       % endfor
       % for child in children:
       % if child.legal_parent != "both":
-      **${ child }** ${ word("") if not defined("child.birthdate") else "(DOB: " + format_date(child.birthdate, format='M/d/yyyy') + ")" if child.birthdate != None else "(DOB: not provided)" }
+      #### **${ child }** ${ word("") if not defined("child.birthdate") else "(DOB: " + format_date(child.birthdate, format='M/d/yyyy') + ")" if child.birthdate != None else "(DOB: not provided)" }
       
       % if defined("child.gender"):
       % if child.gender != "":
         - Gender: ${ child.gender }
       % else:
-        - Gender: not provided"
+        - Gender: not provided
       % endif
       % endif
       % if child.legal_parent == "user":
@@ -1042,7 +1042,49 @@ review:
       % endif
       % endfor     
     show if: children.there_are_any and child_legal_parent_review_screen
-    # using child_legal_parent_review_screen as a proxy for having finished child gathering once
+    # using child_legal_parent_review_screen as a proxy for having finished child gathering once in divorce interviews
+  - note: |
+      ### Children
+      % for child in children.filter(legal_parent="both"):
+      #### **${ child }** (DOB: ${format_date(child.birthdate, format='M/d/yyyy')})
+
+        - Gender: ${ child.gender }
+        - SSN: ${ child.ssn_last_four }
+        - You and ${ other_parties[0] } are **both legal parents.**
+        - You **want a custody order** for this child.
+      
+      % endfor
+      % for child in children:
+      % if child.legal_parent != "both":
+      #### **${ child }** ${ word("") if not defined("child.birthdate") else "(DOB: " + format_date(child.birthdate, format='M/d/yyyy') + ")" if child.birthdate != None else "(DOB: not provided)" }
+
+      % if defined("child.gender"):
+      % if child.gender != "":
+        - Gender: ${ child.gender }
+      % else:
+        - Gender: not provided
+      % endif
+      % endif
+      % if not child.is_shared_child:
+        - **Not included** in custody case. *Reason:* they are **not** a shared child with ${ other_parties[0] }.
+      % elif not child.want_in_custody_case:
+        - **Not included** in custody case. *Reason:* you said you **don't want** them in the case.
+      % elif not child.affidavit_of_parentage:
+        - **Not included** in custody case. *Reason:* you and ${ other_parties[0] } did **not** sign an affidavit of parentage.
+      % elif child.affidavit_revoked:
+        - **Not included** in custody case. *Reason:* affidavit of parentage was revoked. 
+      % elif child.marital_birth and not (child.spouse_excluded_divorce or child.spouse_excluded_order):
+      % if child.bio_parent == "user":
+        - **Not included** in custody case. *Reason:* You were married when ${child.familiar()} was conceived or born, and your spouse's parentage wasn't revoked.
+      % else:
+        - **Not included** in custody case. *Reason:* ${ other_parties[0] } was married when ${child.familiar()} was conceived or born, and their spouse's parentage wasn't revoked. 
+      % endif 
+      % endif
+      
+      % endif
+      % endfor     
+    show if: children.there_are_any and child_custody_case_status_review_screen
+    # using child_legal_parent_review_screen as a proxy for having finished child gathering once in custody interviews
   - Edit:
       - children.there_are_any
       - follow up:
@@ -1195,10 +1237,46 @@ review:
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
       ### Edit a child's **legal parent** info
-    show if: children.there_are_any
+    show if: children.there_are_any and tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]
+  - Edit:
+      - child_custody_case_status_review_screen
+      - invalidate:
+        - children_line_1
+        - children_line_2
+        - set_child_home_choices
+        - guidepost_subject_children
+        - kids_had_other_custodian
+        - third_party_custody_claim
+        - need_temporary_order_kids
+        - temporary_order_kids_exit
+        - interview_order_home_state
+        - set_children_home_state_info
+        - interview_order_custody_where_kids_live
+        - children_live_with_parent
+        - children_now_live_with_which_parent
+        - children_lived_with_which_parent_past
+        - interview_order_stepchild_address
+        - insurance_in_addendum
+        - interview_order_user_employment
+        - interview_order_user_income
+        - calculate_custody_venue_options
+        - check_for_required_venue
+        - venue
+        - court_index
+        - the_court
+        - the_foc
+        - stepchildren_for_addendum
+      - recompute:
+        - children_previous_address.gathered_reset
+        - interview_order_children
+        - prior_family_cases.gathered_deep_reset
+      # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
+    button: |
+      ### Edit a child's **parentage or custody case status**
+    show if: children.there_are_any and tool_ID in ["custody_complaint", "custody_answer"]
   - note: |
       <hr>
-    show if: children.there_are_any and child_legal_parent_review_screen
+    show if: children.there_are_any and child_legal_parent_review_screen or child_custody_case_status_review_screen
   - Edit:
       - need_temporary_order_kids
       - invalidate:
@@ -2123,6 +2201,26 @@ subquestion: |
   ${ children.edit_legal_parents }
 continue button field: child_legal_parent_review_screen
 ---
+table: children.edit_custody_parentage
+rows: children
+columns:
+  - Child: |
+      f"{row_item.name} ({format_date(row_item.birthdate, format='M/d/yyyy')})" if defined("row_item.birthdate") and row_item.birthdate != None else row_item.name
+  - "{Part of custody case}": |
+      "Yes" if row_item.legal_parent == "both" else "No"
+edit:
+  - rerun_custody_logic
+delete buttons: False
+---
+id: review children custody case status
+question: |
+  Edit children's parentage or status in this custody case
+subquestion: |
+  Use the table below to edit information about each child's parentage and role in your custody case.
+
+  ${ children.edit_custody_parentage }
+continue button field: child_custody_case_status_review_screen
+---
 only sets: enable_home_state_review_screen
 code: |
   home_state_review_screen = True
@@ -2146,6 +2244,12 @@ code: |
   child_legal_parent_review_screen = True
 
   enable_child_legal_parent_review_screen = True
+---
+only sets: enable_child_custody_case_status_review_screen
+code: |
+  child_custody_case_status_review_screen = True
+
+  enable_child_custody_case_status_review_screen = True
 ---
 template: debt_review_template
 content: |

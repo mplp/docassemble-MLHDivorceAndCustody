@@ -3464,7 +3464,7 @@ code: |
   custody_child_explanation
   children.gather()
   enable_child_demographics_review_screen
-  enable_child_legal_parent_review_screen
+  enable_child_custody_case_status_review_screen
   interview_order_home_state
 
   there_are_marital_children # misnomer in custody cases, but widely used throughout logic
@@ -5927,6 +5927,12 @@ validation code: |
 event: children[i].rerun_parentage_logic
 code: |
   invalidate("children[i].adopted_during_marriage", "children[i].timing", "children[i].origin", "children[i].complicated_issue_kickout", "children[i].bio_parent", "children[i].legal_parent", "children[i].more_info", "children[i].parentage_established", "children[i].how_conceived", "children[i].both_on_birth_cert", "children[i].marital_birth", "children[i].complete")
+
+  force_gather("children[i].complete")
+---
+event: children[i].rerun_custody_logic
+code: |
+  invalidate("children[i].is_shared_child", "children[i].want_in_custody_case", "children[i].more_info", "children[i].affidavit_of_parentage", "children[i].affidavit_revoked", "children[i].affidavit_revoked", "children[i].not_included_in_case_info", "children[i].marital_birth", "children[i].spouse_excluded_divorce", "children[i].spouse_excluded_order", "children[i].complete")
 
   force_gather("children[i].complete")
 ---

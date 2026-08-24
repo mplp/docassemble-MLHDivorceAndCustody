@@ -188,6 +188,8 @@ terms:
       - minor
     definition: |
       A child is a minor if they are 17 years old or younger.
+  - Part of custody case: |
+      "Yes" means your answers showed the child can be included in the custody case and you want a custody order for them. "No" means either they do not qualify to be part of the custody case or you said you didn't want them in the case. 
   - investments: |
       Stocks, bonds, Certificates of Deposit (CDs), mutual funds, Money Market Accounts, or other investments, not including pensions or retirement accounts.
   - phrases:
