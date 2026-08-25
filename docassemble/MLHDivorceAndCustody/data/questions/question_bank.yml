@@ -349,21 +349,40 @@ action buttons:
     color: danger
     icon: right-from-bracket
 ---
-if: tool_ID == "custody_complaint"
+if: tool_ID == "custody_complaint" and controlling_custody_case in ["yes_one", "yes_multiple"]
 id: controlling_custody_case_exit
 event: controlling_custody_case_exit
 question: |
   Existing family law case
 subquestion: |
-  Sorry, you cannot use this tool to create a complaint for custody, parenting time, and child support if there are any existing family law cases between you and the other parent.
+  % if controlling_case_location == "foreign":
+  Sorry, you cannot use this tool if there is a child support, parenting time, or custody case in a **non-Michigan** court, between you and the other parent. ${MLH_GUIDE_FULL}
+  % elif controlling_custody_case == "yes_multiple" and not MI_cases_in_same_court:
+  Sorry, you cannot use this tool if there is are child support, parenting time, or custody cases between you and the other parent in multiple Michigan state courts. ${MLH_GUIDE_FULL}
+  % elif all_children_in_prior_case:
+  Sorry, this tool is not for you. Usually a new custody request for the same child(ren) should be filed as a motion in the existing case. You can use the [Motion Regarding Custody](https://www.courts.michigan.gov/4a7d59/siteassets/forms/scao-approved/foc87.pdf) to request a custody order if there is already a final order in the case but it did not include custody. You can also use this motion if there is a custody order and you want to change it. To learn about asking for a change in custody, read [Changing a Custody Order](https://michiganlegalhelp.org/resources/family/changing-custody-order).
 
-  If you think you made a mistake, tap **Undo** and change the answer to this question.
+  If the other parent recently filed a Complaint for Custody, Parenting Time, and Child Support, and you need to file an Answer, this tool is not for you. You can use the [Do-It-Yourself Answer and Counterclaim for Custody](https://michiganlegalhelp.org/resources/family/do-it-yourself-answer-and-counterclaim-custody) to get the forms you need.
+
+  ${collapse_template(want_change_custody_court)}
+
+  % elif not (users[0].lives_in_Michigan and other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county) and (users[0].lives_in_Michigan and controlling_custody_case_county == users[0].address.county) or (other_parties[0].lives_in_Michigan and controlling_custody_case_county == other_parties[0].address.county):
+  Based on your answers, the question of where your case should be filed is legally complicated. 
+  
+  It is best to have a lawyer in this scenario to help you decide where to file and to make legal arguments for you if needed. ${MLH_GUIDE_FULL}
+
+  % endif
 action buttons:
   - label: Exit
     action: https://michiganlegalhelp.org/resources/family
     new window: True
     color: danger
     icon: right-from-bracket
+---
+template: want_change_custody_court
+subject: What if I want to file in a different court than my prior case?
+content: |
+  It may be possible to transfer the existing case to a different county. If you believe the case should be transferred to a different court because you and/or the other party have moved away from the county where the case was filed, you may need to talk to a lawyer. ${MLH_GUIDE_FULL}
 ---
 # --------------------------------------------------------------------
 ## introduction
@@ -1808,7 +1827,7 @@ id: custody venue (single option)
 question: Where to file your custody case
 continue button field: venue
 subquestion: |
-  You only meet the requirements to file your custody case in **${ county_choice } County.** Your custody forms will be prepared using ${ county_choice } as the filing county.  
+  You must file your custody case in **${ county_choice } County.** Your custody forms will be prepared using ${ county_choice } as the filing county.  
 validation code: |
   # "jurisdiction_party" is used on Testimony page
   # it should really now (June/2026) be "venue_party" but leaving alone for back-compatibility
@@ -1981,7 +2000,8 @@ code: |
 
   # already kicked out if:
   ## neither party lives in MI, or 
-  ## any child does not live with or visit the only MI parent 
+  ## any child does not live with or visit the only MI parent, or
+  ## there's a complicated controlling case venue situation
 
   # if only one party lives in MI, or if both live in same MI county, venue must be there
   if users[0].lives_in_Michigan and not other_parties[0].lives_in_Michigan:
@@ -6240,14 +6260,80 @@ edit:
 delete buttons: True
 confirm: True
 ---
-id: custody complaint family cases screener
-#TODO: is this wording correct? do we mean US cases only?
-question: Existing family law cases
-subquestion: |
-  This question is about your minor children who are the subject of this case.
+id: custody complaint controlling custody case screener
+question: Existing family law cases in any court
 fields: 
- - "Are there any existing paternity, child support, parenting time, or custody cases in any state between you and the Defendant?": controlling_custody_case
-   datatype: yesnoradio
+  - "Is there any existing child support, parenting time, or custody case in any court anywhere between you and the other parent?": controlling_custody_case
+    datatype: radio
+    choices: 
+      - "Yes, there is **one** existing case.": yes_one
+      - "Yes, there are **multiple** existing cases.": yes_multiple
+      - "No, there is **no** existing case.": no
+  - note: ${collapse_template(existing_case_meaning)}
+  - "Is the existing case in a **Michigan** state court?": controlling_case_location
+    datatype: radio
+    choices:
+      - "Yes, the case is in a Michigan state court.": Michigan
+      - "No, the case is in a different state court, a tribal court, or a court outside the United States.": foreign
+    show if:
+      variable: controlling_custody_case
+      is: yes_one
+  - "Are the existing cases **all in Michigan** state courts?": controlling_case_location
+    datatype: radio
+    choices:
+      - "Yes, the case are **all** in Michigan state courts.": Michigan
+      - "No, at least one case is in a different state court, a tribal court, or a court outside the United States.": foreign
+    show if:
+      variable: controlling_custody_case
+      is: yes_multiple
+---
+if: controlling_custody_case == "yes_one"
+id: custody complaint Michigan custody case followup single
+question: Existing **Michigan** family law case
+subquestion: |
+  You said there is an existing child support, parenting time, or custody case between you and the other parent in a Michigan state court.
+fields: 
+  - "Do you need a custody order for a child or children who were **not** included in the existing case?": all_children_in_prior_case
+    datatype: radio
+    choices:
+      - Yes: False
+      - No. All the children were included in the prior case.: True
+  - "What county was the existing case filed in?": controlling_custody_case_county
+    code: court_list._load_courts()["address_county"].unique()
+    show if: 
+      variable: all_children_in_prior_case
+      is: False
+---
+if: controlling_custody_case == "yes_multiple"
+id: custody complaint Michigan custody case followup -multiple
+question: Existing **Michigan** family law cases
+subquestion: |
+  You said there are multiple existing child support, parenting time, or custody cases between you and the other parent in Michigan state court.
+fields: 
+  - Are the existing Michigan cases all in the same court?: MI_cases_in_same_court
+    datatype: radio
+    choices:
+      - "Yes, the existing cases are all in **the same court.**": True
+      - "No, the existing cases are in **two or more courts.**": False
+  - "Do you need a custody order for a child or children who were **not** included in the existing cases?": all_children_in_prior_case
+    datatype: radio
+    choices:
+      - Yes: False
+      - No. All the children were included in the existing cases.: True
+    show if: MI_cases_in_same_court
+  - "What county were the existing cases filed in?": controlling_custody_case_county
+    code: court_list._load_courts()["address_county"].unique()
+    js show if: |
+      val("MI_cases_in_same_court") === true && val("all_children_in_prior_case") === false    
+---
+template: existing_case_meaning
+subject: What do you mean by "existing case"?
+content: |
+  An "existing case" means a case that is:
+
+  * ongoing,
+  * pending (pasued), or
+  * finished with a final order, and the court has continuing jurisdiction.
 ---
 # LHI Prior Court Cases Part 1
 # TODO: question for Amy: should the help text for family division cases exclude custody, paternity, and child support for custody interviews? (See Prior Court Cases Part 1 Dialog in Brett's materials.)

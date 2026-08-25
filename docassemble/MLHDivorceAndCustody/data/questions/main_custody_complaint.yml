@@ -84,8 +84,16 @@ code: |
     past_marriage_exit
   if not children.there_are_any:
     custody_no_kids_exit
-  if controlling_custody_case:
-    controlling_custody_case_exit
+  
+  if controlling_custody_case in ["yes_one", "yes_multiple"]:
+    if controlling_case_location == "foreign":
+      controlling_custody_case_exit
+    elif controlling_custody_case == "yes_multiple" and not MI_cases_in_same_court:
+      controlling_custody_case_exit
+    elif all_children_in_prior_case:
+      controlling_custody_case_exit
+    else:
+      controlling_custody_case_county ### feeds into venue logic
 
   if spouse_is_incompetent:
     exit_general
@@ -114,6 +122,11 @@ code: |
 
   if not (users[0].lives_in_Michigan or other_parties[0].lives_in_Michigan):
      exit_jurisdiction
+
+  if controlling_custody_case in ["yes_one", "yes_multiple"]:
+    if not (users[0].lives_in_Michigan and other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
+      if (users[0].lives_in_Michigan and controlling_custody_case_county == users[0].address.county) or (other_parties[0].lives_in_Michigan and controlling_custody_case_county == other_parties[0].address.county):
+        controlling_custody_case_exit
 
   if other_parties[0].address.country == "US":
     other_parties[0].address.county # skipped if already asked on lives_in_Michigan screen
