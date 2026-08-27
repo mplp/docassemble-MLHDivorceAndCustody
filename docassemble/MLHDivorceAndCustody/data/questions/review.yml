@@ -81,11 +81,6 @@ review:
     button: |
       ### Has there been domestic violence or threats by ${OP_label}?
         - ${word(yesno(marriage.have_experienced_domestic_violence))}
-  - Edit:
-      - controlling_custody_case
-    button: |
-      ### Is there an existing paternity, child support, parenting time, or custody case in any state between you and the Defendant?
-        - ${word(yesno(controlling_custody_case))}
 #
 #
 # ---------- users[0] ----------
@@ -1173,7 +1168,6 @@ review:
       - recompute:
         - children_previous_address.gathered_reset
         - interview_order_children
-        - prior_family_cases.gathered_deep_reset
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
       % if children.there_are_any:
@@ -1270,7 +1264,6 @@ review:
       - recompute:
         - children_previous_address.gathered_reset
         - interview_order_children
-        - prior_family_cases.gathered_reset
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
       ### Edit a child's **parentage or custody case status**
@@ -1533,7 +1526,7 @@ review:
 # ---------- prior cases ----------
   - raw html: |
       ${ next_accordion("""<h2>Other Court Cases</h2>""") }
-    show if: defined('prior_family_cases.there_are_any')
+    show if: defined('prior_family_cases.there_are_any') or (tool_ID in ["custody_complaint", "custody_answer"] and defined("controlling_custody_case"))
   - Edit:
       - prior_family_cases.there_are_any
       - invalidate:
@@ -1551,7 +1544,7 @@ review:
       ### Any prior family division cases?
       % endif
         - ${word(yesno(prior_family_cases.there_are_any))}
-    show if: len(prior_family_cases.complete_elements()) < 1
+    show if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"] and len(prior_family_cases.complete_elements()) < 1
   - Edit:
       - prior_family_cases.revisit
       - invalidate:
@@ -1562,7 +1555,7 @@ review:
         - court_index
         - the_court
         - the_foc
-    show if: prior_family_cases.there_are_any
+    show if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"] and prior_family_cases.there_are_any
     button: |
       % if tool_ID == "JOD_only":
       ### Custody or support cases
@@ -1641,6 +1634,96 @@ review:
       
       % endfor
       % endif
+  - Edit: 
+      - controlling_custody_case
+      - follow up:
+        - all_children_in_prior_case
+      - invalidate:
+        - venue
+        - check_for_required_venue
+        - court_index
+        - the_court
+        - the_foc
+    button: |
+      ### Existing child support, parenting time, or custody case
+      
+        % if controlling_custody_case == "yes_one":
+        - There **is** an existing child support, parenting time, or custody case between you and ${other_parties[0]}.
+        % elif controlling_custody_case == "yes_multiple":
+        - There **are** multiple existing child support, parenting time, or custody cases between you and ${other_parties[0]}.   
+        % else:
+        - There is **no** existing child support, parenting time, or custody cases between you and ${other_parties[0]}.  
+        % endif
+        % if controlling_custody_case == "yes_one" and controlling_case_location == "Michigan":
+        - The case is located in Michigan state court in ${controlling_custody_case_county} County.
+        % elif controlling_custody_case == "yes_multiple" and controlling_case_location == "Michigan" and MI_cases_in_same_court:
+        - The cases are all located in the same Michigan state court in ${controlling_custody_case_county} County.
+        % endif
+    show if: tool_ID in ["custody_complaint", "custody_answer"]
+  - Edit:
+      - prior_family_cases.there_are_any
+      - invalidate:
+        - venue
+        - check_for_required_venue
+        - court_index
+        - the_court
+        - the_foc
+    button: |
+      ### Any prior family division cases?
+        - ${word(yesno(prior_family_cases.there_are_any))}
+    show if: tool_ID in ["custody_complaint", "custody_answer"] and controlling_custody_case == "no" and len(prior_family_cases.complete_elements()) < 1
+  - Edit:
+      - prior_family_cases.revisit
+      - invalidate:
+        - venue
+        - check_for_required_venue
+        - court_index
+        - the_court
+        - the_foc
+    show if: tool_ID in ["custody_complaint", "custody_answer"] and prior_family_cases.there_are_any
+    button: |
+      ### Family division cases?
+      
+      % for case in prior_family_cases:
+      **Case ${case.docket_number}** (${prior_family_case_types_ordered[case.type]})
+
+        - ${case.title}
+        - ${case.county} County, ${case.state}
+        % if defined("case.court"):
+        - ${case.court}
+        % if defined("case.address"):
+        ${"-- " + case.address}
+        % endif
+        % endif
+        % if tool_ID in ["custody_complaint"]:
+        - Judge ${case.judge}
+        % endif
+        % if case.type == "other":
+        case.type_description
+        % endif
+        - Case status: ${word("ended with final order") if case.status == "ended_with_order" else word("ongoing") if case.status == "pending" else case.status }
+        % if case.status == "ended_with_order":
+        - Date of final judgment or order: ${case.final_order_date}
+        % if case.status in ["ended_with_order", "stayed", "pending"]:
+        - Included custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
+        % if case.included_custody_PT_order:
+        % if tool_ID != "custody_answer":
+        - Custody/parenting time order currently in effect? **${word(yesno(case.has_current_custody_PT_order))}**
+        % endif
+        % if case.status in ["stayed", "pending"]:
+        - Date of custody/PT order: ${case.custody_PT_order_date}
+        % endif
+        % endif
+        % if tool_ID != "custody_answer":
+        - Child support order currently in effect? **${word(yesno(case.has_child_support_order))}**
+        % endif
+        % elif case.status == "dismissed":
+        - Custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
+        - Date of custody/PT order: ${case.custody_PT_order_date}
+        % endif
+        % endif
+      
+      % endfor     
   - Edit:
       - child_support_pending_elsewhere
       - invalidate:

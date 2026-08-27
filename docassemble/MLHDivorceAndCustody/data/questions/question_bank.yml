@@ -6251,6 +6251,10 @@ subquestion: |
 
   ${prior_family_cases.add_action(color="success", size="md")}
 continue button field: prior_family_cases.revisit
+validation code: |
+  if tool_ID == "custody_complaint":
+    if controlling_custody_case in ["yes_one", "yes_multiple"] and prior_family_cases.number_gathered() == 0:
+      validation_error("You said there is an existing child support, parenting time, or custody case.")
 ---
 if: tool_ID != "JOD_only"
 id: prior family cases table
@@ -6265,6 +6269,7 @@ edit:
   - status
   - included_custody_PT_order  
   - separate_maintenance_pending_kickout
+require gathered: False
 delete buttons: True
 confirm: True
 ---
@@ -6278,7 +6283,7 @@ columns:
 edit:
   - status
   - has_current_custody_PT_order
-      
+require gathered: False   
 delete buttons: True
 confirm: True
 ---
@@ -6311,10 +6316,11 @@ fields:
 validation code: |
   if controlling_custody_case in ["yes_one", "yes_multiple"]:
     prior_family_cases.there_are_any = True
+    prior_family_cases.minimum_number=1
   else:
-    undefine("prior_family_cases.there_are_any")
+    undefine("prior_family_cases.there_are_any", "prior_family_cases.minimum_number")
 ---
-if: controlling_custody_case == "yes_one"
+if: controlling_custody_case == "yes_one" and controlling_case_location == "Michigan"
 id: custody complaint Michigan custody case followup single
 question: More about your child support, parenting time, or custody case
 subquestion: |
@@ -6331,7 +6337,7 @@ fields:
       variable: all_children_in_prior_case
       is: False
 ---
-if: controlling_custody_case == "yes_multiple"
+if: controlling_custody_case == "yes_multiple" and controlling_case_location == "Michigan"
 id: custody complaint Michigan custody case followup -multiple
 question: More about your child support, parenting time, or custody cases
 subquestion: |
@@ -6490,6 +6496,12 @@ question: |
   Any more **family division** court cases or orders?
   % endif
 subquestion: |
+  % if tool_ID in ["custody_complaint", "custody_answer"] and controlling_custody_case in ["yes_multiple", "yes_one"]:
+  This includes any existing child support, parenting time, or custody cases, as well as any other family division cases.
+
+  % endif
+  ${ collapse_template(family_division_info) }
+  
   So far, you have listed&colon;
 
   ${prior_family_cases.table}
@@ -6508,13 +6520,17 @@ fields:
       % endif
     field: prior_family_cases.there_is_another
     datatype: yesnoradio
+validation code: |
+  if tool_ID == "custody_complaint":
+    if controlling_custody_case in ["yes_one", "yes_multiple"] and prior_family_cases.number_gathered() == 0:
+      validation_error("You said there is an existing child support, parenting time, or custody case.")
 ---
 id: prior family cases gather logic
 code: |
   if tool_ID == "JOD_only" and there_are_marital_children:
     prior_family_cases[i].status
   
-  elif tool_ID in ["divorce_complaint", "divorce_answer"]:
+  elif tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint", "custody_answer"]:
     # only called in divorce_answer if complaint_type == "with_children"
     prior_family_cases[i].status
     if there_are_marital_children:
@@ -6619,7 +6635,7 @@ fields:
       is: MI
   - County: prior_family_cases[i].county
     js show if: |
-      val("prior_family_cases[i].state") !== "MI" && (${ json.dumps(tool_ID) } === "divorce_complaint" || ${ json.dumps(tool_ID) } === "divorce_answer")
+      val("prior_family_cases[i].state") !== "MI"
   - Court Name: prior_family_cases[i].court
     js show if: |
       val("prior_family_cases[i].state") !== "MI"
@@ -6630,12 +6646,8 @@ fields:
   - Case number:: prior_family_cases[i].docket_number
   - note: |
       Judge's last name *(do not include 'Judge' or 'Hon.')*:
-    show if:
-      code: tool_ID in ["divorce_complaint", "custody_complaint"]
   - "Judge": prior_family_cases[i].judge
     label above field: False
-    show if:
-      code: tool_ID in ["divorce_complaint", "custody_complaint"]
   - What is the nature of this case?: prior_family_cases[i].type
     code: |
       prior_family_case_types_ordered
@@ -6674,6 +6686,68 @@ fields:
 validation code: |
   if prior_family_cases[i].type == "divorce":
     prior_family_cases[i].resolved = True
+---
+# LHI "Prior Family Cases DLG"
+if: tool_ID in ["custody_complaint", "custody_answer"] and controlling_custody_case in ["yes_one", "yes_multiple"]
+id: prior family case or order collection screen existing custody case
+question: Information about the ${ word("first") if controlling_custody_case == "yes_multiple" else "" } existing case
+subquestion: |
+  Please tell us about the ${ word("first") if controlling_custody_case == "yes_multiple" else "" } existing child support, parenting time, or custody case with ${other_parties[0]}
+fields:
+  - State:: prior_family_cases[0].state
+    code: |
+      states_list()
+    default: "MI"
+  - County: prior_family_cases[0].county
+    code: court_list._load_courts()["address_county"].unique()
+    show if:
+      variable: prior_family_cases[0].state
+      is: MI
+    default: "${controlling_custody_case_county}"
+  - County: prior_family_cases[0].county
+    js show if: |
+      val("prior_family_cases[0].state") !== "MI"
+  - Court Name: prior_family_cases[0].court
+    js show if: |
+      val("prior_family_cases[0].state") !== "MI"
+  - Court address: prior_family_cases[0].address
+    js show if: |
+      val("prior_family_cases[0].state") !== "MI" && ${ "true" if there_are_marital_children else "false" }
+  - "Case name *(for example, Jones v. Smith or In re: Thomas)*:": prior_family_cases[0].title
+  - Case number:: prior_family_cases[0].docket_number
+  - note: |
+      Judge's last name *(do not include 'Judge' or 'Hon.')*:
+  - "Judge": prior_family_cases[0].judge
+    label above field: False
+  - What is the nature of this case?: prior_family_cases[0].type
+    code: |
+      prior_family_case_types_ordered
+  - Describe the nature of this case:: prior_family_cases[0].type_description
+    show if:
+      variable: prior_family_cases[0].type
+      is: other
+  - What is the status of this case?: prior_family_cases[0].resolved
+    datatype: radio
+    choices:
+      - "The case is still ongoing. (There is **no** order or judgment resolving all the issues.)": False
+      - "The case is over. (There is an order resolving all the issues, or the case was dismissed.)": True
+  - 'Has the case been **{stayed}?**': prior_family_cases[0].status
+    datatype: radio
+    choices:
+      - "Yes, the case is stayed.": stayed
+      - "No.": pending
+    js show if: |
+      val("prior_family_cases[0].resolved") === false
+  - How did the case end?: prior_family_cases[0].status
+    datatype: radio
+    choices:
+      - "The judge made a **final order** resolving all the issues and ending the case.": ended_with_order
+      - "The judge **dismissed** the case.": dismissed
+    js show if: |
+      val("prior_family_cases[0].resolved") === true
+validation code: |
+  prior_family_cases[0].state = "MI"
+  prior_family_cases[0].county = controlling_custody_case_county
 ---
 # LHI "Prior Family Cases DLG" (start at row 108)
 id: prior family divorce case or order additional info
@@ -6779,7 +6853,12 @@ subquestion: |
 # LHI "Prior Family Cases DLG" (start at row 132)
 id: other prior family case or order additional info (completed case)
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status == "ended_with_order"
-question: ${ capitalize(ordinal(i)) } **family division** case or order
+question: |
+  % if tool_ID == "custody_complaint" and controlling_custody_case in ["yes_one", "yes_multiple"] and i == 0:
+  Orders in the case
+  % else:
+  ${ capitalize(ordinal(i)) } **family division** case or order
+  % endif
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
@@ -6806,7 +6885,12 @@ validation code: |
 # LHI "Prior Family Cases DLG" (start at row 174)
 id: other prior family case or order additional info (stayed, pending)
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status in ["stayed", "pending"]
-question: ${ capitalize(ordinal(i)) } **family division** case or order
+question: |
+  % if tool_ID == "custody_complaint" and controlling_custody_case in ["yes_one", "yes_multiple"] and i == 0:
+  Orders in the case
+  % else:
+  ${ capitalize(ordinal(i)) } **family division** case or order
+  % endif
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
@@ -6832,7 +6916,12 @@ validation code: |
 # LHI "Prior Family Cases DLG" (start at row 151)
 id: other prior family case or order additional info (dismissed)
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status == "dismissed"
-question: ${ capitalize(ordinal(i)) } **family division** case or order
+question: |
+  % if tool_ID == "custody_complaint" and controlling_custody_case in ["yes_one", "yes_multiple"] and i == 0:
+  Orders in the case
+  % else:
+  ${ capitalize(ordinal(i)) } **family division** case or order
+  % endif
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
