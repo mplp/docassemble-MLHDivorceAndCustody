@@ -21,7 +21,7 @@ sections:
   - signpost_parent_basics: "Parents' Basic Info"
   - signpost_prior_cases: "Past Cases"
   - signpost_children: "Children"
-  - signpost_income_etc: "Income, Insurance, etc."
+  - signpost_identifiers_etc: "Parents' Detailed Info"
   - signpost_last_section: "Final Questions"
   - signpost_done: "Get Your Forms"
   - review_full: "✎ <u>Review / Edit</u>"
@@ -146,20 +146,20 @@ code: |
   nav.set_section("signpost_children")
   interview_order_children
 
-  nav.set_section("signpost_income_etc") 
-  users[0].insurance.gather()
-  other_parties[0].insurance.gather()
-
-  interview_order_user_employment
-  interview_order_user_income
+  nav.set_section("signpost_identifiers_etc") 
   users[0].birthdate
   users[0].gender
   interview_order_user_identifying_info
-  interview_order_other_party_employment
-  interview_order_other_party_income
+  interview_order_user_employment
+  interview_order_user_income
   other_parties[0].birthdate
   other_parties[0].gender
   interview_order_other_party_identifying_info
+  interview_order_other_party_employment
+  interview_order_other_party_income
+  
+  users[0].insurance.gather()
+  other_parties[0].insurance.gather()
 
   nav.set_section("signpost_last_section")
   check_for_required_venue

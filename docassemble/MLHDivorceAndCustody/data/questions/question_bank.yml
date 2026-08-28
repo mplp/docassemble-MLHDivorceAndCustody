@@ -1303,6 +1303,17 @@ fields:
   - What county do you live in?: users[0].address.county
     code: court_list._load_courts()["address_county"].unique()
     show if: users[0].lives_in_Michigan
+  - Is it safe to list the state or country where you actually live on your custody forms?: safe_to_disclose_state
+    datatype: yesnoradio
+    js show if: |
+      ${ "true" if tool_ID == "custody_complaint" else "false" } && val("users[0].lives_in_Michigan") === false
+  - US state or territory where you live:: state_of_residence
+    code: |
+      states_list()
+    js show if: |
+      ${ "true" if tool_ID == "custody_complaint" else "false" } && val("users[0].lives_in_Michigan") === false && val("safe_to_disclose_state") === true
+    # add yesno check box here for I live outside the US, and don't show state question and do show country question if it's checked. 
+    # 
 ---
 if: tool_ID == "divorce_complaint" and users[0].lives_in_Michigan
 id: 10-day test user
@@ -3277,7 +3288,7 @@ code: |
         if users[0].lives_in_Michigan:
           users[0].ten_days_in_county
       elif tool_ID == "custody_complaint":
-        users[0].lives_in_Michigan
+         users[0].lives_in_Michigan
     else:
       exit_general
   
@@ -3417,9 +3428,10 @@ if: tool_ID in ["custody_complaint", "custody_answer"]
 table: children.table
 rows: children
 columns:
-  - Name: row_item.name
-  - Birthdate (if given): |
-      format_date(row_item.birthdate, format='M/d/yyyy') if defined("row_item.birthdate") and row_item.birthdate != None else "---"
+  - Child: |
+      f"{row_item.name} ({format_date(row_item.birthdate, format='M/d/yyyy')})" if defined("row_item.birthdate") and row_item.birthdate != None else row_item.name
+  - "{Part of custody case}": |
+      "Yes" if row_item.legal_parent == "both" else "No"
 delete buttons: True
 confirm: True
 ---
@@ -3537,14 +3549,14 @@ code: |
   enable_child_custody_case_status_review_screen
   if len(children.filter(legal_parent="both")) < 1:
     custody_no_applicable_kids_exit
-  
+
+  guidepost_subject_children
   interview_order_home_state
 
   there_are_marital_children # misnomer in custody cases, but widely used throughout logic
   set_child_home_choices
   set_parentage_reminder_logic
 
-  guidepost_subject_children
   if kids_had_other_custodian:
     other_custodian_kickout
   if third_party_custody_claim:
