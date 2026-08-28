@@ -349,21 +349,40 @@ action buttons:
     color: danger
     icon: right-from-bracket
 ---
-if: tool_ID == "custody_complaint"
+if: tool_ID == "custody_complaint" and controlling_custody_case in ["yes_one", "yes_multiple"]
 id: controlling_custody_case_exit
 event: controlling_custody_case_exit
 question: |
-  Existing family law case
+  Existing child support, parenting time, or custody case
 subquestion: |
-  Sorry, you cannot use this tool to create a complaint for custody, parenting time, and child support if there are any existing family law cases between you and the other parent.
+  % if controlling_case_location == "foreign":
+  Sorry, you cannot use this tool if there is a child support, parenting time, or custody case in a **non-Michigan** court, between you and the other parent. ${MLH_GUIDE_FULL}
+  % elif controlling_custody_case == "yes_multiple" and not MI_cases_in_same_court:
+  Sorry, you cannot use this tool if there is are child support, parenting time, or custody cases between you and the other parent in multiple Michigan state courts. ${MLH_GUIDE_FULL}
+  % elif all_children_in_prior_case:
+  Sorry, this tool is not for you. Usually a new custody request for the same child(ren) should be filed as a motion in the existing case. You can use the [Motion Regarding Custody](https://www.courts.michigan.gov/4a7d59/siteassets/forms/scao-approved/foc87.pdf) to request a custody order if there is already a final order in the case but it did not include custody. You can also use this motion if there is a custody order and you want to change it. To learn about asking for a change in custody, read [Changing a Custody Order](https://michiganlegalhelp.org/resources/family/changing-custody-order).
 
-  If you think you made a mistake, tap **Undo** and change the answer to this question.
+  If the other parent recently filed a Complaint for Custody, Parenting Time, and Child Support, and you need to file an Answer, this tool is not for you. You can use the [Do-It-Yourself Answer and Counterclaim for Custody](https://michiganlegalhelp.org/resources/family/do-it-yourself-answer-and-counterclaim-custody) to get the forms you need.
+
+  ${collapse_template(want_change_custody_court)}
+
+  % elif not (users[0].lives_in_Michigan and other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county) and (users[0].lives_in_Michigan and controlling_custody_case_county == users[0].address.county) or (other_parties[0].lives_in_Michigan and controlling_custody_case_county == other_parties[0].address.county):
+  Based on your answers, the question of where your case should be filed is legally complicated. 
+  
+  It is best to have a lawyer in this scenario to help you decide where to file and to make legal arguments for you if needed. ${MLH_GUIDE_FULL}
+
+  % endif
 action buttons:
   - label: Exit
     action: https://michiganlegalhelp.org/resources/family
     new window: True
     color: danger
     icon: right-from-bracket
+---
+template: want_change_custody_court
+subject: What if I want to file in a different court than my prior case?
+content: |
+  It may be possible to transfer the existing case to a different county. If you believe the case should be transferred to a different court because you and/or the other party have moved away from the county where the case was filed, you may need to talk to a lawyer. ${MLH_GUIDE_FULL}
 ---
 # --------------------------------------------------------------------
 ## introduction
@@ -1808,7 +1827,15 @@ id: custody venue (single option)
 question: Where to file your custody case
 continue button field: venue
 subquestion: |
-  You only meet the requirements to file your custody case in **${ county_choice } County.** Your custody forms will be prepared using ${ county_choice } as the filing county.  
+  You must file your custody case in **${ county_choice } County.** Your custody forms will be prepared using ${ county_choice } as the filing county.  
+
+  % if controlling_custody_case in ["yes_one", "yes_multiple"] and county_choice != controlling_custody_case_county:
+  % if controlling_custody_case == "yes_one":
+  Note: You may want to talk to a lawyer about having your prior case from  ${controlling_custody_case_county} County transferred to ${ county_choice } County so the cases can be consolidated. It is also possible that the Friend of the Court or the court may start a transfer of the prior case. ${MLH_GUIDE_FULL}
+  % elif controlling_custody_case == "yes_multiple":
+  Note: You may want to talk to a lawyer about having your prior cases from  ${controlling_custody_case_county} County transferred to ${ county_choice } County so the cases can be consolidated. It is also possible that the Friend of the Court or the court may start a transfer of the prior cases. ${MLH_GUIDE_FULL}
+  % endif
+  % endif
 validation code: |
   # "jurisdiction_party" is used on Testimony page
   # it should really now (June/2026) be "venue_party" but leaving alone for back-compatibility
@@ -1889,6 +1916,20 @@ validation code: |
     jurisdiction_party = other_parties[0]
   else: ## error state
     jurisdiction_party = "unknown"
+---
+if: controlling_custody_case in ["yes_one", "yes_multiple"] and len(all_potential_venue_options) == 2
+# if either parent lives in controlling_custody_case_county they would already have been kicked out
+id: prior custody case consolidation info
+continue button field: consolidate_custody_case_info
+question: You will file in ${ county_choice } County
+subquestion: |
+  OK, you will file your custody case in **${ county_choice } County.** Your custody forms will be prepared using ${ county_choice } as the filing county.  
+
+  % if controlling_custody_case == "yes_one":
+  Note: You may want to talk to a lawyer about having your prior case from  ${controlling_custody_case_county} County transferred to ${ county_choice } County so the cases can be consolidated. It is also possible that the Friend of the Court or the court may start a transfer of the prior case. ${MLH_GUIDE_FULL}
+  % elif controlling_custody_case == "yes_multiple":
+  Note: You may want to talk to a lawyer about having your prior cases from  ${controlling_custody_case_county} County transferred to ${ county_choice } County so the cases can be consolidated. It is also possible that the Friend of the Court or the court may start a transfer of the prior cases. ${MLH_GUIDE_FULL}
+  % endif
 ---
 if: tool_ID == "divorce_complaint" and not returning_to_finalize and len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options
 id: venue (weird separate maintenance choice)
@@ -1981,7 +2022,8 @@ code: |
 
   # already kicked out if:
   ## neither party lives in MI, or 
-  ## any child does not live with or visit the only MI parent 
+  ## any child does not live with or visit the only MI parent, or
+  ## there's an existing MI custody case and one party lives in that same county but other does not
 
   # if only one party lives in MI, or if both live in same MI county, venue must be there
   if users[0].lives_in_Michigan and not other_parties[0].lives_in_Michigan:
@@ -3464,7 +3506,7 @@ code: |
   custody_child_explanation
   children.gather()
   enable_child_demographics_review_screen
-  enable_child_legal_parent_review_screen
+  enable_child_custody_case_status_review_screen
   interview_order_home_state
 
   there_are_marital_children # misnomer in custody cases, but widely used throughout logic
@@ -5008,7 +5050,10 @@ code: |
                                ]
   
   if children.there_are_any and len(children.filter(legal_parent="both")) > 1:
-    child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with ${other_parties[0] if tool_ID in ["custody_complaint", "custody_answer"] else word("my spouse")}.'])
+    if tool_ID in ["custody_complaint", "custody_answer"]:
+      child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with ' + word(other_parties[0])])
+    else:
+      child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with my spouse.'])
 
   set_child_home_choices = True
 ---
@@ -5037,7 +5082,7 @@ subquestion: |
 
   You may want to speak with a lawyer for more help. ${MLH_GUIDE_FULL}
 ---
-id: kickout for colletive children venue problem
+id: kickout for collective children venue problem
 event: all_kids_no_venue_kickout
 question: This tool is not right for you
 subquestion: |
@@ -5930,6 +5975,12 @@ code: |
 
   force_gather("children[i].complete")
 ---
+event: children[i].rerun_custody_logic
+code: |
+  invalidate("children[i].is_shared_child", "children[i].want_in_custody_case", "children[i].more_info", "children[i].affidavit_of_parentage", "children[i].affidavit_revoked", "children[i].affidavit_revoked", "children[i].not_included_in_case_info", "children[i].marital_birth", "children[i].spouse_excluded_divorce", "children[i].spouse_excluded_order", "children[i].complete")
+
+  force_gather("children[i].complete")
+---
 # --------------------------------------------------------------------
 ## pregnancy
 # --------------------------------------------------------------------
@@ -6200,6 +6251,10 @@ subquestion: |
 
   ${prior_family_cases.add_action(color="success", size="md")}
 continue button field: prior_family_cases.revisit
+validation code: |
+  if tool_ID == "custody_complaint":
+    if controlling_custody_case in ["yes_one", "yes_multiple"] and prior_family_cases.number_gathered() == 0:
+      validation_error("You said there is an existing child support, parenting time, or custody case.")
 ---
 if: tool_ID != "JOD_only"
 id: prior family cases table
@@ -6214,6 +6269,7 @@ edit:
   - status
   - included_custody_PT_order  
   - separate_maintenance_pending_kickout
+require gathered: False
 delete buttons: True
 confirm: True
 ---
@@ -6227,34 +6283,111 @@ columns:
 edit:
   - status
   - has_current_custody_PT_order
-      
+require gathered: False   
 delete buttons: True
 confirm: True
 ---
-id: custody complaint family cases screener
-#TODO: is this wording correct? do we mean US cases only?
-question: Existing family law cases
-subquestion: |
-  This question is about your minor children who are the subject of this case.
+id: custody complaint controlling custody case screener
+question: Existing child support, parenting time, or custody cases
 fields: 
- - "Are there any existing paternity, child support, parenting time, or custody cases in any state between you and the Defendant?": controlling_custody_case
-   datatype: yesnoradio
+  - "Is there any existing child support, parenting time, or custody case in any court anywhere between you and the other parent?": controlling_custody_case
+    datatype: radio
+    choices: 
+      - "Yes, there is **one** existing case.": yes_one
+      - "Yes, there are **multiple** existing cases.": yes_multiple
+      - "No, there is **no** existing case.": no
+  - note: ${collapse_template(existing_case_meaning)}
+  - "Is the existing case in a **Michigan** state court?": controlling_case_location
+    datatype: radio
+    choices:
+      - "Yes, the case is in a Michigan state court.": Michigan
+      - "No, the case is in a different state court, a tribal court, or a court outside the United States.": foreign
+    show if:
+      variable: controlling_custody_case
+      is: yes_one
+  - "Are the existing cases **all in Michigan** state courts?": controlling_case_location
+    datatype: radio
+    choices:
+      - "Yes, the case are **all** in Michigan state courts.": Michigan
+      - "No, at least one case is in a different state court, a tribal court, or a court outside the United States.": foreign
+    show if:
+      variable: controlling_custody_case
+      is: yes_multiple
+validation code: |
+  if controlling_custody_case in ["yes_one", "yes_multiple"]:
+    prior_family_cases.there_are_any = True
+    prior_family_cases.minimum_number=1
+  else:
+    undefine("prior_family_cases.there_are_any", "prior_family_cases.minimum_number")
+---
+if: controlling_custody_case == "yes_one" and controlling_case_location == "Michigan"
+id: custody complaint Michigan custody case followup single
+question: More about your child support, parenting time, or custody case
+subquestion: |
+  You said there is an existing child support, parenting time, or custody case between you and the other parent in a Michigan state court.
+fields: 
+  - "Do you need a custody order for a child or children who were **not** included in the existing case?": all_children_in_prior_case
+    datatype: radio
+    choices:
+      - Yes: False
+      - No. All the children were included in the prior case.: True
+  - "What county was the existing case filed in?": controlling_custody_case_county
+    code: court_list._load_courts()["address_county"].unique()
+    show if: 
+      variable: all_children_in_prior_case
+      is: False
+---
+if: controlling_custody_case == "yes_multiple" and controlling_case_location == "Michigan"
+id: custody complaint Michigan custody case followup -multiple
+question: More about your child support, parenting time, or custody cases
+subquestion: |
+  You said there are multiple existing child support, parenting time, or custody cases between you and the other parent in Michigan state court.
+fields: 
+  - Are the existing Michigan cases all in the same court?: MI_cases_in_same_court
+    datatype: radio
+    choices:
+      - "Yes, the existing cases are all in **the same court.**": True
+      - "No, the existing cases are in **two or more courts.**": False
+  - "Do you need a custody order for a child or children who were **not** included in the existing cases?": all_children_in_prior_case
+    datatype: radio
+    choices:
+      - Yes: False
+      - No. All the children were included in the existing cases.: True
+    show if: MI_cases_in_same_court
+  - "What county were the existing cases filed in?": controlling_custody_case_county
+    code: court_list._load_courts()["address_county"].unique()
+    js show if: |
+      val("MI_cases_in_same_court") === true && val("all_children_in_prior_case") === false    
+---
+template: existing_case_meaning
+subject: What do you mean by "existing case"?
+content: |
+  An "existing case" means a case that is:
+
+  * ongoing,
+  * pending (pasued), or
+  * finished with a final order, and the court has continuing jurisdiction.
 ---
 # LHI Prior Court Cases Part 1
-# TODO: question for Amy: should the help text for family division cases exclude custody, paternity, and child support for custody interviews? (See Prior Court Cases Part 1 Dialog in Brett's materials.)
 id: prior family cases
 question: |
   % if tool_ID == "JOD_only":
   Past custody or child support orders
+  % elif tool_ID in ["custody_complaint", "custody_answer"]:
+  Other past family division cases
   % else:
   Past family division cases
+  % endif
+subquestion: |
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  You said there is no existing child support, parenting time, or custody case in any court anywhere between you and ${other_parties[0]}.
   % endif
 fields:
   - label: |
       % if tool_ID == "JOD_only":
       Are there any prior custody or support orders in Michigan or any other state regarding ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') }?
       % elif tool_ID in ["custody_complaint", "custody_answer"]:
-      Are there any pending or resolved **family division** court cases or orders involving you and ${ OP_label }? 
+      Are there any other pending or resolved **family division** court cases or orders involving you and ${ OP_label }? 
       % elif tool_ID in ["divorce_complaint", "divorce_answer"]:
       % if there_are_marital_children and len(children.filter(legal_parent='both')) > 1:
       Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') }, or you and your spouse?
@@ -6342,11 +6475,9 @@ content: |
   **Family Division cases in Michigan** include:
   
   * Divorce, annulment, or separate maintenance (sometimes called legal separation)
-  % if tool_ID in ["divorce_complaint", "divorce_answer"]:
   * Custody
   * Paternity/Parentage
   * Child support
-  % endif
   * All types of personal protection orders-- whether for a domestic relationship, sexual assault, or nondomestic stalking
   * Adoption
   * Child protective proceedings
@@ -6365,6 +6496,12 @@ question: |
   Any more **family division** court cases or orders?
   % endif
 subquestion: |
+  % if tool_ID in ["custody_complaint", "custody_answer"] and controlling_custody_case in ["yes_multiple", "yes_one"]:
+  This includes any existing child support, parenting time, or custody cases, as well as any other family division cases.
+
+  % endif
+  ${ collapse_template(family_division_info) }
+  
   So far, you have listed&colon;
 
   ${prior_family_cases.table}
@@ -6383,13 +6520,17 @@ fields:
       % endif
     field: prior_family_cases.there_is_another
     datatype: yesnoradio
+validation code: |
+  if tool_ID == "custody_complaint":
+    if controlling_custody_case in ["yes_one", "yes_multiple"] and prior_family_cases.number_gathered() == 0:
+      validation_error("You said there is an existing child support, parenting time, or custody case.")
 ---
 id: prior family cases gather logic
 code: |
   if tool_ID == "JOD_only" and there_are_marital_children:
     prior_family_cases[i].status
   
-  elif tool_ID in ["divorce_complaint", "divorce_answer"]:
+  elif tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint", "custody_answer"]:
     # only called in divorce_answer if complaint_type == "with_children"
     prior_family_cases[i].status
     if there_are_marital_children:
@@ -6456,9 +6597,6 @@ objects:
   - prior_family_case_types_ordered: DAOrderedDict.using(elements={**prior_family_case_types}, auto_gather=False, gathered=True)
 ---
 code: |
-  if tool_ID in ["custody_answer", "custody_complaint"]:
-    prior_family_case_types_ordered.pop("paternity")
-    prior_family_case_types_ordered.pop("custody")
   if tool_ID == "custody_complaint":
     prior_family_case_types_ordered.pop("divorce")
     prior_family_case_types_ordered.pop("separate_maintenance")
@@ -6497,7 +6635,7 @@ fields:
       is: MI
   - County: prior_family_cases[i].county
     js show if: |
-      val("prior_family_cases[i].state") !== "MI" && (${ json.dumps(tool_ID) } === "divorce_complaint" || ${ json.dumps(tool_ID) } === "divorce_answer")
+      val("prior_family_cases[i].state") !== "MI"
   - Court Name: prior_family_cases[i].court
     js show if: |
       val("prior_family_cases[i].state") !== "MI"
@@ -6508,12 +6646,8 @@ fields:
   - Case number:: prior_family_cases[i].docket_number
   - note: |
       Judge's last name *(do not include 'Judge' or 'Hon.')*:
-    show if:
-      code: tool_ID in ["divorce_complaint", "custody_complaint"]
   - "Judge": prior_family_cases[i].judge
     label above field: False
-    show if:
-      code: tool_ID in ["divorce_complaint", "custody_complaint"]
   - What is the nature of this case?: prior_family_cases[i].type
     code: |
       prior_family_case_types_ordered
@@ -6552,6 +6686,68 @@ fields:
 validation code: |
   if prior_family_cases[i].type == "divorce":
     prior_family_cases[i].resolved = True
+---
+# LHI "Prior Family Cases DLG"
+if: tool_ID in ["custody_complaint", "custody_answer"] and controlling_custody_case in ["yes_one", "yes_multiple"]
+id: prior family case or order collection screen existing custody case
+question: Information about the ${ word("first") if controlling_custody_case == "yes_multiple" else "" } existing case
+subquestion: |
+  Please tell us about the ${ word("first") if controlling_custody_case == "yes_multiple" else "" } existing child support, parenting time, or custody case with ${other_parties[0]}
+fields:
+  - State:: prior_family_cases[0].state
+    code: |
+      states_list()
+    default: "MI"
+  - County: prior_family_cases[0].county
+    code: court_list._load_courts()["address_county"].unique()
+    show if:
+      variable: prior_family_cases[0].state
+      is: MI
+    default: "${controlling_custody_case_county}"
+  - County: prior_family_cases[0].county
+    js show if: |
+      val("prior_family_cases[0].state") !== "MI"
+  - Court Name: prior_family_cases[0].court
+    js show if: |
+      val("prior_family_cases[0].state") !== "MI"
+  - Court address: prior_family_cases[0].address
+    js show if: |
+      val("prior_family_cases[0].state") !== "MI" && ${ "true" if there_are_marital_children else "false" }
+  - "Case name *(for example, Jones v. Smith or In re: Thomas)*:": prior_family_cases[0].title
+  - Case number:: prior_family_cases[0].docket_number
+  - note: |
+      Judge's last name *(do not include 'Judge' or 'Hon.')*:
+  - "Judge": prior_family_cases[0].judge
+    label above field: False
+  - What is the nature of this case?: prior_family_cases[0].type
+    code: |
+      prior_family_case_types_ordered
+  - Describe the nature of this case:: prior_family_cases[0].type_description
+    show if:
+      variable: prior_family_cases[0].type
+      is: other
+  - What is the status of this case?: prior_family_cases[0].resolved
+    datatype: radio
+    choices:
+      - "The case is still ongoing. (There is **no** order or judgment resolving all the issues.)": False
+      - "The case is over. (There is an order resolving all the issues, or the case was dismissed.)": True
+  - 'Has the case been **{stayed}?**': prior_family_cases[0].status
+    datatype: radio
+    choices:
+      - "Yes, the case is stayed.": stayed
+      - "No.": pending
+    js show if: |
+      val("prior_family_cases[0].resolved") === false
+  - How did the case end?: prior_family_cases[0].status
+    datatype: radio
+    choices:
+      - "The judge made a **final order** resolving all the issues and ending the case.": ended_with_order
+      - "The judge **dismissed** the case.": dismissed
+    js show if: |
+      val("prior_family_cases[0].resolved") === true
+validation code: |
+  prior_family_cases[0].state = "MI"
+  prior_family_cases[0].county = controlling_custody_case_county
 ---
 # LHI "Prior Family Cases DLG" (start at row 108)
 id: prior family divorce case or order additional info
@@ -6657,7 +6853,12 @@ subquestion: |
 # LHI "Prior Family Cases DLG" (start at row 132)
 id: other prior family case or order additional info (completed case)
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status == "ended_with_order"
-question: ${ capitalize(ordinal(i)) } **family division** case or order
+question: |
+  % if tool_ID == "custody_complaint" and controlling_custody_case in ["yes_one", "yes_multiple"] and i == 0:
+  Orders in the case
+  % else:
+  ${ capitalize(ordinal(i)) } **family division** case or order
+  % endif
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
@@ -6684,7 +6885,12 @@ validation code: |
 # LHI "Prior Family Cases DLG" (start at row 174)
 id: other prior family case or order additional info (stayed, pending)
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status in ["stayed", "pending"]
-question: ${ capitalize(ordinal(i)) } **family division** case or order
+question: |
+  % if tool_ID == "custody_complaint" and controlling_custody_case in ["yes_one", "yes_multiple"] and i == 0:
+  Orders in the case
+  % else:
+  ${ capitalize(ordinal(i)) } **family division** case or order
+  % endif
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
@@ -6710,7 +6916,12 @@ validation code: |
 # LHI "Prior Family Cases DLG" (start at row 151)
 id: other prior family case or order additional info (dismissed)
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status == "dismissed"
-question: ${ capitalize(ordinal(i)) } **family division** case or order
+question: |
+  % if tool_ID == "custody_complaint" and controlling_custody_case in ["yes_one", "yes_multiple"] and i == 0:
+  Orders in the case
+  % else:
+  ${ capitalize(ordinal(i)) } **family division** case or order
+  % endif
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
