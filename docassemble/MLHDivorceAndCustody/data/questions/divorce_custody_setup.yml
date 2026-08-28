@@ -53,10 +53,12 @@ code: |
     elif tool_ID == "JOD_only":
       filing_name = "Judgment of Divorce"
   elif tool_ID == "custody_complaint":
+    filing_name = "Custody Complaint"
     user_ask_role = "plaintiff"
     OP_label = "the Defendant"
     case_label = "custody"
   elif tool_ID == "custody_answer":
+    filing_name = "Custody Answer"
     user_ask_role = "defendant"
     OP_label = "the Plaintiff"
     case_label = "custody"
@@ -156,6 +158,8 @@ terms:
       - creditors
     definition: |
       A person, business, or entity that you owe money to.
+  - Defendant: |
+      The other parent of your children involved in a custody case. The Defendant in a custody case is the parent who did **not** file to start the case. 
   - phrases:
       - factor
       - factors
@@ -184,6 +188,8 @@ terms:
       - minor
     definition: |
       A child is a minor if they are 17 years old or younger.
+  - Part of custody case: |
+      "Yes" means your answers showed the child can be included in the custody case and you want a custody order for them. "No" means either they do not qualify to be part of the custody case or you said you didn't want them in the case. 
   - investments: |
       Stocks, bonds, Certificates of Deposit (CDs), mutual funds, Money Market Accounts, or other investments, not including pensions or retirement accounts.
   - phrases:

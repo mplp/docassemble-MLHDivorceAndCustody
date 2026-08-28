@@ -250,6 +250,14 @@ subquestion: |
   Sorry, you cannot use this tool to file an answer to your spouse’s complaint for divorce. Your answers indicate that your spouse may have improperly filed the divorce case in ${county_choice} County, Michigan. 
   
   This means there could be problems with jurisdiction or venue in your divorce case. Jurisdiction and venue are not simple issues. You may want to consider talking to a lawyer to get the best possible result. ${MLH_GUIDE_FULL}
+  % elif tool_ID == "custody_complaint":
+  Sorry, you cannot use this tool to prepare Michigan custody forms. 
+  
+  You or the {Defendant} must live in Michigan to use this tool.
+
+  If one of you lives in Michigan, please use the **Review / Edit** link or the **${MLH_back_button_label}** button to update your information. 
+
+  ${ collapse_template(OP_MI_address_unknown_exit)}
   % endif
 ---
 template: spouse_MI_address_unknown_exit
@@ -258,6 +266,13 @@ content: |
   It may be possible for you to get divorced in Michigan, but it's important to talk to a lawyer first. 
   
   Your answers show that you don't know the defendant's current Michigan address, and their last known address is in another state. It could be hard to prove to the court that your spouse resides in Michigan. Residing in Michigan means more than being present. A residence is where someone has a permanent home and plans to remain.
+---
+template: OP_MI_address_unknown_exit
+subject: What if the Defendant lives in Michigan, but I don't know their current address?
+content: |
+  It may be possible for you to start a custody case in Michigan, but it's important to talk to a lawyer first. 
+  
+  Your answers show that you don't know the Defendant's current Michigan address, and their last known address is in another state. It could be hard to prove to the court that the Defendant resides in Michigan. Residing in Michigan means more than being present. A residence is where someone has a permanent home and plans to remain.
 ---
 id: exit_children
 event: exit_children
@@ -334,6 +349,41 @@ action buttons:
     color: danger
     icon: right-from-bracket
 ---
+if: tool_ID == "custody_complaint" and controlling_custody_case in ["yes_one", "yes_multiple"]
+id: controlling_custody_case_exit
+event: controlling_custody_case_exit
+question: |
+  Existing child support, parenting time, or custody case
+subquestion: |
+  % if controlling_case_location == "foreign":
+  Sorry, you cannot use this tool if there is a child support, parenting time, or custody case in a **non-Michigan** court, between you and the other parent. ${MLH_GUIDE_FULL}
+  % elif controlling_custody_case == "yes_multiple" and not MI_cases_in_same_court:
+  Sorry, you cannot use this tool if there is are child support, parenting time, or custody cases between you and the other parent in multiple Michigan state courts. ${MLH_GUIDE_FULL}
+  % elif all_children_in_prior_case:
+  Sorry, this tool is not for you. Usually a new custody request for the same child(ren) should be filed as a motion in the existing case. You can use the [Motion Regarding Custody](https://www.courts.michigan.gov/4a7d59/siteassets/forms/scao-approved/foc87.pdf) to request a custody order if there is already a final order in the case but it did not include custody. You can also use this motion if there is a custody order and you want to change it. To learn about asking for a change in custody, read [Changing a Custody Order](https://michiganlegalhelp.org/resources/family/changing-custody-order).
+
+  If the other parent recently filed a Complaint for Custody, Parenting Time, and Child Support, and you need to file an Answer, this tool is not for you. You can use the [Do-It-Yourself Answer and Counterclaim for Custody](https://michiganlegalhelp.org/resources/family/do-it-yourself-answer-and-counterclaim-custody) to get the forms you need.
+
+  ${collapse_template(want_change_custody_court)}
+
+  % elif not (users[0].lives_in_Michigan and other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county) and (users[0].lives_in_Michigan and controlling_custody_case_county == users[0].address.county) or (other_parties[0].lives_in_Michigan and controlling_custody_case_county == other_parties[0].address.county):
+  Based on your answers, the question of where your case should be filed is legally complicated. 
+  
+  It is best to have a lawyer in this scenario to help you decide where to file and to make legal arguments for you if needed. ${MLH_GUIDE_FULL}
+
+  % endif
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
+template: want_change_custody_court
+subject: What if I want to file in a different court than my prior case?
+content: |
+  It may be possible to transfer the existing case to a different county. If you believe the case should be transferred to a different court because you and/or the other party have moved away from the county where the case was filed, you may need to talk to a lawyer. ${MLH_GUIDE_FULL}
+---
 # --------------------------------------------------------------------
 ## introduction
 # --------------------------------------------------------------------
@@ -350,7 +400,8 @@ validation code: |
     edit_existing_divorce = False
     returning_to_finalize = False
 ---
-id: custody marriage screening
+if: tool_ID in ["custody_complaint", "custody_answer"]
+id: custody marriage and children screening
 question: Relationship with the other parent
 subquestion: |
   You will be called the Plaintiff in this case because you are filing the Complaint for Custody, Parenting Time, and Child Support. The other parent of this child or these children is called the Defendant.
@@ -362,7 +413,7 @@ fields:
     show if: 
       variable: married_other_parent_now
       is: False
-  - Do you and the Defendant have one or more {minor} children together?: children_in_common
+  - Do you and the Defendant have one or more {minor} children together?: children.there_are_any
     datatype: yesnoradio
     show if: 
       variable: married_other_parent_past
@@ -909,7 +960,7 @@ id: marriage.have_experienced_domestic_violence
 question: |
   Domestic violence
 fields:
-  - label: Have you experienced domestic violence or threats of domestic violence by your spouse?
+  - label: Have you experienced domestic violence or threats of domestic violence by ${OP_label}?
     field: marriage.have_experienced_domestic_violence
     datatype: yesnoradio
 ---
@@ -918,14 +969,23 @@ id: marriage.have_experienced_domestic_violence_continue
 question: |
   Domestic violence
 subquestion: |
-  % if tool_ID == "JOD_only":
-  Domestic violence is often at its worst when a relationship ends. It is important to take steps to be as safe as possible.
+  Domestic violence is often at its worst when a relationship ends. 
+  % if tool_ID in ["JOD_only", "divorce_answer", "custody_answer"]:
+  It is important to take steps to be as safe as possible.
   % elif tool_ID == "divorce_complaint":
-  Domestic violence is often at its worst when a relationship ends. It is important to take steps to be as safe as possible before you start a divorce. 
+  It is important to take steps to be as safe as possible before you start a divorce. 
+  % elif tool_ID == "custody_complaint":
+  It is important to take steps to be as safe as possible before you start a custody case. 
   % endif
+  % if tool_ID in ["JOD_only", "divorce_answer", "divorce_complaint"]:
   If there has been verbal, emotional, or physical abuse in your marriage, you may want to find a lawyer. Your local legal aid office or domestic violence agency may be able to help you. 
   
   To learn about how domestic violence can affect a divorce case and what you can do to keep safe, read [Domestic Violence and Divorce](https://michiganlegalhelp.org/resources/family/domestic-violence-and-divorce). To find a lawyer and contact information for local domestic violence agencies, use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help).
+  % else:
+  If there has been verbal, emotional, or physical abuse in your relationship, you may want to find a lawyer. Your local legal aid office or domestic violence agency may be able to help you. 
+  
+  To learn about domestic violence and personal protection orders, read [Filing for a Personal Protection Order - Domestic Relationship](https://michiganlegalhelp.org/resources/personal-safety/filing-personal-protection-order-domestic-relationship). To find a lawyer and contact information for local domestic violence agencies, use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help).
+  % endif
 fields:
   - label: Do you want to continue with the tool now?
     field: marriage.have_experienced_domestic_violence_continue
@@ -1080,24 +1140,26 @@ id: confidential_contact_info_yn
 question: |
   Contact information confidentiality
 subquestion: |
-  All of the information that you enter in this tool, including your address and telephone number, will be included on forms that you file with the court and give to your spouse. If you fear for your safety if this information is known by your spouse or someone else, proceed with caution. **Do not use an address or telephone number that you want to keep confidential in this tool or on your court forms.**
+  All of the information that you enter in this tool, including your address and telephone number, will be included on forms that you file with the court and give to ${OP_label}. If you fear for your safety if this information is known by ${OP_label} or someone else, proceed with caution. **Do not use an address or telephone number that you want to keep confidential in this tool or on your court forms.**
 
-  Keep in mind that your divorce file is a public record and anyone could ask to look at it and see your address. 
+  Keep in mind that your ${word("custody") if tool_ID in ["custody_complaint", "custody_answer"] else word("divorce")} file is a public record and anyone could ask to look at it and see your address. 
 fields:
   - label: Do you need to keep your real address confidential because of safety concerns?
     field: confidential_contact_info_yn
     datatype: yesnoradio
   - note: |
-      If you fear for the safety of you or your children, it is strongly recommended that you hire a lawyer and do not do your divorce on your own. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to look for a lawyer or legal services near you.
+      If you fear for the safety of you or your children, it is strongly recommended that you find a lawyer and do not do your ${word("custody case") if tool_ID in ["custody_complaint", "custody_answer"] else word("divorce")} on your own. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to look for a lawyer or legal services near you.
 
       ${collapse_template(why_lawyer_address_safety)}
 
       % if tool_ID == "JOD_only" or (tool_ID == "divorce_complaint" and returning_to_finalize):
       But if you need to finish your divorce without a lawyer, you can continue with this tool. 
+      % elif tool_ID in ["custody_complaint", "custody_answer"]:
+      But if you need to do your custody case without a lawyer, you can continue with this tool.
       % else:
       But if you need to file for divorce without a lawyer, you can continue with this tool.
       % endif
-      On the next page, you will need to give a mailing address where the court and your spouse can send you mail related to your case. You may want to use a P.O. Box or the address of a friend or relative, and a different telephone number (such as the telephone number of a friend or relative).
+      On the next page, you will need to give a mailing address where the court and ${OP_label} can send you mail related to your case. You may want to use a P.O. Box or the address of a friend or relative, and a different telephone number (such as the telephone number of a friend or relative).
     show if:
       variable: confidential_contact_info_yn
       is: True
@@ -1123,7 +1185,7 @@ question: |
   Please enter your ${"safe mailing address" if confidential_contact_info_yn else "address"}
 subquestion: |
   % if confidential_contact_info_yn:
-  You said you need to keep your address confidential. Please give a safe address where the court and your spouse can send you mail about the divorce case. For example, you can use a P.O. Box or the address of a friend or relative.
+  You said you need to keep your address confidential. Please give a safe address where the court and ${OP_label} can send you mail about the ${word("custody") if tool_ID in ["custody_complaint", "custody_answer"] else word("divorce")} case. For example, you can use a P.O. Box or the address of a friend or relative.
   % endif
 fields:
   - label: Street Address or PO Box
@@ -1159,7 +1221,7 @@ validation code: |
   if users[0].address.state in ["Michigan", "MI"] and users[0].address.country != "US":
     validation_error('If you live in Michigan in the USA, choose "United States" for the country. If you live in a different country, the state name cannot be "MI" or "Michigan."')
 ---
-if: not confidential_contact_info_yn and tool_ID == "divorce_complaint"
+if: not confidential_contact_info_yn and tool_ID in ["divorce_complaint", "custody_complaint"]
 id: user jurisdiction/venue questions address no confidential
 question: Michigan residence
 fields:
@@ -1192,7 +1254,7 @@ fields:
   - Have you lived in Michigan for the last 180 days or more, since ${ today().minus(days=180) }?: users[0].has_lived_6_months_MI
     datatype: yesnoradio
     js show if: |
-      ${ "true" if users[0].address.state in ["Michigan", "MI"] else "false" } && val("users[0].lives_in_Michigan") === true
+      ${ "true" if users[0].address.state in ["Michigan", "MI"] and tool_ID == "divorce_complaint" else "false" } && val("users[0].lives_in_Michigan") === true
   - What county do you live in?: users[0].address.county
     code: court_list._load_courts()["address_county"].unique()
     js show if: |
@@ -1203,7 +1265,7 @@ validation code: |
   if not users[0].lives_in_Michigan and users[0].address.state in ["Michigan", "MI"]:
     validation_error('If you do not live in Michigan, tap "Undo" and update your address.', field="users[0].lives_in_Michigan")
 ---
-if: confidential_contact_info_yn and tool_ID == "divorce_complaint"
+if: confidential_contact_info_yn and tool_ID in ["divorce_complaint", "custody_complaint"]
 id: user jurisdiction/venue questions, address confidential
 question: Michigan residence
 fields:
@@ -1215,7 +1277,8 @@ fields:
       - "No, I **don't** live in Michigan.": False
   - Have you lived in Michigan for the last 180 days or more, since ${ today().minus(days=180) }?: users[0].has_lived_6_months_MI
     datatype: yesnoradio
-    show if: users[0].lives_in_Michigan
+    js show if: |
+      ${ "true" if tool_ID == "divorce_complaint" else "false" } && val("users[0].lives_in_Michigan") === true
   - What county do you live in?: users[0].address.county
     code: court_list._load_courts()["address_county"].unique()
     show if: users[0].lives_in_Michigan
@@ -1235,13 +1298,14 @@ fields:
   - What county do you live in?: users[0].address.county
     code: court_list._load_courts()["address_county"].unique()
 ---
-if: (tool_ID == "JOD_only" and not users[0].address.state == "MI") or (tool_ID == "divorce_complaint" and not users[0].lives_in_Michigan)
+if: (tool_ID == "JOD_only" and not users[0].address.state == "MI") or (tool_ID in ["divorce_complaint", "custody_complaint"] and not users[0].lives_in_Michigan)
 id: users[0].address.county
 question: |
   County
 fields:
   - What county do you live in?: users[0].address.county
 ---
+if: tool_ID in ["divorce_complaint", "JOD_only"]
 id: users[0].village_or_township
 question: |
   Village or township
@@ -1363,7 +1427,11 @@ sets:
   - other_parties[0].name.suffix
 id: other_parties[0].name.first
 question: |
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  What is the {Defendant}'s name?
+  % else:
   What is your spouse's name?
+  % endif
 fields:
   - code: |
       other_parties[0].name_fields(person_or_business="person")
@@ -1468,7 +1536,7 @@ fields:
 ---
 id: your spouse's address
 question: |
-  Please enter your spouse's last known home address
+  Please enter ${other_parties[0]}'s last known home address
 fields:
   - label: Street Address or PO Box
     field: other_parties[0].address.address
@@ -1503,7 +1571,7 @@ validation code: |
   if other_parties[0].address.state in ["Michigan", "MI"] and other_parties[0].address.country != "US":
     validation_error('If they live in Michigan in the USA, choose "United States" for the country. If they live in a different country, the state name cannot be "MI" or "Michigan."')
 ---
-if: tool_ID == "divorce_complaint"
+if: tool_ID in ["divorce_complaint", "custody_complaint"]
 id: OP jurisdiction/venue questions
 question: |
   % if other_parties[0].address.state in ["Michigan", "MI"]:
@@ -1531,26 +1599,26 @@ fields:
       code: |
         other_parties[0].address.state not in ["Michigan", "MI"]
   - note: |
-      Please tap **${MLH_back_button_label}** and update your spouse's address so that the state says "MI" or "Michigan".
+      Please tap **${MLH_back_button_label}** and update ${OP_label}'s address so that the state says "MI" or "Michigan".
     js show if: |
       ${ "true" if other_parties[0].address.state not in ["Michigan", "MI"] else "false" } && val("other_parties[0].lives_in_Michigan") === true
   - note: |
-      Please tap **${MLH_back_button_label}** and update your spouse's address so that it does **not** list Michigan as the state.
+      Please tap **${MLH_back_button_label}** and update ${OP_label}'s address so that it does **not** list Michigan as the state.
     js show if: |
       ${ "true" if other_parties[0].address.state in ["Michigan", "MI"] else "false" } && val("other_parties[0].lives_in_Michigan") === false
   - Has ${ other_parties[0] } lived in Michigan for the last 180 days or more, since ${ today().minus(days=180) }?: other_parties[0].has_lived_6_months_MI
     datatype: yesnoradio
     js show if: |
-      ${ "true" if other_parties[0].address.state in ["Michigan", "MI"] else "false" } && val("other_parties[0].lives_in_Michigan") === true
+      ${ "true" if other_parties[0].address.state in ["Michigan", "MI"] and tool_ID == "divorce_complaint" else "false" } && val("other_parties[0].lives_in_Michigan") === true
   - What county does ${ other_parties[0] } live in?: other_parties[0].address.county
     code: court_list._load_courts()["address_county"].unique()
     js show if: |
       ${ "true" if other_parties[0].address.state in ["Michigan", "MI"] else "false" } && val("other_parties[0].lives_in_Michigan") === true
 validation code: |
   if other_parties[0].lives_in_Michigan and other_parties[0].address.state not in ["Michigan", "MI"]: 
-    validation_error('If your spouse lives in Michigan, tap "Undo" and update their address.', field="other_parties[0].lives_in_Michigan")
+    validation_error('If they live in Michigan, tap "Undo" and update their address.', field="other_parties[0].lives_in_Michigan")
   if not other_parties[0].lives_in_Michigan and other_parties[0].address.state in ["Michigan", "MI"]:
-    validation_error('If your spouse does not live in Michigan, tap "Undo" and update their address.', field="other_parties[0].lives_in_Michigan")  
+    validation_error('If they do not live in Michigan, tap "Undo" and update their address.', field="other_parties[0].lives_in_Michigan")  
 ---
 if: tool_ID == "divorce_complaint" and other_parties[0].lives_in_Michigan
 id: 10-day test OP
@@ -1568,7 +1636,7 @@ fields:
   - What county does your spouse live in?: other_parties[0].address.county
     code: court_list._load_courts()["address_county"].unique()
 ---
-if: (tool_ID == "JOD_only" and other_parties[0].address.state != "MI") or (tool_ID == "divorce_complaint" and not other_parties[0].lives_in_Michigan)
+if: (tool_ID == "JOD_only" and other_parties[0].address.state != "MI") or (tool_ID in ["divorce_complaint", "custody_complaint"] and not other_parties[0].lives_in_Michigan)
 id: other_parties[0].address.county
 continue button field: just_check_op_county
 question: |
@@ -1576,6 +1644,7 @@ question: |
 fields:
   - What county does your spouse live in?: other_parties[0].address.county
 ---
+if: tool_ID in ["divorce_complaint", "JOD_only"]
 id: other_parties[0].village_or_township
 question: |
   Spouse's village or township
@@ -1595,13 +1664,13 @@ validation code: |
 ---
 id: other_parties[0].mailing_address
 question: |
-  Spouse's different mailing address
+  ${other_parties[0]}'s different mailing address?
 fields:
-  - label: Does your spouse have a different mailing address?
+  - label: Does ${other_parties[0]} have a different mailing address?
     field: other_parties[0].mailing_address.yesno
     datatype: yesnoradio
   - note: |
-      Please enter your spouse's mailing address
+      Please enter ${other_parties[0]}'s mailing address
     show if: other_parties[0].mailing_address.yesno
   - label: Street Address or PO Box
     field: other_parties[0].mailing_address.address
@@ -1646,14 +1715,14 @@ validation code: |
 ---
 id: other_parties[0].phone_number
 question: |
-  Spouse's phone number
+  ${other_parties[0]}'s phone number
 fields:
-  - label: Enter a telephone number where the court can reach your spouse, starting with the area code
+  - label: Enter a telephone number where the court can reach ${other_parties[0]}, starting with the area code
     field: other_parties[0].phone_number
     show if:
       variable: other_parties[0].no_phone_number
       is: False
-  - label: My spouse does not have a phone or I don't know their number.
+  - label: ${other_parties[0]} does not have a phone or I don't know their number.
     field: other_parties[0].no_phone_number
     required: False
     datatype: yesno
@@ -1664,14 +1733,14 @@ fields:
       - Home: home
     js show if: |
       val("other_parties[0].no_phone_number") === false && ${ "true" if tool_ID != "JOD_only" else "false" }
-# TODO ask AB if this is OK. It's very annoying that it only asks for 2 phone types for the FOC23 as far as I can tell. Otherwise defaults to putting "home number everywhere" (or "safe" number if that's chosen) and neither phone type is required. 
+# TODO ask AB if this is OK. It's very annoying that it only asks for 2 phone types for the FOC23 as far as I can tell. Otherwise LHI defaults to putting "home number everywhere" (or "safe" number if that's chosen) and neither phone type is required. 
 
 ---
 id: other_parties[0].email
 question: |
-  Spouse's email address
+  ${other_parties[0]}'s email address
 fields:
-  - label: What is your spouse's email address?
+  - label: What is your ${other_parties[0]}'s email address?
     field: other_parties[0].email
     datatype: email
     required: False
@@ -1757,6 +1826,43 @@ validation code: |
       else: ## neither inititally met 10 day rule; unknown who met it by time of filing
         jurisdiction_party = "unknown"
 ---
+if: tool_ID == "custody_complaint" and len(all_potential_venue_options) == 1
+id: custody venue (single option)
+question: Where to file your custody case
+continue button field: venue
+subquestion: |
+  You must file your custody case in **${ county_choice } County.** Your custody forms will be prepared using ${ county_choice } as the filing county.  
+
+  % if controlling_custody_case in ["yes_one", "yes_multiple"] and county_choice != controlling_custody_case_county:
+  % if controlling_custody_case == "yes_one":
+  Note: You may want to talk to a lawyer about having your prior case from  ${controlling_custody_case_county} County transferred to ${ county_choice } County so the cases can be consolidated. It is also possible that the Friend of the Court or the court may start a transfer of the prior case. ${MLH_GUIDE_FULL}
+  % elif controlling_custody_case == "yes_multiple":
+  Note: You may want to talk to a lawyer about having your prior cases from  ${controlling_custody_case_county} County transferred to ${ county_choice } County so the cases can be consolidated. It is also possible that the Friend of the Court or the court may start a transfer of the prior cases. ${MLH_GUIDE_FULL}
+  % endif
+  % endif
+validation code: |
+  # "jurisdiction_party" is used on Testimony page
+  # it should really now (June/2026) be "venue_party" but leaving alone for back-compatibility
+  if not users[0].lives_in_Michigan:
+    jurisdiction_party = other_parties[0] #OP logically must be the venue basis
+  elif not other_parties[0].lives_in_Michigan:
+    jurisdiction_party = users[0] #user logically must be the venue basis
+  
+  elif users[0].lives_in_Michigan and other_parties[0].lives_in_Michigan:
+  
+    # if parties don't share county, only one party can live in filing county
+    if users[0].address.county != other_parties[0].address.county:
+      if users[0].address.county == county_choice:
+        jurisdiction_party = users[0]
+      elif other_parties[0].address.county == county_choice:
+        jurisdiction_party = other_parties[0]
+      else: ## error state
+        jurisdiction_party = "unknown"
+  
+    #if both users live in the filing county
+    elif users[0].address.county == other_parties[0].address.county:
+      jurisdiction_party = "both"
+---
 if: tool_ID == "divorce_complaint" and not returning_to_finalize and len(all_potential_venue_options) == 2 and not (there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case)
 id: venue (normal choice)
 question: Where to file your divorce
@@ -1794,6 +1900,40 @@ validation code: |
     jurisdiction_party = other_parties[0]
   else: ## error state
     jurisdiction_party = "unknown"
+---
+if: tool_ID == "custody_complaint" and len(all_potential_venue_options) == 2
+id: custody venue (normal choice)
+question: Where to file your custody case
+continue button field: venue
+subquestion: |
+  You can choose to file in either ${ users[0].address.county } County or ${ other_parties[0].address.county } County. 
+fields:
+  - Select the county where you will file your divorce.: county_choice
+    input type: radio
+    code: all_potential_venue_options
+validation code: |
+  # "jurisdiction_party" is used on Testimony page
+  # it should really now (June/2026) be "venue_party" but leaving alone for back-compatibility
+  if county_choice == users[0].address.county:
+    jurisdiction_party = users[0]
+  elif county_choice == other_parties[0].address.county:
+    jurisdiction_party = other_parties[0]
+  else: ## error state
+    jurisdiction_party = "unknown"
+---
+if: controlling_custody_case in ["yes_one", "yes_multiple"] and len(all_potential_venue_options) == 2
+# if either parent lives in controlling_custody_case_county they would already have been kicked out
+id: prior custody case consolidation info
+continue button field: consolidate_custody_case_info
+question: You will file in ${ county_choice } County
+subquestion: |
+  OK, you will file your custody case in **${ county_choice } County.** Your custody forms will be prepared using ${ county_choice } as the filing county.  
+
+  % if controlling_custody_case == "yes_one":
+  Note: You may want to talk to a lawyer about having your prior case from  ${controlling_custody_case_county} County transferred to ${ county_choice } County so the cases can be consolidated. It is also possible that the Friend of the Court or the court may start a transfer of the prior case. ${MLH_GUIDE_FULL}
+  % elif controlling_custody_case == "yes_multiple":
+  Note: You may want to talk to a lawyer about having your prior cases from  ${controlling_custody_case_county} County transferred to ${ county_choice } County so the cases can be consolidated. It is also possible that the Friend of the Court or the court may start a transfer of the prior cases. ${MLH_GUIDE_FULL}
+  % endif
 ---
 if: tool_ID == "divorce_complaint" and not returning_to_finalize and len(all_potential_venue_options) == 2 and there_are_marital_children and prior_family_cases.there_are_any and there_is_venue_controlling_separate_maintenance_case and len(current_venue_options) == 1 and prior_family_cases[separate_maintenance_case_index].county not in current_venue_options
 id: venue (weird separate maintenance choice)
@@ -1880,6 +2020,56 @@ code: |
 
   set_venue_lists = True
 ---
+if: tool_ID == "custody_complaint"
+code: |
+  all_potential_venue_options = []
+
+  # already kicked out if:
+  ## neither party lives in MI, or 
+  ## any child does not live with or visit the only MI parent, or
+  ## there's an existing MI custody case and one party lives in that same county but other does not
+
+  # if only one party lives in MI, or if both live in same MI county, venue must be there
+  if users[0].lives_in_Michigan and not other_parties[0].lives_in_Michigan:
+    all_potential_venue_options.append(users[0].address.county)
+  elif other_parties[0].lives_in_Michigan and not users[0].lives_in_Michigan:
+    all_potential_venue_options.append(other_parties[0].address.county)
+  elif users[0].lives_in_Michigan and other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county:
+    all_potential_venue_options.append(users[0].address.county)
+
+  # if both parties live in MI, but in different counties
+  elif users[0].lives_in_Michigan and other_parties[0].lives_in_Michigan and users[0].address.county != other_parties[0].address.county:
+    if children_now_live_with_which_parent == "both":
+      all_potential_venue_options.append(users[0].address.county)
+      all_potential_venue_options.append(other_parties[0].address.county)
+    
+    elif children_now_live_with_which_parent == "users[0]":
+      all_potential_venue_options.append(users[0].address.county)
+      if all_kids_spend_time_with_other_parent:
+        all_potential_venue_options.append(other_parties[0].address.county)
+  
+    elif children_now_live_with_which_parent == "other_parties[0]":
+      all_potential_venue_options.append(other_parties[0].address.county)
+      if all_kids_spend_time_with_other_parent:
+        all_potential_venue_options.append(users[0].address.county)
+  
+    elif children_now_live_with_which_parent == "depends_on_child":
+      if len(children.filter(legal_parent="both").filter(custody_venue_options="only_OP")) > 0 and len(children.filter(legal_parent="both").filter(custody_venue_options="only_user")) > 0:
+        if venue_conflict_continue:
+          all_potential_venue_options.append(other_parties[0].address.county)
+          all_potential_venue_options.append(users[0].address.county)
+        else:
+          exit_general
+      elif len(children.filter(legal_parent="both").filter(custody_venue_options="only_OP")) > 0:
+        all_potential_venue_options.append(other_parties[0].address.county)
+      elif len(children.filter(legal_parent="both").filter(custody_venue_options="only_user")) > 0:
+        all_potential_venue_options.append(users[0].address.county)
+      else: 
+        all_potential_venue_options.append(other_parties[0].address.county)
+        all_potential_venue_options.append(users[0].address.county)
+
+  calculate_custody_venue_options = True
+---
 if: tool_ID == "divorce_complaint" and not returning_to_finalize
 id: divorce complaint venue logic
 code: |
@@ -1899,6 +2089,18 @@ code: |
 
   check_for_required_venue = True
 # commented out lines above are there to help show full list of options for determining venue. They are accomplished via "Venue" question screens above.  
+---
+if: tool_ID == "custody_complaint"
+id: custody complaint venue logic
+code: |
+  undefine("county_choice")
+  
+  if len(all_potential_venue_options) == 1:
+    county_choice = all_potential_venue_options[0]
+  #elif len(all_potential_venue_options) == 2:
+    #choose on "Venue" question screen
+
+  check_for_required_venue = True
 ---
 if: tool_ID == "divorce_complaint"
 id: separate maintenance case check logic
@@ -3053,11 +3255,14 @@ code: |
       if tool_ID == "divorce_complaint" and not returning_to_finalize:
         if users[0].lives_in_Michigan:
           users[0].ten_days_in_county
+      elif tool_ID == "custody_complaint":
+        users[0].lives_in_Michigan
     else:
       exit_general
   
   else:
     users[0].address.address
+    
     if tool_ID in ["divorce_complaint", "JOD_only"]:
       if tool_ID == "divorce_complaint" and not returning_to_finalize:
         if users[0].lives_in_Michigan:
@@ -3066,6 +3271,10 @@ code: |
         users[0].village_or_township_yn
         users[0].address.county # skipped if answered on lives_in_Michigan screen
   
+    elif tool_ID == "custody_complaint":
+      users[0].lives_in_Michigan
+      users[0].address.county # skipped if answered on lives_in_Michigan screen
+
     if users[0].mailing_address.yesno:
       users[0].mailing_address.address
   
@@ -3079,19 +3288,29 @@ code: |
   if tool_ID == "divorce_complaint": #TODO: should this also be "and not returning_to_finalize"?
     if other_parties[0].lives_in_Michigan:
       other_parties[0].ten_days_in_county
+  elif tool_ID == "custody_complaint":
+    other_parties[0].lives_in_Michigan
 
   interview_order_other_parties_address_info = True
 ---
 id: international_service_warning
 question: "**Warning:** international service"
 subquestion: |
-  You said your spouse lives outside the United States. 
-  
+  You said ${OP_label} lives outside the United States. 
+
+  % if tool_ID == "divorce_complaint":  
   An important step in a divorce is to have your spouse **served** with the divorce papers. This is how your spouse is officially notified of the divorce case.
   
   Other countries have different rules and procedures for how to serve someone. The instructions on serving the divorce papers that are produced by this tool **will not apply to you.**
   
-  You will need to **talk to a lawyer** when it's time to have your spouse served with the divorce papers.
+  You will need to **talk to a lawyer** when it's time to have your spouse served with the divorce papers. ${MLH_GUIDE_FULL}
+  % elif tool_ID == "custody_complaint":
+  An important step in a custody case is to have the {Defendant} **served** with the custody papers. This is how the Defendant is officially notified of the custody case.
+  
+  Other countries have different rules and procedures for how to serve someone. The instructions on serving the custody papers that are produced by this tool **will not apply to you.**
+  
+  You will need to **talk to a lawyer** when it's time to have the Defendant served with the custody papers. ${MLH_GUIDE_FULL}
+  % endif
 continue button field: international_service_warning
 ---
 code: |
@@ -3161,6 +3380,7 @@ code: |
   prior_family_cases.reset_gathered(mark_incomplete=True)
   prior_family_cases.gathered_deep_reset = True
 ---
+if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]
 table: children.table
 rows: children
 columns:
@@ -3172,7 +3392,18 @@ columns:
 delete buttons: True
 confirm: True
 ---
-id: child questions
+if: tool_ID in ["custody_complaint", "custody_answer"]
+table: children.table
+rows: children
+columns:
+  - Name: row_item.name
+  - Birthdate (if given): |
+      format_date(row_item.birthdate, format='M/d/yyyy') if defined("row_item.birthdate") and row_item.birthdate != None else "---"
+delete buttons: True
+confirm: True
+---
+if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]
+id: child questions divorce
 code: |
   children_intro
   children_previous_address # calling now so that reset_gathered works even if no kids
@@ -3202,13 +3433,12 @@ code: |
 
     interview_order_home_state              
 
-    if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
-      if not children_live_with_parent:
-        children_live_with_third_party_kickout
-      if children_now_live_with_which_parent == "depends_on_child":
-        for child in children:
-          if child.legal_parent == "both":
-            child.lives_with
+    if not children_live_with_parent:
+      children_live_with_third_party_kickout
+    if children_now_live_with_which_parent == "depends_on_child":
+      for child in children:
+        if child.legal_parent == "both":
+          child.lives_with
               
 
     if tool_ID in ["divorce_complaint", "divorce_answer"]:
@@ -3275,6 +3505,89 @@ code: |
           interview_order_stepchild_address
   
   interview_order_children = True
+---
+if: tool_ID in ["custody_complaint", "custody_answer"]
+id: child questions custody
+code: |
+  children_previous_address # calling now so that reset_gathered works even if no kids
+  custody_child_explanation
+  children.gather()
+  enable_child_demographics_review_screen
+  enable_child_custody_case_status_review_screen
+  interview_order_home_state
+
+  there_are_marital_children # misnomer in custody cases, but widely used throughout logic
+  set_child_home_choices
+  set_parentage_reminder_logic
+
+  guidepost_subject_children
+  if kids_had_other_custodian:
+    other_custodian_kickout
+  if third_party_custody_claim:
+    third_party_custody_kickout
+  if need_temporary_order_kids:
+    if temporary_order_kids_exit:
+      exit_general        
+
+  interview_order_custody_where_kids_live
+  
+  children_lived_with_which_parent_past
+  children_previous_address.gather() # calls "children's previous addresses" screen
+
+  legal_custody_who
+  if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"]:
+    if (tool_ID == "divorce_complaint" and ((users[0].lives_in_Michigan and users[0].has_lived_6_months_MI and users[0].address.county == "Muskegon") or (other_parties[0].lives_in_Michigan and other_parties[0].has_lived_6_months_MI and other_parties[0].address.county == "Muskegon"))) or (tool_ID in ["JOD_only", "divorce_answer"] and county_choice == "Muskegon"):  
+      Muskegon_specific_PT_info
+      custom_PT_details
+    else:
+      specific_PT_how
+      if specific_PT_how == "custom":
+        custom_PT_details
+  if tool_ID == "custody_complaint":
+    hague_convention_info
+    child_domicile_info
+    if legal_custody_who == "both":
+      hundred_mile_rule
+
+  child_support_basic
+  allow_child_support_overpayment_correction
+  
+  if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party') + children.filter(legal_parent='custody_other')) > 0:
+    guidepost_stepchildren
+    interview_order_stepchild_address
+  
+  interview_order_children = True
+---
+id: interview order for custody kids' addresses/venue stuff
+code: |
+  if not children_live_with_parent:
+    children_live_with_third_party_kickout
+  if children_now_live_with_which_parent == "depends_on_child":
+    for child in children:
+      if child.legal_parent == "both":
+        child.lives_with
+        ### check for missing venue ###
+        if (child.lives_with == "users[0]" and not users[0].lives_in_Michigan and not child.spends_time_with_other_parent) or (child.lives_with == "other_parties[0]" and not other_parties[0].lives_in_Michigan and not child.spends_time_with_other_parent):
+          child.no_venue_kickout
+  
+  ### check for missing venue ###
+  elif children_now_live_with_which_parent == "users[0]":
+    if other_parties[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
+      all_kids_spend_time_with_other_parent
+      if not users[0].lives_in_Michigan and not all_kids_spend_time_with_other_parent:
+        all_kids_no_venue_kickout
+  elif children_now_live_with_which_parent == "other_parties[0]":
+    if users[0].lives_in_Michigan and not (other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
+      all_kids_spend_time_with_other_parent
+      if not other_parties[0].lives_in_Michigan and not all_kids_spend_time_with_other_parent:
+        all_kids_no_venue_kickout
+
+  calculate_custody_venue_options #gives warning if there's a venue conflict
+
+  if not confidential_contact_info_yn and (children_now_live_with_which_parent in ["depends_on_child", "users[0]"]):
+    child_address_not_confidential_warning
+
+  interview_order_custody_where_kids_live = True
 ---
 # --------------------------------------------------------------------
 ## spousal support
@@ -3799,6 +4112,7 @@ fields:
 ## child gathering
 # --------------------------------------------------------------------
 ---
+if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]
 code: |
   children[i].basic_info
   children[i].adopted_during_marriage
@@ -3825,6 +4139,25 @@ code: |
 
   children[i].complete = True
 ---
+if: tool_ID in ["custody_complaint", "custody_answer"]
+code: |
+  children[i].basic_info
+  
+  if children[i].is_shared_child and children[i].want_in_custody_case:
+    children[i].affidavit_of_parentage
+    if not children[i].affidavit_of_parentage or children[i].affidavit_revoked:
+      children[i].not_included_in_case_info
+    else:
+      if children[i].marital_birth and not (children[i].spouse_excluded_divorce or children[i].spouse_excluded_order):
+        children[i].not_included_in_case_info  
+  else:
+    children[i].not_included_in_case_info
+  
+  children[i].more_info
+
+  children[i].complete = True
+---
+if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]
 id: divorce with or without children tag
 code: |
   if tool_ID == "divorce_answer" and not create_counterclaim: 
@@ -3838,6 +4171,11 @@ code: |
     there_are_marital_children = False
 
   set_marital_children_or_not = True
+---
+if: tool_ID in ["custody_complaint", "custody_answer"]
+id: set there_are_marital_children for custody cases
+code: there_are_marital_children = True
+# this is misnamed for custody purposes, but retaining since it's so widely used in the logic
 ---
 id: children intro
 continue button field: children_intro
@@ -3876,7 +4214,8 @@ content: |
   
   You can make your divorce forms using this tool, but the forms **will not** include a child support request for your adult child.
 ---
-id: any children divorce 
+if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]
+id: any children -- divorce
 question: |
   Any minor children?
 subquestion: |
@@ -3884,7 +4223,9 @@ subquestion: |
 
   ${ collapse_template(non_marital_children_explanation_template) }
 fields:
-  - Do you or ${other_parties[0]} have any living {minor} children?: children.there_are_any
+  - label: |
+      Do you or ${other_parties[0]} have any living {minor} children?
+    field: children.there_are_any
     datatype: yesnoradio
 validation code: |
   if not children.there_are_any: 
@@ -3892,17 +4233,44 @@ validation code: |
 ---
 template: non_marital_children_explanation_template
 subject: |
-  Why do I need to include both children in common and separate children?
+  Why include both shared and separate children?
 content: |
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  All children of either parent must be listed on some of the custody case forms. This is true even though separate children will not be included in any custody, parenting time, or child support order.
+  % else:
   If you or your spouse has a child that is not also the child of the other spouse, in some cases this child must also be named in some divorce documents.
 
   Depending on your situation, there may also be important information about parentage that we want to make sure you have.
+  % endif
+---
+id: custody clarify child collection
+continue button field: custody_child_explanation
+question: |
+  Next, add information about **all** children
+subquestion: |
+  Next, you will be asked for information about your and ${other_parties[0]}'s children. You should list all children, including:
+  
+  * your and ${other_parties[0]}'s **shared {minor} children,**
+  * any other minor children that you have, and 
+  * any other minor children that ${other_parties[0]} has.
+
+  ${ collapse_template(non_marital_children_explanation_template) }
 ---
 id: any more children
 question: |
-  Any more children?
+  Any more minor children?
 subquestion: |
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  Please list:
+  
+  * your and ${other_parties[0]}'s **shared {minor} children,**
+  * any other minor children that you have, and 
+  * any other minor children that ${other_parties[0]} has.
+  % else:
   Please list **all minor children** that you or your {spouse} have, either separately or together.
+  % endif
+
+  ${ collapse_template(non_marital_children_explanation_template) }
   
   You have already told us about:
 
@@ -3936,7 +4304,7 @@ fields:
       - They were born after we got married.: marital
   - Did you and ${other_parties[0]} **adopt** ${ children[i] } together?: children[i].adopted_during_marriage
     datatype: yesnoradio
-  # if adopted_during_marriage, the first question is unnecessary. Put first for interview flow.
+  # if adopted_during_marriage, the first question is unnecessary. We put it first anyway for interview flow.
   # TODO? need help text saying don't include children who were born to or adopted by either spouse prior to marriage
 validation code: |
   children[i].revoke_paternity_reminder = False # sets for ALL kids, overridden on later screens as needed
@@ -4000,7 +4368,7 @@ content: |
   % endif
 ---
 id: marital children's origin
-if: children[i].timing == "marital" and not children[i].adopted_during_marriage
+if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"] and children[i].timing == "marital" and not children[i].adopted_during_marriage
 question: |
   About ${children[i]}
 fields:
@@ -4452,7 +4820,7 @@ code: |
   parentage_order_revoke = False
   parentage_marital_revoke = False
 
-  if there_are_marital_children:
+  if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"] and there_are_marital_children:
     for child in children.filter(legal_parent="both"):
       if child.origin == "premarital_with_another" and child.parentage_established == "affidavit" and child.how_conceived == "sex" and child.parentage_plan_to_revoke:
         parentage_affidavit_revoke = True
@@ -4486,7 +4854,7 @@ subquestion: |
   Legal parentage of ${children[i]} may be a complicated issue in your divorce. You will need to find a lawyer to help you. ${MLH_GUIDE_FULL}
 ---
 id: who is birth parent
-if: (children[i].origin == "premarital_with_spouse" and children[i].how_conceived == "premarital_sex_or_assisted_repro_with_spouse") or children[i].origin == "marital_third_party_conceived"
+if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"] and ((children[i].origin == "premarital_with_spouse" and children[i].how_conceived == "premarital_sex_or_assisted_repro_with_spouse") or children[i].origin == "marital_third_party_conceived")
 question: ${children[i]}'s birth parent
 subquestion: |
   ${ collapse_template(why_ask_child_origin) }
@@ -4504,6 +4872,133 @@ fields:
     js show if: |
       (val("children[i].bio_parent") == "user" || val("children[i].bio_parent") == "other_party") && ${ json.dumps(children[i].origin) } === "marital_third_party_conceived"
 ---
+id: should this child be part of the custody case -- basics
+if: tool_ID in ["custody_complaint", "custody_answer"]
+question: About ${children[i]}
+subquestion: |
+  ${ collapse_template(why_ask_child_origin) }
+fields:
+  - "Are you and ${ other_parties[0] } both parents of ${children[i]}?": children[i].is_shared_child
+    datatype: radio
+    choices: 
+      - "Yes, we are both ${children[i]}'s parents.": True
+      - "No, only one of us is ${children[i]}'s parent.": False
+  - "Should ${children[i]} be included in this custody case?": children[i].want_in_custody_case
+    datatype: yesnoradio
+    show if: children[i].is_shared_child
+  - note: ${collapse_template(children[i].include_custody_case_help)}
+    show if: children[i].is_shared_child
+validation code: |
+  if children[i].is_shared_child and children[i].want_in_custody_case:
+    children[i].legal_parent = "both"
+  else:
+    children[i].legal_parent = "custody_other"
+---
+template: children[i].include_custody_case_help                        
+subject: What if I'm not sure?
+content: |
+  Usually, you should answer **Yes** if you need a custody, parenting time, or child support order for ${children[i]}. 
+---
+id: custody case parentage basics
+if: tool_ID in ["custody_complaint", "custody_answer"]
+question: ${children[i]}'s parentage
+subquestion: |
+  ${ collapse_template(why_ask_child_origin) }
+fields:
+  - "Is there an Affidavit of Parentage signed by you and ${ other_parties[0] }?": children[i].affidavit_of_parentage
+    datatype: yesnoradio
+  - Who gave birth to ${children[i]}?: children[i].bio_parent
+    datatype: radio
+    choices:
+      - I did.: user
+      - "${ other_parties[0] } did.": other_party
+    show if: children[i].affidavit_of_parentage
+  - "Has your parentage been revoked (canceled) by a court order? This would only happen if someone filed a complaint or motion to revoke parentage, and the judge granted it.": children[i].affidavit_revoked
+    datatype: yesnoradio
+    show if:
+      variable: children[i].bio_parent
+      is: other_party
+  - "Has ${ other_parties[0] }'s parentage been revoked (canceled) by a court order? This would only happen if someone filed a complaint or motion to revoke parentage, and the judge granted it.": children[i].affidavit_revoked
+    datatype: yesnoradio
+    show if:
+      variable: children[i].bio_parent
+      is: user
+---
+id: who is birth parent (custody)
+if: tool_ID in ["custody_complaint", "custody_answer"]
+question: ${word("Your") if children[i].bio_parent == "user" else word(other_parties[0]) + word("'s")} marital status when ${children[i]} was born or conceived
+subquestion: |
+  ${ collapse_template(why_ask_child_origin) }
+fields:
+  - label: |
+      % if children[i].bio_parent == "user":
+      Were you married when ${children[i]} was conceived or born?
+      % else:
+      Was ${ other_parties[0] } married when ${children[i]} was conceived or born?
+      % endif
+    field: children[i].marital_birth
+    datatype: yesnoradio
+  - label: |
+      % if children[i].bio_parent == "user":
+      Did a Judgment of Divorce exclude your spouse as ${children[i]}'s parent?
+      % else:
+      Did a Judgment of Divorce exclude ${ other_parties[0] }'s spouse as ${children[i]}'s parent?
+      % endif
+    field: children[i].spouse_excluded_divorce
+    datatype: yesnoradio
+    show if: children[i].marital_birth
+  - label: |
+      % if children[i].bio_parent == "user":
+      Is there another court order revoking (undoing) the parentage (or paternity) of your spouse? *There may be a separate court order revoking parentage if you, ${ other_parties[0] }, or your spouse filed a case to revoke the spouse's parentage.*
+      % else:
+      Is there another court order revoking (undoing) the parentage (or paternity) of ${ other_parties[0] }'s spouse? *There may be a separate court order revoking parentage if you, ${ other_parties[0] }, or the spouse filed a case to revoke the spouse's parentage.*
+      % endif
+    field: children[i].spouse_excluded_order
+    datatype: yesnoradio
+    show if: 
+      variable: children[i].spouse_excluded_divorce
+      is: False 
+---
+id: info about children who can't be included in custody case
+continue button field: children[i].not_included_in_case_info
+question: Important!
+subquestion: |
+  % if not children[i].is_shared_child:
+  You said ${children[i]} is **not** your shared child with ${ other_parties[0] }. Because of this, ${children[i].familiar()} won't be included in the custody, parenting time, and child support parts of your custody case. However, information about them will be included on some forms.
+  % elif not children[i].want_in_custody_case:
+  You said ${children[i]} should not be included in the custody case. ${children[i].familiar()} won't be included in the custody, parenting time, and child support parts of your custody case. However, information about them will be included on some forms.
+  % elif not children[i].affidavit_of_parentage:
+  You said you and ${ other_parties[0] } did not sign an affidavit of parentage for ${children[i]}. This means that you can't use this tool to create a custody complaint for ${children[i].familiar()}. 
+
+  ${children[i].familiar()} won't be included in the custody, parenting time, and child support parts of your custody case. However, information about them will be included on some forms.
+
+  If you need more help you may want to speak to a lawyer. ${MLH_GUIDE_FULL}
+  % elif children[i].affidavit_revoked:
+  You said you the affidavit of parentage for ${children[i]} was revoked. This means that you can't use this tool to create a custody complaint for ${children[i].familiar()}. 
+
+  ${children[i].familiar()} won't be included in the custody, parenting time, and child support parts of your custody case. However, information about them will be included on some forms.
+
+  If you need more help you may want to speak to a lawyer. ${MLH_GUIDE_FULL}
+  % elif children[i].marital_birth and not (children[i].spouse_excluded_divorce or children[i].spouse_excluded_order):
+  % if children[i].bio_parent == "user":
+  You said:
+  
+  * you were married when ${children[i]} was conceived or born, and
+  * your spouse's parentage has not been revoked.
+  % else:
+  You said:
+  
+  * ${ other_parties[0] } was married when ${children[i]} was conceived or born, and
+  * their spouse's parentage has not been revoked.
+  % endif 
+  
+  ${children[i].familiar()} won't be included in the custody, parenting time, and child support parts of your custody case. However, information about them will be included on some forms.
+
+  If you need more help you may want to speak to a lawyer. ${MLH_GUIDE_FULL}
+  % endif
+validation code: |
+  children[i].legal_parent = "custody_other"
+---
 ######## start children qualification/address/home state questions #######
 # LHI "(Marital) Minor Children Information" (first part)
 ---
@@ -4520,6 +5015,14 @@ subquestion: |
   % else:
   The divorce may decide issues of custody and child support for ${ comma_and_list(children.filter(legal_parent='both')) }
   % endif
+---
+id: guidepost_subject_children
+continue button field: guidepost_subject_children
+question: More information about the children who are the subject of the case
+subquestion: |
+  The next few questions are all about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() } who will be the subject of your custody case: 
+  
+  **${ comma_and_list(children.filter(legal_parent='both')) }**.
 ---
 id: where children live
 question: |
@@ -4559,23 +5062,75 @@ validation code: | ## for review screen functionality ##
     invalidate("child.lives_with")
 ---
 code: |
-  child_lives_with_choices = [
-                  ['users[0]', 'Me'],
-                  ['other_parties[0]', 'My spouse'],
-                  ['both', 'Both']
-                             ]
+  if tool_ID in ["custody_complaint", "custody_answer"]:
+    child_lives_with_choices = [
+                    ['users[0]', 'Me'],
+                    ['other_parties[0]', other_parties[0]],
+                    ['both', 'Both']
+                               ]
+  else:
+    child_lives_with_choices = [
+                    ['users[0]', 'Me'],
+                    ['other_parties[0]', 'My Spouse'],
+                    ['both', 'Both']
+                               ]
   
   if children.there_are_any and len(children.filter(legal_parent="both")) > 1:
-    child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with my spouse.'])
+    if tool_ID in ["custody_complaint", "custody_answer"]:
+      child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with ' + word(other_parties[0])])
+    else:
+      child_lives_with_choices.append(['depends_on_child', 'One or more children live with me, and one or more children live with my spouse.'])
 
   set_child_home_choices = True
+---
+if: tool_ID == "custody_complaint"
+id: children with conflicting venue requirements
+question: Important! 
+subquestion: |
+  Your answers indicate that${ comma_and_list(children.filter(legal_parent="both").filter(custody_venue_options="only_OP"), and_string='and') } do not spend time with a parent in ${users[0].address.county} County and comma_and_list(children.filter(legal_parent="both").filter(custody_venue_options="only_user"), and_string='and') } do not spend time with a parent in ${other_parties[0].address.county} County.
+
+  In this situation, Michigan law is not clear if you can file just one custody case or if you would have to file a case in both counties and then ask to have the cases consolidated. 
+
+  If you continue now, your complaint will include all the children, but the court may tell you it can't make an order that includes all of the children. 
+    
+  It is best to find a lawyer to help you. ${MLH_GUIDE_FULL} You can also change which children you include in your custody case by using the **Review / Edit** link.
+fields:
+ - Do you want to continue even though there's a risk the court may not be able to issue a custody order for all the children?: venue_conflict_continue
+   datatype: yesnoradio
+---
+id: kickout for individual child venue problem
+event: children[i].no_venue_kickout
+question: This tool is not right for you
+subquestion: |
+  You said that ${children[i]} does not live in Michigan or spend time in Michigan. This means you cannot include ${children[i]} as the subject of your Michigan custody case.
+
+  You can change which children you include in your custody case by using the **Review / Edit** link.
+
+  You may want to speak with a lawyer for more help. ${MLH_GUIDE_FULL}
+---
+id: kickout for collective children venue problem
+event: all_kids_no_venue_kickout
+question: This tool is not right for you
+subquestion: |
+  You said that ${ comma_and_list(children.filter(legal_parent='both'), and_string='and') } ${ children.filter(legal_parent="both").does_verb('do') } not live in Michigan or spend time in Michigan. This means you cannot start a Michigan custody case.
+
+  You may want to speak with a lawyer for more help. ${MLH_GUIDE_FULL}  
 ---
 if: not children_live_with_parent
 id: kickout if children don't live with parents
 event: children_live_with_third_party_kickout
 question: This tool is not right for you
 subquestion: |
-  We're sorry. You cannot use this tool if any of your and ${ other_parties[0] }'s minor children are living with someone besides you or your spouse.
+  We're sorry. You cannot use this tool if
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } (the children who you want to include as the subject of the custody case) are living with someone besides you or your spouse.
+
+  % if len(children.filter(legal_parent="both")) > 1:
+  If you want to start a custody case with just some of these children instead, you can change which children you include in your custody papers by using the **Review / Edit** link.
+  % endif
+  % else:
+  any of your and ${ other_parties[0] }'s minor children are living with someone besides you or your spouse.
+  % endif
   
   You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
 ---
@@ -4584,7 +5139,16 @@ if: kids_had_other_custodian
 event: other_custodian_kickout
 question: This tool is not right for you
 subquestion: |
-  We're sorry. You cannot use this tool if any of your and ${ other_parties[0] }'s minor children have lived with a legal custodian other than a parent during the past five years.
+  We're sorry. You cannot use this tool if
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } (the children who you want to include as the subject of the custody case) have lived with a legal custodian other than a parent during the past five years.
+
+  % if len(children.filter(legal_parent="both")) > 1:
+  If you want to start a custody case with just some of these children instead, you can change which children you include in your custody papers by using the **Review / Edit** link.
+  % endif
+  % else:
+  any of your and ${ other_parties[0] }'s minor children have lived with a legal custodian other than a parent during the past five years.
+  % endif
   
   You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
 ---
@@ -4593,7 +5157,16 @@ if: third_party_custody_claim
 event: third_party_custody_kickout
 question: This tool is not right for you
 subquestion: |
-  We're sorry. You cannot use this tool if there are any other adults (besides you and ${ other_parties[0] }) who may have a legal right to custody or parenting time of any of your and ${ other_parties[0] }'s minor children.
+  We're sorry. You cannot use this tool if there are any other adults (besides you and ${ other_parties[0] }) who may have a legal right to custody or parenting time of 
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } (the children you want to include as the subject of the custody case). 
+
+  % if len(children.filter(legal_parent="both")) > 1:
+  If you want to start a custody case with just some of these children instead, you can change which children you include in your custody papers by using the **Review / Edit** link.
+  % endif
+  % else:
+  any of your and ${ other_parties[0] }'s minor children.
+  % endif
   
   You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
 ---
@@ -4601,12 +5174,19 @@ id: children disqualifiers
 question: |
   Minor children -- special situations
 subquestion: |
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  These questions are about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() } who will be the subject of yor custody case: **${ comma_and_list(children.filter(legal_parent='both')) }**.
+  % else:
   These questions are about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() }: **${ comma_and_list(children.filter(legal_parent='both')) }**.
-
+  % endif
 fields:
   - label: |
       % if len(children.filter(legal_parent="both")) > 1:
+      % if tool_ID in ["custody_complaint", "custody_answer"]:
+      Have any of the children listed above lived with a legal custodian, other than a parent, during the past five years? (For example, because of a child protective services case, a minor guardianship, or a third-party custody order.)      
+      % else:
       Have any of your and ${ other_parties[0] }'s children lived with a legal custodian, other than a parent, during the past five years? (For example, because of a child protective services case, a minor guardianship, or a third-party custody order.)
+      % endif
       % else:
       Has your child ${ children.filter(legal_parent='both') } lived with a legal custodian, other than a parent, during the past five years? (For example, because of a child protective services case, a minor guardianship, or a third-party custody order.)
       % endif
@@ -4614,7 +5194,7 @@ fields:
     datatype: yesnoradio
   - label: |
       % if len(children.filter(legal_parent="both")) > 1:
-      Are there any other adults (besides you and your spouse) who may have a legal right to custody or parenting time of any of the minor children?
+      Are there any other adults (besides you and your spouse) who may have a legal right to custody or parenting time of any of these minor children?
       % else:
       Are there any other adults (besides you and your spouse) who may have a legal right to custody or parenting time for ${ children.filter(legal_parent='both') }?
       % endif
@@ -4625,7 +5205,7 @@ fields:
     datatype: yesnoradio
   - label: |
       % if len(children.filter(legal_parent="both")) > 1:
-      Do you believe that a temporary custody order is needed to protect the children because they have been abused, mistreated, threatened, or neglected?
+      Do you believe that a temporary custody order is needed to protect these children because they have been abused, mistreated, threatened, or neglected?
       % else:
       Do you believe that a temporary custody order is needed to protect ${ children.filter(legal_parent='both') } because they have been abused, mistreated, threatened, or neglected?
       % endif
@@ -4641,7 +5221,7 @@ question: |
 subquestion: |
   You said that you think a temporary custody order is needed to protect ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } because of abuse, mistreatment, threats, or neglect.
 
-  Getting a temporary custody order is not simple. You can still use this tool to prepare your forms and begin the divorce process, but this tool will not help you ask for or get a temporary custody order.
+  Getting a temporary custody order is not simple. You can still use this tool to prepare your forms and begin the ${word("divorce") if tool_ID in ["divorce_complaint", "JOD_only", "divorce_answer"] else word("custody")} process, but this tool will not help you ask for or get a temporary custody order.
   
   You may want to speak to a lawyer. ${MLH_GUIDE_FULL}
 fields:
@@ -4656,6 +5236,56 @@ fields:
     choices:
       - ${ users[0] }: users[0]
       - ${ other_parties[0] }: other_parties[0]
+  - Does ${ children[i] } spend time with ${ other_parties[0] } in ${other_parties[0].address.county} County?: children[i].spends_time_with_other_parent
+    datatype: yesnoradio
+    js show if: |
+      ${ "true" if tool_ID in ["custody_complaint", "custody_answer"] and other_parties[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county) else "false" } && val('children[i].lives_with') === "users[0]"
+  - Does ${ children[i] } spend time with you in ${users[0].address.county} County?: children[i].spends_time_with_other_parent
+    datatype: yesnoradio
+    js show if: |
+      ${ "true" if tool_ID in ["custody_complaint", "custody_answer"] and users[0].lives_in_Michigan and not (other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county) else "false" } && val('children[i].lives_with') === "other_parties[0]"
+validation code: |
+  if tool_ID == "custody_complaint":
+    if children[i].lives_with == "users[0]" and other_parties[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
+      if children[i].spends_time_with_other_parent:
+        children[i].custody_venue_options = "both"
+      else: 
+        children[i].custody_venue_options = "only_user"
+    elif children[i].lives_with == "other_parties[0]" and users[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
+      if children[i].spends_time_with_other_parent:
+        children[i].custody_venue_options = "both"
+      else: 
+        children[i].custody_venue_options = "only_OP"
+    else:
+      children[i].custody_venue_options = "not_needed"      
+---
+id: all children same home, spend time in other home
+question: Time with their other parent?
+subquestion: |
+  You said ${ comma_and_list(children.filter(legal_parent='both'), and_string='and') } ${ children.filter(legal_parent="both").does_verb('live') } with ${ word("you") if children_now_live_with_which_parent == "users[0]" else other_parties[0]}.
+fields:
+  - label: |
+      % if len(children.filter(legal_parent="both")) > 1:
+      Do all these children spend time with ${ other_parties[0] } in ${other_parties[0].address.county} County?
+      % else:
+      Does ${ children.filter(legal_parent='both') } spend time with ${ other_parties[0] } in ${other_parties[0].address.county} County?
+      % endif
+    field: all_kids_spend_time_with_other_parent
+    datatype: yesnoradio
+    show if:
+      code: |
+        children_now_live_with_which_parent == "users[0]" 
+  - label: |
+      % if len(children.filter(legal_parent="both")) > 1:
+      Do all these children spend time with you in ${users[0].address.county} County?
+      % else:
+      Does ${ children.filter(legal_parent='both') } spend time with you in ${users[0].address.county} County?
+      % endif
+    field: all_kids_spend_time_with_other_parent
+    datatype: yesnoradio
+    show if:
+      code: |
+        children_now_live_with_which_parent == "other_parties[0]" 
 ---
 #####
 ######## Home State logic
@@ -4829,6 +5459,26 @@ fields:
       variable: children[i].spent_six_months_in_michigan
       is: True
 ---
+if: tool_ID in ["custody_complaint", "custody_answer"]
+id: kickout if home state not MI
+event: children[i].home_state_exit
+question: This tool is not right for you
+subquestion: |
+  Based on your answers, Michigan is not ${ children[i] }'s legal "home state".
+  
+  We're sorry. You cannot use this tool if any of the children included as the subject of the custody case do not have Michigan as their legal "home state". 
+  
+  When another state, country, or Native American tribe is considered the child's home state, a judge in a Michigan court may not be able to enter an order dealing with child custody, parenting time, and child support. This means that you may need to file in a separate court to get an order dealing with those issues.
+
+  You may want to speak to a lawyer. If you have low income you may qualify for free legal services. ${ MLH_GUIDE_FULL }
+
+  % if len(children.filter(legal_parent="both")) > 1:
+  If you want to start a custody case **without** including this child, you can change which children you include in your custody papers by using the **Review / Edit** link.
+  % endif
+  
+  You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
+---
+if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]
 id: MI has no custody jurisdiction warning
 question: It's important for you to talk to a lawyer
 subquestion: |
@@ -5016,13 +5666,13 @@ fields:
     datatype: radio
     choices:
       - Only me: user
-      - Only my spouse: other_party
+      - "Only ${other_parties[0]}": other_party
       - "Both of us, jointly": both
   - Who should have physical custody?: physical_custody_who
     datatype: radio
     choices:
       - Only me: user
-      - Only my spouse: other_party
+      - "Only ${other_parties[0]}": other_party
       - "Both of us, jointly": both
   - note: |
       Because you have selected joint physical custody, both parents will have parenting time.
@@ -5137,21 +5787,21 @@ content: |
   1. If you **already went to the final hearing** and the judge made decisions about custody and {parenting time}, you should match what the judge ordered.
   
   2. Otherwise:
-      * if you and your spouse **agree** on a question, use your agreed answer.
-      * if you and your spouse **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
+      * if you and ${OP_label} **agree** on a question, use your agreed answer.
+      * if you and ${OP_label} **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
   
-  % elif tool_ID == "divorce_complaint":
-  * If you and your spouse **agree** on a question, use your agreed answer.
-  * If you and your spouse **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
+  % elif tool_ID in ["divorce_complaint", "custody_complaint"]:
+  * If you and ${OP_label} **agree** on a question, use your agreed answer.
+  * If you and ${OP_label} **don't agree** on a question, use the custody and parenting time terms that you want the judge to order.
 
-  You may have to come back to this tool later and change the custody and parenting time terms if you and your spouse change your agreement or if the judge orders something different.  
+  You may have to come back to this tool later and change the custody and parenting time terms if you and ${OP_label} change your agreement or if the judge orders something different.  
   % if not user_logged_in():
   You must create an account and log in to save your answers.
   % endif
   % elif tool_ID == "divorce_answer":
   Use the custody and parenting time terms that you want the judge to order. 
   
-  These are not necessarily the custody and parenting time arrangements you will end up with in your divorce. They are just what you are asking the judge to order.
+  These are not necessarily the custody and parenting time arrangements you will end up with in your ${word("final order") if tool_ID in ["custody_complaint", "custody_answer"] else word("divorce")}. They are just what you are asking the judge to order.
   % endif
 ---
 template: custody_definitions
@@ -5191,7 +5841,7 @@ content: |
 
   Types of parenting time:
   
-  * **Reasonable** parenting time means that specific dates, times, and other conditions are left for the parents to work out. If you believe that you and your spouse can agree on parenting time arrangements, you may ask for reasonable parenting time. However, if the judge orders reasonable parenting time, and you and your spouse can’t agree, the judge may not be able to enforce the order or judgment. You will need to return to court and ask for a specific parenting time schedule in order for the judge to enforce the judgment.
+  * **Reasonable** parenting time means that specific dates, times, and other conditions are left for the parents to work out. If you believe that you and ${other_parties[0]} can agree on parenting time arrangements, you may ask for reasonable parenting time. However, if the judge orders reasonable parenting time, and you and ${other_parties[0]} can’t agree, the judge may not be able to enforce the order or judgment. You will need to return to court and ask for a specific parenting time schedule in order for the judge to enforce the judgment.
   * **Specific** parenting time means that all of the dates, times, and conditions for visits are included in the court order. Many counties have standard parenting time schedules that you can use in your case. You can contact the Friend of the Court in the county where your case will be filed and ask if there is a standard parenting time schedule. You can also find sample schedules in the [Michigan Parenting Time Guideline](https://www.courts.michigan.gov/4a537f/siteassets/court-administration/standardsguidelines/foc/pt_gdlns.pdf).
   * **Specific and supervised** parenting time means that all of the dates, times, and conditions for visits are included in the court order. The judge will order parenting time to be supervised by a third party – such as a relative, friend, or supervised parenting time center. Supervised parenting time may be appropriate if the {noncustodial parent} is a risk to the children. The supervisor must be willing to supervise parenting time. (This option does not apply if both parents share physical custody.)
 
@@ -5203,7 +5853,7 @@ subquestion: |
   What parenting time schedule do you want the judge to order?
   
    - Write in complete sentences and include all important details, including days and times.
-   - Refer to yourself and your spouse by your full names, or as Plaintiff and Defendant.
+   - Refer to yourself and ${other_parties[0]} by your full names, or as Plaintiff and Defendant.
    - Do **not** use words like “I”, “we”, “him”, or “her”.
 
   Review the [Michigan Parenting Time Guideline](https://www.courts.michigan.gov/4a537f/siteassets/court-administration/standardsguidelines/foc/pt_gdlns.pdf) for help creating a schedule that fits your family’s needs. 
@@ -5221,9 +5871,9 @@ subquestion: |
 
   An abducted child is returned to where the child was a **habitual resident.** This means the country where the child has been living. It doesn’t necessarily mean the country where the child or the child’s parents are citizens. After the child is returned to the country of habitual residence, custody decisions are made in the courts there. The Hague Convention does not decide who should have custody of the child. It only decides where the custody case will happen.
 
-  It can be much harder to return a kidnapped child from a country that has not signed on to the Hague Convention. Because of this, Michigan law requires your Judgment of Divorce to include a paragraph that prevents parenting time in a non-Hague Convention country. The Judgment includes a place where you and your spouse can agree to allow parenting time in a specific country that is not a Hague Convention country, but you cannot do this using this tool.
+  It can be much harder to return a kidnapped child from a country that has not signed on to the Hague Convention. Because of this, Michigan law requires your ${word("Order Regarding Custody, Parenting Time and Child Support") if tool_ID in ["custody_complaint", "custody_answer"] else word("Judgment of Divorce")} to include a paragraph that prevents parenting time in a non-Hague Convention country. The ${word("Order") if tool_ID in ["custody_complaint", "custody_answer"] else word("Judgment")} includes a place where you and ${other_parties[0]} can agree to allow parenting time in a specific country that is not a Hague Convention country, but you cannot do this using this tool.
 
-  The Hague Convention is complicated, and it is an important tool for a parent whose spouse abducts their child and keeps the child in another country. If you want your spouse to have parenting time in a country that is **not** a party to the Hague Convention, you may want to consider talking to a lawyer to make sure you understand the risks involved.
+  The Hague Convention is complicated, and it is an important tool for a parent if the other parent abducts their child and keeps the child in another country. If you want ${other_parties[0]} to have parenting time in a country that is **not** a party to the Hague Convention, you may want to consider talking to a lawyer to make sure you understand the risks involved.
 
 ---
 # LHI Domicile and Residence of Minor Children Part 1
@@ -5231,16 +5881,18 @@ id: generic domicile provisions
 continue button field: child_domicile_info
 question: Domicile and Residence of Minor Children 
 subquestion: |
+  % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
   If your Judgment of Divorce has custody provisions, the following will apply:
 
+  % endif
   % if len(children.complete_elements()) > 1:
   * If you have sole or joint physical custody of your children and you move, you must give the Friend of the Court the child’s new address in writing.
-  * The minor children may not be moved from the state of Michigan without the judge’s prior approval. Even if you and your spouse agree that the children can move out of state, you must get a court order first.
-  * Neither you nor your spouse may move more than 100 miles away from where you lived at the beginning of the case (within Michigan) except in certain situations. This is called the “100-mile rule.” **If one parent is granted sole legal custody of the minor children, the 100-mile rule will not apply.**
+  * The minor children may not be moved from the state of Michigan without the judge's prior approval. Even if you and ${other_parties[0]} agree that the children can move out of state, you must get a court order first.
+  * Neither you nor ${other_parties[0]} may move more than 100 miles away from where you lived at the beginning of the case (within Michigan) except in certain situations. This is called the “100-mile rule.” **If one parent is granted sole legal custody of the minor children, the 100-mile rule will not apply.**
   % else:
   * If you have sole or joint physical custody of your child and you move, you must give the Friend of the Court the child’s new address in writing.
-  * The minor child may not be moved from the state of Michigan without the judge’s prior approval. Even if you and your spouse agree that the child can move out of state, you must get a court order first.
-  * Neither you nor your spouse may move more than 100 miles away from where you lived at the beginning of the case (within Michigan) except in certain situations. This is referred to as the “100-mile rule.” **If one parent is granted sole legal custody of the minor child, the 100-mile rule will not apply.**
+  * The minor child may not be moved from the state of Michigan without the judge's prior approval. Even if you and ${other_parties[0]} agree that the child can move out of state, you must get a court order first.
+  * Neither you nor ${other_parties[0]} may move more than 100 miles away from where you lived at the beginning of the case (within Michigan) except in certain situations. This is referred to as the “100-mile rule.” **If one parent is granted sole legal custody of the minor child, the 100-mile rule will not apply.**
   % endif
 
 ---
@@ -5249,27 +5901,27 @@ id: 100 mile rule
 continue button field: hundred_mile_rule
 question: 100-Mile Rule
 fields:
-  - Do you and your spouse currently live more than 100 miles away from each other?: already_over_100_miles
+  - Do you and ${other_parties[0]} currently live more than 100 miles away from each other?: already_over_100_miles
     datatype: yesnoradio
   - note: |
-      **The 100-mile rule will not apply in your case** because you and your spouse live more than 100 miles away from each other at the start of your divorce case. 
+      **The 100-mile rule will not apply in your case** because you and ${other_parties[0]} live more than 100 miles away from each other at the start of your ${word("custody") if tool_ID in ["custody_complaint", "custody_answer"] else word("divorce")} case. 
     show if:
       variable: already_over_100_miles
       is: True
-  - "Do you and your spouse agree that either of you may move more than 100 miles from where you currently live, as long as you still live within the state of Michigan?": allow_over_100_miles
+  - "Do you and ${other_parties[0]} agree that either of you may move more than 100 miles from where you currently live, as long as you still live within the state of Michigan?": allow_over_100_miles
     datatype: yesnoradio
     show if:
       variable: already_over_100_miles
       is: False
   - note: |
-      **The 100-mile rule will not apply in your case** if you and your spouse agree that it will not apply. 
+      **The 100-mile rule will not apply in your case** if you and ${other_parties[0]} agree that it will not apply. 
     show if:
       variable: allow_over_100_miles
       is: True
   - note: |
-      According to your answers, the minor child will have a legal residence with each parent, (meaning you and your spouse will be granted joint legal custody), and **the 100-mile rule will apply in your case.** 
+      According to your answers, the minor child will have a legal residence with each parent, (meaning you and ${other_parties[0]} will be granted joint legal custody), and **the 100-mile rule will apply in your case.** 
       
-      Your Judgment of Divorce will state that "neither {party} shall move more than 100 miles away from where they lived at the beginning of this case, and the child(ren) have a legal residence with each parent." For more information, read [Moving with Children After Separation or Divorce](https://michiganlegalhelp.org/resources/family/moving-children-after-separation-or-divorce).
+      Your ${word("Order Regarding Custody, Parenting Time and Child Support") if tool_ID in ["custody_complaint", "custody_answer"] else word("Judgment of Divorce")} will state that "neither {party} shall move more than 100 miles away from where they lived at the beginning of this case, and the child(ren) have a legal residence with each parent." For more information, read [Moving with Children After Separation or Divorce](https://michiganlegalhelp.org/resources/family/moving-children-after-separation-or-divorce).
     show if:
       variable: allow_over_100_miles
       is: False
@@ -5280,7 +5932,7 @@ continue button field: child_support_basic
 question: Child Support
 subquestion: |
   % if tool_ID == "divorce_complaint":
-  Your Complaint for Divorce will ask the judge to order child support. 
+  Your Complaint for ${word("Custody") if tool_ID in ["custody_complaint", "custody_answer"] else word("Divorce")} will ask the judge to order child support. 
   % endif
   Michigan law requires judges to order child support based on the Michigan Child Support Formula. In many counties, the Friend of the Court will calculate child support for you. The amount of child support is based on the income of each parent, the number of overnights that each parent has with the child, and a number of other factors. You can use the [MiChildSupport Calculator](https://pcal.state.mi.us/welcome) on the Michigan Department of Health and Human Services website to find out what the support amount might be in your case.
 
@@ -5326,7 +5978,11 @@ question: |
 subquestion: |
   Use the buttons below to add or remove a child. 
 
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  Please list **all minor children** that you or ${other_parties[0]} have, either separately or together.
+  % else:
   Please list **all minor children** that you or your {spouse} have, either separately or together.
+  % endif
 
   % if len(children.complete_elements()) > 0:
   You have already told us about:
@@ -5342,6 +5998,12 @@ validation code: |
 event: children[i].rerun_parentage_logic
 code: |
   invalidate("children[i].adopted_during_marriage", "children[i].timing", "children[i].origin", "children[i].complicated_issue_kickout", "children[i].bio_parent", "children[i].legal_parent", "children[i].more_info", "children[i].parentage_established", "children[i].how_conceived", "children[i].both_on_birth_cert", "children[i].marital_birth", "children[i].complete")
+
+  force_gather("children[i].complete")
+---
+event: children[i].rerun_custody_logic
+code: |
+  invalidate("children[i].is_shared_child", "children[i].want_in_custody_case", "children[i].more_info", "children[i].affidavit_of_parentage", "children[i].affidavit_revoked", "children[i].affidavit_revoked", "children[i].not_included_in_case_info", "children[i].marital_birth", "children[i].spouse_excluded_divorce", "children[i].spouse_excluded_order", "children[i].complete")
 
   force_gather("children[i].complete")
 ---
@@ -5615,6 +6277,10 @@ subquestion: |
 
   ${prior_family_cases.add_action(color="success", size="md")}
 continue button field: prior_family_cases.revisit
+validation code: |
+  if tool_ID == "custody_complaint":
+    if controlling_custody_case in ["yes_one", "yes_multiple"] and prior_family_cases.number_gathered() == 0:
+      validation_error("You said there is an existing child support, parenting time, or custody case.")
 ---
 if: tool_ID != "JOD_only"
 id: prior family cases table
@@ -5629,6 +6295,7 @@ edit:
   - status
   - included_custody_PT_order  
   - separate_maintenance_pending_kickout
+require gathered: False
 delete buttons: True
 confirm: True
 ---
@@ -5642,25 +6309,111 @@ columns:
 edit:
   - status
   - has_current_custody_PT_order
-      
+require gathered: False   
 delete buttons: True
 confirm: True
 ---
+id: custody complaint controlling custody case screener
+question: Existing child support, parenting time, or custody cases
+fields: 
+  - "Is there any existing child support, parenting time, or custody case in any court anywhere between you and the other parent?": controlling_custody_case
+    datatype: radio
+    choices: 
+      - "Yes, there is **one** existing case.": yes_one
+      - "Yes, there are **multiple** existing cases.": yes_multiple
+      - "No, there is **no** existing case.": no
+  - note: ${collapse_template(existing_case_meaning)}
+  - "Is the existing case in a **Michigan** state court?": controlling_case_location
+    datatype: radio
+    choices:
+      - "Yes, the case is in a Michigan state court.": Michigan
+      - "No, the case is in a different state court, a tribal court, or a court outside the United States.": foreign
+    show if:
+      variable: controlling_custody_case
+      is: yes_one
+  - "Are the existing cases **all in Michigan** state courts?": controlling_case_location
+    datatype: radio
+    choices:
+      - "Yes, the case are **all** in Michigan state courts.": Michigan
+      - "No, at least one case is in a different state court, a tribal court, or a court outside the United States.": foreign
+    show if:
+      variable: controlling_custody_case
+      is: yes_multiple
+validation code: |
+  if controlling_custody_case in ["yes_one", "yes_multiple"]:
+    prior_family_cases.there_are_any = True
+    prior_family_cases.minimum_number=1
+  else:
+    undefine("prior_family_cases.there_are_any", "prior_family_cases.minimum_number")
+---
+if: controlling_custody_case == "yes_one" and controlling_case_location == "Michigan"
+id: custody complaint Michigan custody case followup single
+question: More about your child support, parenting time, or custody case
+subquestion: |
+  You said there is an existing child support, parenting time, or custody case between you and the other parent in a Michigan state court.
+fields: 
+  - "Do you need a custody order for a child or children who were **not** included in the existing case?": all_children_in_prior_case
+    datatype: radio
+    choices:
+      - Yes: False
+      - No. All the children were included in the prior case.: True
+  - "What county was the existing case filed in?": controlling_custody_case_county
+    code: court_list._load_courts()["address_county"].unique()
+    show if: 
+      variable: all_children_in_prior_case
+      is: False
+---
+if: controlling_custody_case == "yes_multiple" and controlling_case_location == "Michigan"
+id: custody complaint Michigan custody case followup -multiple
+question: More about your child support, parenting time, or custody cases
+subquestion: |
+  You said there are multiple existing child support, parenting time, or custody cases between you and the other parent in Michigan state court.
+fields: 
+  - Are the existing Michigan cases all in the same court?: MI_cases_in_same_court
+    datatype: radio
+    choices:
+      - "Yes, the existing cases are all in **the same court.**": True
+      - "No, the existing cases are in **two or more courts.**": False
+  - "Do you need a custody order for a child or children who were **not** included in the existing cases?": all_children_in_prior_case
+    datatype: radio
+    choices:
+      - Yes: False
+      - No. All the children were included in the existing cases.: True
+    show if: MI_cases_in_same_court
+  - "What county were the existing cases filed in?": controlling_custody_case_county
+    code: court_list._load_courts()["address_county"].unique()
+    js show if: |
+      val("MI_cases_in_same_court") === true && val("all_children_in_prior_case") === false    
+---
+template: existing_case_meaning
+subject: What do you mean by "existing case"?
+content: |
+  An "existing case" means a case that is:
+
+  * ongoing,
+  * pending (pasued), or
+  * finished with a final order, and the court has continuing jurisdiction.
+---
 # LHI Prior Court Cases Part 1
-# TODO: question for Amy: should the help text for family division cases exclude custody, paternity, and child support for custody interviews? (See Prior Court Cases Part 1 Dialog in Brett's materials.)
 id: prior family cases
 question: |
   % if tool_ID == "JOD_only":
   Past custody or child support orders
+  % elif tool_ID in ["custody_complaint", "custody_answer"]:
+  Other past family division cases
   % else:
   Past family division cases
+  % endif
+subquestion: |
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  You said there is no existing child support, parenting time, or custody case in any court anywhere between you and ${other_parties[0]}.
   % endif
 fields:
   - label: |
       % if tool_ID == "JOD_only":
       Are there any prior custody or support orders in Michigan or any other state regarding ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') }?
       % elif tool_ID in ["custody_complaint", "custody_answer"]:
-      Are there any pending or resolved **family division** court cases or orders involving you and ${ OP_label }? 
+      Are there any other pending or resolved **family division** court cases or orders involving you and ${ OP_label }? 
       % elif tool_ID in ["divorce_complaint", "divorce_answer"]:
       % if there_are_marital_children and len(children.filter(legal_parent='both')) > 1:
       Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') }, or you and your spouse?
@@ -5748,11 +6501,9 @@ content: |
   **Family Division cases in Michigan** include:
   
   * Divorce, annulment, or separate maintenance (sometimes called legal separation)
-  % if tool_ID in ["divorce_complaint", "divorce_answer"]:
   * Custody
   * Paternity/Parentage
   * Child support
-  % endif
   * All types of personal protection orders-- whether for a domestic relationship, sexual assault, or nondomestic stalking
   * Adoption
   * Child protective proceedings
@@ -5771,6 +6522,12 @@ question: |
   Any more **family division** court cases or orders?
   % endif
 subquestion: |
+  % if tool_ID in ["custody_complaint", "custody_answer"] and controlling_custody_case in ["yes_multiple", "yes_one"]:
+  This includes any existing child support, parenting time, or custody cases, as well as any other family division cases.
+
+  % endif
+  ${ collapse_template(family_division_info) }
+  
   So far, you have listed&colon;
 
   ${prior_family_cases.table}
@@ -5789,13 +6546,17 @@ fields:
       % endif
     field: prior_family_cases.there_is_another
     datatype: yesnoradio
+validation code: |
+  if tool_ID == "custody_complaint":
+    if controlling_custody_case in ["yes_one", "yes_multiple"] and prior_family_cases.number_gathered() == 0:
+      validation_error("You said there is an existing child support, parenting time, or custody case.")
 ---
 id: prior family cases gather logic
 code: |
   if tool_ID == "JOD_only" and there_are_marital_children:
     prior_family_cases[i].status
   
-  elif tool_ID in ["divorce_complaint", "divorce_answer"]:
+  elif tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint", "custody_answer"]:
     # only called in divorce_answer if complaint_type == "with_children"
     prior_family_cases[i].status
     if there_are_marital_children:
@@ -5862,14 +6623,11 @@ objects:
   - prior_family_case_types_ordered: DAOrderedDict.using(elements={**prior_family_case_types}, auto_gather=False, gathered=True)
 ---
 code: |
-  if tool_ID in ["custody_answer", "custody_complaint"]:
-    prior_family_case_types_ordered.pop("paternity")
-    prior_family_case_types_ordered.pop("custody")
   if tool_ID == "custody_complaint":
     prior_family_case_types_ordered.pop("divorce")
+    prior_family_case_types_ordered.pop("separate_maintenance")
 
   set_prior_family_case_types = True
-#TODO: when build custody, should new separate maintenance option be removed from one or both tools?
 ---
 variable name: prior_family_case_types
 data: !!omap
@@ -5903,7 +6661,7 @@ fields:
       is: MI
   - County: prior_family_cases[i].county
     js show if: |
-      val("prior_family_cases[i].state") !== "MI" && (${ json.dumps(tool_ID) } === "divorce_complaint" || ${ json.dumps(tool_ID) } === "divorce_answer")
+      val("prior_family_cases[i].state") !== "MI"
   - Court Name: prior_family_cases[i].court
     js show if: |
       val("prior_family_cases[i].state") !== "MI"
@@ -5914,12 +6672,8 @@ fields:
   - Case number:: prior_family_cases[i].docket_number
   - note: |
       Judge's last name *(do not include 'Judge' or 'Hon.')*:
-    show if:
-      code: tool_ID in ["divorce_complaint", "custody_complaint"]
   - "Judge": prior_family_cases[i].judge
     label above field: False
-    show if:
-      code: tool_ID in ["divorce_complaint", "custody_complaint"]
   - What is the nature of this case?: prior_family_cases[i].type
     code: |
       prior_family_case_types_ordered
@@ -5958,6 +6712,68 @@ fields:
 validation code: |
   if prior_family_cases[i].type == "divorce":
     prior_family_cases[i].resolved = True
+---
+# LHI "Prior Family Cases DLG"
+if: tool_ID in ["custody_complaint", "custody_answer"] and controlling_custody_case in ["yes_one", "yes_multiple"]
+id: prior family case or order collection screen existing custody case
+question: Information about the ${ word("first") if controlling_custody_case == "yes_multiple" else "" } existing case
+subquestion: |
+  Please tell us about the ${ word("first") if controlling_custody_case == "yes_multiple" else "" } existing child support, parenting time, or custody case with ${other_parties[0]}
+fields:
+  - State:: prior_family_cases[0].state
+    code: |
+      states_list()
+    default: "MI"
+  - County: prior_family_cases[0].county
+    code: court_list._load_courts()["address_county"].unique()
+    show if:
+      variable: prior_family_cases[0].state
+      is: MI
+    default: "${controlling_custody_case_county}"
+  - County: prior_family_cases[0].county
+    js show if: |
+      val("prior_family_cases[0].state") !== "MI"
+  - Court Name: prior_family_cases[0].court
+    js show if: |
+      val("prior_family_cases[0].state") !== "MI"
+  - Court address: prior_family_cases[0].address
+    js show if: |
+      val("prior_family_cases[0].state") !== "MI" && ${ "true" if there_are_marital_children else "false" }
+  - "Case name *(for example, Jones v. Smith or In re: Thomas)*:": prior_family_cases[0].title
+  - Case number:: prior_family_cases[0].docket_number
+  - note: |
+      Judge's last name *(do not include 'Judge' or 'Hon.')*:
+  - "Judge": prior_family_cases[0].judge
+    label above field: False
+  - What is the nature of this case?: prior_family_cases[0].type
+    code: |
+      prior_family_case_types_ordered
+  - Describe the nature of this case:: prior_family_cases[0].type_description
+    show if:
+      variable: prior_family_cases[0].type
+      is: other
+  - What is the status of this case?: prior_family_cases[0].resolved
+    datatype: radio
+    choices:
+      - "The case is still ongoing. (There is **no** order or judgment resolving all the issues.)": False
+      - "The case is over. (There is an order resolving all the issues, or the case was dismissed.)": True
+  - 'Has the case been **{stayed}?**': prior_family_cases[0].status
+    datatype: radio
+    choices:
+      - "Yes, the case is stayed.": stayed
+      - "No.": pending
+    js show if: |
+      val("prior_family_cases[0].resolved") === false
+  - How did the case end?: prior_family_cases[0].status
+    datatype: radio
+    choices:
+      - "The judge made a **final order** resolving all the issues and ending the case.": ended_with_order
+      - "The judge **dismissed** the case.": dismissed
+    js show if: |
+      val("prior_family_cases[0].resolved") === true
+validation code: |
+  prior_family_cases[0].state = "MI"
+  prior_family_cases[0].county = controlling_custody_case_county
 ---
 # LHI "Prior Family Cases DLG" (start at row 108)
 id: prior family divorce case or order additional info
@@ -6063,7 +6879,12 @@ subquestion: |
 # LHI "Prior Family Cases DLG" (start at row 132)
 id: other prior family case or order additional info (completed case)
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status == "ended_with_order"
-question: ${ capitalize(ordinal(i)) } **family division** case or order
+question: |
+  % if tool_ID == "custody_complaint" and controlling_custody_case in ["yes_one", "yes_multiple"] and i == 0:
+  Orders in the case
+  % else:
+  ${ capitalize(ordinal(i)) } **family division** case or order
+  % endif
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
@@ -6090,7 +6911,12 @@ validation code: |
 # LHI "Prior Family Cases DLG" (start at row 174)
 id: other prior family case or order additional info (stayed, pending)
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status in ["stayed", "pending"]
-question: ${ capitalize(ordinal(i)) } **family division** case or order
+question: |
+  % if tool_ID == "custody_complaint" and controlling_custody_case in ["yes_one", "yes_multiple"] and i == 0:
+  Orders in the case
+  % else:
+  ${ capitalize(ordinal(i)) } **family division** case or order
+  % endif
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
@@ -6116,7 +6942,12 @@ validation code: |
 # LHI "Prior Family Cases DLG" (start at row 151)
 id: other prior family case or order additional info (dismissed)
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type not in ["divorce", "separate_maintenance"] and prior_family_cases[i].status == "dismissed"
-question: ${ capitalize(ordinal(i)) } **family division** case or order
+question: |
+  % if tool_ID == "custody_complaint" and controlling_custody_case in ["yes_one", "yes_multiple"] and i == 0:
+  Orders in the case
+  % else:
+  ${ capitalize(ordinal(i)) } **family division** case or order
+  % endif
 subquestion: |
   These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
 fields:
@@ -6151,24 +6982,32 @@ code: |
 id: guidepost_stepchildren
 continue button field: guidepost_stepchildren
 question: |
-  % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 1:
+  % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party') + children.filter(legal_parent='custody_other')) > 1:
   Other children
   % else:
-  More information about **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**
+  More information about **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party') + children.filter(legal_parent='custody_other')) }**
   % endif
 subquestion: |
-  % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 1:
+  % if len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party') + children.filter(legal_parent='custody_other')) > 1:
   The next few questions are about the minor children:
   
-  **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**.
-  
-  These children only have one of you as their legal parent. This divorce case will not directly affect these children, but information about them is required on some of the forms.   
+  **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party') + children.filter(legal_parent='custody_other')) }**.
+
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  The custody case will not directly affect these children, but information about them is required on some of the forms.
+  % else:
+  These children only have one of you as their legal parent. This divorce case will not directly affect these children, but information about them is required on some of the forms.  
+  % endif
   % else:
   The next few questions are about the minor child: 
   
-  **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }**.
-  
-  This child only has one of you as their legal parent. This divorce case will not directly affect ${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }, but information about them is required on some of the forms.
+  **${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party') + children.filter(legal_parent='custody_other')) }**.
+
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  The custody case will not directly affect ${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party') + children.filter(legal_parent='custody_other')) }, but information about them is required on some of the forms.
+  % else:
+  This child only has one of you as their legal parent. This divorce case will not directly affect  ${ comma_and_list(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) }, but information about them is required on some of the forms.
+  % endif
   % endif
 ---
 if: children[i].legal_parent == "user"
@@ -6288,6 +7127,59 @@ fields:
     show if:
       variable: children[i].stepchild_address_confidential
       is: False
+---
+if: children[i].legal_parent == "custody_other"
+id: shared child (not included in custody case) home
+question: ${ children[i] }'s home address
+fields:
+  - Who does ${ children[i] } live with?: children[i].stepchild_lives_with
+    datatype: radio
+    choices:
+      - Me: user
+      - "${other_parties[0]}": other_party
+      - Someone else: other
+  - Do you want to keep this child's address confidential?: children[i].stepchild_address_confidential
+    datatype: yesnoradio
+    js show if: |
+      val("children[i].stepchild_lives_with") === "other"
+  - label: Street Address or PO Box
+    field: children[i].address.address
+    address autocomplete: True
+    required: False
+    js show if: |
+      val("children[i].stepchild_lives_with") === "other" && val("children[i].stepchild_address_confidential") === false
+  - label: Apartment, suite, etc
+    field: children[i].address.unit
+    required: False
+    js show if: |
+      val("children[i].stepchild_lives_with") === "other" && val("children[i].stepchild_address_confidential") === false
+  - label: City
+    field: children[i].address.city
+    required: False
+    js show if: |
+      val("children[i].stepchild_lives_with") === "other" && val("children[i].stepchild_address_confidential") === false
+  - label: State or Province (two-letter abbreviation for U.S. states)
+    field: children[i].address.state
+    default: MI
+    input type: datalist
+    code: |
+      states_list()
+    required: False
+    js show if: |
+      val("children[i].stepchild_lives_with") === "other" && val("children[i].stepchild_address_confidential") === false
+  - label: Zip or Postal Code
+    field: children[i].address.zip
+    required: False
+    js show if: |
+      val("children[i].stepchild_lives_with") === "other" && val("children[i].stepchild_address_confidential") === false
+  - label: Country or Territory
+    field: children[i].address.country
+    default: "US"
+    code: |
+      countries_list()
+    required: False
+    js show if: |
+      val("children[i].stepchild_lives_with") === "other" && val("children[i].stepchild_address_confidential") === false
 ---
 code: |
   stepchildren_for_addendum = []
@@ -6490,10 +7382,10 @@ fields:
 code: |
   users[0].has_job
   if users[0].has_job:
-    if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children")): #for FOC23
+    if tool_ID in ["custody_complaint", "custody_answer"] or (tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children"))): #for FOC23
       users[0].occupation
     users[0].job.employer.name.first
-  if tool_ID in ["divorce_complaint", "JOD_only"]:
+  if tool_ID in ["divorce_complaint", "JOD_only", "custody_complaint"]: # for FOC100
     users[0].has_professional_license
 
   interview_order_user_employment = True
@@ -6502,7 +7394,7 @@ code: |
 # used for FOC23 and fee waiver; never asked for JOD_only
 # note some of this code is in the fee waiver shared_code.yml
 code: |
-  if there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children"): #for FOC23
+  if tool_ID in ["custody_complaint", "custody_answer"] or there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children"): #for FOC23
     if users[0].has_job:
       users[0].income.value
   if pa_status == "gets_assistance":
@@ -6516,7 +7408,7 @@ code: |
       pa_ssa_number
     pa_case_numbers_foc_23
     public_assistance_list
-  if pa_status == "applied" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children")):
+  if pa_status == "applied" and (tool_ID in ["custody_complaint", "custody_answer"] or there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children")):
     pa_food_assistance_program 
     if pa_other:
       pa_other_types
@@ -6527,17 +7419,17 @@ code: |
 code: |
   other_parties[0].has_job
   if other_parties[0].has_job:
-    if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children")): #for FOC23
+    if tool_ID in ["custody_complaint", "custody_answer"] or (tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children"))): #for FOC23
       other_parties[0].occupation
     other_parties[0].job.employer.name.first
-  if tool_ID in ["divorce_complaint", "JOD_only"]:
+  if tool_ID in ["divorce_complaint", "JOD_only", "custody_complaint"]: #For FOC100
     other_parties[0].has_professional_license
 
   interview_order_other_party_employment = True
 ---
 # LHI: "Plaintiff Income" or "Defendant Income"
 # never asked for JOD_only
-# in divorce complaint, only asked if children or spousal support request by user (FOC23)
+# in divorce complaint, only asked if children or spousal support request by user (FOC23) (analagously only asked in divorce answer when creating FOC23)
 code: |
   if other_parties[0].has_job:
     other_parties[0].income.value
@@ -6568,7 +7460,12 @@ question: Your employment
 subquestion: |
   Answer the following questions about your employment as fully as you can. If you don’t have all the information or if you are afraid to disclose this information to ${ OP_label }, you can leave some answers blank, but the court may require answers later.
       
-  All of the information you supply in this tool, including your employment information, will be included on forms that you will file with the court and deliver to ${ OP_label }. If you are afraid that sharing your employment information will put you at risk of harm, you should contact a lawyer to help you with your case. For more information, see [Domestic Violence and Divorce](https://michiganlegalhelp.org/resources/family/domestic-violence-and-divorce).   
+  All of the information you supply in this tool, including your employment information, will be included on forms that you will file with the court and deliver to ${ OP_label }. If you are afraid that sharing your employment information will put you at risk of harm, you should contact a lawyer to help you with your case. 
+  % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
+  For more information, see [Domestic Violence and Divorce](https://michiganlegalhelp.org/resources/family/domestic-violence-and-divorce).   
+  % else: 
+  To learn about domestic violence and personal protection orders, read [Filing for a Personal Protection Order - Domestic Relationship](https://michiganlegalhelp.org/resources/personal-safety/filing-personal-protection-order-domestic-relationship).
+  % endif
 fields:
   - Are you currently employed?: users[0].has_job
     datatype: yesnoradio
@@ -6828,7 +7725,7 @@ code: |
 id: other party employment
 question: ${ other_parties[0] }'s employment
 subquestion: |
-  Answer these questions as fully as you can. If you don’t have all the information, you can leave some answers blank, but the court may require answers later.
+  Answer these questions as fully as you can. If you don't have all the information, you can leave some answers blank, but the court may require answers later.
 fields:
   - To the best of your knowledge, is ${ other_parties[0] } currently employed?: other_parties[0].has_job
     required: False
@@ -7015,7 +7912,7 @@ fields:
 ---
 code: |
   users[0].ssn 
-  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))): #for FOC23
+  if tool_ID in ["custody_complaint", "custody_answer"] or (tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant)))): #for FOC23
     users[0].eye_color
     users[0].height_feet
     users[0].race
@@ -7024,7 +7921,7 @@ code: |
 ---
 code: |
   other_parties[0].ssn
-  if tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))): #for FOC23
+  if tool_ID in ["custody_complaint", "custody_answer"] or (tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant)))): #for FOC23
     other_parties[0].eye_color
     other_parties[0].height_feet
     other_parties[0].race
@@ -7144,7 +8041,7 @@ fields:
       is: Other
 ---
 id: user alias
-if: there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
+if: tool_ID in ["custody_complaint", "custody_answer"] or there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
 question: Other names
 subquestion: |
   * Your name is ${users[0]}.
@@ -7170,7 +8067,7 @@ question: |
   % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
   Your spouse's identity documents
   % else:
-  The plaintiff's identity documents
+  ${ other_parties[0] }'s identity documents
   % endif
 subquestion: |
   ${ collapse_template(why_need_SSN)}
@@ -7207,7 +8104,7 @@ question: |
   % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
   Your spouse's physical description
   % else:
-  The plaintiff's physical description
+  ${ other_parties[0] }'s physical description
   % endif
 fields:
   - What color eyes does ${ OP_label } have?: other_parties[0].eye_color
@@ -7263,7 +8160,7 @@ question: |
   % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
   Your spouse's race
   % else:
-  The plaintiff's race
+  ${ other_parties[0] }'s race
   % endif
 fields:
   - What is ${ OP_label }'s race?: other_parties[0].race
@@ -7284,10 +8181,14 @@ fields:
       is: Other
 ---
 id: other party alias
-if: there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
+if: tool_ID in ["custody_complaint", "custody_answer"] or there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and (users[0].pregnant or other_parties[0].pregnant))
 question: Other names
 subquestion: |
+  % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
   * Your spouse's name is **${other_parties[0]}.**
+  % else:
+  * The other parent's name is **${other_parties[0]}.**
+  % endif
   % if tool_ID in ["divorce_complaint", "divorce_answer"]:
   % if other_parties[0].has_previous_name:
   * Their name before **this** marriage was **${other_parties[0].previous_first_name + " " + other_parties[0].previous_middle_name + " " + other_parties[0].previous_last_name}.**
@@ -7298,9 +8199,9 @@ subquestion: |
   % endif
   
 fields:
-  - Has your spouse ever been known by any other name(s) or aliases not listed above?: other_parties[0].has_alias
+  - ${word("Has your spouse") if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"] else word("Have they")} ever been known by any other name(s) or aliases not listed above?: other_parties[0].has_alias
     datatype: yesnoradio
-  - What are the other names your spouse has been known by?: other_parties[0].aliases
+  - What are the other names they have been known by?: other_parties[0].aliases
     show if:
       variable: other_parties[0].has_alias
       is: True
