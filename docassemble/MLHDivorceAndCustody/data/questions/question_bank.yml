@@ -349,6 +349,27 @@ action buttons:
     color: danger
     icon: right-from-bracket
 ---
+if: tool_ID == "custody_complaint"
+id: custody_no_applicable_kids_exit
+event: custody_no_applicable_kids_exit
+question: |
+  Sorry, you cannot continue
+subquestion: |
+  Sorry, to use this tool, you must enter at least one child who meets these requirements:
+
+  * they are the child of both you and ${other_parties[0]},
+  * you answered "Yes" that you want them included in the custody case,
+  * there is an Affidavit of parentage for the child that was signed by you and ${other_parties[0]} and never revoked (canceled), and
+  * the parent who gave birth to the child was **not** married at the time **or** if they were married their spouse's parentage has been revoked (canceled).
+
+  If there is a child who meets all of these requirements, please edit your answers so that you can continue.
+action buttons:
+  - label: Exit
+    action: https://michiganlegalhelp.org/resources/family
+    new window: True
+    color: danger
+    icon: right-from-bracket
+---
 if: tool_ID == "custody_complaint" and controlling_custody_case in ["yes_one", "yes_multiple"]
 id: controlling_custody_case_exit
 event: controlling_custody_case_exit
@@ -3514,6 +3535,9 @@ code: |
   children.gather()
   enable_child_demographics_review_screen
   enable_child_custody_case_status_review_screen
+  if len(children.filter(legal_parent="both")) < 1:
+    custody_no_applicable_kids_exit
+  
   interview_order_home_state
 
   there_are_marital_children # misnomer in custody cases, but widely used throughout logic
@@ -4248,11 +4272,10 @@ continue button field: custody_child_explanation
 question: |
   Next, add information about **all** children
 subquestion: |
-  Next, you will be asked for information about your and ${other_parties[0]}'s children. You should list all children, including:
+  Next, you will be asked for information about your and ${other_parties[0]}'s children. List **all** children, including:
   
-  * your and ${other_parties[0]}'s **shared {minor} children,**
-  * any other minor children that you have, and 
-  * any other minor children that ${other_parties[0]} has.
+  * your and ${other_parties[0]}'s **shared {minor} children,** and
+  * any other minor children that you or ${other_parties[0]} have.
 
   ${ collapse_template(non_marital_children_explanation_template) }
 ---
@@ -4263,9 +4286,8 @@ subquestion: |
   % if tool_ID in ["custody_complaint", "custody_answer"]:
   Please list:
   
-  * your and ${other_parties[0]}'s **shared {minor} children,**
-  * any other minor children that you have, and 
-  * any other minor children that ${other_parties[0]} has.
+  * your and ${other_parties[0]}'s **shared {minor} children,** and
+  * any other minor children that you or ${other_parties[0]} have.
   % else:
   Please list **all minor children** that you or your {spouse} have, either separately or together.
   % endif
@@ -6341,10 +6363,10 @@ fields:
       is: yes_multiple
 validation code: |
   if controlling_custody_case in ["yes_one", "yes_multiple"]:
-    prior_family_cases.there_are_any = True
     prior_family_cases.minimum_number=1
+    prior_family_cases.reset_gathered(only_if_empty=True)
   else:
-    undefine("prior_family_cases.there_are_any", "prior_family_cases.minimum_number")
+    prior_family_cases.minimum_number=None
 ---
 if: controlling_custody_case == "yes_one" and controlling_case_location == "Michigan"
 id: custody complaint Michigan custody case followup single
