@@ -242,13 +242,14 @@ attachment:
       - defendant_residency: | # Field Needs Work
           ${ other_parties[0].address.county + " County, " + state_name(other_parties[0].address.state) if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
       - children_live_with_plaintiff: |
+          # field needs work
           ${ children_now_live_with_which_parent in ["users[0]", "both"] }
       - children_live_with_defendant: |
+          # field needs work
           ${ children_now_live_with_which_parent in ["other_parties[0]", "both"] }
       - children_live_in_county: # field needs work
       - marital_children_names_ages: |
           ${ comma_and_list([child.name.full() + ", age " + str(child.age_in_years()) for child in children if child.legal_parent == "both"]) + "." if any(child.legal_parent == "both" for child in children) else "" }
-          ${ "I intend to file a Motion to Determine Child Born Out of Wedlock with regard to " + comma_and_list([child.name.full() for child in children if child.legal_parent == "both" and child.revoke_paternity_reminder]) + "." if any(child.legal_parent == "both" and child.revoke_paternity_reminder for child in children) else "" }
       - children_paternity_affidavit: ${ comma_and_list([child.name.full() for child in children.filter(legal_parent="both")]) } # field needs work
       - parties_with_legal_custody__1: |
           % if legal_custody_who == "user":
