@@ -7,10 +7,12 @@ Michigan Legal Help
 Lemma Legal
 
 ## Changelog:
-* 8/7/26   2.0.7 minor updates to Divorce Answer property guidance, interview order, and instruction language.
+* 8/19/26  2.0.9 allow changing answer on whether there's real property during gathering process
+* 8/17/26  2.0.8 fix bug introduced by 2.0.7 with real property flow
+* 8/14/26  2.0.7 minor updates to Divorce Answer property guidance, interview language and order, and instruction language; changes to Important Reminders; add more parentage revocation guidance
 * 8/3/26   2.0.6 fix "marriage.pension_retirement_accounts_keep_own" being called when undefined
 * 7/31/26  2.0.5 minor review screen edits to address "exceptions"
-* 7/30/26  2.0.4 various small fixes for answer tool when someone's pregnant but no kids
+* 7/30/26  2.0.4 small fixes for answer tool when someone's pregnant but no kids
 * 7/30/26  2.0.3 fix Verified Statement income code error when user is not plaintiff
 * 7/24/26  2.0.2 address error with "marriage.pension_retirement_accounts_keep_own" being undefined; update SSN explanation
 * 7/23/26  2.0.1 Fix "childen" typo causing errors
