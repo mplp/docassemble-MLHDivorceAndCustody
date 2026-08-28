@@ -7210,6 +7210,7 @@ columns:
       row_item.covers_child.true_values()
 edit:
   - company_name
+require gathered: False
 delete buttons: True
 confirm: True
 ---
@@ -7223,6 +7224,7 @@ columns:
       row_item.covers_child.true_values()
 edit:
   - company_name
+require gathered: False
 delete buttons: True
 confirm: True
 ---
