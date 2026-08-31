@@ -237,8 +237,22 @@ attachment:
       - trial_court_phone_number: ${ the_court.phone }
       - plaintiff: ${ plaintiffs[0].name_full() }
       - defendant: ${ defendants[0].name_full() }
-      - plaintiff_residency: | # Field Needs Work; As is this field stays blank if the user enters a confidential address.
+      - plaintiff_residency: | 
+          % if confidential_contact_info_yn:
+          % if users[0].lives_in_Michigan:
+          ${ users[0].address.county } County, Michigan
+          % elif safe_to_disclose_state:
+          % if users[0].foreign_residence:
+          ${country_name(users[0].country_of_residence_to_disclose)}
+          % else:
+          State of ${state_name(users[0].state_of_residence_to_disclose)}
+          % endif
+          % else:
+          Confidential
+          % endif
+          % else:
           ${ users[0].address.county + " County, " + state_name(users[0].address.state) if users[0].address.country == "US" else country_name(users[0].address.country) }
+          % endif
       - defendant_residency: | # Field Needs Work
           ${ other_parties[0].address.county + " County, " + state_name(other_parties[0].address.state) if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
       - children_live_with_plaintiff: |

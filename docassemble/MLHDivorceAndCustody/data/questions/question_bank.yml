@@ -1307,13 +1307,23 @@ fields:
     datatype: yesnoradio
     js show if: |
       ${ "true" if tool_ID == "custody_complaint" else "false" } && val("users[0].lives_in_Michigan") === false
-  - US state or territory where you live:: state_of_residence
+  - label: Check here if you live outside the United States.
+    field: users[0].foreign_residence
+    required: False
+    datatype: yesno
+    js show if: |
+      ${ "true" if tool_ID == "custody_complaint" else "false" } && val("users[0].lives_in_Michigan") === false && val("safe_to_disclose_state") === true 
+  - US state or territory where you live:: users[0].state_of_residence_to_disclose
     code: |
       states_list()
     js show if: |
-      ${ "true" if tool_ID == "custody_complaint" else "false" } && val("users[0].lives_in_Michigan") === false && val("safe_to_disclose_state") === true
-    # add yesno check box here for I live outside the US, and don't show state question and do show country question if it's checked. 
-    # 
+      ${ "true" if tool_ID == "custody_complaint" else "false" } && val("users[0].lives_in_Michigan") === false && val("safe_to_disclose_state") === true && val("users[0].foreign_residence") === false
+  - Country where you live:: users[0].country_of_residence_to_disclose
+    default: US
+    code: |
+      countries_list()
+    js show if: |
+      ${ "true" if tool_ID == "custody_complaint" else "false" } && val("users[0].lives_in_Michigan") === false && val("safe_to_disclose_state") === true && val("users[0].foreign_residence") === true
 ---
 if: tool_ID == "divorce_complaint" and users[0].lives_in_Michigan
 id: 10-day test user
