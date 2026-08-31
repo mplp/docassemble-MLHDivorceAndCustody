@@ -19,7 +19,7 @@ objects:
 ---
 if: tool_ID == "custody_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, custody_complaint_cc_429, custody_order_cc_432, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, noh_motion_consent, noh_motion_default, default_request_mc07, mrcs_foc12, foc_100_full, foc_10_full, proof_of_service, proof_of_service, fee_waiver_attachment, protected_pii_mc_97a_attachment], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, custody_complaint_cc_429, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, noh_motion_consent, noh_motion_default, default_request_mc07, mrcs_foc12, foc_100_full, custody_order_cc_432, foc_10_full, proof_of_service, proof_of_service, fee_waiver_attachment, protected_pii_mc_97a_attachment], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
   #- al_court_bundle: ALDocumentBundle.using(elements=[], filename="Michigan Custody Complaint --all forms", title="All forms and instructions", enabled=True)
 ---
 # ====================================================================
@@ -143,7 +143,7 @@ code: |
   noh_motion_default.enabled = tool_ID in ["divorce_complaint", "JOD_only", "custody_complaint"]
 ---
 code: |
-  noh_motion_consent.enabled = (tool_ID == "divorce_complaint") or (tool_ID == "JOD_only")
+  noh_motion_consent.enabled = tool_ID in ["divorce_complaint", "JOD_only", "custody_complaint"]
 ---
 # enabling logic for judgment with or without kids
 code: |
@@ -198,10 +198,10 @@ code: |
     judgment_overflow_addendum.enabled = True
 ---
 code: |
-  summons_mc01.enabled = tool_ID in ["divorce_complaint"]
+  summons_mc01.enabled = tool_ID in ["divorce_complaint", "custody_complaint"]
 ---
 code: |
-  default_request_mc07.enabled = (tool_ID in ["divorce_complaint"]) and (not spouse_is_in_military)
+  default_request_mc07.enabled = tool_ID in ["divorce_complaint", "custody_complaint"] and not spouse_is_in_military
 ---
 # ====================================================================
 ## specific form objects and attachment blocks
@@ -237,18 +237,33 @@ attachment:
       - trial_court_phone_number: ${ the_court.phone }
       - plaintiff: ${ plaintiffs[0].name_full() }
       - defendant: ${ defendants[0].name_full() }
-      - plaintiff_residency: | # Field Needs Work; As is this field stays blank if the user enters a confidential address.
+      - plaintiff_residency: | 
+          % if confidential_contact_info_yn:
+          % if users[0].lives_in_Michigan:
+          ${ users[0].address.county } County, Michigan
+          % elif safe_to_disclose_state:
+          % if users[0].foreign_residence:
+          ${country_name(users[0].country_of_residence_to_disclose)}
+          % else:
+          State of ${state_name(users[0].state_of_residence_to_disclose)}
+          % endif
+          % else:
+          Confidential
+          % endif
+          % else:
           ${ users[0].address.county + " County, " + state_name(users[0].address.state) if users[0].address.country == "US" else country_name(users[0].address.country) }
+          % endif
       - defendant_residency: | # Field Needs Work
           ${ other_parties[0].address.county + " County, " + state_name(other_parties[0].address.state) if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
       - children_live_with_plaintiff: |
+          # field needs work
           ${ children_now_live_with_which_parent in ["users[0]", "both"] }
       - children_live_with_defendant: |
+          # field needs work
           ${ children_now_live_with_which_parent in ["other_parties[0]", "both"] }
       - children_live_in_county: # field needs work
       - marital_children_names_ages: |
           ${ comma_and_list([child.name.full() + ", age " + str(child.age_in_years()) for child in children if child.legal_parent == "both"]) + "." if any(child.legal_parent == "both" for child in children) else "" }
-          ${ "I intend to file a Motion to Determine Child Born Out of Wedlock with regard to " + comma_and_list([child.name.full() for child in children if child.legal_parent == "both" and child.revoke_paternity_reminder]) + "." if any(child.legal_parent == "both" and child.revoke_paternity_reminder for child in children) else "" }
       - children_paternity_affidavit: ${ comma_and_list([child.name.full() for child in children.filter(legal_parent="both")]) } # field needs work
       - parties_with_legal_custody__1: |
           % if legal_custody_who == "user":
