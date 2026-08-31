@@ -28,7 +28,7 @@ sections:
 ---
 # set static instructions variables
 code: |
-  survey_link_url_only = "https://www.surveymonkey.com/r/PLACEHOLDER"
+  survey_link_url_only = "https://www.surveymonkey.com/r/7S3X9NK"
 ---
 code: |
   tool_ID = "custody_complaint"
@@ -43,12 +43,6 @@ code: |
 # sets MLH_case_type_language
 code: |
     MLH_case_type_language = "The case type code is **DC.**"   
----
-template: survey_embed_script
-content: |
-  <script>
-  ?????????
-  </script>
 ---
 # set intro landing screen variables
 code: |

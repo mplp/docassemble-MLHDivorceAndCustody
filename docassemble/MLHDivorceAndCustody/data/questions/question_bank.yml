@@ -6757,13 +6757,13 @@ fields:
   - State:: prior_family_cases[0].state
     code: |
       states_list()
-    default: "MI"
+    default: MI
   - County: prior_family_cases[0].county
     code: court_list._load_courts()["address_county"].unique()
     show if:
       variable: prior_family_cases[0].state
       is: MI
-    default: "${controlling_custody_case_county}"
+    default: ${controlling_custody_case_county}
   - County: prior_family_cases[0].county
     js show if: |
       val("prior_family_cases[0].state") !== "MI"
@@ -6805,9 +6805,6 @@ fields:
       - "The judge **dismissed** the case.": dismissed
     js show if: |
       val("prior_family_cases[0].resolved") === true
-validation code: |
-  prior_family_cases[0].state = "MI"
-  prior_family_cases[0].county = controlling_custody_case_county
 ---
 # LHI "Prior Family Cases DLG" (start at row 108)
 id: prior family divorce case or order additional info

@@ -19,7 +19,7 @@ objects:
 ---
 if: tool_ID == "custody_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, custody_complaint_cc_429, custody_order_cc_432, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, noh_motion_consent, noh_motion_default, default_request_mc07, mrcs_foc12, foc_100_full, foc_10_full, proof_of_service, proof_of_service, fee_waiver_attachment, protected_pii_mc_97a_attachment], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, custody_complaint_cc_429, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, noh_motion_consent, noh_motion_default, default_request_mc07, mrcs_foc12, foc_100_full, custody_order_cc_432, foc_10_full, proof_of_service, proof_of_service, fee_waiver_attachment, protected_pii_mc_97a_attachment], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
   #- al_court_bundle: ALDocumentBundle.using(elements=[], filename="Michigan Custody Complaint --all forms", title="All forms and instructions", enabled=True)
 ---
 # ====================================================================
@@ -143,7 +143,7 @@ code: |
   noh_motion_default.enabled = tool_ID in ["divorce_complaint", "JOD_only", "custody_complaint"]
 ---
 code: |
-  noh_motion_consent.enabled = (tool_ID == "divorce_complaint") or (tool_ID == "JOD_only")
+  noh_motion_consent.enabled = tool_ID in ["divorce_complaint", "JOD_only", "custody_complaint"]
 ---
 # enabling logic for judgment with or without kids
 code: |
@@ -198,10 +198,10 @@ code: |
     judgment_overflow_addendum.enabled = True
 ---
 code: |
-  summons_mc01.enabled = tool_ID in ["divorce_complaint"]
+  summons_mc01.enabled = tool_ID in ["divorce_complaint", "custody_complaint"]
 ---
 code: |
-  default_request_mc07.enabled = (tool_ID in ["divorce_complaint"]) and (not spouse_is_in_military)
+  default_request_mc07.enabled = tool_ID in ["divorce_complaint", "custody_complaint"] and not spouse_is_in_military
 ---
 # ====================================================================
 ## specific form objects and attachment blocks
