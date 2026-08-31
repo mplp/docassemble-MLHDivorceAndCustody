@@ -222,9 +222,21 @@ review:
         - ${word(yesno(users[0].has_lived_6_months_MI))}
       ### Have you lived in ${users[0].address.county} County for the last 10 days?
         - ${word(yesno(users[0].ten_days_in_county))}
-      % else:
+      % elif tool_ID in ["custody_complaint", "custody_answer"]:
       ### Your County:
         - ${users[0].address.county}
+      % endif
+      % else:
+      ### Is it safe to list your state or country on your complaint?
+        - ${word(yesno(safe_to_disclose_state))}
+      % if safe_to_disclose_state:
+      % if users[0].foreign_residence:
+      ### Country where you live: 
+        - ${country_name(users[0].country_of_residence_to_disclose)}
+      % else:
+      ### State where you live: 
+        - ${state_name(users[0].state_of_residence_to_disclose)}
+      % endif
       % endif
       % endif
     show if: confidential_contact_info_yn
