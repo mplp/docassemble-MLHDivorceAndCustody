@@ -2150,7 +2150,7 @@ code: |
   there_is_venue_controlling_separate_maintenance_case = False
   if there_are_marital_children and prior_family_cases.there_are_any:
     for i, case in enumerate(prior_family_cases):
-      if case.type == "separate_maintenance" and case.status == "ended_with_order" and case.involved_custody_pt_support and case.county in all_potential_venue_options:
+      if case.type == "separate_maintenance" and case.status == "ended_with_order" and case.involved_custody_pt_support and case.country == "US" and case.state == "MI" and not case.in_tribal_court and case.county in all_potential_venue_options:
         separate_maintenance_case_index = i
         there_is_venue_controlling_separate_maintenance_case = True
   
@@ -6335,8 +6335,8 @@ rows: prior_family_cases
 columns:
   - Case No.: row_item.docket_number
   - Type: prior_family_case_types_ordered[row_item.type]
-  - State: row_item.state
-  - County: row_item.county
+  - Location: |
+      " ".join((row_item.county, "County", state_name(row_item.state))) if row_item.country == "US" and not row_item.in_tribal_court else " ".join(("Tribal court in", state_name(row_item.state))) if row_item.country == "US" and row_item.in_tribal_court else country_name(row_item.country) if row_item.country != "US" else "Error"
 edit:
   - status
   - included_custody_PT_order  
@@ -6606,7 +6606,7 @@ code: |
     # only called in divorce_answer if complaint_type == "with_children"
     prior_family_cases[i].status
     if there_are_marital_children:
-      if prior_family_cases[i].state != "MI":
+      if not (prior_family_cases[i].country == "US" and prior_family_cases[i].state == "MI" and not prior_family_cases[i].in_tribal_court):
         prior_family_cases[i].address # trigger question if user changes answer on marital children from none to some, after case already gathered
   
       if prior_family_cases[i].type == "separate_maintenance":
@@ -6634,9 +6634,22 @@ question: ${ capitalize(ordinal(i)) } prior custody or support case
 subquestion: |
   ${prior_family_cases.question_text_table_template}
 fields:
+  - Country:: prior_family_cases[i].country
+    code: |
+      countries_list()
+    default: US
   - State:: prior_family_cases[i].state
     code: |
       states_list()
+    default: MI
+    show if:
+      variable: prior_family_cases[i].country
+      is: US
+  - "Check here if the case is from a tribal court.": prior_family_cases[i].in_tribal_court
+    datatype: yesno
+    required: False
+    help: |
+      ${tribal_court_help}
   - What is the status of this case?: prior_family_cases[i].resolved
     datatype: radio
     choices:
@@ -6697,23 +6710,41 @@ question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
   ${prior_family_cases.question_text_table_template}
 fields:
+  - Country:: prior_family_cases[i].country
+    code: |
+      countries_list()
+    default: US
   - State:: prior_family_cases[i].state
     code: |
       states_list()
+    default: MI
+    show if:
+      variable: prior_family_cases[i].country
+      is: US
+  - "Check here if the case is from a tribal court.": prior_family_cases[i].in_tribal_court
+    datatype: yesno
+    required: False
+    help: |
+      ${tribal_court_help}
   - County: prior_family_cases[i].county
     code: court_list._load_courts()["address_county"].unique()
-    show if:
-      variable: prior_family_cases[i].state
-      is: MI
+    js show if: |
+      val("prior_family_cases[i].country") === "US" && val("prior_family_cases[i].state") === "MI" && val("prior_family_cases[i].in_tribal_court") === false
   - County: prior_family_cases[i].county
     js show if: |
-      val("prior_family_cases[i].state") !== "MI"
+      val("prior_family_cases[i].country") === "US" && val("prior_family_cases[i].state") !== "MI" && val("prior_family_cases[i].in_tribal_court") === false
   - Court Name: prior_family_cases[i].court
+    js hide if: |
+      (val("prior_family_cases[i].country") === "US" && val("prior_family_cases[i].state") === "MI") || val("prior_family_cases[i].in_tribal_court") === true
+  - Court Name (Please include the tribal government's name.): prior_family_cases[i].court
     js show if: |
-      val("prior_family_cases[i].state") !== "MI"
+      val("prior_family_cases[i].in_tribal_court") === true
+  - "State/Province/Other administrative unit:": prior_family_cases[i].foreign_admin_unit
+    js show if: |
+      val("prior_family_cases[i].country") !== "US"
   - Court address: prior_family_cases[i].address
     js show if: |
-      val("prior_family_cases[i].state") !== "MI" && ${ "true" if there_are_marital_children else "false" }
+      (val("prior_family_cases[i].country") !== "US" || val("prior_family_cases[i].state") !== "MI" || val("prior_family_cases[i].in_tribal_court")) && ${ "true" if there_are_marital_children else "false" }
   - "Case name *(for example, Jones v. Smith or In re: Thomas)*:": prior_family_cases[i].title
   - Case number:: prior_family_cases[i].docket_number
   - note: |
@@ -6759,6 +6790,10 @@ validation code: |
   if prior_family_cases[i].type == "divorce":
     prior_family_cases[i].resolved = True
 ---
+template: tribal_court_help
+content: |
+  A tribal court is a court run by a Native American or First Nations government. In the United States, many Native American tribal governments have their own court systems. This type of court may have different names in different places.
+---
 # LHI "Prior Family Cases DLG"
 if: tool_ID in ["custody_complaint", "custody_answer"] and controlling_custody_case in ["yes_one", "yes_multiple"]
 id: prior family case or order collection screen existing custody case
@@ -6766,25 +6801,42 @@ question: Information about the ${ word("first") if controlling_custody_case == 
 subquestion: |
   Please tell us about the ${ word("first") if controlling_custody_case == "yes_multiple" else "" } existing child support, parenting time, or custody case with ${other_parties[0]}
 fields:
+  - Country:: prior_family_cases[0].country
+    code: |
+      countries_list()
+    default: US
   - State:: prior_family_cases[0].state
     code: |
       states_list()
     default: MI
+    show if:
+      variable: prior_family_cases[0].country
+      is: US
+  - "Check here if the case is from a tribal court.": prior_family_cases[0].in_tribal_court
+    datatype: yesno
+    required: False
+    help: |
+      ${tribal_court_help}
   - County: prior_family_cases[0].county
     code: court_list._load_courts()["address_county"].unique()
-    show if:
-      variable: prior_family_cases[0].state
-      is: MI
+    js show if: |
+      val("prior_family_cases[0].country") === "US" && val("prior_family_cases[0].state") === "MI" && val("prior_family_cases[0].in_tribal_court") === false
     default: ${controlling_custody_case_county}
   - County: prior_family_cases[0].county
     js show if: |
-      val("prior_family_cases[0].state") !== "MI"
+      val("prior_family_cases[0].country") === "US" && val("prior_family_cases[0].state") !== "MI" && val("prior_family_cases[0].in_tribal_court") === false
   - Court Name: prior_family_cases[0].court
+    js hide if: |
+      (val("prior_family_cases[0].country") === "US" && val("prior_family_cases[0].state") === "MI") || val("prior_family_cases[0].in_tribal_court") === true
+  - Court Name (Please include the tribal government's name.): prior_family_cases[0].court
     js show if: |
-      val("prior_family_cases[0].state") !== "MI"
+      val("prior_family_cases[0].in_tribal_court") === true
+  - "State/Province/Other administrative unit:": prior_family_cases[0].foreign_admin_unit
+    js show if: |
+      val("prior_family_cases[0].country") !== "US"
   - Court address: prior_family_cases[0].address
     js show if: |
-      val("prior_family_cases[0].state") !== "MI" && ${ "true" if there_are_marital_children else "false" }
+      (val("prior_family_cases[0].country") !== "US" || val("prior_family_cases[0].state") !== "MI" || val("prior_family_cases[0].in_tribal_court")) && ${ "true" if there_are_marital_children else "false" }
   - "Case name *(for example, Jones v. Smith or In re: Thomas)*:": prior_family_cases[0].title
   - Case number:: prior_family_cases[0].docket_number
   - note: |
@@ -6823,7 +6875,16 @@ id: prior family divorce case or order additional info
 if: tool_ID != "JOD_only" and there_are_marital_children and prior_family_cases[i].type == "divorce"
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }", the Divorce case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
+  These questions are about "${ prior_family_cases[i].title }", the Divorce case in 
+  % if prior_family_cases[i].country == "US":
+  % if prior_family_cases[i].in_tribal_court:
+  ${ prior_family_cases[i].court } in ${state_name(prior_family_cases[i].state) }.
+  % else:
+  ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
+  % endif
+  % else:
+  ${ country_name(prior_family_cases[i].country) }.
+  % endif
 fields:
   - label: |
       % if prior_family_cases[i].status == "dismissed":
@@ -6847,7 +6908,16 @@ id: prior family separate maintenance case additional info
 if: there_are_marital_children and prior_family_cases[i].type == "separate_maintenance" and (tool_ID == "divorce_answer" or (tool_ID == "divorce_complaint" and prior_family_cases[i].status in ["ended_with_order", "dismissed"]))
 question: ${ capitalize(ordinal(i)) } **family division** case or order
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }", the Separate Maintenance case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
+  These questions are about "${ prior_family_cases[i].title }", the Separate Maintenance case in 
+  % if prior_family_cases[i].country == "US":
+  % if prior_family_cases[i].in_tribal_court:
+  ${ prior_family_cases[i].court } in ${state_name(prior_family_cases[i].state) }.
+  % else:
+  ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
+  % endif
+  % else:
+  ${ country_name(prior_family_cases[i].country) }.
+  % endif
 fields:
   - label: ${word("Did") if prior_family_cases[i].status in ["dismissed", "ended_with_order"] else word ("Does")} the separate maintenance case involve custody, parenting time, or child support?
     field: prior_family_cases[i].involved_custody_pt_support
@@ -6929,7 +6999,16 @@ question: |
   ${ capitalize(ordinal(i)) } **family division** case or order
   % endif
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
+  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in 
+  % if prior_family_cases[i].country == "US":
+  % if prior_family_cases[i].in_tribal_court:
+  ${ prior_family_cases[i].court } in ${state_name(prior_family_cases[i].state) }.
+  % else:
+  ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
+  % endif
+  % else:
+  ${ country_name(prior_family_cases[i].country) }.
+  % endif
 fields:
   - What is the date of the final judgment or order?: prior_family_cases[i].final_order_date
     datatype: ThreePartsDate
@@ -6961,7 +7040,16 @@ question: |
   ${ capitalize(ordinal(i)) } **family division** case or order
   % endif
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
+  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in 
+  % if prior_family_cases[i].country == "US":
+  % if prior_family_cases[i].in_tribal_court:
+  ${ prior_family_cases[i].court } in ${state_name(prior_family_cases[i].state) }.
+  % else:
+  ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
+  % endif
+  % else:
+  ${ country_name(prior_family_cases[i].country) }.
+  % endif
 fields:
   - Is there a **custody or parenting time** order in this case?: prior_family_cases[i].included_custody_PT_order
     datatype: yesnoradio
@@ -6992,7 +7080,16 @@ question: |
   ${ capitalize(ordinal(i)) } **family division** case or order
   % endif
 subquestion: |
-  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
+  These questions are about "${ prior_family_cases[i].title }", the ${ prior_family_case_types_ordered[prior_family_cases[i].type] } case in 
+  % if prior_family_cases[i].country == "US":
+  % if prior_family_cases[i].in_tribal_court:
+  ${ prior_family_cases[i].court } in ${state_name(prior_family_cases[i].state) }.
+  % else:
+  ${ prior_family_cases[i].county } County, ${ state_name(prior_family_cases[i].state) }.
+  % endif
+  % else:
+  ${ country_name(prior_family_cases[i].country) }.
+  % endif
 fields:
   - "Was a temporary custody or parenting time order entered in that case when the case was pending?": prior_family_cases[i].included_custody_PT_order
     datatype: yesnoradio
