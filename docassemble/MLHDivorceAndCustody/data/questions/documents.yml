@@ -1200,10 +1200,19 @@ attachment:
       #- judge_name:
       - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
       - defendants0_name_full: ${defendants[0].name_full()}
-      - family_cases0_court_same: ${True if prior_family_cases[0].state == "MI" and the_court.address.county == prior_family_cases[0].county else False}
-      - family_cases0_court_other: ${False if prior_family_cases[0].state == "MI" and the_court.address.county == prior_family_cases[0].county else True}
+      - family_cases0_court_same: ${True if prior_family_cases[0].country == "US" and prior_family_cases[0].state == "MI" and not prior_family_cases[0].in_tribal_court and the_court.address.county == prior_family_cases[0].county else False}
+      - family_cases0_court_other: ${False if prior_family_cases[0].country == "US" and prior_family_cases[0].state == "MI" and not prior_family_cases[0].in_tribal_court and the_court.address.county == prior_family_cases[0].county else True}
       - family_cases0_court_name_number_county_state: |
-          ${prior_family_cases[0].court if prior_family_cases[0].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[0].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[0].county} County, ${state_name(prior_family_cases[0].state)}
+          ${prior_family_cases[0].court if (prior_family_cases[0].country != "US" or prior_family_cases[0].state != "MI" or prior_family_cases[0].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[0].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[0].country == "US":
+          % if prior_family_cases[0].in_tribal_court:
+          ${state_name(prior_family_cases[0].state) }
+          % else:
+          ${ prior_family_cases[0].county } County, ${ state_name(prior_family_cases[0].state) }
+          % endif
+          % else:
+          ${prior_family_cases[0].foreign_admin_unit}, ${ country_name(prior_family_cases[0].country) }
+          % endif
       - family_cases0_name: ${prior_family_cases[0].title}
       - family_cases0_docket_number: ${prior_family_cases[0].docket_number}
       - family_cases0_judge: ${word("Judge ") + word(prior_family_cases[0].judge)}
@@ -1229,10 +1238,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases1_court_same: ${True if prior_family_cases[1].state == "MI" and the_court.address.county == prior_family_cases[1].county else False}
-      - family_cases1_court_other: ${False if prior_family_cases[1].state == "MI" and the_court.address.county == prior_family_cases[1].county else True}
+      - family_cases1_court_same: ${True if prior_family_cases[1].country == "US" and prior_family_cases[1].state == "MI" and not prior_family_cases[1].in_tribal_court and the_court.address.county == prior_family_cases[1].county else False}
+      - family_cases1_court_other: ${False if prior_family_cases[1].country == "US" and prior_family_cases[1].state == "MI" and not prior_family_cases[1].in_tribal_court and the_court.address.county == prior_family_cases[1].county else True}
       - family_cases1_court_name_number_county_state: |
-          ${prior_family_cases[1].court if prior_family_cases[1].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[1].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[1].county} County, ${state_name(prior_family_cases[1].state)}
+          ${prior_family_cases[1].court if (prior_family_cases[1].country != "US" or prior_family_cases[1].state != "MI" or prior_family_cases[1].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[1].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[1].country == "US":
+          % if prior_family_cases[1].in_tribal_court:
+          ${state_name(prior_family_cases[1].state) }
+          % else:
+          ${ prior_family_cases[1].county } County, ${ state_name(prior_family_cases[1].state) }
+          % endif
+          % else:
+          ${prior_family_cases[1].foreign_admin_unit}, ${ country_name(prior_family_cases[1].country) }
+          % endif
       - family_cases1_name: ${prior_family_cases[1].title}
       - family_cases1_docket_number: ${prior_family_cases[1].docket_number}
       - family_cases1_judge: ${word("Judge ") + word(prior_family_cases[1].judge)}
@@ -1258,10 +1276,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases2_court_same: ${True if prior_family_cases[2].state == "MI" and the_court.address.county == prior_family_cases[2].county else False}
-      - family_cases2_court_other: ${False if prior_family_cases[2].state == "MI" and the_court.address.county == prior_family_cases[2].county else True}
+      - family_cases2_court_same: ${True if prior_family_cases[2].country == "US" and prior_family_cases[2].state == "MI" and not prior_family_cases[2].in_tribal_court and the_court.address.county == prior_family_cases[2].county else False}
+      - family_cases2_court_other: ${False if prior_family_cases[2].country == "US" and prior_family_cases[2].state == "MI" and not prior_family_cases[2].in_tribal_court and the_court.address.county == prior_family_cases[2].county else True}
       - family_cases2_court_name_number_county_state: |
-          ${prior_family_cases[2].court if prior_family_cases[2].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[2].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[2].county} County, ${state_name(prior_family_cases[2].state)}
+          ${prior_family_cases[2].court if (prior_family_cases[2].country != "US" or prior_family_cases[2].state != "MI" or prior_family_cases[2].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[2].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[2].country == "US":
+          % if prior_family_cases[2].in_tribal_court:
+          ${state_name(prior_family_cases[2].state) }
+          % else:
+          ${ prior_family_cases[2].county } County, ${ state_name(prior_family_cases[2].state) }
+          % endif
+          % else:
+          ${prior_family_cases[2].foreign_admin_unit}, ${ country_name(prior_family_cases[2].country) }
+          % endif
       - family_cases2_name: ${prior_family_cases[2].title}
       - family_cases2_docket_number: ${prior_family_cases[2].docket_number}
       - family_cases2_judge: ${word("Judge ") + word(prior_family_cases[2].judge)}
@@ -1287,10 +1314,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases3_court_same: ${True if prior_family_cases[3].state == "MI" and the_court.address.county == prior_family_cases[3].county else False}
-      - family_cases3_court_other: ${False if prior_family_cases[3].state == "MI" and the_court.address.county == prior_family_cases[3].county else True}
+      - family_cases3_court_same: ${True if prior_family_cases[3].country == "US" and prior_family_cases[3].state == "MI" and not prior_family_cases[3].in_tribal_court and the_court.address.county == prior_family_cases[3].county else False}
+      - family_cases3_court_other: ${False if prior_family_cases[3].country == "US" and prior_family_cases[3].state == "MI" and not prior_family_cases[3].in_tribal_court and the_court.address.county == prior_family_cases[3].county else True}
       - family_cases3_court_name_number_county_state: |
-          ${prior_family_cases[3].court if prior_family_cases[3].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[3].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[3].county} County, ${state_name(prior_family_cases[3].state)}
+          ${prior_family_cases[3].court if (prior_family_cases[3].country != "US" or prior_family_cases[3].state != "MI" or prior_family_cases[3].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[3].county], ['circuit'], column_3='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[3].country == "US":
+          % if prior_family_cases[3].in_tribal_court:
+          ${state_name(prior_family_cases[3].state) }
+          % else:
+          ${ prior_family_cases[3].county } County, ${ state_name(prior_family_cases[3].state) }
+          % endif
+          % else:
+          ${prior_family_cases[3].foreign_admin_unit}, ${ country_name(prior_family_cases[3].country) }
+          % endif
       - family_cases3_name: ${prior_family_cases[3].title}
       - family_cases3_docket_number: ${prior_family_cases[3].docket_number}
       - family_cases3_judge: ${word("Judge ") + word(prior_family_cases[3].judge)}
@@ -1339,10 +1375,19 @@ attachment:
       #- judge_name:
       - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
       - defendants0_name_full: ${defendants[0].name_full()}
-      - family_cases0_court_same: ${True if prior_family_cases[4].state == "MI" and the_court.address.county == prior_family_cases[4].county else False}
-      - family_cases0_court_other: ${False if prior_family_cases[4].state == "MI" and the_court.address.county == prior_family_cases[4].county else True}
+      - family_cases0_court_same: ${True if prior_family_cases[4].country == "US" and prior_family_cases[4].state == "MI" and not prior_family_cases[4].in_tribal_court and the_court.address.county == prior_family_cases[4].county else False}
+      - family_cases0_court_other: ${False if prior_family_cases[4].country == "US" and prior_family_cases[4].state == "MI" and not prior_family_cases[4].in_tribal_court and the_court.address.county == prior_family_cases[4].county else True}
       - family_cases0_court_name_number_county_state: |
-          ${prior_family_cases[4].court if prior_family_cases[4].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[4].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[4].county} County, ${state_name(prior_family_cases[4].state)}
+          ${prior_family_cases[4].court if (prior_family_cases[4].country != "US" or prior_family_cases[4].state != "MI" or prior_family_cases[4].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[4].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[4].country == "US":
+          % if prior_family_cases[4].in_tribal_court:
+          ${state_name(prior_family_cases[4].state) }
+          % else:
+          ${ prior_family_cases[4].county } County, ${ state_name(prior_family_cases[4].state) }
+          % endif
+          % else:
+          ${prior_family_cases[4].foreign_admin_unit}, ${ country_name(prior_family_cases[4].country) }
+          % endif
       - family_cases0_name: ${prior_family_cases[4].title}
       - family_cases0_docket_number: ${prior_family_cases[4].docket_number}
       - family_cases0_judge: ${word("Judge ") + word(prior_family_cases[4].judge)}
@@ -1368,10 +1413,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases1_court_same: ${True if prior_family_cases[5].state == "MI" and the_court.address.county == prior_family_cases[5].county else False}
-      - family_cases1_court_other: ${False if prior_family_cases[5].state == "MI" and the_court.address.county == prior_family_cases[5].county else True}
+      - family_cases1_court_same: ${True if prior_family_cases[5].country == "US" and prior_family_cases[5].state == "MI" and not prior_family_cases[5].in_tribal_court and the_court.address.county == prior_family_cases[5].county else False}
+      - family_cases1_court_other: ${False if prior_family_cases[5].country == "US" and prior_family_cases[5].state == "MI" and not prior_family_cases[5].in_tribal_court and the_court.address.county == prior_family_cases[5].county else True}
       - family_cases1_court_name_number_county_state: |
-          ${prior_family_cases[5].court if prior_family_cases[5].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[5].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[5].county} County, ${state_name(prior_family_cases[5].state)}
+          ${prior_family_cases[5].court if (prior_family_cases[5].country != "US" or prior_family_cases[5].state != "MI" or prior_family_cases[5].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[5].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[5].country == "US":
+          % if prior_family_cases[5].in_tribal_court:
+          ${state_name(prior_family_cases[5].state) }
+          % else:
+          ${ prior_family_cases[5].county } County, ${ state_name(prior_family_cases[5].state) }
+          % endif
+          % else:
+          ${prior_family_cases[5].foreign_admin_unit}, ${ country_name(prior_family_cases[5].country) }
+          % endif
       - family_cases1_name: ${prior_family_cases[5].title}
       - family_cases1_docket_number: ${prior_family_cases[5].docket_number}
       - family_cases1_judge: ${word("Judge ") + word(prior_family_cases[5].judge)}
@@ -1397,10 +1451,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases2_court_same: ${True if prior_family_cases[6].state == "MI" and the_court.address.county == prior_family_cases[6].county else False}
-      - family_cases2_court_other: ${False if prior_family_cases[6].state == "MI" and the_court.address.county == prior_family_cases[6].county else True}
+      - family_cases2_court_same: ${True if prior_family_cases[6].country == "US" and prior_family_cases[6].state == "MI" and not prior_family_cases[6].in_tribal_court and the_court.address.county == prior_family_cases[6].county else False}
+      - family_cases2_court_other: ${False if prior_family_cases[6].country == "US" and prior_family_cases[6].state == "MI" and not prior_family_cases[6].in_tribal_court and the_court.address.county == prior_family_cases[6].county else True}
       - family_cases2_court_name_number_county_state: |
-          ${prior_family_cases[6].court if prior_family_cases[6].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[6].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[6].county} County, ${state_name(prior_family_cases[6].state)}
+          ${prior_family_cases[6].court if (prior_family_cases[6].country != "US" or prior_family_cases[6].state != "MI" or prior_family_cases[6].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[6].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[6].country == "US":
+          % if prior_family_cases[6].in_tribal_court:
+          ${state_name(prior_family_cases[6].state) }
+          % else:
+          ${ prior_family_cases[6].county } County, ${ state_name(prior_family_cases[6].state) }
+          % endif
+          % else:
+          ${prior_family_cases[6].foreign_admin_unit}, ${ country_name(prior_family_cases[6].country) }
+          % endif
       - family_cases2_name: ${prior_family_cases[6].title}
       - family_cases2_docket_number: ${prior_family_cases[6].docket_number}
       - family_cases2_judge: ${word("Judge ") + word(prior_family_cases[6].judge)}
@@ -1426,10 +1489,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases3_court_same: ${True if prior_family_cases[7].state == "MI" and the_court.address.county == prior_family_cases[7].county else False}
-      - family_cases3_court_other: ${False if prior_family_cases[7].state == "MI" and the_court.address.county == prior_family_cases[7].county else True}
+      - family_cases3_court_same: ${True if prior_family_cases[7].country == "US" and prior_family_cases[7].state == "MI" and not prior_family_cases[7].in_tribal_court and the_court.address.county == prior_family_cases[7].county else False}
+      - family_cases3_court_other: ${False if prior_family_cases[7].country == "US" and prior_family_cases[7].state == "MI" and not prior_family_cases[7].in_tribal_court and the_court.address.county == prior_family_cases[7].county else True}
       - family_cases3_court_name_number_county_state: |
-          ${prior_family_cases[7].court if prior_family_cases[7].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[7].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[7].county} County, ${state_name(prior_family_cases[7].state)}
+          ${prior_family_cases[7].court if (prior_family_cases[7].country != "US" or prior_family_cases[7].state != "MI" or prior_family_cases[7].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[7].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[7].country == "US":
+          % if prior_family_cases[7].in_tribal_court:
+          ${state_name(prior_family_cases[7].state) }
+          % else:
+          ${ prior_family_cases[7].county } County, ${ state_name(prior_family_cases[7].state) }
+          % endif
+          % else:
+          ${prior_family_cases[7].foreign_admin_unit}, ${ country_name(prior_family_cases[7].country) }
+          % endif
       - family_cases3_name: ${prior_family_cases[7].title}
       - family_cases3_docket_number: ${prior_family_cases[7].docket_number}
       - family_cases3_judge: ${word("Judge ") + word(prior_family_cases[7].judge)}
@@ -1478,10 +1550,19 @@ attachment:
       #- judge_name:
       - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
       - defendants0_name_full: ${defendants[0].name_full()}
-      - family_cases0_court_same: ${True if prior_family_cases[8].state == "MI" and the_court.address.county == prior_family_cases[8].county else False}
-      - family_cases0_court_other: ${False if prior_family_cases[8].state == "MI" and the_court.address.county == prior_family_cases[8].county else True}
+      - family_cases0_court_same: ${True if prior_family_cases[8].country == "US" and prior_family_cases[8].state == "MI" and not prior_family_cases[8].in_tribal_court and the_court.address.county == prior_family_cases[8].county else False}
+      - family_cases0_court_other: ${False if prior_family_cases[8].country == "US" and prior_family_cases[8].state == "MI" and not prior_family_cases[8].in_tribal_court and the_court.address.county == prior_family_cases[8].county else True}
       - family_cases0_court_name_number_county_state: |
-          ${prior_family_cases[8].court if prior_family_cases[8].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[8].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[8].county} County, ${state_name(prior_family_cases[8].state)}
+          ${prior_family_cases[8].court if (prior_family_cases[8].country != "US" or prior_family_cases[8].state != "MI" or prior_family_cases[8].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[8].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[8].country == "US":
+          % if prior_family_cases[8].in_tribal_court:
+          ${state_name(prior_family_cases[8].state) }
+          % else:
+          ${ prior_family_cases[8].county } County, ${ state_name(prior_family_cases[8].state) }
+          % endif
+          % else:
+          ${prior_family_cases[8].foreign_admin_unit}, ${ country_name(prior_family_cases[8].country) }
+          % endif
       - family_cases0_name: ${prior_family_cases[8].title}
       - family_cases0_docket_number: ${prior_family_cases[8].docket_number}
       - family_cases0_judge: ${word("Judge ") + word(prior_family_cases[8].judge)}
@@ -1507,10 +1588,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases1_court_same: ${True if prior_family_cases[9].state == "MI" and the_court.address.county == prior_family_cases[9].county else False}
-      - family_cases1_court_other: ${False if prior_family_cases[9].state == "MI" and the_court.address.county == prior_family_cases[9].county else True}
+      - family_cases1_court_same: ${True if prior_family_cases[9].country == "US" and prior_family_cases[9].state == "MI" and not prior_family_cases[9].in_tribal_court and the_court.address.county == prior_family_cases[9].county else False}
+      - family_cases1_court_other: ${False if prior_family_cases[9].country == "US" and prior_family_cases[9].state == "MI" and not prior_family_cases[9].in_tribal_court and the_court.address.county == prior_family_cases[9].county else True}
       - family_cases1_court_name_number_county_state: |
-          ${prior_family_cases[9].court if prior_family_cases[9].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[9].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[9].county} County, ${state_name(prior_family_cases[9].state)}
+          ${prior_family_cases[9].court if (prior_family_cases[9].country != "US" or prior_family_cases[9].state != "MI" or prior_family_cases[9].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[9].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[9].country == "US":
+          % if prior_family_cases[9].in_tribal_court:
+          ${state_name(prior_family_cases[9].state) }
+          % else:
+          ${ prior_family_cases[9].county } County, ${ state_name(prior_family_cases[9].state) }
+          % endif
+          % else:
+          ${prior_family_cases[9].foreign_admin_unit}, ${ country_name(prior_family_cases[9].country) }
+          % endif
       - family_cases1_name: ${prior_family_cases[9].title}
       - family_cases1_docket_number: ${prior_family_cases[9].docket_number}
       - family_cases1_judge: ${word("Judge ") + word(prior_family_cases[9].judge)}
@@ -1536,10 +1626,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases2_court_same: ${True if prior_family_cases[10].state == "MI" and the_court.address.county == prior_family_cases[10].county else False}
-      - family_cases2_court_other: ${False if prior_family_cases[10].state == "MI" and the_court.address.county == prior_family_cases[10].county else True}
+      - family_cases2_court_same: ${True if prior_family_cases[10].country == "US" and prior_family_cases[10].state == "MI" and not prior_family_cases[10].in_tribal_court and the_court.address.county == prior_family_cases[10].county else False}
+      - family_cases2_court_other: ${False if prior_family_cases[10].country == "US" and prior_family_cases[10].state == "MI" and not prior_family_cases[10].in_tribal_court and the_court.address.county == prior_family_cases[10].county else True}
       - family_cases2_court_name_number_county_state: |
-          ${prior_family_cases[10].court if prior_family_cases[10].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[10].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[10].county} County, ${state_name(prior_family_cases[10].state)}
+          ${prior_family_cases[10].court if (prior_family_cases[10].country != "US" or prior_family_cases[10].state != "MI" or prior_family_cases[10].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[10].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[10].country == "US":
+          % if prior_family_cases[10].in_tribal_court:
+          ${state_name(prior_family_cases[10].state) }
+          % else:
+          ${ prior_family_cases[10].county } County, ${ state_name(prior_family_cases[10].state) }
+          % endif
+          % else:
+          ${prior_family_cases[10].foreign_admin_unit}, ${ country_name(prior_family_cases[10].country) }
+          % endif
       - family_cases2_name: ${prior_family_cases[10].title}
       - family_cases2_docket_number: ${prior_family_cases[10].docket_number}
       - family_cases2_judge: ${word("Judge ") + word(prior_family_cases[10].judge)}
@@ -1565,10 +1664,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases3_court_same: ${True if prior_family_cases[11].state == "MI" and the_court.address.county == prior_family_cases[11].county else False}
-      - family_cases3_court_other: ${False if prior_family_cases[11].state == "MI" and the_court.address.county == prior_family_cases[11].county else True}
+      - family_cases3_court_same: ${True if prior_family_cases[11].country == "US" and prior_family_cases[11].state == "MI" and not prior_family_cases[11].in_tribal_court and the_court.address.county == prior_family_cases[11].county else False}
+      - family_cases3_court_other: ${False if prior_family_cases[11].country == "US" and prior_family_cases[11].state == "MI" and not prior_family_cases[11].in_tribal_court and the_court.address.county == prior_family_cases[11].county else True}
       - family_cases3_court_name_number_county_state: |
-          ${prior_family_cases[11].court if prior_family_cases[11].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[11].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[11].county} County, ${state_name(prior_family_cases[11].state)}
+          ${prior_family_cases[11].court if (prior_family_cases[11].country != "US" or prior_family_cases[11].state != "MI" or prior_family_cases[11].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[11].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[11].country == "US":
+          % if prior_family_cases[11].in_tribal_court:
+          ${state_name(prior_family_cases[11].state) }
+          % else:
+          ${ prior_family_cases[11].county } County, ${ state_name(prior_family_cases[11].state) }
+          % endif
+          % else:
+          ${prior_family_cases[11].foreign_admin_unit}, ${ country_name(prior_family_cases[11].country) }
+          % endif
       - family_cases3_name: ${prior_family_cases[11].title}
       - family_cases3_docket_number: ${prior_family_cases[11].docket_number}
       - family_cases3_judge: ${word("Judge ") + word(prior_family_cases[11].judge)}
@@ -1681,7 +1789,21 @@ attachment:
           % else:
             % for case in prior_family_cases:
               % if case.add_to_MC416_4:
-          ${case.title}; Case #: ${case.docket_number}; ${case.court if case.state != "MI" else court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}; ${case.address if case.state != "MI" else word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_address')) + word(" ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_unit')) + word(", ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='CSZ'))}; Nature: ${prior_family_case_types_ordered[case.type]}; Order date: ${format_date(case.final_order_date, format='M/d/yyyy') if case.type not in ["divorce", "separate_maintenance"] and case.status == "ended_with_order" else format_date(case.custody_PT_order_date, format='M/d/yyyy')} ${word("; This proceeding is continuing.") if case.status == "pending" else word("; This proceeding has been stayed by the court.") if case.status == "stayed" else word("; This proceeding was later dismissed.") if case.status == "dismissed" else word("")}
+          ${case.title}; Case #: ${case.docket_number}; ${case.court if (case.country != "US" or case.state != "MI" or case.in_tribal_court) else court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='name')};
+          % if case.country == "US":
+          % if case.state == "MI":
+          % if case.in_tribal_court:
+          ${ case.address };
+          % else:
+          ${word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_address')) + word(" ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_unit')) + word(", ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='CSZ'))}; 
+          % endif
+          % else:
+          ${ case.address };
+          % endif
+          % else:
+          ${ case.address }, ${ case.foreign_admin_unit }, ${ country_name(case.country) };
+          % endif
+          Nature: ${prior_family_case_types_ordered[case.type]}; Order date: ${format_date(case.final_order_date, format='M/d/yyyy') if case.type not in ["divorce", "separate_maintenance"] and case.status == "ended_with_order" else format_date(case.custody_PT_order_date, format='M/d/yyyy')} ${word("; This proceeding is continuing.") if case.status == "pending" else word("; This proceeding has been stayed by the court.") if case.status == "stayed" else word("; This proceeding was later dismissed.") if case.status == "dismissed" else word("")}
               % endif
             % endfor
           % endif
@@ -1691,7 +1813,21 @@ attachment:
           % else:
             % for case in prior_family_cases:
               % if case.type != "name_change" and case.status in ["pending", "stayed"]:
-          ${case.title}; Case #: ${case.docket_number}; ${case.court if case.state != "MI" else court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}; ${case.address if case.state != "MI" else word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_address')) + word(" ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_unit')) + word(", ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='CSZ'))}; Nature: ${prior_family_case_types_ordered[case.type]}; ${word("Order date: ") + format_date(case.custody_PT_order_date, format='M/d/yyyy' + ";") if (case.type == "separate_maintenance" and case.involved_custody_pt_support and case.included_custody_PT_order) or (case.type != "separate_maintenance" and case.included_custody_PT_order) else ""} ${word("This proceeding is continuing.") if case.status == "pending" else word("This proceeding has been stayed by the court.")}
+          ${case.title}; Case #: ${case.docket_number}; ${case.court if (case.country != "US" or case.state != "MI" or case.in_tribal_court) else court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='name')};
+          % if case.country == "US":
+          % if case.state == "MI":
+          % if case.in_tribal_court:
+          ${ case.address };
+          % else:
+          ${word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_address')) + word(" ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_unit')) + word(", ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='CSZ'))}; 
+          % endif
+          % else:
+          ${ case.address };
+          % endif
+          % else:
+          ${ case.address }, ${ case.foreign_admin_unit }, ${ country_name(case.country) };
+          % endif
+          Nature: ${prior_family_case_types_ordered[case.type]}; ${word("Order date: ") + format_date(case.custody_PT_order_date, format='M/d/yyyy' + ";") if (case.type == "separate_maintenance" and case.involved_custody_pt_support and case.included_custody_PT_order) or (case.type != "separate_maintenance" and case.included_custody_PT_order) else ""} ${word("This proceeding is continuing.") if case.status == "pending" else word("This proceeding has been stayed by the court.")}
               % endif
             % endfor
           % endif
