@@ -1451,6 +1451,19 @@ review:
         % endfor
         % endif     
     show if: there_are_marital_children
+  - Edit: 
+      - judge_ruled_jurisdiction_over_kids
+    button: |
+      ### Has the MI divorce judge decided if they have jurisdiction to make custody and parenting time determinations?
+      % if judge_ruled_jurisdiction_over_kids == "yes":
+      - Yes, the judge decided they **do have jurisdiction** to make custody and parenting time determinations.
+      % elif judge_ruled_jurisdiction_over_kids == "no":
+      - No, the judge decided they **do not have jurisdiction** to make custody and parenting time determinations.
+      % else:
+      - The judge has not made a decision on jurisdiction yet.
+      % endif
+    show if: |
+      tool_ID == "JOD_only" and there_are_marital_children and prior_cases.there_are_any and len(prior_family_cases.filter(potential_jurisdiction_probem=True)) > 0
   - Edit:
       - stepchild_address_review_screen
     button: |-

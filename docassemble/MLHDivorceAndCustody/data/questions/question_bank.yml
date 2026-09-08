@@ -5560,17 +5560,17 @@ validation code: |
   if children[i].home_state_exit == False and children[i].acknowledge_home_state_warning == False:
     validation_error("You need to understand the importance of speaking with a lawyer before you continue.", field="children[i].acknowledge_home_state_warning")
 ---
-if: tool_ID in ["divorce_complaint", "JOD_only"] # maybe only divorce complaint?
+if: tool_ID in ["divorce_complaint", "JOD_only"]
 id: out-of-state custody or parenting time order
 question: Important! Out-of-state custody or parenting time order
 subquestion: |
-  % if MI_home_state_all_kids: # note waiting to learn if this should be MI_has_jurisdiction_all_kids
+  % if MI_has_jurisdiction_all_kids:
 
   If a child or parent in your Michigan divorce case lives in the other state, country, or tribal land where the prior order was made, the Michigan court might not be able to make a new custody order in the divorce. 
   
   If this is your situation, it's best to find a lawyer to help you.
   % else:
-  Find a lawyer to help you. A Michigan court likely will not be able to make a custody order in your case. 
+  Find a lawyer to help you. A Michigan court might not be able to make a custody order in your case. 
   % endif
   ${ MLH_GUIDE_FULL }
 fields:
@@ -5581,10 +5581,14 @@ fields:
       - "No, I want to continue.": False
   - "Do you understand that if you make your divorce forms using this tool and file a divorce case in a Michigan court, it is important to find a lawyer to help you?": out_of_state_order_understand_continue
     datatype: yesnoradio
-    show if:
-      variable: out_of_state_order_stop
-      is: False
+    js show if: |
+      val("out_of_state_order_stop") === false && ${"true" if tool_ID == "divorce_complaint" else "false"}
+  - "Do you understand that if you make your divorce forms using this tool, it is important to find a lawyer to help you?": out_of_state_order_understand_continue
+    datatype: yesnoradio
+    js show if: |
+      val("out_of_state_order_stop") === false && ${"true" if tool_ID == "JOD_only" else "false"}
 ---
+# relevant if there's an out-of-state custody or parenting time order in effect
 if: tool_ID in ["JOD_only"]
 id: judge determined there's jurisdicion over kids?
 question: Has the judge decided there's jurisdiction over the kids in the case?
@@ -5592,8 +5596,9 @@ fields:
    - Has the judge in your current MI divorce case decided they have jurisdiction to make custody and parenting time determinations?: judge_ruled_jurisdiction_over_kids
      datatype: radio
      choices:
-       - Yes: True
-       - "No, or I don't know": False
+       - The judge decided they **do have jurisdiction** to make custody and parenting time determinations.: yes
+       - The judge decided they **do not have jurisdiction** to make custody and parenting time determinations.: no
+       - The judge has not made a decision on jurisdiction yet.: undecided
 ---
 template: tribal_divorce_forms
 subject: Forms for filing in tribal courts
@@ -6636,9 +6641,10 @@ id: prior family cases gather logic
 code: |
   if tool_ID == "JOD_only" and there_are_marital_children:
     prior_family_cases[i].status
-  
-    if prior_family_cases[i].has_current_custody_PT_order and (prior_family_cases[i].country != "US" or prior_family_cases[i].state != "MI" or prior_family_cases[i].in_tribal_court):
-      judge_ruled_jurisdiction_over_kids
+    if prior_family_cases[i].potential_jurisdiction_problem:
+      if judge_ruled_jurisdiction_over_kids == "undecided":
+        if not out_of_state_order_understand_continue:
+          exit_general
   
   elif tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint", "custody_answer"]:
     # only called in divorce_answer if complaint_type == "with_children"
@@ -6663,7 +6669,7 @@ code: |
         prior_family_cases[i].included_custody_PT_order
   
     if tool_ID in ["divorce_complaint"]:
-      if prior_family_cases[i].has_current_custody_PT_order and (prior_family_cases[i].country != "US" or prior_family_cases[i].state != "MI" or prior_family_cases[i].in_tribal_court):
+      if prior_family_cases[i].potential_jurisdiction_problem:
         if not out_of_state_order_understand_continue:
             exit_general
 
@@ -6719,6 +6725,11 @@ fields:
     datatype: yesnoradio
   - Is there a child support order from this case that is currently in effect?: prior_family_cases[i].has_child_support_order
     datatype: yesnoradio
+validation code: |
+  if prior_family_cases[i].has_current_custody_PT_order and (prior_family_cases[i].country != "US" or prior_family_cases[i].state != "MI" or prior_family_cases[i].in_tribal_court):
+    prior_family_cases[i].potential_jurisdiction_problem = True
+  else:
+    prior_family_cases[i].potential_jurisdiction_problem = False
 ---
 objects:
   # next 3 blocks create ordered list of case types sources for a multiple choice dropdown
@@ -6954,6 +6965,7 @@ fields:
 validation code: |
   prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
   prior_family_cases[i].has_current_custody_PT_order = False
+  prior_family_cases[i].potential_jurisdiction_problem = False
   # per Jan 2026 emails w/ AB, assume there are no custody/PT orders in effect from past divorce case
 ---
 sets: prior_family_cases[i].included_custody_PT_order
@@ -7002,9 +7014,14 @@ validation code: |
   
   if not prior_family_cases[i].involved_custody_pt_support:
     prior_family_cases[i].included_custody_PT_order = False 
+  
   if not prior_family_cases[i].included_custody_PT_order:
     prior_family_cases[i].has_current_custody_PT_order = False
-# 2nd validation code (and "sets" modifier above) is here so that on the table/revisit screen, we can just call included_custody_PT_order rather than needing to call both included and involved and potentially triggering this screen twice
+  if prior_family_cases[i].has_current_custody_PT_order and (prior_family_cases[i].country != "US" or prior_family_cases[i].state != "MI" or prior_family_cases[i].in_tribal_court):
+    prior_family_cases[i].potential_jurisdiction_problem = True
+  else:
+    prior_family_cases[i].potential_jurisdiction_problem = False
+# 2nd validation code chunk (and "sets" modifier above) is here so that on the table/revisit screen, we can just call included_custody_PT_order rather than needing to call both included and involved and potentially triggering this screen twice
 ---
 id: separate maintenance conversion notice
 if: tool_ID == "divorce_complaint"
@@ -7087,6 +7104,10 @@ validation code: |
 
   if not prior_family_cases[i].included_custody_PT_order:
     prior_family_cases[i].has_current_custody_PT_order = False
+  if prior_family_cases[i].has_current_custody_PT_order and (prior_family_cases[i].country != "US" or prior_family_cases[i].state != "MI" or prior_family_cases[i].in_tribal_court):
+    prior_family_cases[i].potential_jurisdiction_problem = True
+  else:
+    prior_family_cases[i].potential_jurisdiction_problem = False
 ---
 # LHI "Prior Family Cases DLG" (start at row 174)
 id: other prior family case or order additional info (stayed, pending)
@@ -7130,6 +7151,10 @@ validation code: |
 
   if not prior_family_cases[i].included_custody_PT_order:
     prior_family_cases[i].has_current_custody_PT_order = False
+  if prior_family_cases[i].has_current_custody_PT_order and (prior_family_cases[i].country != "US" or prior_family_cases[i].state != "MI" or prior_family_cases[i].in_tribal_court):
+    prior_family_cases[i].potential_jurisdiction_problem = True
+  else:
+    prior_family_cases[i].potential_jurisdiction_problem = False
 ---
 # LHI "Prior Family Cases DLG" (start at row 151)
 id: other prior family case or order additional info (dismissed)
@@ -7163,6 +7188,7 @@ fields:
 validation code: |
   prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
   prior_family_cases[i].has_current_custody_PT_order = False
+  prior_family_cases[i].potential_jurisdiction_problem = False
 ---
 # --------------------------------------------------------------------
 ## stepchildren address info
