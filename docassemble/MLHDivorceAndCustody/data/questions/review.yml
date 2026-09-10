@@ -1463,7 +1463,7 @@ review:
       - The judge has not made a decision on jurisdiction yet.
       % endif
     show if: |
-      tool_ID == "JOD_only" and there_are_marital_children and prior_cases.there_are_any and len(prior_family_cases.filter(potential_jurisdiction_probem=True)) > 0
+      tool_ID == "JOD_only" and there_are_marital_children and prior_cases.there_are_any and len(prior_family_cases.filter(potential_jurisdiction_problem=True)) > 0
   - Edit:
       - stepchild_address_review_screen
     button: |-
@@ -1592,6 +1592,9 @@ review:
         % else:
         - State or territory: ${case.state}
         % endif
+        % if case.in_tribal_court:
+        - This case is in a tribal court.
+        % endif
         - Case status: ${case.status}
         - Custody or parenting time order in effect? **${word(yesno(case.has_current_custody_PT_order))}**
         - Child support order in effect? **${word(yesno(case.has_child_support_order))}**
@@ -1603,7 +1606,7 @@ review:
 
         - ${case.title}
        % if case.country != "US" or case.state != "MI" or case.in_tribal_court:
-        - ${case.court}
+        - ${case.court} ${word("(tribal court)" if case.in_tribal_court else "")}
         % endif
         % if case.country == "US":
         - ${case.county} County, ${case.state}
@@ -1718,7 +1721,7 @@ review:
 
         - ${case.title}
         % if case.country != "US" or case.state != "MI" or case.in_tribal_court:
-        - ${case.court}
+        - ${case.court} ${word("(tribal court)" if case.in_tribal_court else "")}
         % endif
         % if case.country == "US": 
         % if not case.in_tribal_court:
