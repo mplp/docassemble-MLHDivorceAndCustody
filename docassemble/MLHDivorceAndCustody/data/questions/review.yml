@@ -1463,7 +1463,7 @@ review:
       - The judge has not made a decision on jurisdiction yet.
       % endif
     show if: |
-      tool_ID == "JOD_only" and there_are_marital_children and prior_cases.there_are_any and len(prior_family_cases.filter(potential_jurisdiction_problem=True)) > 0
+      tool_ID == "JOD_only" and there_are_marital_children and prior_family_cases.there_are_any and len(prior_family_cases.filter(potential_jurisdiction_problem=True)) > 0
   - Edit:
       - stepchild_address_review_screen
     button: |-
