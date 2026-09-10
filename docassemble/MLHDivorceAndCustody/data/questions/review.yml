@@ -1605,15 +1605,17 @@ review:
       **Case ${case.docket_number}** (${prior_family_case_types_ordered[case.type]})
 
         - ${case.title}
-       % if case.country != "US" or case.state != "MI" or case.in_tribal_court:
-        - ${case.court} ${word("(tribal court)" if case.in_tribal_court else "")}
+        % if case.country != "US" or case.state != "MI" or case.in_tribal_court:
+        - ${case.court} ${word("(tribal court)") if case.in_tribal_court else ""}
         % endif
         % if case.country == "US":
+        % if not case.in_tribal_court:
         - ${case.county} County, ${case.state}
-        % if case.in_tribal_court or case.state != "MI":
+        % endif
+        % if (case.in_tribal_court or case.state != "MI") and defined("case.address"):
         - ${ case.address }
         % endif
-        % elif case.country != "US":
+        % elif case.country != "US" and defined("case.address"):
         - ${ case.address }, ${ case.foreign_admin_unit }, ${ country_name(case.country) }
         % endif   
         % if tool_ID in ["divorce_complaint", "custody_complaint"]:
@@ -1721,7 +1723,7 @@ review:
 
         - ${case.title}
         % if case.country != "US" or case.state != "MI" or case.in_tribal_court:
-        - ${case.court} ${word("(tribal court)" if case.in_tribal_court else "")}
+        - ${case.court} ${word("(tribal court)") if case.in_tribal_court else ""}
         % endif
         % if case.country == "US": 
         % if not case.in_tribal_court:
