@@ -5564,13 +5564,15 @@ if: tool_ID in ["divorce_complaint", "JOD_only"]
 id: out-of-state custody or parenting time order
 question: Important! Out-of-state custody or parenting time order
 subquestion: |
+  You said there is a custody or parenting time order in effect from a court of another country, state or tribal government.
+  
   % if MI_has_jurisdiction_all_kids:
 
-  If a child or parent in your Michigan divorce case lives in the other state, country, or tribal land where the prior order was made, the Michigan court might not be able to make a new custody order in the divorce. 
+  If a child or parent in your Michigan divorce case lives in the other state, country, or tribal land where the prior order was made, the Michigan court might not be able to make a new custody order in the divorce case. 
   
   If this is your situation, it's best to find a lawyer to help you.
   % else:
-  Find a lawyer to help you. A Michigan court might not be able to make a custody order in your case. 
+  Find a lawyer to help you. A Michigan court might not be able to make a custody order in your divorce case. 
   % endif
   ${ MLH_GUIDE_FULL }
 fields:
@@ -6641,10 +6643,6 @@ id: prior family cases gather logic
 code: |
   if tool_ID == "JOD_only" and there_are_marital_children:
     prior_family_cases[i].status
-    if prior_family_cases[i].potential_jurisdiction_problem:
-      if judge_ruled_jurisdiction_over_kids == "undecided":
-        if not out_of_state_order_understand_continue:
-          exit_general
   
   elif tool_ID in ["divorce_complaint", "divorce_answer", "custody_complaint", "custody_answer"]:
     # only called in divorce_answer if complaint_type == "with_children"
@@ -6667,11 +6665,6 @@ code: |
   
       elif prior_family_cases[i].type != "separate_maintenance":
         prior_family_cases[i].included_custody_PT_order
-  
-    if tool_ID in ["divorce_complaint"]:
-      if prior_family_cases[i].potential_jurisdiction_problem:
-        if not out_of_state_order_understand_continue:
-            exit_general
 
   prior_family_cases[i].complete = True
 ---
@@ -8755,3 +8748,14 @@ content: |
   * **change your last name** as part of the divorce
   * ask for **spousal support**
 ---
+# this is for back compatibility with the September 2026 change in how we collect prior case locations and screen for jurisdiction problems with existing custody or PT orders. Should be able to delete this in a year or so.
+id: court_info_revamp_compatibility
+code: |
+  for case in prior_family_cases:
+    if not defined("case.country"):
+      case.country = "US"
+      case.in_tribal_court = False
+      case.potential_jurisdiction_problem = False
+  
+  
+  court_info_revamp_compatibility = True

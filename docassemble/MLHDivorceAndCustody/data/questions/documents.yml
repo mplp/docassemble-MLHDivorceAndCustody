@@ -182,7 +182,7 @@ code: |
 
   judgment_addendum_income_tax.enabled = there_are_marital_children
 
-  judgment_addendum_parenting_time.enabled = there_are_marital_children and MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 650
+  judgment_addendum_parenting_time.enabled = there_are_marital_children and MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 650
 ---
 # enabling logic for JOD_only addenda overflow fields (personal property and debts, real property legal description, and other provisions)
 code: |
@@ -3974,84 +3974,84 @@ attachment:
       - defendants1_name: ${defendants}
       - children_line_1: ${children_line_1}
       - children_line_2: ${children_line_2}
-      - awards_legal_custody: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
+      - awards_legal_custody: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
       - legal_custody_plaintiff: |
-          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "user" and user_ask_role == "plaintiff":
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "user" and user_ask_role == "plaintiff":
           True
-          % elif MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "other_party" and user_ask_role == "defendant":
+          % elif MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "other_party" and user_ask_role == "defendant":
           True
           % else:
           False
           % endif
       - legal_custody_defendant: |
-          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "user" and user_ask_role == "defendant":
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "user" and user_ask_role == "defendant":
           True
-          % elif MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "other_party" and user_ask_role == "plaintiff":
+          % elif MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "other_party" and user_ask_role == "plaintiff":
           True
           % else:
           False
           % endif
       - legal_custody_joint: |
-          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "both":
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "both":
           True
           % else:
           False
           % endif
-      - awards_physical_custody: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
+      - awards_physical_custody: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
       - physical_custody_plaintiff: |
-          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and physical_custody_who == "user" and user_ask_role == "plaintiff":
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and physical_custody_who == "user" and user_ask_role == "plaintiff":
           True
-          % elif MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and physical_custody_who == "other_party" and user_ask_role == "defendant":
+          % elif MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and physical_custody_who == "other_party" and user_ask_role == "defendant":
           True
           % else:
           False
           % endif
       - physical_custody_defendant: |
-          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and physical_custody_who == "user" and user_ask_role == "defendant":
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and physical_custody_who == "user" and user_ask_role == "defendant":
           True
-          % elif MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and physical_custody_who == "other_party" and user_ask_role == "plaintiff":
+          % elif MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and physical_custody_who == "other_party" and user_ask_role == "plaintiff":
           True
           % else:
           False
           % endif
       - physical_custody_joint: |
-          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and physical_custody_who == "both":
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and physical_custody_who == "both":
           True
           % else:
           False
           % endif
       - custody_not_determined: ## leaving blank per attorney feedback: "There are times under the statute where a MI court could decide to exercise jurisdiction even when MI is not the home state."
-      - must_notify_address_change: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
-      - court_must_approve_domicile_change: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
+      - must_notify_address_change: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
+      - court_must_approve_domicile_change: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
       - 100_mile_rule_applies: |
-          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "both" and not already_over_100_miles and not allow_over_100_miles:
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "both" and not already_over_100_miles and not allow_over_100_miles:
           True
           % else:
           False
           % endif
       - 100_mile_NA_already_exceeded: |
-          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "both" and already_over_100_miles:
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "both" and already_over_100_miles:
           True
           % else:
           False
           % endif
       - 100_mile_NA_sole_custody: |
-          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who != "both":
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who != "both":
           True
           % else:
           False
           % endif
       - 100_mile_waived: |
-          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "both" and not already_over_100_miles and allow_over_100_miles:
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "both" and not already_over_100_miles and allow_over_100_miles:
           True
           % else:
           False
           % endif
       - docket_number__1: ${docket_number}
-      - parents_shall_cooperate: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
-      - parenting_time_established: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
+      - parents_shall_cooperate: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
+      - parenting_time_established: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
       - parenting_time_provisions: |
-          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes"):
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes"):
             % if physical_custody_who != "both":
               % if PT_who == "user":
           ${OP_party_label.capitalize()} will not have parenting time.
@@ -4085,7 +4085,7 @@ attachment:
             % endif
           % endif
       - child_support_ordered: |
-          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and not other_case_controls_child_support:
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and not other_case_controls_child_support:
           True
           % else:
           False
@@ -4154,7 +4154,7 @@ attachment:
       - pensions_keep_own: ${marriage.have_pension_retirement and marriage.pension_contributions_made and marriage.attr("pension_retirement_accounts_keep_own")}
       - pensions_in_addendum: ${marriage.have_pension_retirement and marriage.pension_contributions_made and not marriage.attr("pension_retirement_accounts_keep_own")}
       - has_income_tax_addendum: ${there_are_marital_children}
-      - has_parenting_time_addendum: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_probem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 650}
+      - has_parenting_time_addendum: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 650}
       - has_overflow_addendum: ${(send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum) or (marriage.real_property and send_rp_legal_description_to_addendum) or (marriage.other_provisions_any and len(marriage.other_provisions) > 650)}
       - has_other_provisions: ${marriage.other_provisions_any}
       - other_provisions: |

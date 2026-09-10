@@ -195,6 +195,10 @@ code: |
 
   nav.set_section("signpost_prior_cases")
   prior_family_cases.gather()
+  court_info_revamp_compatibility # for back compatibility 
+  if len(prior_family_cases.filter(potential_jurisdiction_problem=True)) > 0:
+    if out_of_state_order_stop or not out_of_state_order_understand_continue:
+        exit_general
   if there_are_marital_children:
     child_support_pending_elsewhere
   has_prior_civil_cases
