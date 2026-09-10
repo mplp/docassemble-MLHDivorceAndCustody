@@ -182,7 +182,7 @@ code: |
 
   judgment_addendum_income_tax.enabled = there_are_marital_children
 
-  judgment_addendum_parenting_time.enabled = there_are_marital_children and MI_has_jurisdiction_all_kids and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 650
+  judgment_addendum_parenting_time.enabled = there_are_marital_children and MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 650
 ---
 # enabling logic for JOD_only addenda overflow fields (personal property and debts, real property legal description, and other provisions)
 code: |
@@ -318,31 +318,29 @@ attachment:
           Defendant
           % endif
       - parenting_time_provisions: |
-          % if MI_has_jurisdiction_all_kids:
-            % if physical_custody_who != "both":
-              % if PT_who == "user":
+          % if physical_custody_who != "both":
+            % if PT_who == "user":
           ${ OP_party_label.capitalize() } will not have parenting time.
-              % elif PT_who == "other_party":
+            % elif PT_who == "other_party":
           ${ user_party_label.capitalize() } will not have parenting time.
-              % endif
             % endif
-            % if physical_custody_who == "both" or PT_who == "both":
-              % if PT_type == "reasonable":
+          % endif
+          % if physical_custody_who == "both" or PT_who == "both":
+            % if PT_type == "reasonable":
           Parenting time arrangements will be made by mutual agreement of the parties.
-              % elif PT_type in ["specific", "supervised"]:
-                % if specific_PT_how == "custom":
-                  % if len(custom_PT_details) > 650:
+            % elif PT_type in ["specific", "supervised"]:
+              % if specific_PT_how == "custom":
+                % if len(custom_PT_details) > 650:
           Both parties will have specific parenting time with the minor ${ "child" if len(children.filter(legal_parent="both")) == 1 else "children" } according to the Parenting Time Addendum.
-                  % else:
-          ${ custom_PT_details }
-                  % endif
                 % else:
-          Both parties will have specific parenting time with the minor ${ "child" if len(children.filter(legal_parent="both")) == 1 else "children" } according to the ${ the_court.address.county } County Friend of the Court parenting time schedule.
+          ${ custom_PT_details }
                 % endif
-                % if PT_type == "supervised" and not (specific_PT_how == "custom" and len(custom_PT_details) > 650):
+              % else:
+          Both parties will have specific parenting time with the minor ${ "child" if len(children.filter(legal_parent="both")) == 1 else "children" } according to the ${ the_court.address.county } County Friend of the Court parenting time schedule.
+              % endif
+              % if PT_type == "supervised" and not (specific_PT_how == "custom" and len(custom_PT_details) > 650):
 
           Parenting time for ${ OP_party_label.lower() if physical_custody_who == "user" else user_party_label.lower() } will be supervised by ${ PT_supervisor if PT_supervisor != "" else "________________________" }.
-                % endif
               % endif
             % endif
           % endif
@@ -440,42 +438,40 @@ attachment:
       - physical_custody_defendant: |
           ${ (physical_custody_who == "user" and user_ask_role == "defendant") or (physical_custody_who == "other_party" and user_ask_role == "plaintiff") }
       - physical_custody_joint: ${ physical_custody_who == "both" }
-      - 100_mile_rule_applies: | # fields need work -- will the MI_has_jurisdiction_all_kids thing apply here? possibly need to apply it to more fields. LHI uses home state is MI on most of these fields
-          ${ MI_has_jurisdiction_all_kids and legal_custody_who == "both" and not already_over_100_miles and not allow_over_100_miles }
+      - 100_mile_rule_applies: | # fields need work -- I think MI_has_jurisdiction_all_kids thing does not apply here because kids will be excluded from case if they don't fall under MI jurisdiction. LHI uses home state is MI on most of these fields.
+          ${ legal_custody_who == "both" and not already_over_100_miles and not allow_over_100_miles }
       - 100_mile_NA_already_exceeded: |
-          ${ MI_has_jurisdiction_all_kids and legal_custody_who == "both" and already_over_100_miles }
+          ${ legal_custody_who == "both" and already_over_100_miles }
       - 100_mile_NA_sole_custody: |
-          ${ MI_has_jurisdiction_all_kids and legal_custody_who != "both" }
+          ${ legal_custody_who != "both" }
       - 100_mile_waived: |
-          ${ MI_has_jurisdiction_all_kids and legal_custody_who == "both" and not already_over_100_miles and allow_over_100_miles }
+          ${ legal_custody_who == "both" and not already_over_100_miles and allow_over_100_miles }
       - page_number__1: ${ "2" }
       - page_number__2: ${ "2" }
       - parenting_time_provisions: |
-          % if MI_has_jurisdiction_all_kids:
-            % if physical_custody_who != "both":
-              % if PT_who == "user":
+          % if physical_custody_who != "both":
+            % if PT_who == "user":
           ${ OP_party_label.capitalize() } will not have parenting time.
-              % elif PT_who == "other_party":
+            % elif PT_who == "other_party":
           ${ user_party_label.capitalize() } will not have parenting time.
-              % endif
             % endif
-            % if physical_custody_who == "both" or PT_who == "both":
-              % if PT_type == "reasonable":
+          % endif
+          % if physical_custody_who == "both" or PT_who == "both":
+            % if PT_type == "reasonable":
           Parenting time arrangements will be made by mutual agreement of the parties.
-              % elif PT_type in ["specific", "supervised"]:
-                % if specific_PT_how == "custom":
-                  % if len(custom_PT_details) > 650:
+            % elif PT_type in ["specific", "supervised"]:
+              % if specific_PT_how == "custom":
+                % if len(custom_PT_details) > 650:
           Both parties will have specific parenting time with the minor ${ "child" if len(children.filter(legal_parent="both")) == 1 else "children" } according to the Parenting Time Addendum.
-                  % else:
-          ${ custom_PT_details }
-                  % endif
                 % else:
-          Both parties will have specific parenting time with the minor ${ "child" if len(children.filter(legal_parent="both")) == 1 else "children" } according to the ${ the_court.address.county } County Friend of the Court parenting time schedule.
+          ${ custom_PT_details }
                 % endif
-                % if PT_type == "supervised" and not (specific_PT_how == "custom" and len(custom_PT_details) > 650):
+              % else:
+          Both parties will have specific parenting time with the minor ${ "child" if len(children.filter(legal_parent="both")) == 1 else "children" } according to the ${ the_court.address.county } County Friend of the Court parenting time schedule.
+              % endif
+              % if PT_type == "supervised" and not (specific_PT_how == "custom" and len(custom_PT_details) > 650):
 
           Parenting time for ${ OP_party_label.lower() if physical_custody_who == "user" else user_party_label.lower() } will be supervised by ${ PT_supervisor if PT_supervisor != "" else "________________________" }.
-                % endif
               % endif
             % endif
           % endif
@@ -1200,10 +1196,19 @@ attachment:
       #- judge_name:
       - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
       - defendants0_name_full: ${defendants[0].name_full()}
-      - family_cases0_court_same: ${True if prior_family_cases[0].state == "MI" and the_court.address.county == prior_family_cases[0].county else False}
-      - family_cases0_court_other: ${False if prior_family_cases[0].state == "MI" and the_court.address.county == prior_family_cases[0].county else True}
+      - family_cases0_court_same: ${True if prior_family_cases[0].country == "US" and prior_family_cases[0].state == "MI" and not prior_family_cases[0].in_tribal_court and the_court.address.county == prior_family_cases[0].county else False}
+      - family_cases0_court_other: ${False if prior_family_cases[0].country == "US" and prior_family_cases[0].state == "MI" and not prior_family_cases[0].in_tribal_court and the_court.address.county == prior_family_cases[0].county else True}
       - family_cases0_court_name_number_county_state: |
-          ${prior_family_cases[0].court if prior_family_cases[0].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[0].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[0].county} County, ${state_name(prior_family_cases[0].state)}
+          ${prior_family_cases[0].court if (prior_family_cases[0].country != "US" or prior_family_cases[0].state != "MI" or prior_family_cases[0].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[0].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[0].country == "US":
+          % if prior_family_cases[0].in_tribal_court:
+          ${state_name(prior_family_cases[0].state) }
+          % else:
+          ${ prior_family_cases[0].county } County, ${ state_name(prior_family_cases[0].state) }
+          % endif
+          % else:
+          ${prior_family_cases[0].foreign_admin_unit}, ${ country_name(prior_family_cases[0].country) }
+          % endif
       - family_cases0_name: ${prior_family_cases[0].title}
       - family_cases0_docket_number: ${prior_family_cases[0].docket_number}
       - family_cases0_judge: ${word("Judge ") + word(prior_family_cases[0].judge)}
@@ -1229,10 +1234,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases1_court_same: ${True if prior_family_cases[1].state == "MI" and the_court.address.county == prior_family_cases[1].county else False}
-      - family_cases1_court_other: ${False if prior_family_cases[1].state == "MI" and the_court.address.county == prior_family_cases[1].county else True}
+      - family_cases1_court_same: ${True if prior_family_cases[1].country == "US" and prior_family_cases[1].state == "MI" and not prior_family_cases[1].in_tribal_court and the_court.address.county == prior_family_cases[1].county else False}
+      - family_cases1_court_other: ${False if prior_family_cases[1].country == "US" and prior_family_cases[1].state == "MI" and not prior_family_cases[1].in_tribal_court and the_court.address.county == prior_family_cases[1].county else True}
       - family_cases1_court_name_number_county_state: |
-          ${prior_family_cases[1].court if prior_family_cases[1].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[1].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[1].county} County, ${state_name(prior_family_cases[1].state)}
+          ${prior_family_cases[1].court if (prior_family_cases[1].country != "US" or prior_family_cases[1].state != "MI" or prior_family_cases[1].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[1].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[1].country == "US":
+          % if prior_family_cases[1].in_tribal_court:
+          ${state_name(prior_family_cases[1].state) }
+          % else:
+          ${ prior_family_cases[1].county } County, ${ state_name(prior_family_cases[1].state) }
+          % endif
+          % else:
+          ${prior_family_cases[1].foreign_admin_unit}, ${ country_name(prior_family_cases[1].country) }
+          % endif
       - family_cases1_name: ${prior_family_cases[1].title}
       - family_cases1_docket_number: ${prior_family_cases[1].docket_number}
       - family_cases1_judge: ${word("Judge ") + word(prior_family_cases[1].judge)}
@@ -1258,10 +1272,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases2_court_same: ${True if prior_family_cases[2].state == "MI" and the_court.address.county == prior_family_cases[2].county else False}
-      - family_cases2_court_other: ${False if prior_family_cases[2].state == "MI" and the_court.address.county == prior_family_cases[2].county else True}
+      - family_cases2_court_same: ${True if prior_family_cases[2].country == "US" and prior_family_cases[2].state == "MI" and not prior_family_cases[2].in_tribal_court and the_court.address.county == prior_family_cases[2].county else False}
+      - family_cases2_court_other: ${False if prior_family_cases[2].country == "US" and prior_family_cases[2].state == "MI" and not prior_family_cases[2].in_tribal_court and the_court.address.county == prior_family_cases[2].county else True}
       - family_cases2_court_name_number_county_state: |
-          ${prior_family_cases[2].court if prior_family_cases[2].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[2].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[2].county} County, ${state_name(prior_family_cases[2].state)}
+          ${prior_family_cases[2].court if (prior_family_cases[2].country != "US" or prior_family_cases[2].state != "MI" or prior_family_cases[2].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[2].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[2].country == "US":
+          % if prior_family_cases[2].in_tribal_court:
+          ${state_name(prior_family_cases[2].state) }
+          % else:
+          ${ prior_family_cases[2].county } County, ${ state_name(prior_family_cases[2].state) }
+          % endif
+          % else:
+          ${prior_family_cases[2].foreign_admin_unit}, ${ country_name(prior_family_cases[2].country) }
+          % endif
       - family_cases2_name: ${prior_family_cases[2].title}
       - family_cases2_docket_number: ${prior_family_cases[2].docket_number}
       - family_cases2_judge: ${word("Judge ") + word(prior_family_cases[2].judge)}
@@ -1287,10 +1310,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases3_court_same: ${True if prior_family_cases[3].state == "MI" and the_court.address.county == prior_family_cases[3].county else False}
-      - family_cases3_court_other: ${False if prior_family_cases[3].state == "MI" and the_court.address.county == prior_family_cases[3].county else True}
+      - family_cases3_court_same: ${True if prior_family_cases[3].country == "US" and prior_family_cases[3].state == "MI" and not prior_family_cases[3].in_tribal_court and the_court.address.county == prior_family_cases[3].county else False}
+      - family_cases3_court_other: ${False if prior_family_cases[3].country == "US" and prior_family_cases[3].state == "MI" and not prior_family_cases[3].in_tribal_court and the_court.address.county == prior_family_cases[3].county else True}
       - family_cases3_court_name_number_county_state: |
-          ${prior_family_cases[3].court if prior_family_cases[3].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[3].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[3].county} County, ${state_name(prior_family_cases[3].state)}
+          ${prior_family_cases[3].court if (prior_family_cases[3].country != "US" or prior_family_cases[3].state != "MI" or prior_family_cases[3].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[3].county], ['circuit'], column_3='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[3].country == "US":
+          % if prior_family_cases[3].in_tribal_court:
+          ${state_name(prior_family_cases[3].state) }
+          % else:
+          ${ prior_family_cases[3].county } County, ${ state_name(prior_family_cases[3].state) }
+          % endif
+          % else:
+          ${prior_family_cases[3].foreign_admin_unit}, ${ country_name(prior_family_cases[3].country) }
+          % endif
       - family_cases3_name: ${prior_family_cases[3].title}
       - family_cases3_docket_number: ${prior_family_cases[3].docket_number}
       - family_cases3_judge: ${word("Judge ") + word(prior_family_cases[3].judge)}
@@ -1339,10 +1371,19 @@ attachment:
       #- judge_name:
       - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
       - defendants0_name_full: ${defendants[0].name_full()}
-      - family_cases0_court_same: ${True if prior_family_cases[4].state == "MI" and the_court.address.county == prior_family_cases[4].county else False}
-      - family_cases0_court_other: ${False if prior_family_cases[4].state == "MI" and the_court.address.county == prior_family_cases[4].county else True}
+      - family_cases0_court_same: ${True if prior_family_cases[4].country == "US" and prior_family_cases[4].state == "MI" and not prior_family_cases[4].in_tribal_court and the_court.address.county == prior_family_cases[4].county else False}
+      - family_cases0_court_other: ${False if prior_family_cases[4].country == "US" and prior_family_cases[4].state == "MI" and not prior_family_cases[4].in_tribal_court and the_court.address.county == prior_family_cases[4].county else True}
       - family_cases0_court_name_number_county_state: |
-          ${prior_family_cases[4].court if prior_family_cases[4].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[4].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[4].county} County, ${state_name(prior_family_cases[4].state)}
+          ${prior_family_cases[4].court if (prior_family_cases[4].country != "US" or prior_family_cases[4].state != "MI" or prior_family_cases[4].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[4].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[4].country == "US":
+          % if prior_family_cases[4].in_tribal_court:
+          ${state_name(prior_family_cases[4].state) }
+          % else:
+          ${ prior_family_cases[4].county } County, ${ state_name(prior_family_cases[4].state) }
+          % endif
+          % else:
+          ${prior_family_cases[4].foreign_admin_unit}, ${ country_name(prior_family_cases[4].country) }
+          % endif
       - family_cases0_name: ${prior_family_cases[4].title}
       - family_cases0_docket_number: ${prior_family_cases[4].docket_number}
       - family_cases0_judge: ${word("Judge ") + word(prior_family_cases[4].judge)}
@@ -1368,10 +1409,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases1_court_same: ${True if prior_family_cases[5].state == "MI" and the_court.address.county == prior_family_cases[5].county else False}
-      - family_cases1_court_other: ${False if prior_family_cases[5].state == "MI" and the_court.address.county == prior_family_cases[5].county else True}
+      - family_cases1_court_same: ${True if prior_family_cases[5].country == "US" and prior_family_cases[5].state == "MI" and not prior_family_cases[5].in_tribal_court and the_court.address.county == prior_family_cases[5].county else False}
+      - family_cases1_court_other: ${False if prior_family_cases[5].country == "US" and prior_family_cases[5].state == "MI" and not prior_family_cases[5].in_tribal_court and the_court.address.county == prior_family_cases[5].county else True}
       - family_cases1_court_name_number_county_state: |
-          ${prior_family_cases[5].court if prior_family_cases[5].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[5].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[5].county} County, ${state_name(prior_family_cases[5].state)}
+          ${prior_family_cases[5].court if (prior_family_cases[5].country != "US" or prior_family_cases[5].state != "MI" or prior_family_cases[5].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[5].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[5].country == "US":
+          % if prior_family_cases[5].in_tribal_court:
+          ${state_name(prior_family_cases[5].state) }
+          % else:
+          ${ prior_family_cases[5].county } County, ${ state_name(prior_family_cases[5].state) }
+          % endif
+          % else:
+          ${prior_family_cases[5].foreign_admin_unit}, ${ country_name(prior_family_cases[5].country) }
+          % endif
       - family_cases1_name: ${prior_family_cases[5].title}
       - family_cases1_docket_number: ${prior_family_cases[5].docket_number}
       - family_cases1_judge: ${word("Judge ") + word(prior_family_cases[5].judge)}
@@ -1397,10 +1447,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases2_court_same: ${True if prior_family_cases[6].state == "MI" and the_court.address.county == prior_family_cases[6].county else False}
-      - family_cases2_court_other: ${False if prior_family_cases[6].state == "MI" and the_court.address.county == prior_family_cases[6].county else True}
+      - family_cases2_court_same: ${True if prior_family_cases[6].country == "US" and prior_family_cases[6].state == "MI" and not prior_family_cases[6].in_tribal_court and the_court.address.county == prior_family_cases[6].county else False}
+      - family_cases2_court_other: ${False if prior_family_cases[6].country == "US" and prior_family_cases[6].state == "MI" and not prior_family_cases[6].in_tribal_court and the_court.address.county == prior_family_cases[6].county else True}
       - family_cases2_court_name_number_county_state: |
-          ${prior_family_cases[6].court if prior_family_cases[6].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[6].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[6].county} County, ${state_name(prior_family_cases[6].state)}
+          ${prior_family_cases[6].court if (prior_family_cases[6].country != "US" or prior_family_cases[6].state != "MI" or prior_family_cases[6].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[6].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[6].country == "US":
+          % if prior_family_cases[6].in_tribal_court:
+          ${state_name(prior_family_cases[6].state) }
+          % else:
+          ${ prior_family_cases[6].county } County, ${ state_name(prior_family_cases[6].state) }
+          % endif
+          % else:
+          ${prior_family_cases[6].foreign_admin_unit}, ${ country_name(prior_family_cases[6].country) }
+          % endif
       - family_cases2_name: ${prior_family_cases[6].title}
       - family_cases2_docket_number: ${prior_family_cases[6].docket_number}
       - family_cases2_judge: ${word("Judge ") + word(prior_family_cases[6].judge)}
@@ -1426,10 +1485,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases3_court_same: ${True if prior_family_cases[7].state == "MI" and the_court.address.county == prior_family_cases[7].county else False}
-      - family_cases3_court_other: ${False if prior_family_cases[7].state == "MI" and the_court.address.county == prior_family_cases[7].county else True}
+      - family_cases3_court_same: ${True if prior_family_cases[7].country == "US" and prior_family_cases[7].state == "MI" and not prior_family_cases[7].in_tribal_court and the_court.address.county == prior_family_cases[7].county else False}
+      - family_cases3_court_other: ${False if prior_family_cases[7].country == "US" and prior_family_cases[7].state == "MI" and not prior_family_cases[7].in_tribal_court and the_court.address.county == prior_family_cases[7].county else True}
       - family_cases3_court_name_number_county_state: |
-          ${prior_family_cases[7].court if prior_family_cases[7].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[7].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[7].county} County, ${state_name(prior_family_cases[7].state)}
+          ${prior_family_cases[7].court if (prior_family_cases[7].country != "US" or prior_family_cases[7].state != "MI" or prior_family_cases[7].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[7].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[7].country == "US":
+          % if prior_family_cases[7].in_tribal_court:
+          ${state_name(prior_family_cases[7].state) }
+          % else:
+          ${ prior_family_cases[7].county } County, ${ state_name(prior_family_cases[7].state) }
+          % endif
+          % else:
+          ${prior_family_cases[7].foreign_admin_unit}, ${ country_name(prior_family_cases[7].country) }
+          % endif
       - family_cases3_name: ${prior_family_cases[7].title}
       - family_cases3_docket_number: ${prior_family_cases[7].docket_number}
       - family_cases3_judge: ${word("Judge ") + word(prior_family_cases[7].judge)}
@@ -1478,10 +1546,19 @@ attachment:
       #- judge_name:
       - plaintiffs0_name_full: ${plaintiffs[0].name_full()}
       - defendants0_name_full: ${defendants[0].name_full()}
-      - family_cases0_court_same: ${True if prior_family_cases[8].state == "MI" and the_court.address.county == prior_family_cases[8].county else False}
-      - family_cases0_court_other: ${False if prior_family_cases[8].state == "MI" and the_court.address.county == prior_family_cases[8].county else True}
+      - family_cases0_court_same: ${True if prior_family_cases[8].country == "US" and prior_family_cases[8].state == "MI" and not prior_family_cases[8].in_tribal_court and the_court.address.county == prior_family_cases[8].county else False}
+      - family_cases0_court_other: ${False if prior_family_cases[8].country == "US" and prior_family_cases[8].state == "MI" and not prior_family_cases[8].in_tribal_court and the_court.address.county == prior_family_cases[8].county else True}
       - family_cases0_court_name_number_county_state: |
-          ${prior_family_cases[8].court if prior_family_cases[8].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[8].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[8].county} County, ${state_name(prior_family_cases[8].state)}
+          ${prior_family_cases[8].court if (prior_family_cases[8].country != "US" or prior_family_cases[8].state != "MI" or prior_family_cases[8].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[8].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[8].country == "US":
+          % if prior_family_cases[8].in_tribal_court:
+          ${state_name(prior_family_cases[8].state) }
+          % else:
+          ${ prior_family_cases[8].county } County, ${ state_name(prior_family_cases[8].state) }
+          % endif
+          % else:
+          ${prior_family_cases[8].foreign_admin_unit}, ${ country_name(prior_family_cases[8].country) }
+          % endif
       - family_cases0_name: ${prior_family_cases[8].title}
       - family_cases0_docket_number: ${prior_family_cases[8].docket_number}
       - family_cases0_judge: ${word("Judge ") + word(prior_family_cases[8].judge)}
@@ -1507,10 +1584,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases1_court_same: ${True if prior_family_cases[9].state == "MI" and the_court.address.county == prior_family_cases[9].county else False}
-      - family_cases1_court_other: ${False if prior_family_cases[9].state == "MI" and the_court.address.county == prior_family_cases[9].county else True}
+      - family_cases1_court_same: ${True if prior_family_cases[9].country == "US" and prior_family_cases[9].state == "MI" and not prior_family_cases[9].in_tribal_court and the_court.address.county == prior_family_cases[9].county else False}
+      - family_cases1_court_other: ${False if prior_family_cases[9].country == "US" and prior_family_cases[9].state == "MI" and not prior_family_cases[9].in_tribal_court and the_court.address.county == prior_family_cases[9].county else True}
       - family_cases1_court_name_number_county_state: |
-          ${prior_family_cases[9].court if prior_family_cases[9].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[9].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[9].county} County, ${state_name(prior_family_cases[9].state)}
+          ${prior_family_cases[9].court if (prior_family_cases[9].country != "US" or prior_family_cases[9].state != "MI" or prior_family_cases[9].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[9].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[9].country == "US":
+          % if prior_family_cases[9].in_tribal_court:
+          ${state_name(prior_family_cases[9].state) }
+          % else:
+          ${ prior_family_cases[9].county } County, ${ state_name(prior_family_cases[9].state) }
+          % endif
+          % else:
+          ${prior_family_cases[9].foreign_admin_unit}, ${ country_name(prior_family_cases[9].country) }
+          % endif
       - family_cases1_name: ${prior_family_cases[9].title}
       - family_cases1_docket_number: ${prior_family_cases[9].docket_number}
       - family_cases1_judge: ${word("Judge ") + word(prior_family_cases[9].judge)}
@@ -1536,10 +1622,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases2_court_same: ${True if prior_family_cases[10].state == "MI" and the_court.address.county == prior_family_cases[10].county else False}
-      - family_cases2_court_other: ${False if prior_family_cases[10].state == "MI" and the_court.address.county == prior_family_cases[10].county else True}
+      - family_cases2_court_same: ${True if prior_family_cases[10].country == "US" and prior_family_cases[10].state == "MI" and not prior_family_cases[10].in_tribal_court and the_court.address.county == prior_family_cases[10].county else False}
+      - family_cases2_court_other: ${False if prior_family_cases[10].country == "US" and prior_family_cases[10].state == "MI" and not prior_family_cases[10].in_tribal_court and the_court.address.county == prior_family_cases[10].county else True}
       - family_cases2_court_name_number_county_state: |
-          ${prior_family_cases[10].court if prior_family_cases[10].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[10].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[10].county} County, ${state_name(prior_family_cases[10].state)}
+          ${prior_family_cases[10].court if (prior_family_cases[10].country != "US" or prior_family_cases[10].state != "MI" or prior_family_cases[10].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[10].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[10].country == "US":
+          % if prior_family_cases[10].in_tribal_court:
+          ${state_name(prior_family_cases[10].state) }
+          % else:
+          ${ prior_family_cases[10].county } County, ${ state_name(prior_family_cases[10].state) }
+          % endif
+          % else:
+          ${prior_family_cases[10].foreign_admin_unit}, ${ country_name(prior_family_cases[10].country) }
+          % endif
       - family_cases2_name: ${prior_family_cases[10].title}
       - family_cases2_docket_number: ${prior_family_cases[10].docket_number}
       - family_cases2_judge: ${word("Judge ") + word(prior_family_cases[10].judge)}
@@ -1565,10 +1660,19 @@ attachment:
           % else:
           False
           % endif
-      - family_cases3_court_same: ${True if prior_family_cases[11].state == "MI" and the_court.address.county == prior_family_cases[11].county else False}
-      - family_cases3_court_other: ${False if prior_family_cases[11].state == "MI" and the_court.address.county == prior_family_cases[11].county else True}
+      - family_cases3_court_same: ${True if prior_family_cases[11].country == "US" and prior_family_cases[11].state == "MI" and not prior_family_cases[11].in_tribal_court and the_court.address.county == prior_family_cases[11].county else False}
+      - family_cases3_court_other: ${False if prior_family_cases[11].country == "US" and prior_family_cases[11].state == "MI" and not prior_family_cases[11].in_tribal_court and the_court.address.county == prior_family_cases[11].county else True}
       - family_cases3_court_name_number_county_state: |
-          ${prior_family_cases[11].court if prior_family_cases[11].state != "MI" else court_list.get_court_info_by_2([prior_family_cases[11].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, ${prior_family_cases[11].county} County, ${state_name(prior_family_cases[11].state)}
+          ${prior_family_cases[11].court if (prior_family_cases[11].country != "US" or prior_family_cases[11].state != "MI" or prior_family_cases[11].in_tribal_court) else court_list.get_court_info_by_2([prior_family_cases[11].county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}, 
+          % if prior_family_cases[11].country == "US":
+          % if prior_family_cases[11].in_tribal_court:
+          ${state_name(prior_family_cases[11].state) }
+          % else:
+          ${ prior_family_cases[11].county } County, ${ state_name(prior_family_cases[11].state) }
+          % endif
+          % else:
+          ${prior_family_cases[11].foreign_admin_unit}, ${ country_name(prior_family_cases[11].country) }
+          % endif
       - family_cases3_name: ${prior_family_cases[11].title}
       - family_cases3_docket_number: ${prior_family_cases[11].docket_number}
       - family_cases3_judge: ${word("Judge ") + word(prior_family_cases[11].judge)}
@@ -1681,7 +1785,21 @@ attachment:
           % else:
             % for case in prior_family_cases:
               % if case.add_to_MC416_4:
-          ${case.title}; Case #: ${case.docket_number}; ${case.court if case.state != "MI" else court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}; ${case.address if case.state != "MI" else word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_address')) + word(" ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_unit')) + word(", ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='CSZ'))}; Nature: ${prior_family_case_types_ordered[case.type]}; Order date: ${format_date(case.final_order_date, format='M/d/yyyy') if case.type not in ["divorce", "separate_maintenance"] and case.status == "ended_with_order" else format_date(case.custody_PT_order_date, format='M/d/yyyy')} ${word("; This proceeding is continuing.") if case.status == "pending" else word("; This proceeding has been stayed by the court.") if case.status == "stayed" else word("; This proceeding was later dismissed.") if case.status == "dismissed" else word("")}
+          ${case.title}; Case #: ${case.docket_number}; ${case.court if (case.country != "US" or case.state != "MI" or case.in_tribal_court) else court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}; \
+          % if case.country == "US":
+          % if case.state == "MI":
+          % if case.in_tribal_court:
+          ${ case.address }; \
+          % else:
+          ${word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_address')) + word(" ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_unit')) + word(", ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='CSZ'))}; \
+          % endif
+          % else:
+          ${ case.address }; \
+          % endif
+          % else:
+          ${ case.address }, ${ case.foreign_admin_unit }, ${ country_name(case.country) }; \
+          % endif
+          Nature: ${prior_family_case_types_ordered[case.type]}; Order date: ${format_date(case.final_order_date, format='M/d/yyyy') if case.type not in ["divorce", "separate_maintenance"] and case.status == "ended_with_order" else format_date(case.custody_PT_order_date, format='M/d/yyyy')} ${word("; This proceeding is continuing.") if case.status == "pending" else word("; This proceeding has been stayed by the court.") if case.status == "stayed" else word("; This proceeding was later dismissed.") if case.status == "dismissed" else word("")}
               % endif
             % endfor
           % endif
@@ -1691,7 +1809,21 @@ attachment:
           % else:
             % for case in prior_family_cases:
               % if case.type != "name_change" and case.status in ["pending", "stayed"]:
-          ${case.title}; Case #: ${case.docket_number}; ${case.court if case.state != "MI" else court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}; ${case.address if case.state != "MI" else word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_address')) + word(" ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_unit')) + word(", ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='CSZ'))}; Nature: ${prior_family_case_types_ordered[case.type]}; ${word("Order date: ") + format_date(case.custody_PT_order_date, format='M/d/yyyy' + ";") if (case.type == "separate_maintenance" and case.involved_custody_pt_support and case.included_custody_PT_order) or (case.type != "separate_maintenance" and case.included_custody_PT_order) else ""} ${word("This proceeding is continuing.") if case.status == "pending" else word("This proceeding has been stayed by the court.")}
+          ${case.title}; Case #: ${case.docket_number}; ${case.court if (case.country != "US" or case.state != "MI" or case.in_tribal_court) else court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='name')}; \
+          % if case.country == "US":
+          % if case.state == "MI":
+          % if case.in_tribal_court:
+          ${ case.address }; \
+          % else:
+          ${word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_address')) + word(" ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='address_unit')) + word(", ") + word(court_list.get_court_info_by_2([case.county], ['circuit'], column_1='address_county', column_2='type', return_column='CSZ'))}; \
+          % endif
+          % else:
+          ${ case.address }; \
+          % endif
+          % else:
+          ${ case.address }, ${ case.foreign_admin_unit }, ${ country_name(case.country) }; \
+          % endif
+          Nature: ${prior_family_case_types_ordered[case.type]}; ${word("Order date: ") + format_date(case.custody_PT_order_date, format='M/d/yyyy' + ";") if (case.type == "separate_maintenance" and case.involved_custody_pt_support and case.included_custody_PT_order) or (case.type != "separate_maintenance" and case.included_custody_PT_order) else ""} ${word("This proceeding is continuing.") if case.status == "pending" else word("This proceeding has been stayed by the court.")}
               % endif
             % endfor
           % endif
@@ -3842,84 +3974,84 @@ attachment:
       - defendants1_name: ${defendants}
       - children_line_1: ${children_line_1}
       - children_line_2: ${children_line_2}
-      - awards_legal_custody: ${MI_has_jurisdiction_all_kids}
+      - awards_legal_custody: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
       - legal_custody_plaintiff: |
-          % if MI_has_jurisdiction_all_kids and legal_custody_who == "user" and user_ask_role == "plaintiff":
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "user" and user_ask_role == "plaintiff":
           True
-          % elif MI_has_jurisdiction_all_kids and legal_custody_who == "other_party" and user_ask_role == "defendant":
+          % elif MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "other_party" and user_ask_role == "defendant":
           True
           % else:
           False
           % endif
       - legal_custody_defendant: |
-          % if MI_has_jurisdiction_all_kids and legal_custody_who == "user" and user_ask_role == "defendant":
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "user" and user_ask_role == "defendant":
           True
-          % elif MI_has_jurisdiction_all_kids and legal_custody_who == "other_party" and user_ask_role == "plaintiff":
+          % elif MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "other_party" and user_ask_role == "plaintiff":
           True
           % else:
           False
           % endif
       - legal_custody_joint: |
-          % if MI_has_jurisdiction_all_kids and legal_custody_who == "both":
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "both":
           True
           % else:
           False
           % endif
-      - awards_physical_custody: ${MI_has_jurisdiction_all_kids}
+      - awards_physical_custody: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
       - physical_custody_plaintiff: |
-          % if MI_has_jurisdiction_all_kids and physical_custody_who == "user" and user_ask_role == "plaintiff":
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and physical_custody_who == "user" and user_ask_role == "plaintiff":
           True
-          % elif MI_has_jurisdiction_all_kids and physical_custody_who == "other_party" and user_ask_role == "defendant":
+          % elif MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and physical_custody_who == "other_party" and user_ask_role == "defendant":
           True
           % else:
           False
           % endif
       - physical_custody_defendant: |
-          % if MI_has_jurisdiction_all_kids and physical_custody_who == "user" and user_ask_role == "defendant":
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and physical_custody_who == "user" and user_ask_role == "defendant":
           True
-          % elif MI_has_jurisdiction_all_kids and physical_custody_who == "other_party" and user_ask_role == "plaintiff":
+          % elif MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and physical_custody_who == "other_party" and user_ask_role == "plaintiff":
           True
           % else:
           False
           % endif
       - physical_custody_joint: |
-          % if MI_has_jurisdiction_all_kids and physical_custody_who == "both":
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and physical_custody_who == "both":
           True
           % else:
           False
           % endif
-      - custody_not_determined: # ${ not MI_has_jurisdiction_all_kids } ## commenting out per attorney feedback: "There are times under the statute where a MI court could decide to exercise jurisdiction even when MI is not the home state."
-      - must_notify_address_change: ${MI_has_jurisdiction_all_kids}
-      - court_must_approve_domicile_change: ${MI_has_jurisdiction_all_kids}
+      - custody_not_determined: ## leaving blank per attorney feedback: "There are times under the statute where a MI court could decide to exercise jurisdiction even when MI is not the home state."
+      - must_notify_address_change: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
+      - court_must_approve_domicile_change: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
       - 100_mile_rule_applies: |
-          % if MI_has_jurisdiction_all_kids and legal_custody_who == "both" and not already_over_100_miles and not allow_over_100_miles:
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "both" and not already_over_100_miles and not allow_over_100_miles:
           True
           % else:
           False
           % endif
       - 100_mile_NA_already_exceeded: |
-          % if MI_has_jurisdiction_all_kids and legal_custody_who == "both" and already_over_100_miles:
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "both" and already_over_100_miles:
           True
           % else:
           False
           % endif
       - 100_mile_NA_sole_custody: |
-          % if MI_has_jurisdiction_all_kids and legal_custody_who != "both":
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who != "both":
           True
           % else:
           False
           % endif
       - 100_mile_waived: |
-          % if MI_has_jurisdiction_all_kids and legal_custody_who == "both" and not already_over_100_miles and allow_over_100_miles:
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and legal_custody_who == "both" and not already_over_100_miles and allow_over_100_miles:
           True
           % else:
           False
           % endif
       - docket_number__1: ${docket_number}
-      - parents_shall_cooperate: ${MI_has_jurisdiction_all_kids}
-      - parenting_time_established: ${MI_has_jurisdiction_all_kids}
+      - parents_shall_cooperate: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
+      - parenting_time_established: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes")}
       - parenting_time_provisions: |
-          % if MI_has_jurisdiction_all_kids:
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes"):
             % if physical_custody_who != "both":
               % if PT_who == "user":
           ${OP_party_label.capitalize()} will not have parenting time.
@@ -3953,7 +4085,7 @@ attachment:
             % endif
           % endif
       - child_support_ordered: |
-          % if MI_has_jurisdiction_all_kids and not other_case_controls_child_support:
+          % if MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and not other_case_controls_child_support:
           True
           % else:
           False
@@ -4022,7 +4154,7 @@ attachment:
       - pensions_keep_own: ${marriage.have_pension_retirement and marriage.pension_contributions_made and marriage.attr("pension_retirement_accounts_keep_own")}
       - pensions_in_addendum: ${marriage.have_pension_retirement and marriage.pension_contributions_made and not marriage.attr("pension_retirement_accounts_keep_own")}
       - has_income_tax_addendum: ${there_are_marital_children}
-      - has_parenting_time_addendum: ${MI_has_jurisdiction_all_kids and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 650}
+      - has_parenting_time_addendum: ${MI_has_jurisdiction_all_kids and (tool_ID != "JOD_only" or not prior_family_cases.there_are_any or len(prior_family_cases.filter(potential_jurisdiction_problem=True)) < 1 or judge_ruled_jurisdiction_over_kids == "yes") and (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 650}
       - has_overflow_addendum: ${(send_plaintiff_personal_property_to_addendum or send_defendant_personal_property_to_addendum or send_plaintiff_debts_to_addendum or send_defendant_debts_to_addendum) or (marriage.real_property and send_rp_legal_description_to_addendum) or (marriage.other_provisions_any and len(marriage.other_provisions) > 650)}
       - has_other_provisions: ${marriage.other_provisions_any}
       - other_provisions: |
