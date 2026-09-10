@@ -6957,8 +6957,10 @@ fields:
       val("prior_family_cases[i].included_custody_PT_order") === true
 validation code: |
   prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
-  prior_family_cases[i].has_current_custody_PT_order = False
-  prior_family_cases[i].potential_jurisdiction_problem = False
+  
+  if tool_ID in ["divorce_complaint", "JOD_only"]:
+    prior_family_cases[i].has_current_custody_PT_order = False
+    prior_family_cases[i].potential_jurisdiction_problem = False
   # per Jan 2026 emails w/ AB, assume there are no custody/PT orders in effect from past divorce case
 ---
 sets: prior_family_cases[i].included_custody_PT_order
@@ -7008,12 +7010,13 @@ validation code: |
   if not prior_family_cases[i].involved_custody_pt_support:
     prior_family_cases[i].included_custody_PT_order = False 
   
-  if not prior_family_cases[i].included_custody_PT_order:
-    prior_family_cases[i].has_current_custody_PT_order = False
-  if prior_family_cases[i].has_current_custody_PT_order and (prior_family_cases[i].country != "US" or prior_family_cases[i].state != "MI" or prior_family_cases[i].in_tribal_court):
-    prior_family_cases[i].potential_jurisdiction_problem = True
-  else:
-    prior_family_cases[i].potential_jurisdiction_problem = False
+  if tool_ID in ["divorce_complaint", "JOD_only"]:
+    if not prior_family_cases[i].included_custody_PT_order:
+      prior_family_cases[i].has_current_custody_PT_order = False
+    if prior_family_cases[i].has_current_custody_PT_order and (prior_family_cases[i].country != "US" or prior_family_cases[i].state != "MI" or prior_family_cases[i].in_tribal_court):
+      prior_family_cases[i].potential_jurisdiction_problem = True
+    else:
+      prior_family_cases[i].potential_jurisdiction_problem = False
 # 2nd validation code chunk (and "sets" modifier above) is here so that on the table/revisit screen, we can just call included_custody_PT_order rather than needing to call both included and involved and potentially triggering this screen twice
 ---
 id: separate maintenance conversion notice
@@ -7095,12 +7098,13 @@ validation code: |
   else:
     prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
 
-  if not prior_family_cases[i].included_custody_PT_order:
-    prior_family_cases[i].has_current_custody_PT_order = False
-  if prior_family_cases[i].has_current_custody_PT_order and (prior_family_cases[i].country != "US" or prior_family_cases[i].state != "MI" or prior_family_cases[i].in_tribal_court):
-    prior_family_cases[i].potential_jurisdiction_problem = True
-  else:
-    prior_family_cases[i].potential_jurisdiction_problem = False
+  if tool_ID in ["divorce_complaint", "JOD_only"]:
+    if not prior_family_cases[i].included_custody_PT_order:
+      prior_family_cases[i].has_current_custody_PT_order = False
+    if prior_family_cases[i].has_current_custody_PT_order and (prior_family_cases[i].country != "US" or prior_family_cases[i].state != "MI" or prior_family_cases[i].in_tribal_court):
+      prior_family_cases[i].potential_jurisdiction_problem = True
+    else:
+      prior_family_cases[i].potential_jurisdiction_problem = False
 ---
 # LHI "Prior Family Cases DLG" (start at row 174)
 id: other prior family case or order additional info (stayed, pending)
@@ -7142,12 +7146,13 @@ fields:
 validation code: |
   prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
 
-  if not prior_family_cases[i].included_custody_PT_order:
-    prior_family_cases[i].has_current_custody_PT_order = False
-  if prior_family_cases[i].has_current_custody_PT_order and (prior_family_cases[i].country != "US" or prior_family_cases[i].state != "MI" or prior_family_cases[i].in_tribal_court):
-    prior_family_cases[i].potential_jurisdiction_problem = True
-  else:
-    prior_family_cases[i].potential_jurisdiction_problem = False
+  if tool_ID in ["divorce_complaint", "JOD_only"]:
+    if not prior_family_cases[i].included_custody_PT_order:
+      prior_family_cases[i].has_current_custody_PT_order = False
+    if prior_family_cases[i].has_current_custody_PT_order and (prior_family_cases[i].country != "US" or prior_family_cases[i].state != "MI" or prior_family_cases[i].in_tribal_court):
+      prior_family_cases[i].potential_jurisdiction_problem = True
+    else:
+      prior_family_cases[i].potential_jurisdiction_problem = False
 ---
 # LHI "Prior Family Cases DLG" (start at row 151)
 id: other prior family case or order additional info (dismissed)
@@ -7180,8 +7185,10 @@ fields:
       val("prior_family_cases[i].included_custody_PT_order") === true
 validation code: |
   prior_family_cases[i].add_to_MC416_4 = prior_family_cases[i].included_custody_PT_order
-  prior_family_cases[i].has_current_custody_PT_order = False
-  prior_family_cases[i].potential_jurisdiction_problem = False
+
+  if tool_ID in ["divorce_complaint", "JOD_only"]:
+    prior_family_cases[i].has_current_custody_PT_order = False
+    prior_family_cases[i].potential_jurisdiction_problem = False
 ---
 # --------------------------------------------------------------------
 ## stepchildren address info
