@@ -87,6 +87,7 @@ code: |
   # for backward compatibility, can remove once enough time has passed because these are now (~May 2026) in set_persistent_interview_specific_logic:
   property_review_template
   debt_review_template
+  ottawa_circuit_location = "West Olive" # temporary fix for weird bug
   
   nav.set_section("review_full")
   nav.set_section("signpost_intro")
