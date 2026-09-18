@@ -137,7 +137,7 @@ template: x.gender_explanation_template
 subject: |
   Why are you asking this?
 content: |
-  Several forms that may be needed in a Michigan divorce ask for gender. We will use your response to fill in these forms.
+  Several forms that may be needed in a Michigan ${word("divorce") if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"] else word("custody case")} ask for gender. We will use your response to fill in these forms.
 ---
 # ====================================================================
 ## questions
@@ -1436,7 +1436,7 @@ question: |
   Phone number
 subquestion: |
   % if confidential_contact_info_yn:
-  Please enter a safe telephone number where the court can reach you (such as the number of a friend or relative), starting with the area code. This telephone number will appear on papers filed with the court and served on your spouse. **Do not enter a telephone number that you want to keep confidential.**
+  Please enter a safe telephone number where the court can reach you (such as the number of a friend or relative), starting with the area code. This telephone number will appear on papers filed with the court and served on ${OP_label}. **Do not enter a telephone number that you want to keep confidential.**
   % else:
   Enter a telephone number where the court can reach you, starting with the area code.
   % endif
@@ -1462,7 +1462,7 @@ fields:
       - Home: home
     js show if: |
       val("users[0].no_phone_number") === false && ${ "true" if tool_ID != "JOD_only" else "false" }
-# TODO ask AB if this is OK. It's very annoying that it only asks for 2 phone types for the FOC23 as far as I can tell. Otherwise defaults to putting "home number everywhere" (or "safe" number if that's chosen) and neither phone type is required. 
+# Note: technically FOC23 wants both cell and home numbers, if they exist, but that seems silly and was annoying technically. This solution seems to be acceptable. LHI version defaulted to putting "home" number everywhere except FOC23 (or "safe" number if that's chosen) and neither phone type was required. 
 ---
 id: users[0].email
 question: |
@@ -1551,7 +1551,7 @@ validation code: |
 id: other_parties[0].gender
 sets: other_parties[0].gender
 question: |
-  What is your spouse's gender?
+  What is ${OP_label}'s gender?
 subquestion: |
   ${collapse_template(other_parties[0].gender_explanation_template)}
 fields:
@@ -1795,9 +1795,9 @@ fields:
 ---
 id: other_parties[0].email
 question: |
-  ${other_parties[0]}'s email address
+  ${OP_label}'s email address
 fields:
-  - label: What is your ${other_parties[0]}'s email address?
+  - label: What is ${other_parties[0]}'s email address?
     field: other_parties[0].email
     datatype: email
     required: False
