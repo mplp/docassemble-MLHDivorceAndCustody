@@ -312,12 +312,12 @@ action buttons:
     icon: right-from-bracket
 ---
 if: tool_ID == "custody_complaint"
-id: past_marriage_exit
-event: past_marriage_exit
+id: marital_children_exit
+event: marital_children_exit
 question: |
-  Past marriage to the other parent
+  Children of past marriage to the other parent
 subquestion: |
-  You cannot use this tool to prepare a Custody Complaint if you used to be married to the other parent. Depending on the circumstances, you may need to file a motion in the divorce case instead. You may want to speak to a lawyer. ${MLH_GUIDE_FULL}
+  You cannot use this tool to prepare a Custody Complaint. You may need to file a motion in the divorce case. You may want to speak to a lawyer to figure out your next steps. ${MLH_GUIDE_FULL}
 
   If you already have a custody, parenting time, and child support order that you want to change, these articles may be useful:
 
@@ -425,20 +425,35 @@ if: tool_ID in ["custody_complaint", "custody_answer"]
 id: custody marriage and children screening
 question: Relationship with the other parent
 subquestion: |
-  You will be called the Plaintiff in this case because you are filing the Complaint for Custody, Parenting Time, and Child Support. The other parent of this child or these children is called the Defendant.
+  You will be called the Plaintiff in this case because you are filing the Complaint for Custody, Parenting Time, and Child Support. The other parent of this child or children is called the Defendant.
 fields: 
+  - Do you and the Defendant have one or more {minor} children together?: children.there_are_any
+    datatype: yesnoradio
   - Are you currently married to the Defendant?: married_other_parent_now
     datatype: yesnoradio
+    show if: 
+      variable: children.there_are_any
+      is: True
   - Have you ever been married to the Defendant?: married_other_parent_past
     datatype: yesnoradio
     show if: 
       variable: married_other_parent_now
       is: False
-  - Do you and the Defendant have one or more {minor} children together?: children.there_are_any
-    datatype: yesnoradio
+  - Do you need a custody, parenting time, and child support order for a child or children who were **conceived before or after** the divorce was final?: married_other_parent_children_status
+    datatype: radio
+    choices:
+      - They were conceived **before** the divorce was final.: before_divorce
+      - They were conceived **after** the divorce was final.: after_divorce
+      - "One or more were conceived before the divorce was final, and one or more were conceived after.": mixed
     show if: 
       variable: married_other_parent_past
-      is: False
+      is: True
+  - note: ${collapse_template(divorce_final_meaning)}
+---
+template: divorce_final_meaning
+subject: When is a divorce final? 
+content: |
+  A divorce is final on the date the judge signed your Judgment of Divorce.
 ---
 if: tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and returning_to_finalize)
 id: Choose a court

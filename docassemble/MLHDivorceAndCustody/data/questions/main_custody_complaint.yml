@@ -72,12 +72,13 @@ code: |
   MLH_standard_intro_pages
 
   nav.set_section("signpost_qualify")
+  if not children.there_are_any:
+    custody_no_kids_exit
   if married_other_parent_now:
     current_marriage_exit
   if married_other_parent_past:
-    past_marriage_exit
-  if not children.there_are_any:
-    custody_no_kids_exit
+    if married_other_parent_children_status in ["before_divorce", "mixed"]:
+      marital_children_exit
   
   if spouse_is_incompetent:
     exit_general
