@@ -95,13 +95,11 @@ code: |
 
   users.gather()
   users[0].name.first
-  users[0].has_alias
 
   interview_order_user_contact_info
 
   other_parties.gather()
   other_parties[0].name.first
-  other_parties[0].has_alias
 
   interview_order_other_parties_address_info
 
@@ -115,9 +113,6 @@ code: |
 
   if other_parties[0].mailing_address.yesno:
     other_parties[0].mailing_address.address
-  other_parties[0].no_phone_number
-  other_parties[0].email
-
   
   nav.set_section("signpost_prior_cases")
   prior_family_cases ## calling now so that validation code on controlling_custody_case works
@@ -144,11 +139,17 @@ code: |
   nav.set_section("signpost_identifiers_etc") 
   users[0].birthdate
   users[0].gender
+  users[0].no_phone_number
+  users[0].email
+  users[0].has_alias
   interview_order_user_identifying_info
   interview_order_user_employment
   interview_order_user_income
   other_parties[0].birthdate
   other_parties[0].gender
+  other_parties[0].no_phone_number
+  other_parties[0].email
+  other_parties[0].has_alias
   interview_order_other_party_identifying_info
   interview_order_other_party_employment
   interview_order_other_party_income

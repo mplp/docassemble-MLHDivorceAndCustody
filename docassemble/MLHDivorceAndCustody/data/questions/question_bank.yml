@@ -3338,8 +3338,9 @@ code: |
     if users[0].mailing_address.yesno:
       users[0].mailing_address.address
   
-  users[0].no_phone_number
-  users[0].email
+  if tool_ID != "custody_complaint":
+    users[0].no_phone_number
+    users[0].email
   
   interview_order_user_contact_info = True
 ---
@@ -5968,7 +5969,7 @@ content: |
 
   Types of parenting time:
   
-  * **Reasonable** parenting time means that specific dates, times, and other conditions are left for the parents to work out. If you believe that you and ${other_parties[0]} can agree on parenting time arrangements, you may ask for reasonable parenting time. However, if the judge orders reasonable parenting time, and you and ${other_parties[0]} can’t agree, the judge may not be able to enforce the order or judgment. You will need to return to court and ask for a specific parenting time schedule in order for the judge to enforce the judgment.
+  * **Reasonable** parenting time means that specific dates, times, and other conditions are left for the parents to work out. If you believe that you and ${other_parties[0]} can agree on parenting time arrangements, you may ask for reasonable parenting time. However, if the judge orders reasonable parenting time, and you and ${other_parties[0]} can't agree, the judge may not be able to enforce the order or judgment. You may need to return to court and ask for a specific parenting time schedule.
   * **Specific** parenting time means that all of the dates, times, and conditions for visits are included in the court order. Many counties have standard parenting time schedules that you can use in your case. You can contact the Friend of the Court in the county where your case will be filed and ask if there is a standard parenting time schedule. You can also find sample schedules in the [Michigan Parenting Time Guideline](https://www.courts.michigan.gov/4a537f/siteassets/court-administration/standardsguidelines/foc/pt_gdlns.pdf).
   * **Specific and supervised** parenting time means that all of the dates, times, and conditions for visits are included in the court order. The judge will order parenting time to be supervised by a third party – such as a relative, friend, or supervised parenting time center. Supervised parenting time may be appropriate if the {noncustodial parent} is a risk to the children. The supervisor must be willing to supervise parenting time. (This option does not apply if both parents share physical custody.)
 
@@ -6046,7 +6047,7 @@ fields:
       variable: allow_over_100_miles
       is: True
   - note: |
-      According to your answers, the minor child will have a legal residence with each parent, (meaning you and ${other_parties[0]} will be granted joint legal custody), and **the 100-mile rule will apply in your case.** 
+      According to your answers, the minor child will have a {legal residence with each parent}, and **the 100-mile rule will apply in your case.** 
       
       Your ${word("Order Regarding Custody, Parenting Time and Child Support") if tool_ID in ["custody_complaint", "custody_answer"] else word("Judgment of Divorce")} will state that "neither {party} shall move more than 100 miles away from where they lived at the beginning of this case, and the child(ren) have a legal residence with each parent." For more information, read [Moving with Children After Separation or Divorce](https://michiganlegalhelp.org/resources/family/moving-children-after-separation-or-divorce).
     show if:
@@ -6061,11 +6062,18 @@ subquestion: |
   % if tool_ID == "divorce_complaint":
   Your Complaint for ${word("Custody") if tool_ID in ["custody_complaint", "custody_answer"] else word("Divorce")} will ask the judge to order child support. 
   % endif
-  Michigan law requires judges to order child support based on the Michigan Child Support Formula. In many counties, the Friend of the Court will calculate child support for you. The amount of child support is based on the income of each parent, the number of overnights that each parent has with the child, and a number of other factors. You can use the [MiChildSupport Calculator](https://pcal.state.mi.us/welcome) on the Michigan Department of Health and Human Services website to find out what the support amount might be in your case.
+  Michigan law requires judges to order child support based on the Michigan Child Support Formula. The amount of child support is based on the income of each parent, the number of overnights that each parent has with the child, and a number of other factors. You can use the [MiChildSupport Calculator](https://pcal.state.mi.us/welcome) on the Michigan Department of Health and Human Services website to find out what the support amount might be in your case.
 
   In some situations, the judge can order support that is less than what is required by the Michigan Child Support Formula, or order no child support at all—but this is uncommon. If you think there is a reason to have less child support than required by the Formula or none at all, you may want to contact a lawyer. ${MLH_GUIDE_FULL} 
   
   To learn more about child support, read [Child Support in a Nutshell](https://michiganlegalhelp.org/resources/family/child-support-nutshell).
+
+  ${collapse_template(who_calculates_support)}
+---
+template: who_calculates_support
+subject: Who calculates child support?
+content: |
+  In many counties, the Friend of the Court (FOC) will calculate child support for you and prepare a recommended child support order. Other counties may require you to calculate child support and submit a child support order that includes the calculation results.
 ---
 # LHI Child Support Part 2
 # note: do not include in JOD-only, but do include in other 4 tools

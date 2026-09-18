@@ -181,6 +181,10 @@ terms:
     definition: |
       A paragraph of text in the deed that describes exactly where the property is located and where the boundaries are. It uses precise measurements instead of just the street address.
   - phrases:
+      - legal residence with each parent
+    definition: |
+      Michigan law says that a child whose parental custody is governed by court order has a legal residence with each parent. This is true when parents share joint legal or physical custody.
+  - phrases:
       - marital children
     definition: |
       Children who have both you and your spouse as their legal parents.
