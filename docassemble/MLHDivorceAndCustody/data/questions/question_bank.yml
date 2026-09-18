@@ -6860,7 +6860,7 @@ if: tool_ID in ["custody_complaint", "custody_answer"] and controlling_custody_c
 id: prior family case or order collection screen existing custody case
 question: Information about the ${ word("first") if controlling_custody_case == "yes_multiple" else "" } existing case
 subquestion: |
-  Please tell us about the ${ word("first") if controlling_custody_case == "yes_multiple" else "" } existing child support, parenting time, or custody case with ${other_parties[0]}
+  Please tell us about the ${ word("first") if controlling_custody_case == "yes_multiple" else "" } existing child support, parenting time, or custody case with ${other_parties[0]}.
 fields:
   - Country:: prior_family_cases[0].country
     code: |
