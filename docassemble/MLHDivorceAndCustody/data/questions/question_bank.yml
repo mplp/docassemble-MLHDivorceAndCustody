@@ -836,18 +836,21 @@ content: |
   
   Please return to use this tool when you have determined if ${OP_label} is currently on active military duty. 
 ---
-id: residence_warning
-continue button field: residence_warning
-question: Connection to Michigan
+id: advance_warnings
+continue button field: advance_warnings
+question: Requirements for a Michigan custody case
 subquestion: |
-  To file a custody case in Michigan, usually:
-
-  * one of the parents must live in Michigan, and
-  * all your {minor} children with the other parent must have lived for the last 6 months (or since birth) in Michigan.
-
-  We will ask specifically about these things later in this tool. 
+  To start a Michigan custody case for a child:
   
-  If these things are not true for your case, you may want to **stop now and speak with a lawyer.** ${MLH_GUIDE_FULL}
+  * the child must have lived for 6 months (or since birth) in Michigan, 
+  * there must be a signed Affidvait of Parentage for that child,
+  * there must **not** be an existing child support, parenting time, or custody case involving the child,
+  * the child must **not** have lived with a legal custodian, other than a parent, during the past five years (for example, because of a child protective services case, a minor guardianship, or a third-party custody order), and
+  * there must **not** be any other adults (besides you and the other parent) who may have a legal right to custody or parenting time.
+
+  We'll ask specifically about these things later on in this tool.
+  
+  You may want to **stop now and speak with a lawyer** if any of the things listed above could be an issue in your case. ${MLH_GUIDE_FULL}
 ---
 id: need temp order
 question: Need a temporary order to secure marital property?
@@ -4418,12 +4421,18 @@ content: |
   Gender: FOC 23 only gives options of "F" for female or "M" for male. If you select "Nonbinary", we will put "NB", and a note that this stands for Nonbinary.
 
   Age: {Marital children}'s age, but not their date of birth, may be included on other court forms.
-  % else:
+  % elif tool_ID in ["divorce_complaint", "JOD_only"]:
   Children's sex, date of birth, and (for {marital children}) social security number are used on the *Verified Statement* form (FOC 23) and *Domestic Relations Judgment Information* form (FOC 100). These forms will **not** be publicly available. The Friend of the Court office and your {spouse} will have access to these forms.
 
   Gender: FOC 23 only gives options of "F" for female or "M" for male. If you select "Nonbinary", we will put "NB", and a note that this stands for Nonbinary.
 
   Age: {Marital children}'s age, but not their date of birth, will be included on other court forms.
+  % else: 
+  Children's sex, date of birth, and (for shared minor children) social security number are used on the *Verified Statement* form (FOC 23) and *Domestic Relations Judgment Information* form (FOC 100). These forms will **not** be publicly available. The Friend of the Court office and the Defendant will have access to these forms.
+
+  Gender: FOC 23 only gives options of "F" for female or "M" for male. If you select "Nonbinary", we will put "NB", and a note that this stands for Nonbinary.
+
+  Age: Shared children's age, but not their date of birth, will be included on other court forms.
   % endif
 ---
 id: marital children's origin
@@ -4954,9 +4963,11 @@ validation code: |
     children[i].legal_parent = "custody_other"
 ---
 template: children[i].include_custody_case_help                        
-subject: What if I'm not sure?
+subject: What if I'm not sure whether ${children[i].familiar()} should be included in the case?
 content: |
   Usually, you should answer **Yes** if you need a custody, parenting time, or child support order for ${children[i]}. 
+
+  But if there is already a court order involving custody, parenting time, and/or child support for ${children[i].familiar()}, answer **No.** In that situation, a new request should usually be filed as a motion in the existing case.
 ---
 id: custody case parentage basics
 if: tool_ID in ["custody_complaint", "custody_answer"]

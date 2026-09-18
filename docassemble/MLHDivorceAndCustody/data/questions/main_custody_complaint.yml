@@ -89,7 +89,7 @@ code: |
     if not marriage.have_experienced_domestic_violence_continue:
       exit_general
  
-  residence_warning
+  advance_warnings
 
   nav.set_section("signpost_parent_basics")
 
