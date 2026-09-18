@@ -5042,6 +5042,10 @@ subquestion: |
 
   ${children[i].familiar()} won't be included in the custody, parenting time, and child support parts of your custody case. However, information about them will be included on some forms.
 
+  ${collapse_template(how_get_affidavit)}
+
+  ${collapse_template(if_court_established_parentage)}
+
   If you need more help you may want to speak to a lawyer. ${MLH_GUIDE_FULL}
   % elif children[i].affidavit_revoked:
   You said you the affidavit of parentage for ${children[i]} was revoked. This means that you can't use this tool to create a custody complaint for ${children[i].familiar()}. 
@@ -5068,6 +5072,16 @@ subquestion: |
   % endif
 validation code: |
   children[i].legal_parent = "custody_other"
+---
+template: how_get_affidavit
+subject: How do I get an Affidavit of Parentage?
+content: |
+  To learn how to establish legal parentage through an Affidavit of Parentage, read the article [How to Become a Legal Parent](https://michiganlegalhelp.org/resources/family/how-become-legal-parent).
+---
+template: if_court_established_parentage
+subject: What if legal parentage was established by court order instead?
+content: |
+  Requests about custody, parenting time, and child support should be filed in the case that the paternity/parentage order (called an *Order of Filiation*) was entered in.
 ---
 ######## start children qualification/address/home state questions #######
 # LHI "(Marital) Minor Children Information" (first part)
@@ -5479,7 +5493,10 @@ validation code: |
 template: home_state_info
 subject: What is a "home state" and why does it matter?
 content: |
-  Usually, a Michigan court can enter an order about child custody when Michigan is the “home state” of a child. This matters in a divorce case because the final order in the case will include custody.
+  Usually, a Michigan court can enter an order about child custody when Michigan is the "home state" of a child. 
+  % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
+  This matters in a divorce case because the final order in the case will include custody.
+  % endif
 
   The home state of a child is the state where the child has lived with a parent (or a person acting as a parent) for at least 6 consecutive months (6 months in a row). If the child is less than 6 months old, the home state is the state where the child lived from birth with a parent or person acting as a parent. A short-term absence of a parent is included as part of the 6 months.
 
@@ -5496,7 +5513,7 @@ content: |
   * A child may have lived with you in Michigan for four months.
   * Then you both go to visit relatives in Ohio for a week. 
   * Then, you return to Michigan with the child, where you live for two more months. 
-  * Then you file your divorce case.
+  * Then you file your ${word("custody") if tool_ID in ["custody_complaint", "custody_answer"] else word("divorce")} case.
   
   In this case, the week in Ohio counts as part of the time the child lived in Michigan. The child in the example has lived in Michigan for the last six months.
   % else:
@@ -5507,7 +5524,7 @@ content: |
   * A child might be born and live with you in Michigan for two months. 
   * Then you both go to visit relatives in Ohio for a week. 
   * Then, you return to Michigan with the child, where you live for another month. 
-  * Then you file your divorce case. 
+  * Then you file your ${word("custody") if tool_ID in ["custody_complaint", "custody_answer"] else word("divorce")} case. 
   
   In this case, the week in Ohio counts as part of the time the child lived in Michigan. The child in the example has lived in Michigan from birth.
   % endif
@@ -5540,13 +5557,11 @@ subquestion: |
   
   When another state, country, or Native American tribe is considered the child's home state, a judge in a Michigan court may not be able to enter an order dealing with child custody, parenting time, and child support. This means that you may need to file in a separate court to get an order dealing with those issues.
 
-  You may want to speak to a lawyer. If you have low income you may qualify for free legal services. ${ MLH_GUIDE_FULL }
-
   % if len(children.filter(legal_parent="both")) > 1:
   If you want to start a custody case **without** including this child, you can change which children you include in your custody papers by using the **Review / Edit** link.
-  % endif
   
-  You may want to speak with a lawyer. ${MLH_GUIDE_FULL}
+  % endif
+  You may want to speak with a lawyer. If you have low income you may qualify for free legal services. ${MLH_GUIDE_FULL}
 ---
 if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]
 id: MI has no custody jurisdiction warning
