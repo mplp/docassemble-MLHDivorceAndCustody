@@ -210,6 +210,7 @@ code: |
       if there_are_marital_children:
         nav.set_section("signpost_prior_cases")
         prior_family_cases.gather()
+        court_info_revamp_compatibility
         nav.set_section("signpost_income_etc")
         users[0].insurance.gather()
         other_parties[0].insurance.gather()

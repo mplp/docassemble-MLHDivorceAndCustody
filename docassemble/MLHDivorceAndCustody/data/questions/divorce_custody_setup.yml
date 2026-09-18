@@ -177,6 +177,10 @@ terms:
 
       You also got marital property if you or your spouse had separate property, and one of you actively worked during the marriage to **increase its value.**
   - phrases:
+      - legal description
+    definition: |
+      A paragraph of text in the deed that describes exactly where the property is located and where the boundaries are. It uses precise measurements instead of just the street address.
+  - phrases:
       - marital children
     definition: |
       Children who have both you and your spouse as their legal parents.
@@ -261,10 +265,8 @@ terms:
       * You accepted the papers and signed an acknowledgment of service for them; or
       * Someone handed the papers to you directly, whether you signed for them or not; or
       * The papers were sent to you by registered or certified mail, and you signed a return receipt acknowledging delivery of the papers.
-  - phrases:
-      - legal description
-    definition: |
-      A paragraph of text in the deed that describes exactly where the property is located and where the boundaries are. It uses precise measurements instead of just the street address.
+  - tribal court: | # currently unused, moved to "help" text
+      A tribal court is a court run by a Native American or First Nations government. In the United States, many Native American tribal governments have their own court systems. This type of court may have different names in different places.
 ---
 # override standard AL version to add message about infinite spinner
 id: waiting screen

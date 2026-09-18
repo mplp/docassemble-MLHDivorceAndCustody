@@ -1451,6 +1451,19 @@ review:
         % endfor
         % endif     
     show if: there_are_marital_children
+  - Edit: 
+      - judge_ruled_jurisdiction_over_kids
+    button: |
+      ### Has the MI divorce judge decided if they have jurisdiction to make custody and parenting time determinations?
+      % if judge_ruled_jurisdiction_over_kids == "yes":
+      - Yes, the judge decided they **do have jurisdiction** to make custody and parenting time determinations.
+      % elif judge_ruled_jurisdiction_over_kids == "no":
+      - No, the judge decided they **do not have jurisdiction** to make custody and parenting time determinations.
+      % else:
+      - The judge has not made a decision on jurisdiction yet.
+      % endif
+    show if: |
+      tool_ID == "JOD_only" and there_are_marital_children and prior_family_cases.there_are_any and len(prior_family_cases.filter(potential_jurisdiction_problem=True)) > 0
   - Edit:
       - stepchild_address_review_screen
     button: |-
@@ -1573,8 +1586,15 @@ review:
       % if tool_ID == "JOD_only":
       % for case in prior_family_cases:
       **Case ${case.docket_number}**
-      
+
+        % if case.country != "US":
+        - ${ country_name(case.country) }
+        % else:
         - State or territory: ${case.state}
+        % endif
+        % if case.in_tribal_court:
+        - This case is in a tribal court.
+        % endif
         - Case status: ${case.status}
         - Custody or parenting time order in effect? **${word(yesno(case.has_current_custody_PT_order))}**
         - Child support order in effect? **${word(yesno(case.has_child_support_order))}**
@@ -1585,18 +1605,24 @@ review:
       **Case ${case.docket_number}** (${prior_family_case_types_ordered[case.type]})
 
         - ${case.title}
+        % if case.country != "US" or case.state != "MI" or case.in_tribal_court:
+        - ${case.court} ${word("(tribal court)") if case.in_tribal_court else ""}
+        % endif
+        % if case.country == "US":
+        % if not case.in_tribal_court:
         - ${case.county} County, ${case.state}
-        % if defined("case.court"):
-        - ${case.court}
-        % if defined("case.address"):
-        ${"-- " + case.address}
         % endif
+        % if (case.in_tribal_court or case.state != "MI") and defined("case.address"):
+        - ${ case.address }
         % endif
+        % elif case.country != "US" and defined("case.address"):
+        - ${ case.address }, ${ case.foreign_admin_unit }, ${ country_name(case.country) }
+        % endif   
         % if tool_ID in ["divorce_complaint", "custody_complaint"]:
         - Judge ${case.judge}
         % endif
         % if case.type == "other":
-        case.type_description
+        - ${case.type_description}
         % endif
         - Case status: ${word("ended with final order") if case.status == "ended_with_order" else word("ongoing") if case.status == "pending" else case.status }
         % if there_are_marital_children:
@@ -1696,22 +1722,29 @@ review:
       **Case ${case.docket_number}** (${prior_family_case_types_ordered[case.type]})
 
         - ${case.title}
-        - ${case.county} County, ${case.state}
-        % if defined("case.court"):
-        - ${case.court}
-        % if defined("case.address"):
-        ${"-- " + case.address}
+        % if case.country != "US" or case.state != "MI" or case.in_tribal_court:
+        - ${case.court} ${word("(tribal court)") if case.in_tribal_court else ""}
         % endif
+        % if case.country == "US": 
+        % if not case.in_tribal_court:
+        - ${case.county} County, ${case.state}
+        % endif
+        % if case.in_tribal_court or case.state != "MI":
+        - ${ case.address }
+        % endif
+        % elif case.country != "US":
+        - ${ case.address }, ${ case.foreign_admin_unit }, ${ country_name(case.country) }
         % endif
         % if tool_ID in ["custody_complaint"]:
         - Judge ${case.judge}
         % endif
         % if case.type == "other":
-        case.type_description
+        - ${case.type_description}
         % endif
         - Case status: ${word("ended with final order") if case.status == "ended_with_order" else word("ongoing") if case.status == "pending" else case.status }
         % if case.status == "ended_with_order":
         - Date of final judgment or order: ${case.final_order_date}
+        % endif
         % if case.status in ["ended_with_order", "stayed", "pending"]:
         - Included custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
         % if case.included_custody_PT_order:
@@ -1728,7 +1761,6 @@ review:
         % elif case.status == "dismissed":
         - Custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
         - Date of custody/PT order: ${case.custody_PT_order_date}
-        % endif
         % endif
       
       % endfor     
