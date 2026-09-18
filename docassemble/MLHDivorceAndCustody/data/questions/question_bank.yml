@@ -5207,7 +5207,7 @@ question: This tool is not right for you
 subquestion: |
   We're sorry. You cannot use this tool if
   % if tool_ID in ["custody_complaint", "custody_answer"]:
-  ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } (the children who you want to include as the subject of the custody case) are living with someone besides you or your spouse.
+  ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } (the ${ children.filter(legal_parent='both').as_noun() } who you want to include as the subject of the custody case) ${ children.filter(legal_parent="both").does_verb('be') } living with someone besides you or your spouse.
 
   % if len(children.filter(legal_parent="both")) > 1:
   If you want to start a custody case with just some of these children instead, you can change which children you include in your custody papers by using the **Review / Edit** link.
@@ -5225,7 +5225,7 @@ question: This tool is not right for you
 subquestion: |
   We're sorry. You cannot use this tool if
   % if tool_ID in ["custody_complaint", "custody_answer"]:
-  ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } (the children who you want to include as the subject of the custody case) have lived with a legal custodian other than a parent during the past five years.
+  ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } (the ${ children.filter(legal_parent='both').as_noun() } who you want to include as the subject of the custody case) ${ children.filter(legal_parent="both").does_verb('have') } lived with a legal custodian other than a parent during the past five years.
 
   % if len(children.filter(legal_parent="both")) > 1:
   If you want to start a custody case with just some of these children instead, you can change which children you include in your custody papers by using the **Review / Edit** link.
@@ -5243,7 +5243,7 @@ question: This tool is not right for you
 subquestion: |
   We're sorry. You cannot use this tool if there are any other adults (besides you and ${ other_parties[0] }) who may have a legal right to custody or parenting time of 
   % if tool_ID in ["custody_complaint", "custody_answer"]:
-  ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } (the children you want to include as the subject of the custody case). 
+  ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } (the ${ children.filter(legal_parent='both').as_noun() } you want to include as the subject of the custody case). 
 
   % if len(children.filter(legal_parent="both")) > 1:
   If you want to start a custody case with just some of these children instead, you can change which children you include in your custody papers by using the **Review / Edit** link.
