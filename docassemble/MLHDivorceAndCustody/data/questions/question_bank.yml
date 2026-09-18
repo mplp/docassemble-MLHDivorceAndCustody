@@ -1968,7 +1968,7 @@ continue button field: venue
 subquestion: |
   You can choose to file in either ${ users[0].address.county } County or ${ other_parties[0].address.county } County. 
 fields:
-  - Select the county where you will file your divorce.: county_choice
+  - Select the county where you will file your ${word("custody case.") if tool_ID == "custody_complaint" else word("divorce.")}: county_choice
     input type: radio
     code: all_potential_venue_options
 validation code: |
@@ -5260,7 +5260,7 @@ question: |
   Minor children -- special situations
 subquestion: |
   % if tool_ID in ["custody_complaint", "custody_answer"]:
-  These questions are about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() } who will be the subject of yor custody case: **${ comma_and_list(children.filter(legal_parent='both')) }**.
+  These questions are about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() } who will be the subject of your custody case: **${ comma_and_list(children.filter(legal_parent='both')) }**.
   % else:
   These questions are about your and ${ other_parties[0] }'s minor ${ children.filter(legal_parent='both').as_noun() }: **${ comma_and_list(children.filter(legal_parent='both')) }**.
   % endif
@@ -7532,7 +7532,7 @@ fields:
     field: users[0].insurance.there_are_any
     datatype: yesnoradio
   - note: |
-      **Do not** include coverage provided by ${ OP_label } or ${ OP_label }’s employer here. We'll ask about that next.
+      **Do not** include coverage provided by ${ OP_label } or ${ OP_label }'s employer here. We'll ask about that next.
 validation code: |
   if not users[0].insurance.there_are_any:
     users[0].insurance.clear()
@@ -8239,7 +8239,12 @@ template: why_need_SSN
 subject: |
   Why are you asking for a social security number?
 content: |
-  Social security numbers are used on some **nonpublic** forms related to children, spousal support, or financial disclosures to your spouse. The Friend of the Court office and/or your {spouse} will have access to these forms. If you don't want to enter an SSN here, you can hand write the number on the documents later.
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  Social security numbers are used on some **nonpublic** forms related to children. The Friend of the Court office and/or the other parent will have access to these forms. 
+  % else:
+  Social security numbers are used on some **nonpublic** forms related to children, spousal support, or financial disclosures to your spouse. The Friend of the Court office and/or your {spouse} will have access to these forms.
+  % endif
+  If you don't want to enter an SSN here, you can hand write the number on the documents later.
 ---
 id: user eye color, hair color, weight
 question: |
