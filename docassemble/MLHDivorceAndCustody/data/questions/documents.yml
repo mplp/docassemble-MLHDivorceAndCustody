@@ -62,7 +62,7 @@ code: |
     elif (
         len(children_previous_address) > 4
         or len(prior_family_cases.filter(add_to_MC416_4=True)) > 5
-        or len(prior_family_cases.filter(not_name_change).filter(resolved=False)) > 1
+        or len(cases_for_UCCJEA_5(prior_family_cases)) > 1
         or (not MI_home_state_all_kids and len(children.filter(legal_parent='both')) > 1)
        ):
       UCCJEA_affidavit_mc416_addendum.enabled = True
@@ -1804,7 +1804,7 @@ attachment:
             % endfor
           % endif
       - pending_cases_affecting_custody: |
-          % if len(prior_family_cases.filter(not_name_change).filter(resolved=False)) > 1:
+          % if len(cases_for_UCCJEA_5(prior_family_cases)) > 1:
           See addendum.
           % else:
             % for case in prior_family_cases:
@@ -1828,8 +1828,8 @@ attachment:
             % endfor
           % endif
       - pending_proceeding_continuing: |
-          % if len(prior_family_cases.filter(not_name_change).filter(resolved=False)) == 1:
-          % if prior_family_cases.filter(not_name_change).filter(resolved=False)[0].status == "pending":
+          % if len(cases_for_UCCJEA_5(prior_family_cases)) == 1:
+          % if cases_for_UCCJEA_5(prior_family_cases)[0].status == "pending":
           True
           % else:
           False
@@ -1837,8 +1837,8 @@ attachment:
           % endif
         # if there's only one pending or stayed (resolved=False) case affecting custody, this checks if that one case is pending. If there's multiple unresolved cases affecting custody, leave blank.
       - pending_proceeding_stayed: |
-          % if len(prior_family_cases.filter(not_name_change).filter(resolved=False)) == 1:
-          % if prior_family_cases.filter(not_name_change).filter(resolved=False)[0].status == "stayed":
+          % if len(cases_for_UCCJEA_5(prior_family_cases)) == 1:
+          % if cases_for_UCCJEA_5(prior_family_cases)[0].status == "stayed":
           True
           % else:
           False

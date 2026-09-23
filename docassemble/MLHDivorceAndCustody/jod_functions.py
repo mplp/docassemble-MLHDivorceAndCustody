@@ -11,5 +11,5 @@ def validate_us_state(address: Address) -> None:
         else:
             validation_error("You must enter the state's two-letter abbreviation.", f"""{address.attr_name("state")}""")
 
-def not_name_change(case):
-    return case.type != "name_change"
+def cases_for_UCCJEA_5(cases):
+    return [case for case in cases if case.type != "name_change" and case.resolved == False]
