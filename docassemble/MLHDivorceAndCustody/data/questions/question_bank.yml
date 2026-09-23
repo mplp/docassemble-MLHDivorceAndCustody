@@ -5030,6 +5030,8 @@ fields:
       variable: children[i].spouse_excluded_divorce
       is: False 
 ---
+if: tool_ID in ["custody_complaint", "custody_answer"]
+only sets: children[i].not_included_in_case_info
 id: info about children who can't be included in custody case
 continue button field: children[i].not_included_in_case_info
 question: Important!
