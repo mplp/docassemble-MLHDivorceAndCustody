@@ -6052,7 +6052,10 @@ code: |
               return "Confidential"
       else:
           if users[0].address.country == "US":
-              return users[0].address.county + " County, " + state_name(users[0].address.state)
+              if users[0].address.state == "MI":
+                  return users[0].address.county + " County, Michigan"
+              else:
+                  return "State of " + state_name(users[0].address.state)
           else:
               return country_name(users[0].address.country)
 ---

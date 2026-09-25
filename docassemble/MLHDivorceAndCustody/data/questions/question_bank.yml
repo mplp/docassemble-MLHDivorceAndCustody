@@ -1696,7 +1696,7 @@ fields:
   - What county does your spouse live in?: other_parties[0].address.county
     code: court_list._load_courts()["address_county"].unique()
 ---
-if: (tool_ID == "JOD_only" and other_parties[0].address.state != "MI") or (tool_ID in ["divorce_complaint", "custody_complaint"] and not other_parties[0].lives_in_Michigan)
+if: ((tool_ID == "JOD_only" and other_parties[0].address.state != "MI") or ((tool_ID in ["divorce_complaint", "custody_complaint"] and not other_parties[0].lives_in_Michigan))) and other_parties[0].address.country == "US"
 id: other_parties[0].address.county check
 continue button field: just_check_op_county
 question: |
@@ -3333,7 +3333,8 @@ code: |
   
     elif tool_ID == "custody_complaint":
       users[0].lives_in_Michigan
-      users[0].address.county # skipped if answered on lives_in_Michigan screen
+      if users[0].address.country == "US":
+        users[0].address.county # skipped if answered on lives_in_Michigan screen
 
     if users[0].mailing_address.yesno:
       users[0].mailing_address.address
