@@ -254,9 +254,21 @@ attachment:
       - children_live_in_county: |
           % if children_now_live_with_which_parent in ["both", "depends_on_child"]:
           % if users[0].lives_in_Michigan and other_parties[0].lives_in_Michigan:
-          ${users[0].address.county} and ${other_parties[0].address.county}
+          ${users[0].address.county} County and ${other_parties[0].address.county}
           % else:
-          ${custody_plaintiff_complaint_residence()} and ${ other_parties[0].address.county + " County, Michigan" if other_parties[0].lives_in_Michigan else "State of " + other_parties[0].address.state if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
+          ${custody_plaintiff_complaint_residence()} and ${ other_parties[0].address.county + " County, Michigan" if other_parties[0].lives_in_Michigan else "State of " + state_name(other_parties[0].address.state) if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
+          % endif
+          % elif children_now_live_with_which_parent == "users[0]":
+          % if users[0].lives_in_Michigan:
+          ${users[0].address.county}
+          % else:
+          ${custody_plaintiff_complaint_residence()} and ${ other_parties[0].address.county + " County, Michigan" if other_parties[0].lives_in_Michigan else "State of " + state_name(other_parties[0].address.state) if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
+          % endif
+          % elif children_now_live_with_which_parent == "other_parties[0]":
+          % if other_parties[0].lives_in_Michigan:
+          ${ other_parties[0].address.county }
+          % else:
+          ${custody_plaintiff_complaint_residence()} and ${ other_parties[0].address.county + " County, Michigan" if other_parties[0].lives_in_Michigan else "State of " + state_name(other_parties[0].address.state) if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
           % endif
           % endif
       - marital_children_names_ages: |
