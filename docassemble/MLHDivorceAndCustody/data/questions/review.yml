@@ -162,9 +162,10 @@ review:
       - recompute: 
         - interview_order_user_contact_info
       - invalidate:
-        - interview_order_children # for Muskegon PT logic
+        - interview_order_children # for Muskegon PT logic and custody venue stuff
         - calculate_custody_venue_options
         - interview_order_custody_where_kids_live
+        - children_live_with_parent
         - venue
         - current_venue_options
         - all_potential_venue_options
@@ -202,9 +203,10 @@ review:
       - follow up:
         - users[0].ten_days_in_county
       - invalidate:
-        - interview_order_children # because of Muskegon PT logic
+        - interview_order_children # because of Muskegon PT logic and custody venue stuff
         - calculate_custody_venue_options
         - interview_order_custody_where_kids_live
+        - children_live_with_parent
         - venue
         - current_venue_options
         - all_potential_venue_options
@@ -526,9 +528,10 @@ review:
         - other_parties[0].village_or_township_yn
         - just_check_op_county
       - invalidate:
-        - interview_order_children # because of Muskegon PT logic
+        - interview_order_children # because of Muskegon PT logic and custody venue stuff
         - calculate_custody_venue_options
         - interview_order_custody_where_kids_live
+        - children_live_with_parent
         - venue
         - current_venue_options
         - all_potential_venue_options
@@ -1306,6 +1309,7 @@ review:
       - children_live_with_parent
       - invalidate:
         - child_address_not_confidential_warning
+        - interview_order_custody_where_kids_live
       - recompute:
         - interview_order_children
       # Note validation logic on children_live_with_parent

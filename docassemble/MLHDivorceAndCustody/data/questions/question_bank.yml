@@ -3632,6 +3632,9 @@ code: |
     for child in children:
       if child.legal_parent == "both":
         child.lives_with
+        if (child.lives_with == "other_parties[0]" and users[0].lives_in_Michigan and not (other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county)) or (child.lives_with == "users[0]" and other_parties[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county)):
+          child.spends_time_with_other_parent
+        child.custody_venue_options
         ### check for missing venue ###
         if (child.lives_with == "users[0]" and not users[0].lives_in_Michigan and not child.spends_time_with_other_parent) or (child.lives_with == "other_parties[0]" and not other_parties[0].lives_in_Michigan and not child.spends_time_with_other_parent):
           child.no_venue_kickout
@@ -5148,6 +5151,8 @@ fields:
 validation code: | ## for review screen functionality ##
   for child in children.filter(legal_parent="both"):
     invalidate("child.lives_with")
+    invalidate("child.spends_time_with_other_parent")
+    invalidate("child.custody_venue_options")
 ---
 code: |
   if tool_ID in ["custody_complaint", "custody_answer"]:
@@ -5175,7 +5180,7 @@ if: tool_ID == "custody_complaint"
 id: children with conflicting venue requirements
 question: Important! 
 subquestion: |
-  Your answers indicate that${ comma_and_list(children.filter(legal_parent="both").filter(custody_venue_options="only_OP"), and_string='and') } do not spend time with a parent in ${users[0].address.county} County and comma_and_list(children.filter(legal_parent="both").filter(custody_venue_options="only_user"), and_string='and') } do not spend time with a parent in ${other_parties[0].address.county} County.
+  Your answers indicate that ${comma_and_list(children.filter(legal_parent="both").filter(custody_venue_options="only_OP"), and_string='and')} ${children.filter(legal_parent="both").filter(custody_venue_options="only_OP").does_verb('do')} not spend time with a parent in ${users[0].address.county} County and ${comma_and_list(children.filter(legal_parent="both").filter(custody_venue_options="only_user"), and_string='and')} ${children.filter(legal_parent="both").filter(custody_venue_options="only_user").does_verb('do')} not spend time with a parent in ${other_parties[0].address.county} County.
 
   In this situation, Michigan law is not clear if you can file just one custody case or if you would have to file a case in both counties and then ask to have the cases consolidated. 
 
@@ -5324,22 +5329,31 @@ fields:
     choices:
       - ${ users[0] }: users[0]
       - ${ other_parties[0] }: other_parties[0]
+---
+if: tool_ID in ["custody_complaint", "custody_answer"] and children[i].lives_with == "users[0]" and other_parties[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county)
+id: spend time in OP county
+question: ${ children[i] }'s connection to ${other_parties[0].address.county} County
+fields:
   - Does ${ children[i] } spend time with ${ other_parties[0] } in ${other_parties[0].address.county} County?: children[i].spends_time_with_other_parent
     datatype: yesnoradio
-    js show if: |
-      ${ "true" if tool_ID in ["custody_complaint", "custody_answer"] and other_parties[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county) else "false" } && val('children[i].lives_with') === "users[0]"
+---
+if: tool_ID in ["custody_complaint", "custody_answer"] and children[i].lives_with == "other_parties[0]" and users[0].lives_in_Michigan and not (other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county)
+id: spend time in user county
+question: ${ children[i] }'s connection to ${users[0].address.county} County
+fields:
   - Does ${ children[i] } spend time with you in ${users[0].address.county} County?: children[i].spends_time_with_other_parent
     datatype: yesnoradio
-    js show if: |
-      ${ "true" if tool_ID in ["custody_complaint", "custody_answer"] and users[0].lives_in_Michigan and not (other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county) else "false" } && val('children[i].lives_with') === "other_parties[0]"
-validation code: |
+---
+id: set custody_venue_options
+sets: children[i].custody_venue_options
+code: |
   if tool_ID == "custody_complaint":
     if children[i].lives_with == "users[0]" and other_parties[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
       if children[i].spends_time_with_other_parent:
         children[i].custody_venue_options = "both"
       else: 
         children[i].custody_venue_options = "only_user"
-    elif children[i].lives_with == "other_parties[0]" and users[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
+    elif children[i].lives_with == "other_parties[0]" and users[0].lives_in_Michigan and not (other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
       if children[i].spends_time_with_other_parent:
         children[i].custody_venue_options = "both"
       else: 
