@@ -434,7 +434,7 @@ attachment:
           % endif
           ${ defendants[0].address.line_one() }
           ${ defendants[0].address.line_two() }
-          ${ word("Does not have phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
+          ${ word("Unknown phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
       - children_line_1: ${ children_line_1 } # field needs work, not sure how we're choosing included chldren
       - children_line_2: ${ children_line_2 }
       - awards_legal_custody: True # in LHI, only checked if MI is home state

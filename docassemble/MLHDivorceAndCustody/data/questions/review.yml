@@ -165,6 +165,7 @@ review:
         - interview_order_children # for Muskegon PT logic and custody venue stuff
         - calculate_custody_venue_options
         - interview_order_custody_where_kids_live
+        - all_kids_spend_time_with_other_parent
         - children_live_with_parent
         - venue
         - current_venue_options
@@ -206,6 +207,7 @@ review:
         - interview_order_children # because of Muskegon PT logic and custody venue stuff
         - calculate_custody_venue_options
         - interview_order_custody_where_kids_live
+        - all_kids_spend_time_with_other_parent
         - children_live_with_parent
         - venue
         - current_venue_options
@@ -531,6 +533,7 @@ review:
         - interview_order_children # because of Muskegon PT logic and custody venue stuff
         - calculate_custody_venue_options
         - interview_order_custody_where_kids_live
+        - all_kids_spend_time_with_other_parent
         - children_live_with_parent
         - venue
         - current_venue_options
@@ -1165,6 +1168,7 @@ review:
         - interview_order_home_state
         - set_children_home_state_info
         - interview_order_custody_where_kids_live
+        - all_kids_spend_time_with_other_parent
         - children_live_with_parent
         - children_now_live_with_which_parent
         - children_lived_with_which_parent_past
@@ -1258,6 +1262,7 @@ review:
         - interview_order_home_state
         - set_children_home_state_info
         - interview_order_custody_where_kids_live
+        - all_kids_spend_time_with_other_parent
         - children_live_with_parent
         - children_now_live_with_which_parent
         - children_lived_with_which_parent_past
@@ -1308,24 +1313,43 @@ review:
   - Edit:
       - children_live_with_parent
       - invalidate:
+        - all_kids_spend_time_with_other_parent
         - child_address_not_confidential_warning
         - interview_order_custody_where_kids_live
       - recompute:
         - interview_order_children
       # Note validation logic on children_live_with_parent
     button: |
-      ### Home of marital children
-      ${ comma_and_list(children.filter(legal_parent='both').familiar()) } ${ children.filter(legal_parent="both").does_verb('live') } with: 
+      ### Home of ${word("marital") if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"] else "" } children ${word("who are the subject of the case") if tool_ID in ["custody_complaint", "custody_answer"] else ""}
+        ${ comma_and_list(children.filter(legal_parent='both').familiar()) } ${ children.filter(legal_parent="both").does_verb('live') } with: 
         % if children_now_live_with_which_parent == "users[0]":
         you.
+      
+        % if tool_ID in ["custody_complaint", "custody_answer"] and other_parties[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
+        They **${word("do") if all_kids_spend_time_with_other_parent else word("don't")}** spend time in ${other_parties[0].address.county} County with ${other_parties[0]}.
+        % endif
         % elif children_now_live_with_which_parent == "other_parties[0]":
-        your spouse.
+        ${other_parties[0]}.
+              
+        % if tool_ID in ["custody_complaint", "custody_answer"] and users[0].lives_in_Michigan and not (other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
+        They **${word("do") if all_kids_spend_time_with_other_parent else word("don't")}** spend time in ${users[0].address.county} County with you.
+        % endif
         % elif children_now_live_with_which_parent == "both":
-        you and your spouse.
+        you and ${other_parties[0]}.
         % elif children_now_live_with_which_parent == "depends_on_child": 
       
         % for child in children.filter(legal_parent='both'):  
-        - ${ child.familiar() } lives with ${ word("you") if child.lives_with == "users[0]" else word("your spouse") }.
+        % if child.lives_with == "users[0]":
+        - ${ child.familiar() } lives with ${ word("you")}. 
+        % if tool_ID in ["custody_complaint", "custody_answer"] and other_parties[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
+        They **${word("do") if child.spends_time_with_other_parent else word("don't")}** spend time in ${other_parties[0].address.county} County with ${other_parties[0]}.
+        % endif
+        % elif child.lives_with == "other_parties[0]":
+        - ${ child.familiar() } lives with ${ word(other_parties[0]) }. 
+        % if tool_ID in ["custody_complaint", "custody_answer"] and users[0].lives_in_Michigan and not (other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
+        They **${word("do") if child.spends_time_with_other_parent else word("don't")}** spend time in ${users[0].address.county} County with you.
+        % endif
+        % endif
         % endfor
         % endif
     show if: there_are_marital_children
