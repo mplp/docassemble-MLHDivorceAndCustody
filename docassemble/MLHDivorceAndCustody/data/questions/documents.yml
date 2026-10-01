@@ -404,6 +404,7 @@ objects:
 ---
 code: |
   custody_order_cc_432.enabled = tool_ID in ["custody_complaint"]
+  format_children_names(children)
 ---
 attachment:
   - name: Order Regarding Complaint for Custody - CC 432
