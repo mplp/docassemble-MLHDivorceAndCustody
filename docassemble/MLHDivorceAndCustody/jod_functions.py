@@ -11,5 +11,25 @@ def validate_us_state(address: Address) -> None:
         else:
             validation_error("You must enter the state's two-letter abbreviation.", f"""{address.attr_name("state")}""")
 
-def not_name_change(case):
-    return case.type != "name_change"
+def cases_for_UCCJEA_5(cases):
+    return [case for case in cases if case.type != "name_change" and case.resolved == False]
+
+#def custody_plaintiff_complaint_residence():
+#    if value('confidential_contact_info_yn'):
+#        if value('users[0].lives_in_Michigan'):
+#            return value('users[0].address.county') + " County, Michigan"
+#        elif value('safe_to_disclose_state'):
+#            if value('users[0].foreign_residence'):
+#                return value('country_name(users[0].country_of_residence_to_disclose)')
+#            else:
+#                return "State of " + value('state_name(users[0].state_of_residence_to_disclose)')
+#        else:
+#            return "Confidential"
+#    else:
+#        if value('users[0].address.country') == "US":
+#            if value('users[0].address.state') == "MI":
+#                return value('users[0].address.county') + " County, Michigan"
+#            else:
+#                return "State of " + value('state_name(users[0].address.state)')
+#        else:
+#            return value('country_name(users[0].address.country)')
