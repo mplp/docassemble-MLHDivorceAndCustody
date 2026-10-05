@@ -19,7 +19,7 @@ objects:
 ---
 if: tool_ID == "custody_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, custody_complaint_cc_429, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, noh_motion_consent, noh_motion_default, default_request_mc07, mrcs_foc12, foc_100_full, custody_order_cc_432, foc_10_full, proof_of_service, proof_of_service, fee_waiver_attachment, protected_pii_mc_97a_attachment], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, custody_complaint_cc_429, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, noh_motion_consent, noh_motion_default, default_request_mc07, mrcs_foc12, foc_100_full, custody_order_cc_432_full, foc_10_full, proof_of_service, proof_of_service, fee_waiver_attachment, protected_pii_mc_97a_attachment], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
   #- al_court_bundle: ALDocumentBundle.using(elements=[], filename="Michigan Custody Complaint --all forms", title="All forms and instructions", enabled=True)
 ---
 # ====================================================================
@@ -150,6 +150,7 @@ code: |
   judgment_ccmlh413.enabled = there_are_marital_children
   judgment_ccmlh412.enabled = not there_are_marital_children
 ---
+if: tool_ID in ["divorce_complaint", "JOD_only"]
 # enabling logic for judgment addenda bundle and load functions/variables
 code: |
   # run these functions/load variables first because if they have not been run they will be skipped when used to fill out judgment checkboxes
@@ -328,30 +329,31 @@ attachment:
           % endif
       - parenting_time_provisions: |
           % if physical_custody_who != "both":
-            % if PT_who == "user":
-          ${ OP_party_label.capitalize() } will not have parenting time.
-            % elif PT_who == "other_party":
-          ${ user_party_label.capitalize() } will not have parenting time.
-            % endif
+          % if PT_who == "user":
+          Defendant will not have parenting time.
+          % elif PT_who == "other_party":
+          Plaintiff will not have parenting time.
+          % endif
           % endif
           % if physical_custody_who == "both" or PT_who == "both":
-            % if PT_type == "reasonable":
-          Parenting time arrangements will be made by mutual agreement of the parties.
-            % elif PT_type in ["specific", "supervised"]:
-              % if specific_PT_how == "custom":
-                % if len(custom_PT_details) > 650:
-          Both parties will have specific parenting time with the minor ${ "child" if len(children.filter(legal_parent="both")) == 1 else "children" } according to the Parenting Time Addendum.
-                % else:
-          ${ custom_PT_details }
-                % endif
-              % else:
-          Both parties will have specific parenting time with the minor ${ "child" if len(children.filter(legal_parent="both")) == 1 else "children" } according to the ${ the_court.address.county } County Friend of the Court parenting time schedule.
-              % endif
-              % if PT_type == "supervised" and not (specific_PT_how == "custom" and len(custom_PT_details) > 650):
-
-          Parenting time for ${ OP_party_label.lower() if physical_custody_who == "user" else user_party_label.lower() } will be supervised by ${ PT_supervisor if PT_supervisor != "" else "________________________" }.
-              % endif
-            % endif
+          % if PT_type == "reasonable":
+          Reasonable parenting time on dates and times agreed to by the parties.
+          % elif PT_type == "specific":
+          % if specific_PT_how == "custom":
+          See Attachment to Custody Complaint.
+          % elif specific_PT_how == "FOC_sample":
+          Parenting time according to the ${ county_choice } County Friend of the Court parenting time schedule.
+          % endif
+          % elif PT_type == "supervised":
+          % if specific_PT_how == "custom":
+          See Attachment to Custody Complaint.
+          % elif specific_PT_how == "FOC_sample":
+          % if PT_supervisor != "":
+          Parenting time supervised by ${ PT_supervisor }.
+          % endif
+          Parenting time according to the ${ county_choice } County Friend of the Court parenting time schedule.
+          % endif
+          % endif
           % endif
       - parties_with_legal_custody__3: |
           % if legal_custody_who == "user":
@@ -400,11 +402,20 @@ attachment:
 # --------------------------------------------------------------------
 ---
 objects:
-    - custody_order_cc_432: ALDocument.using(title="Order Regarding Complaint for Custody - CC 432", filename="Order Regarding Complaint for Custody - CC 432", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+  - custody_order_cc_432_full: ALDocumentBundle.using(elements=[custody_order_cc_432, judgment_addendum_parenting_time], filename="Order Regarding Complaint for Custody - CC 432", title="Order Regarding Complaint for Custody - CC 432")
+---
+objects:
+  - custody_order_cc_432: ALDocument.using(title="Order Regarding Complaint for Custody - CC 432", filename="Order Regarding Complaint for Custody - CC 432")
+# judgment_addendum_parenting_time is created in divorce judgment code      
 ---
 code: |
-  custody_order_cc_432.enabled = tool_ID in ["custody_complaint"]
+  custody_order_cc_432_full.enabled = True
+  custody_order_cc_432.enabled = True
   format_children_names(children)
+---
+if: tool_ID == "custody_complaint"
+code: |
+  judgment_addendum_parenting_time.enabled = (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 275
 ---
 attachment:
   - name: Order Regarding Complaint for Custody - CC 432
@@ -471,7 +482,7 @@ attachment:
           Parenting time arrangements will be made by mutual agreement of the parties.
             % elif PT_type in ["specific", "supervised"]:
               % if specific_PT_how == "custom":
-                % if len(custom_PT_details) > 375:
+                % if len(custom_PT_details) > 275:
           Both parties will have specific parenting time with the minor ${ "child" if len(children.filter(legal_parent="both")) == 1 else "children" } according to the Parenting Time Addendum.
                 % else:
           ${ custom_PT_details }
@@ -479,7 +490,7 @@ attachment:
               % else:
           Both parties will have specific parenting time with the minor ${ "child" if len(children.filter(legal_parent="both")) == 1 else "children" } according to the ${ the_court.address.county } County Friend of the Court parenting time schedule.
               % endif
-              % if PT_type == "supervised" and not (specific_PT_how == "custom" and len(custom_PT_details) > 375):
+              % if PT_type == "supervised" and not (specific_PT_how == "custom" and len(custom_PT_details) > 275):
 
           Parenting time for ${ OP_party_label.lower() if physical_custody_who == "user" else user_party_label.lower() } will be supervised by ${ PT_supervisor if PT_supervisor != "" else "________________________" }.
               % endif

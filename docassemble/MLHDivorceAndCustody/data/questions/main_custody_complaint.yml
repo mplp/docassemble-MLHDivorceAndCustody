@@ -173,7 +173,7 @@ code: |
   plaintiffs
   defendants
 
-  # testing
+  testing
 
   al_user_bundle.generate_downloads_task
   nav.set_section("signpost_done")
@@ -181,9 +181,40 @@ code: |
   if not al_user_bundle.generate_downloads_task.ready():
     al_download_waiting_screen
   MLH_download
-#---
-#question: test
-#subquestion: |
-#  ${custody_plaintiff_complaint_residence()}
-#continue button field: testing
+---
+question: test
+subquestion: |
+  % if (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 275:
+  "ADDENDUM enabled"
+  % else:
+  "no addendum":
+  % endif
+  
+  % if physical_custody_who != "both":
+    % if PT_who == "user":
+  ${ OP_party_label.capitalize() } will not have parenting time.
+    % elif PT_who == "other_party":
+  ${ user_party_label.capitalize() } will not have parenting time.
+    % endif
+  % endif
+  % if physical_custody_who == "both" or PT_who == "both":
+    % if PT_type == "reasonable":
+  Parenting time arrangements will be made by mutual agreement of the parties.
+    % elif PT_type in ["specific", "supervised"]:
+      % if specific_PT_how == "custom":
+        % if len(custom_PT_details) > 275:
+  Both parties will have specific parenting time with the minor ${ "child" if len(children.filter(legal_parent="both")) == 1 else "children" } according to the Parenting Time Addendum.
+        % else:
+  ${ custom_PT_details }
+        % endif
+      % else:
+  Both parties will have specific parenting time with the minor ${ "child" if len(children.filter(legal_parent="both")) == 1 else "children" } according to the ${ the_court.address.county } County Friend of the Court parenting time schedule.
+      % endif
+      % if PT_type == "supervised" and not (specific_PT_how == "custom" and len(custom_PT_details) > 275):
+  
+  Parenting time for ${ OP_party_label.lower() if physical_custody_who == "user" else user_party_label.lower() } will be supervised by ${ PT_supervisor if PT_supervisor != "" else "________________________" }.
+      % endif
+    % endif
+  % endif
+continue button field: testing
 ---

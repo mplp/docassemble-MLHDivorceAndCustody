@@ -5867,6 +5867,7 @@ fields:
       val("physical_custody_who") != "both" && val("PT_who") === "both"
   - label: "If you know the name of the person or agency you want to supervise parenting time, enter it here. If you don't know, leave this blank."
     field: PT_supervisor
+    maxlength: 44
     js show if: |
       val("physical_custody_who") != "both" && val("PT_who") === "both" && val("PT_type") === "supervised"
     required: False

@@ -57,11 +57,15 @@ code: |
     user_ask_role = "plaintiff"
     OP_label = "the Defendant"
     case_label = "custody"
+    user_party_label = "the Plaintiff"
+    OP_party_label = "the Defendant"
   elif tool_ID == "custody_answer":
     filing_name = "Custody Answer"
     user_ask_role = "defendant"
     OP_label = "the Plaintiff"
     case_label = "custody"
+    user_party_label = "the Defendant"
+    OP_party_label = "the Plaintiff"
 
   set_prior_family_case_types
   
