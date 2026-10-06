@@ -19,7 +19,7 @@ objects:
 ---
 if: tool_ID == "custody_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, custody_complaint_cc_429, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, noh_motion_consent, noh_motion_default, default_request_mc07, mrcs_foc12, foc_100_full, custody_order_cc_432_full, foc_10_full, proof_of_service, proof_of_service, fee_waiver_attachment, protected_pii_mc_97a_attachment], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, custody_complaint_cc_429_full, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, noh_motion_consent, noh_motion_default, default_request_mc07, mrcs_foc12, foc_100_full, custody_order_cc_432_full, foc_10_full, proof_of_service, proof_of_service, fee_waiver_attachment, protected_pii_mc_97a_attachment], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
   #- al_court_bundle: ALDocumentBundle.using(elements=[], filename="Michigan Custody Complaint --all forms", title="All forms and instructions", enabled=True)
 ---
 # ====================================================================
@@ -217,12 +217,19 @@ code: |
 # --------------------------------------------------------------------
 ---
 objects:
-    - custody_complaint_cc_429: ALDocument.using(title="Complaint for Custody - CC 429", filename="Complaint for Custody - CC 429", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+  - custody_complaint_cc_429_full: ALDocumentBundle.using(elements=[custody_complaint_cc_429, complaint_answer_attachment], filename="Complaint for Custody - CC 429", title="Complaint for Custody - CC 429")
+---
+objects:
+  - custody_complaint_cc_429: ALDocument.using(title="Complaint for Custody - CC 429", filename="Complaint for Custody - CC 429", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+# complaint_answer_attachment is created with divorce code
 ---
 code: |
+  custody_complaint_cc_429_full.enabled = tool_ID in ["custody_complaint"]
   custody_complaint_cc_429.enabled = tool_ID in ["custody_complaint"]
   # running this so it's available in the document
   custody_plaintiff_complaint_residence()
+  if custody_complaint_cc_429.enabled:
+    complaint_answer_attachment.enabled = ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom")
 ---
 attachment:
   - name: Complaint for Custody - CC 429
