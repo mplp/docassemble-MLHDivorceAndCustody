@@ -5640,11 +5640,11 @@ fields:
     choices:
       - "Yes, I want to stop.": True
       - "No, I want to continue.": False
-  - "Do you understand that if you make your divorce forms using this tool and file a divorce case in a Michigan court, it is important to find a lawyer to help you?": out_of_state_order_understand_continue
+  - "Do you understand that if you make your divorce forms using this tool and file a divorce case in a Michigan court, you may need to find a lawyer to help you?": out_of_state_order_understand_continue
     datatype: yesnoradio
     js show if: |
       val("out_of_state_order_stop") === false && ${"true" if tool_ID == "divorce_complaint" else "false"}
-  - "Do you understand that if you make your divorce forms using this tool, it is important to find a lawyer to help you?": out_of_state_order_understand_continue
+  - "Do you understand that if you make your divorce forms using this tool, you may need to find a lawyer to help you?": out_of_state_order_understand_continue
     datatype: yesnoradio
     js show if: |
       val("out_of_state_order_stop") === false && ${"true" if tool_ID == "JOD_only" else "false"}
