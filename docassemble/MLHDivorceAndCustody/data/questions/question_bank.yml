@@ -840,7 +840,7 @@ id: advance_warnings
 continue button field: advance_warnings
 question: Requirements for a Michigan custody case
 subquestion: |
-  To start a Michigan custody case for a child:
+  To use our forms to start a Michigan custody case for a child:
   
   * the child must have lived for 6 months (or since birth) in Michigan, 
   * there must be a signed Affidvait of Parentage for that child,
@@ -6470,6 +6470,10 @@ confirm: True
 ---
 id: custody complaint controlling custody case screener
 question: Existing child support, parenting time, or custody cases
+subquestion: |
+  ${existing_case_meaning}
+
+  <hr>
 fields: 
   - "Is there any existing child support, parenting time, or custody case in any court anywhere between you and the other parent?": controlling_custody_case
     datatype: radio
@@ -6477,7 +6481,6 @@ fields:
       - "Yes, there is **one** existing case.": yes_one
       - "Yes, there are **multiple** existing cases.": yes_multiple
       - "No, there is **no** existing case.": no
-  - note: ${collapse_template(existing_case_meaning)}
   - "Is the existing case in a **Michigan** state court?": controlling_case_location
     datatype: radio
     choices:
@@ -6523,6 +6526,8 @@ id: custody complaint Michigan custody case followup -multiple
 question: More about your child support, parenting time, or custody cases
 subquestion: |
   You said there are multiple existing child support, parenting time, or custody cases between you and the other parent in Michigan state court.
+  
+  ${collapse_template(existing_case_meaning)}
 fields: 
   - Are the existing Michigan cases all in the same court?: MI_cases_in_same_court
     datatype: radio
@@ -6544,11 +6549,14 @@ template: existing_case_meaning
 subject: What do you mean by "existing case"?
 content: |
   An "existing case" means a case that is:
-
+  
   * pending (ongoing), or
   * finished with a final order, and the court has continuing jurisdiction.
+  
+  "Existing case" **does not** include dismissed cases.
 ---
 # LHI Prior Court Cases Part 1
+# this field is skipped in custody complaint tool if there's a controlling_custody_case because a minimum_number of prior_family_cases is set in that circumstance.
 id: prior family cases
 question: |
   % if tool_ID == "JOD_only":
@@ -6580,6 +6588,10 @@ fields:
     field: prior_family_cases.there_are_any
     datatype: yesnoradio
   - note: |
+      % if tool_ID in ["custody_complaint", "custody_answer"]:
+      This includes any dismissed child support, parenting time, or custody cases, and any other family division cases, no matter the case status.
+      % endif
+      
       % if tool_ID in ["custody_complaint", "custody_answer", "divorce_complaint", "divorce_answer"]:
       ${ collapse_template(family_division_info) }
       % endif
@@ -6676,8 +6688,8 @@ question: |
   Any more **family division** court cases or orders?
   % endif
 subquestion: |
-  % if tool_ID in ["custody_complaint", "custody_answer"] and controlling_custody_case in ["yes_multiple", "yes_one"]:
-  This includes any existing child support, parenting time, or custody cases, as well as any other family division cases.
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  This includes **all** child support, parenting time, or custody cases, as well as any other family division cases. Add every case, including dismissed, ongoing, or stayed (paused) cases, and cases that have ended with an order.
 
   % endif
   ${ collapse_template(family_division_info) }
@@ -6913,6 +6925,8 @@ id: prior family case or order collection screen existing custody case
 question: Information about the ${ word("first") if controlling_custody_case == "yes_multiple" else "" } existing case
 subquestion: |
   Please tell us about the ${ word("first") if controlling_custody_case == "yes_multiple" else "" } existing child support, parenting time, or custody case with ${other_parties[0]}.
+
+  ${collapse_template(existing_case_meaning)}
 fields:
   - Country:: prior_family_cases[0].country
     code: |
@@ -6975,7 +6989,7 @@ fields:
     datatype: radio
     choices:
       - "The case is still ongoing. (There is **no** order or judgment resolving all the issues.)": False
-      - "The case is over. (There is an order resolving all the issues, or the case was dismissed.)": True
+      - "The case is over. (There is an order resolving all the issues.)": True
   - 'Has the case been **{stayed}?**': prior_family_cases[0].status
     datatype: radio
     choices:
@@ -6983,13 +6997,9 @@ fields:
       - "No.": pending
     js show if: |
       val("prior_family_cases[0].resolved") === false
-  - How did the case end?: prior_family_cases[0].status
-    datatype: radio
-    choices:
-      - "The judge made a **final order** resolving all the issues and ending the case.": ended_with_order
-      - "The judge **dismissed** the case.": dismissed
-    js show if: |
-      val("prior_family_cases[0].resolved") === true
+validation code: |
+  if prior_family_cases[0].resolved:
+    prior_family_cases[0].status = "ended_with_order"
 ---
 # LHI "Prior Family Cases DLG" (start at row 108)
 id: prior family divorce case or order additional info
