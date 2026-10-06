@@ -379,7 +379,7 @@ subquestion: |
   % if controlling_case_location == "foreign":
   Sorry, you cannot use this tool if there is a child support, parenting time, or custody case in a **non-Michigan** court, between you and the other parent. ${MLH_GUIDE_FULL}
   % elif controlling_custody_case == "yes_multiple" and not MI_cases_in_same_court:
-  Sorry, you cannot use this tool if there is are child support, parenting time, or custody cases between you and the other parent in multiple Michigan state courts. ${MLH_GUIDE_FULL}
+  Sorry, you cannot use this tool if there are child support, parenting time, or custody cases between you and the other parent in multiple Michigan state courts. ${MLH_GUIDE_FULL}
   % elif all_children_in_prior_case:
   Sorry, this tool is not for you. Usually a new custody request for the same child(ren) should be filed as a motion in the existing case. You can use the [Motion Regarding Custody](https://www.courts.michigan.gov/4a7d59/siteassets/forms/scao-approved/foc87.pdf) to request a custody order if there is already a final order in the case but it did not include custody. You can also use this motion if there is a custody order and you want to change it. To learn about asking for a change in custody, read [Changing a Custody Order](https://michiganlegalhelp.org/resources/family/changing-custody-order).
 
@@ -4217,7 +4217,7 @@ code: |
     if not children[i].affidavit_of_parentage or children[i].affidavit_revoked:
       children[i].not_included_in_case_info
     else:
-      if children[i].marital_birth and not (children[i].spouse_excluded_divorce or children[i].spouse_excluded_order):
+      if children[i].marital_birth and not children[i].spouse_excluded_order:
         children[i].not_included_in_case_info  
   else:
     children[i].not_included_in_case_info
@@ -5015,24 +5015,15 @@ fields:
     datatype: yesnoradio
   - label: |
       % if children[i].bio_parent == "user":
-      Did a Judgment of Divorce exclude your spouse as ${children[i]}'s parent?
+      Is there a court order revoking (undoing) the parentage (or paternity) of your spouse? *There may be a court order revoking parentage if you, ${ other_parties[0] }, or your spouse filed to revoke the spouse's parentage.*
       % else:
-      Did a Judgment of Divorce exclude ${ other_parties[0] }'s spouse as ${children[i]}'s parent?
-      % endif
-    field: children[i].spouse_excluded_divorce
-    datatype: yesnoradio
-    show if: children[i].marital_birth
-  - label: |
-      % if children[i].bio_parent == "user":
-      Is there another court order revoking (undoing) the parentage (or paternity) of your spouse? *There may be a separate court order revoking parentage if you, ${ other_parties[0] }, or your spouse filed a case to revoke the spouse's parentage.*
-      % else:
-      Is there another court order revoking (undoing) the parentage (or paternity) of ${ other_parties[0] }'s spouse? *There may be a separate court order revoking parentage if you, ${ other_parties[0] }, or the spouse filed a case to revoke the spouse's parentage.*
+      Is there a court order revoking (undoing) the parentage (or paternity) of ${ other_parties[0] }'s spouse? *There may be a court order revoking parentage if you, ${ other_parties[0] }, or the spouse filed to revoke the spouse's parentage.*
       % endif
     field: children[i].spouse_excluded_order
     datatype: yesnoradio
     show if: 
-      variable: children[i].spouse_excluded_divorce
-      is: False 
+      variable: children[i].marital_birth
+      is: True 
 ---
 if: tool_ID in ["custody_complaint", "custody_answer"]
 only sets: children[i].not_included_in_case_info
@@ -5060,7 +5051,7 @@ subquestion: |
   ${children[i].familiar()} won't be included in the custody, parenting time, and child support parts of your custody case. However, information about them will be included on some forms.
 
   If you need more help you may want to speak to a lawyer. ${MLH_GUIDE_FULL}
-  % elif children[i].marital_birth and not (children[i].spouse_excluded_divorce or children[i].spouse_excluded_order):
+  % elif children[i].marital_birth and not children[i].spouse_excluded_order:
   % if children[i].bio_parent == "user":
   You said:
   
@@ -6156,7 +6147,7 @@ code: |
 ---
 event: children[i].rerun_custody_logic
 code: |
-  invalidate("children[i].is_shared_child", "children[i].want_in_custody_case", "children[i].more_info", "children[i].affidavit_of_parentage", "children[i].affidavit_revoked", "children[i].affidavit_revoked", "children[i].not_included_in_case_info", "children[i].marital_birth", "children[i].spouse_excluded_divorce", "children[i].spouse_excluded_order", "children[i].complete")
+  invalidate("children[i].is_shared_child", "children[i].want_in_custody_case", "children[i].more_info", "children[i].affidavit_of_parentage", "children[i].affidavit_revoked", "children[i].affidavit_revoked", "children[i].not_included_in_case_info", "children[i].marital_birth", "children[i].spouse_excluded_order", "children[i].complete")
 
   force_gather("children[i].complete")
 ---
@@ -6492,7 +6483,7 @@ fields:
   - "Are the existing cases **all in Michigan** state courts?": controlling_case_location
     datatype: radio
     choices:
-      - "Yes, the case are **all** in Michigan state courts.": Michigan
+      - "Yes, the cases are **all** in Michigan state courts.": Michigan
       - "No, at least one case is in a different state court, a tribal court, or a court outside the United States.": foreign
     show if:
       variable: controlling_custody_case
