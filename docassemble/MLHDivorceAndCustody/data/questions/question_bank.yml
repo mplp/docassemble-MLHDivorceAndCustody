@@ -379,7 +379,7 @@ subquestion: |
   % if controlling_case_location == "foreign":
   Sorry, you cannot use this tool if there is a child support, parenting time, or custody case in a **non-Michigan** court, between you and the other parent. ${MLH_GUIDE_FULL}
   % elif controlling_custody_case == "yes_multiple" and not MI_cases_in_same_court:
-  Sorry, you cannot use this tool if there is are child support, parenting time, or custody cases between you and the other parent in multiple Michigan state courts. ${MLH_GUIDE_FULL}
+  Sorry, you cannot use this tool if there are child support, parenting time, or custody cases between you and the other parent in multiple Michigan state courts. ${MLH_GUIDE_FULL}
   % elif all_children_in_prior_case:
   Sorry, this tool is not for you. Usually a new custody request for the same child(ren) should be filed as a motion in the existing case. You can use the [Motion Regarding Custody](https://www.courts.michigan.gov/4a7d59/siteassets/forms/scao-approved/foc87.pdf) to request a custody order if there is already a final order in the case but it did not include custody. You can also use this motion if there is a custody order and you want to change it. To learn about asking for a change in custody, read [Changing a Custody Order](https://michiganlegalhelp.org/resources/family/changing-custody-order).
 
@@ -840,7 +840,7 @@ id: advance_warnings
 continue button field: advance_warnings
 question: Requirements for a Michigan custody case
 subquestion: |
-  To start a Michigan custody case for a child:
+  To use our forms to start a Michigan custody case for a child:
   
   * the child must have lived for 6 months (or since birth) in Michigan, 
   * there must be a signed Affidvait of Parentage for that child,
@@ -1696,7 +1696,7 @@ fields:
   - What county does your spouse live in?: other_parties[0].address.county
     code: court_list._load_courts()["address_county"].unique()
 ---
-if: (tool_ID == "JOD_only" and other_parties[0].address.state != "MI") or (tool_ID in ["divorce_complaint", "custody_complaint"] and not other_parties[0].lives_in_Michigan)
+if: ((tool_ID == "JOD_only" and other_parties[0].address.state != "MI") or ((tool_ID in ["divorce_complaint", "custody_complaint"] and not other_parties[0].lives_in_Michigan))) and other_parties[0].address.country == "US"
 id: other_parties[0].address.county check
 continue button field: just_check_op_county
 question: |
@@ -3333,7 +3333,8 @@ code: |
   
     elif tool_ID == "custody_complaint":
       users[0].lives_in_Michigan
-      users[0].address.county # skipped if answered on lives_in_Michigan screen
+      if users[0].address.country == "US":
+        users[0].address.county # skipped if answered on lives_in_Michigan screen
 
     if users[0].mailing_address.yesno:
       users[0].mailing_address.address
@@ -3631,6 +3632,9 @@ code: |
     for child in children:
       if child.legal_parent == "both":
         child.lives_with
+        if (child.lives_with == "other_parties[0]" and users[0].lives_in_Michigan and not (other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county)) or (child.lives_with == "users[0]" and other_parties[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county)):
+          child.spends_time_with_other_parent
+        child.custody_venue_options
         ### check for missing venue ###
         if (child.lives_with == "users[0]" and not users[0].lives_in_Michigan and not child.spends_time_with_other_parent) or (child.lives_with == "other_parties[0]" and not other_parties[0].lives_in_Michigan and not child.spends_time_with_other_parent):
           child.no_venue_kickout
@@ -4213,7 +4217,7 @@ code: |
     if not children[i].affidavit_of_parentage or children[i].affidavit_revoked:
       children[i].not_included_in_case_info
     else:
-      if children[i].marital_birth and not (children[i].spouse_excluded_divorce or children[i].spouse_excluded_order):
+      if children[i].marital_birth and not children[i].spouse_excluded_order:
         children[i].not_included_in_case_info  
   else:
     children[i].not_included_in_case_info
@@ -5011,24 +5015,15 @@ fields:
     datatype: yesnoradio
   - label: |
       % if children[i].bio_parent == "user":
-      Did a Judgment of Divorce exclude your spouse as ${children[i]}'s parent?
+      Is there a court order revoking (undoing) the parentage (or paternity) of your spouse? *There may be a court order revoking parentage if you, ${ other_parties[0] }, or your spouse filed to revoke the spouse's parentage.*
       % else:
-      Did a Judgment of Divorce exclude ${ other_parties[0] }'s spouse as ${children[i]}'s parent?
-      % endif
-    field: children[i].spouse_excluded_divorce
-    datatype: yesnoradio
-    show if: children[i].marital_birth
-  - label: |
-      % if children[i].bio_parent == "user":
-      Is there another court order revoking (undoing) the parentage (or paternity) of your spouse? *There may be a separate court order revoking parentage if you, ${ other_parties[0] }, or your spouse filed a case to revoke the spouse's parentage.*
-      % else:
-      Is there another court order revoking (undoing) the parentage (or paternity) of ${ other_parties[0] }'s spouse? *There may be a separate court order revoking parentage if you, ${ other_parties[0] }, or the spouse filed a case to revoke the spouse's parentage.*
+      Is there a court order revoking (undoing) the parentage (or paternity) of ${ other_parties[0] }'s spouse? *There may be a court order revoking parentage if you, ${ other_parties[0] }, or the spouse filed to revoke the spouse's parentage.*
       % endif
     field: children[i].spouse_excluded_order
     datatype: yesnoradio
     show if: 
-      variable: children[i].spouse_excluded_divorce
-      is: False 
+      variable: children[i].marital_birth
+      is: True 
 ---
 if: tool_ID in ["custody_complaint", "custody_answer"]
 only sets: children[i].not_included_in_case_info
@@ -5056,7 +5051,7 @@ subquestion: |
   ${children[i].familiar()} won't be included in the custody, parenting time, and child support parts of your custody case. However, information about them will be included on some forms.
 
   If you need more help you may want to speak to a lawyer. ${MLH_GUIDE_FULL}
-  % elif children[i].marital_birth and not (children[i].spouse_excluded_divorce or children[i].spouse_excluded_order):
+  % elif children[i].marital_birth and not children[i].spouse_excluded_order:
   % if children[i].bio_parent == "user":
   You said:
   
@@ -5147,6 +5142,8 @@ fields:
 validation code: | ## for review screen functionality ##
   for child in children.filter(legal_parent="both"):
     invalidate("child.lives_with")
+    invalidate("child.spends_time_with_other_parent")
+    invalidate("child.custody_venue_options")
 ---
 code: |
   if tool_ID in ["custody_complaint", "custody_answer"]:
@@ -5174,7 +5171,7 @@ if: tool_ID == "custody_complaint"
 id: children with conflicting venue requirements
 question: Important! 
 subquestion: |
-  Your answers indicate that${ comma_and_list(children.filter(legal_parent="both").filter(custody_venue_options="only_OP"), and_string='and') } do not spend time with a parent in ${users[0].address.county} County and comma_and_list(children.filter(legal_parent="both").filter(custody_venue_options="only_user"), and_string='and') } do not spend time with a parent in ${other_parties[0].address.county} County.
+  Your answers indicate that ${comma_and_list(children.filter(legal_parent="both").filter(custody_venue_options="only_OP"), and_string='and')} ${children.filter(legal_parent="both").filter(custody_venue_options="only_OP").does_verb('do')} not spend time with a parent in ${users[0].address.county} County and ${comma_and_list(children.filter(legal_parent="both").filter(custody_venue_options="only_user"), and_string='and')} ${children.filter(legal_parent="both").filter(custody_venue_options="only_user").does_verb('do')} not spend time with a parent in ${other_parties[0].address.county} County.
 
   In this situation, Michigan law is not clear if you can file just one custody case or if you would have to file a case in both counties and then ask to have the cases consolidated. 
 
@@ -5323,22 +5320,31 @@ fields:
     choices:
       - ${ users[0] }: users[0]
       - ${ other_parties[0] }: other_parties[0]
+---
+if: tool_ID in ["custody_complaint", "custody_answer"] and children[i].lives_with == "users[0]" and other_parties[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county)
+id: spend time in OP county
+question: ${ children[i] }'s connection to ${other_parties[0].address.county} County
+fields:
   - Does ${ children[i] } spend time with ${ other_parties[0] } in ${other_parties[0].address.county} County?: children[i].spends_time_with_other_parent
     datatype: yesnoradio
-    js show if: |
-      ${ "true" if tool_ID in ["custody_complaint", "custody_answer"] and other_parties[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county) else "false" } && val('children[i].lives_with') === "users[0]"
+---
+if: tool_ID in ["custody_complaint", "custody_answer"] and children[i].lives_with == "other_parties[0]" and users[0].lives_in_Michigan and not (other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county)
+id: spend time in user county
+question: ${ children[i] }'s connection to ${users[0].address.county} County
+fields:
   - Does ${ children[i] } spend time with you in ${users[0].address.county} County?: children[i].spends_time_with_other_parent
     datatype: yesnoradio
-    js show if: |
-      ${ "true" if tool_ID in ["custody_complaint", "custody_answer"] and users[0].lives_in_Michigan and not (other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county) else "false" } && val('children[i].lives_with') === "other_parties[0]"
-validation code: |
+---
+id: set custody_venue_options
+sets: children[i].custody_venue_options
+code: |
   if tool_ID == "custody_complaint":
     if children[i].lives_with == "users[0]" and other_parties[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
       if children[i].spends_time_with_other_parent:
         children[i].custody_venue_options = "both"
       else: 
         children[i].custody_venue_options = "only_user"
-    elif children[i].lives_with == "other_parties[0]" and users[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
+    elif children[i].lives_with == "other_parties[0]" and users[0].lives_in_Michigan and not (other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
       if children[i].spends_time_with_other_parent:
         children[i].custody_venue_options = "both"
       else: 
@@ -5625,11 +5631,11 @@ fields:
     choices:
       - "Yes, I want to stop.": True
       - "No, I want to continue.": False
-  - "Do you understand that if you make your divorce forms using this tool and file a divorce case in a Michigan court, it is important to find a lawyer to help you?": out_of_state_order_understand_continue
+  - "Do you understand that if you make your divorce forms using this tool and file a divorce case in a Michigan court, you may need to find a lawyer to help you?": out_of_state_order_understand_continue
     datatype: yesnoradio
     js show if: |
       val("out_of_state_order_stop") === false && ${"true" if tool_ID == "divorce_complaint" else "false"}
-  - "Do you understand that if you make your divorce forms using this tool, it is important to find a lawyer to help you?": out_of_state_order_understand_continue
+  - "Do you understand that if you make your divorce forms using this tool, you may need to find a lawyer to help you?": out_of_state_order_understand_continue
     datatype: yesnoradio
     js show if: |
       val("out_of_state_order_stop") === false && ${"true" if tool_ID == "JOD_only" else "false"}
@@ -5852,6 +5858,7 @@ fields:
       val("physical_custody_who") != "both" && val("PT_who") === "both"
   - label: "If you know the name of the person or agency you want to supervise parenting time, enter it here. If you don't know, leave this blank."
     field: PT_supervisor
+    maxlength: 44
     js show if: |
       val("physical_custody_who") != "both" && val("PT_who") === "both" && val("PT_type") === "supervised"
     required: False
@@ -6140,7 +6147,7 @@ code: |
 ---
 event: children[i].rerun_custody_logic
 code: |
-  invalidate("children[i].is_shared_child", "children[i].want_in_custody_case", "children[i].more_info", "children[i].affidavit_of_parentage", "children[i].affidavit_revoked", "children[i].affidavit_revoked", "children[i].not_included_in_case_info", "children[i].marital_birth", "children[i].spouse_excluded_divorce", "children[i].spouse_excluded_order", "children[i].complete")
+  invalidate("children[i].is_shared_child", "children[i].want_in_custody_case", "children[i].more_info", "children[i].affidavit_of_parentage", "children[i].affidavit_revoked", "children[i].affidavit_revoked", "children[i].not_included_in_case_info", "children[i].marital_birth", "children[i].spouse_excluded_order", "children[i].complete")
 
   force_gather("children[i].complete")
 ---
@@ -6454,6 +6461,10 @@ confirm: True
 ---
 id: custody complaint controlling custody case screener
 question: Existing child support, parenting time, or custody cases
+subquestion: |
+  ${existing_case_meaning}
+
+  <hr>
 fields: 
   - "Is there any existing child support, parenting time, or custody case in any court anywhere between you and the other parent?": controlling_custody_case
     datatype: radio
@@ -6461,7 +6472,6 @@ fields:
       - "Yes, there is **one** existing case.": yes_one
       - "Yes, there are **multiple** existing cases.": yes_multiple
       - "No, there is **no** existing case.": no
-  - note: ${collapse_template(existing_case_meaning)}
   - "Is the existing case in a **Michigan** state court?": controlling_case_location
     datatype: radio
     choices:
@@ -6473,7 +6483,7 @@ fields:
   - "Are the existing cases **all in Michigan** state courts?": controlling_case_location
     datatype: radio
     choices:
-      - "Yes, the case are **all** in Michigan state courts.": Michigan
+      - "Yes, the cases are **all** in Michigan state courts.": Michigan
       - "No, at least one case is in a different state court, a tribal court, or a court outside the United States.": foreign
     show if:
       variable: controlling_custody_case
@@ -6507,6 +6517,8 @@ id: custody complaint Michigan custody case followup -multiple
 question: More about your child support, parenting time, or custody cases
 subquestion: |
   You said there are multiple existing child support, parenting time, or custody cases between you and the other parent in Michigan state court.
+  
+  ${collapse_template(existing_case_meaning)}
 fields: 
   - Are the existing Michigan cases all in the same court?: MI_cases_in_same_court
     datatype: radio
@@ -6528,11 +6540,14 @@ template: existing_case_meaning
 subject: What do you mean by "existing case"?
 content: |
   An "existing case" means a case that is:
-
+  
   * pending (ongoing), or
   * finished with a final order, and the court has continuing jurisdiction.
+  
+  "Existing case" **does not** include dismissed cases.
 ---
 # LHI Prior Court Cases Part 1
+# this field is skipped in custody complaint tool if there's a controlling_custody_case because a minimum_number of prior_family_cases is set in that circumstance.
 id: prior family cases
 question: |
   % if tool_ID == "JOD_only":
@@ -6564,6 +6579,10 @@ fields:
     field: prior_family_cases.there_are_any
     datatype: yesnoradio
   - note: |
+      % if tool_ID in ["custody_complaint", "custody_answer"]:
+      This includes any dismissed child support, parenting time, or custody cases, and any other family division cases, no matter the case status.
+      % endif
+      
       % if tool_ID in ["custody_complaint", "custody_answer", "divorce_complaint", "divorce_answer"]:
       ${ collapse_template(family_division_info) }
       % endif
@@ -6660,8 +6679,8 @@ question: |
   Any more **family division** court cases or orders?
   % endif
 subquestion: |
-  % if tool_ID in ["custody_complaint", "custody_answer"] and controlling_custody_case in ["yes_multiple", "yes_one"]:
-  This includes any existing child support, parenting time, or custody cases, as well as any other family division cases.
+  % if tool_ID in ["custody_complaint", "custody_answer"]:
+  This includes **all** child support, parenting time, or custody cases, as well as any other family division cases. Add every case, including dismissed, ongoing, or stayed (paused) cases, and cases that have ended with an order.
 
   % endif
   ${ collapse_template(family_division_info) }
@@ -6897,6 +6916,8 @@ id: prior family case or order collection screen existing custody case
 question: Information about the ${ word("first") if controlling_custody_case == "yes_multiple" else "" } existing case
 subquestion: |
   Please tell us about the ${ word("first") if controlling_custody_case == "yes_multiple" else "" } existing child support, parenting time, or custody case with ${other_parties[0]}.
+
+  ${collapse_template(existing_case_meaning)}
 fields:
   - Country:: prior_family_cases[0].country
     code: |
@@ -6959,7 +6980,7 @@ fields:
     datatype: radio
     choices:
       - "The case is still ongoing. (There is **no** order or judgment resolving all the issues.)": False
-      - "The case is over. (There is an order resolving all the issues, or the case was dismissed.)": True
+      - "The case is over. (There is an order resolving all the issues.)": True
   - 'Has the case been **{stayed}?**': prior_family_cases[0].status
     datatype: radio
     choices:
@@ -6967,13 +6988,9 @@ fields:
       - "No.": pending
     js show if: |
       val("prior_family_cases[0].resolved") === false
-  - How did the case end?: prior_family_cases[0].status
-    datatype: radio
-    choices:
-      - "The judge made a **final order** resolving all the issues and ending the case.": ended_with_order
-      - "The judge **dismissed** the case.": dismissed
-    js show if: |
-      val("prior_family_cases[0].resolved") === true
+validation code: |
+  if prior_family_cases[0].resolved:
+    prior_family_cases[0].status = "ended_with_order"
 ---
 # LHI "Prior Family Cases DLG" (start at row 108)
 id: prior family divorce case or order additional info

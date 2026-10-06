@@ -19,7 +19,7 @@ objects:
 ---
 if: tool_ID == "custody_complaint"
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, custody_complaint_cc_429, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, noh_motion_consent, noh_motion_default, default_request_mc07, mrcs_foc12, foc_100_full, custody_order_cc_432, foc_10_full, proof_of_service, proof_of_service, fee_waiver_attachment, protected_pii_mc_97a_attachment], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, summons_mc01, custody_complaint_cc_429_full, confidential_case_inventory_mc21_full, UCCJEA_affidavit_mc416_full, verified_statement_foc_23_full, domestic_relations_verified_financial_cc_320, child_support_services_dhs_1201d, noh_motion_consent, noh_motion_default, default_request_mc07, mrcs_foc12, foc_100_full, custody_order_cc_432_full, foc_10_full, proof_of_service, proof_of_service, fee_waiver_attachment, protected_pii_mc_97a_attachment], filename="Michigan Judgment of Divorce --all forms", title="All forms and instructions", enabled=True)
   #- al_court_bundle: ALDocumentBundle.using(elements=[], filename="Michigan Custody Complaint --all forms", title="All forms and instructions", enabled=True)
 ---
 # ====================================================================
@@ -62,7 +62,7 @@ code: |
     elif (
         len(children_previous_address) > 4
         or len(prior_family_cases.filter(add_to_MC416_4=True)) > 5
-        or len(prior_family_cases.filter(not_name_change).filter(resolved=False)) > 1
+        or len(cases_for_UCCJEA_5(prior_family_cases)) > 1
         or (not MI_home_state_all_kids and len(children.filter(legal_parent='both')) > 1)
        ):
       UCCJEA_affidavit_mc416_addendum.enabled = True
@@ -150,6 +150,7 @@ code: |
   judgment_ccmlh413.enabled = there_are_marital_children
   judgment_ccmlh412.enabled = not there_are_marital_children
 ---
+if: tool_ID in ["divorce_complaint", "JOD_only"]
 # enabling logic for judgment addenda bundle and load functions/variables
 code: |
   # run these functions/load variables first because if they have not been run they will be skipped when used to fill out judgment checkboxes
@@ -216,10 +217,19 @@ code: |
 # --------------------------------------------------------------------
 ---
 objects:
-    - custody_complaint_cc_429: ALDocument.using(title="Complaint for Custody - CC 429", filename="Complaint for Custody - CC 429", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+  - custody_complaint_cc_429_full: ALDocumentBundle.using(elements=[custody_complaint_cc_429, complaint_answer_attachment], filename="Complaint for Custody - CC 429", title="Complaint for Custody - CC 429")
+---
+objects:
+  - custody_complaint_cc_429: ALDocument.using(title="Complaint for Custody - CC 429", filename="Complaint for Custody - CC 429", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+# complaint_answer_attachment is created with divorce code
 ---
 code: |
+  custody_complaint_cc_429_full.enabled = tool_ID in ["custody_complaint"]
   custody_complaint_cc_429.enabled = tool_ID in ["custody_complaint"]
+  # running this so it's available in the document
+  custody_plaintiff_complaint_residence()
+  if custody_complaint_cc_429.enabled:
+    complaint_answer_attachment.enabled = ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom")
 ---
 attachment:
   - name: Complaint for Custody - CC 429
@@ -238,33 +248,40 @@ attachment:
       - plaintiff: ${ plaintiffs[0].name_full() }
       - defendant: ${ defendants[0].name_full() }
       - plaintiff_residency: | 
-          % if confidential_contact_info_yn:
-          % if users[0].lives_in_Michigan:
-          ${ users[0].address.county } County, Michigan
-          % elif safe_to_disclose_state:
-          % if users[0].foreign_residence:
-          ${country_name(users[0].country_of_residence_to_disclose)}
-          % else:
-          State of ${state_name(users[0].state_of_residence_to_disclose)}
+          ${custody_plaintiff_complaint_residence()}
+      - defendant_residency: | 
+          ${ other_parties[0].address.county + " County, Michigan" if other_parties[0].lives_in_Michigan else "State of " + other_parties[0].address.state if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
+      - or_may_be_found: |
+          % if MI_home_state_all_kids == False or (children_now_live_with_which_parent == "other_parties[0]" and not other_parties[0].lives_in_Michigan and all_kids_spend_time_with_other_parent) or (children_now_live_with_which_parent == "users[0]" and not users[0].lives_in_Michigan and all_kids_spend_time_with_other_parent):
+          ^ or may be found with
           % endif
-          % else:
-          Confidential
-          % endif
-          % else:
-          ${ users[0].address.county + " County, " + state_name(users[0].address.state) if users[0].address.country == "US" else country_name(users[0].address.country) }
-          % endif
-      - defendant_residency: | # Field Needs Work
-          ${ other_parties[0].address.county + " County, " + state_name(other_parties[0].address.state) if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
       - children_live_with_plaintiff: |
-          # field needs work
-          ${ children_now_live_with_which_parent in ["users[0]", "both"] }
+          ${children_now_live_with_which_parent in ["users[0]", "both", "depends_on_child"] or (children_now_live_with_which_parent == "other_parties[0]" and not other_parties[0].lives_in_Michigan and all_kids_spend_time_with_other_parent)}
       - children_live_with_defendant: |
-          # field needs work
-          ${ children_now_live_with_which_parent in ["other_parties[0]", "both"] }
-      - children_live_in_county: # field needs work
+          ${children_now_live_with_which_parent in ["other_parties[0]", "both", "depends_on_child"] or (children_now_live_with_which_parent == "users[0]" and not users[0].lives_in_Michigan and all_kids_spend_time_with_other_parent)}
+      - children_live_in_county: |
+          % if children_now_live_with_which_parent in ["both", "depends_on_child"]:
+          % if users[0].lives_in_Michigan and other_parties[0].lives_in_Michigan:
+          ${users[0].address.county} County and ${other_parties[0].address.county}
+          % else:
+          ${custody_plaintiff_complaint_residence()} and ${ other_parties[0].address.county + " County, Michigan" if other_parties[0].lives_in_Michigan else "State of " + state_name(other_parties[0].address.state) if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
+          % endif
+          % elif children_now_live_with_which_parent == "users[0]":
+          % if users[0].lives_in_Michigan:
+          ${users[0].address.county}
+          % else:
+          ${custody_plaintiff_complaint_residence()} and ${ other_parties[0].address.county + " County, Michigan" if other_parties[0].lives_in_Michigan else "State of " + state_name(other_parties[0].address.state) if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
+          % endif
+          % elif children_now_live_with_which_parent == "other_parties[0]":
+          % if other_parties[0].lives_in_Michigan:
+          ${ other_parties[0].address.county }
+          % else:
+          ${custody_plaintiff_complaint_residence()} and ${ other_parties[0].address.county + " County, Michigan" if other_parties[0].lives_in_Michigan else "State of " + state_name(other_parties[0].address.state) if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
+          % endif
+          % endif
       - marital_children_names_ages: |
-          ${ comma_and_list([child.name.full() + ", age " + str(child.age_in_years()) for child in children if child.legal_parent == "both"]) + "." if any(child.legal_parent == "both" for child in children) else "" }
-      - children_paternity_affidavit: ${ comma_and_list([child.name.full() for child in children.filter(legal_parent="both")]) } # field needs work
+          ${ comma_and_list([child.name.full() + ", age " + str(child.age_in_years()) for child in children if child.legal_parent == "both"]) + "." }
+      - children_paternity_affidavit: ${ comma_and_list([child.name.full() for child in children.filter(legal_parent="both")]) }
       - parties_with_legal_custody__1: |
           % if legal_custody_who == "user":
           Plaintiff
@@ -319,30 +336,31 @@ attachment:
           % endif
       - parenting_time_provisions: |
           % if physical_custody_who != "both":
-            % if PT_who == "user":
-          ${ OP_party_label.capitalize() } will not have parenting time.
-            % elif PT_who == "other_party":
-          ${ user_party_label.capitalize() } will not have parenting time.
-            % endif
+          % if PT_who == "user":
+          Defendant will not have parenting time.
+          % elif PT_who == "other_party":
+          Plaintiff will not have parenting time.
+          % endif
           % endif
           % if physical_custody_who == "both" or PT_who == "both":
-            % if PT_type == "reasonable":
-          Parenting time arrangements will be made by mutual agreement of the parties.
-            % elif PT_type in ["specific", "supervised"]:
-              % if specific_PT_how == "custom":
-                % if len(custom_PT_details) > 650:
-          Both parties will have specific parenting time with the minor ${ "child" if len(children.filter(legal_parent="both")) == 1 else "children" } according to the Parenting Time Addendum.
-                % else:
-          ${ custom_PT_details }
-                % endif
-              % else:
-          Both parties will have specific parenting time with the minor ${ "child" if len(children.filter(legal_parent="both")) == 1 else "children" } according to the ${ the_court.address.county } County Friend of the Court parenting time schedule.
-              % endif
-              % if PT_type == "supervised" and not (specific_PT_how == "custom" and len(custom_PT_details) > 650):
-
-          Parenting time for ${ OP_party_label.lower() if physical_custody_who == "user" else user_party_label.lower() } will be supervised by ${ PT_supervisor if PT_supervisor != "" else "________________________" }.
-              % endif
-            % endif
+          % if PT_type == "reasonable":
+          Reasonable parenting time on dates and times agreed to by the parties.
+          % elif PT_type == "specific":
+          % if specific_PT_how == "custom":
+          See Attachment to Custody Complaint.
+          % elif specific_PT_how == "FOC_sample":
+          Parenting time according to the ${ county_choice } County Friend of the Court parenting time schedule.
+          % endif
+          % elif PT_type == "supervised":
+          % if specific_PT_how == "custom":
+          See Attachment to Custody Complaint.
+          % elif specific_PT_how == "FOC_sample":
+          % if PT_supervisor != "":
+          Parenting time supervised by ${ PT_supervisor }.
+          % endif
+          Parenting time according to the ${ county_choice } County Friend of the Court parenting time schedule.
+          % endif
+          % endif
           % endif
       - parties_with_legal_custody__3: |
           % if legal_custody_who == "user":
@@ -391,10 +409,20 @@ attachment:
 # --------------------------------------------------------------------
 ---
 objects:
-    - custody_order_cc_432: ALDocument.using(title="Order Regarding Complaint for Custody - CC 432", filename="Order Regarding Complaint for Custody - CC 432", default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+  - custody_order_cc_432_full: ALDocumentBundle.using(elements=[custody_order_cc_432, judgment_addendum_parenting_time], filename="Order Regarding Complaint for Custody - CC 432", title="Order Regarding Complaint for Custody - CC 432")
+---
+objects:
+  - custody_order_cc_432: ALDocument.using(title="Order Regarding Complaint for Custody - CC 432", filename="Order Regarding Complaint for Custody - CC 432")
+# judgment_addendum_parenting_time is created in divorce judgment code      
 ---
 code: |
-  custody_order_cc_432.enabled = tool_ID in ["custody_complaint"]
+  custody_order_cc_432_full.enabled = True
+  custody_order_cc_432.enabled = True
+  format_children_names(children)
+---
+if: tool_ID == "custody_complaint"
+code: |
+  judgment_addendum_parenting_time.enabled = (physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom" and len(custom_PT_details) > 275
 ---
 attachment:
   - name: Order Regarding Complaint for Custody - CC 432
@@ -425,20 +453,20 @@ attachment:
           % endif
           ${ defendants[0].address.line_one() }
           ${ defendants[0].address.line_two() }
-          ${ word("Does not have phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
-      - children_line_1: ${ children_line_1 } # field needs work, not sure how we're choosing included chldren
+          ${ word("Unknown phone") if defendants[0].no_phone_number else phone_number_formatted(defendants[0].phone_number) }
+      - children_line_1: ${ children_line_1 } 
       - children_line_2: ${ children_line_2 }
-      - awards_legal_custody: True # in LHI, only checked if MI is home state
+      - awards_legal_custody: True
       - legal_custody_plaintiff: ${ (legal_custody_who == "user" and user_ask_role == "plaintiff") or (legal_custody_who == "other_party" and user_ask_role == "defendant") }
       - legal_custody_defendant: ${ (legal_custody_who == "user" and user_ask_role == "defendant") or (legal_custody_who == "other_party" and user_ask_role == "plaintiff") }
       - legal_custody_joint: ${ legal_custody_who == "both" }
-      - awards_physical_custody: True # in LHI, only checked if MI is home state
+      - awards_physical_custody: True
       - physical_custody_plaintiff: |
           ${ (physical_custody_who == "user" and user_ask_role == "plaintiff") or (physical_custody_who == "other_party" and user_ask_role == "defendant") }
       - physical_custody_defendant: |
           ${ (physical_custody_who == "user" and user_ask_role == "defendant") or (physical_custody_who == "other_party" and user_ask_role == "plaintiff") }
       - physical_custody_joint: ${ physical_custody_who == "both" }
-      - 100_mile_rule_applies: | # fields need work -- I think MI_has_jurisdiction_all_kids thing does not apply here because kids will be excluded from case if they don't fall under MI jurisdiction. LHI uses home state is MI on most of these fields.
+      - 100_mile_rule_applies: | 
           ${ legal_custody_who == "both" and not already_over_100_miles and not allow_over_100_miles }
       - 100_mile_NA_already_exceeded: |
           ${ legal_custody_who == "both" and already_over_100_miles }
@@ -461,7 +489,7 @@ attachment:
           Parenting time arrangements will be made by mutual agreement of the parties.
             % elif PT_type in ["specific", "supervised"]:
               % if specific_PT_how == "custom":
-                % if len(custom_PT_details) > 650:
+                % if len(custom_PT_details) > 275:
           Both parties will have specific parenting time with the minor ${ "child" if len(children.filter(legal_parent="both")) == 1 else "children" } according to the Parenting Time Addendum.
                 % else:
           ${ custom_PT_details }
@@ -469,7 +497,7 @@ attachment:
               % else:
           Both parties will have specific parenting time with the minor ${ "child" if len(children.filter(legal_parent="both")) == 1 else "children" } according to the ${ the_court.address.county } County Friend of the Court parenting time schedule.
               % endif
-              % if PT_type == "supervised" and not (specific_PT_how == "custom" and len(custom_PT_details) > 650):
+              % if PT_type == "supervised" and not (specific_PT_how == "custom" and len(custom_PT_details) > 275):
 
           Parenting time for ${ OP_party_label.lower() if physical_custody_who == "user" else user_party_label.lower() } will be supervised by ${ PT_supervisor if PT_supervisor != "" else "________________________" }.
               % endif
@@ -1804,7 +1832,7 @@ attachment:
             % endfor
           % endif
       - pending_cases_affecting_custody: |
-          % if len(prior_family_cases.filter(not_name_change).filter(resolved=False)) > 1:
+          % if len(cases_for_UCCJEA_5(prior_family_cases)) > 1:
           See addendum.
           % else:
             % for case in prior_family_cases:
@@ -1828,8 +1856,8 @@ attachment:
             % endfor
           % endif
       - pending_proceeding_continuing: |
-          % if len(prior_family_cases.filter(not_name_change).filter(resolved=False)) == 1:
-          % if prior_family_cases.filter(not_name_change).filter(resolved=False)[0].status == "pending":
+          % if len(cases_for_UCCJEA_5(prior_family_cases)) == 1:
+          % if cases_for_UCCJEA_5(prior_family_cases)[0].status == "pending":
           True
           % else:
           False
@@ -1837,8 +1865,8 @@ attachment:
           % endif
         # if there's only one pending or stayed (resolved=False) case affecting custody, this checks if that one case is pending. If there's multiple unresolved cases affecting custody, leave blank.
       - pending_proceeding_stayed: |
-          % if len(prior_family_cases.filter(not_name_change).filter(resolved=False)) == 1:
-          % if prior_family_cases.filter(not_name_change).filter(resolved=False)[0].status == "stayed":
+          % if len(cases_for_UCCJEA_5(prior_family_cases)) == 1:
+          % if cases_for_UCCJEA_5(prior_family_cases)[0].status == "stayed":
           True
           % else:
           False
@@ -6040,6 +6068,27 @@ code: |
                   return joined[:max_len].rstrip(), joined[max_len:].lstrip(", ").lstrip()
           return joined[:split_at].rstrip(","), joined[split_at+1:].lstrip()
   children_line_1, children_line_2 = format_children_names(children)
+---
+code: |
+  def custody_plaintiff_complaint_residence():
+      if confidential_contact_info_yn:
+          if users[0].lives_in_Michigan:
+              return users[0].address.county + " County, Michigan"
+          elif safe_to_disclose_state:
+              if users[0].foreign_residence:
+                  return country_name(users[0].country_of_residence_to_disclose)
+              else:
+                  return "State of " + state_name(users[0].state_of_residence_to_disclose)
+          else:
+              return "Confidential"
+      else:
+          if users[0].address.country == "US":
+              if users[0].address.state == "MI":
+                  return users[0].address.county + " County, Michigan"
+              else:
+                  return "State of " + state_name(users[0].address.state)
+          else:
+              return country_name(users[0].address.country)
 ---
 ### income tax addendum code ###
 # add commas and the word "and" plus split specific plaintiff/defendant tax children names to two lines when over character count
