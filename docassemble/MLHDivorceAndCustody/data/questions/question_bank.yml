@@ -6494,6 +6494,7 @@ validation code: |
     prior_family_cases.reset_gathered(only_if_empty=True)
   else:
     prior_family_cases.minimum_number=None
+    undefine("prior_family_cases.there_are_any")
 ---
 if: controlling_custody_case == "yes_one" and controlling_case_location == "Michigan"
 id: custody complaint Michigan custody case followup single

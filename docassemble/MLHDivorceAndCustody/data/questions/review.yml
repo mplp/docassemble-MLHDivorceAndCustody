@@ -577,7 +577,7 @@ review:
       % endif
         - ${word(yesno(other_parties[0].mailing_address.yesno))}
       % if other_parties[0].mailing_address.yesno:
-      ### Spouse's mailing address
+      ### ${capitalize(OP_label)}'s mailing address
         - ${other_parties[0].mailing_address.on_one_line()}
       % endif
   - Edit:
