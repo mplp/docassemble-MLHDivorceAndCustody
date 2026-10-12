@@ -449,6 +449,9 @@ fields:
       variable: married_other_parent_past
       is: True
   - note: ${collapse_template(divorce_final_meaning)}
+    show if: 
+      variable: married_other_parent_past
+      is: True
 ---
 template: divorce_final_meaning
 subject: When is a divorce final? 
@@ -6683,15 +6686,11 @@ question: |
   Any more **family division** court cases or orders?
   % endif
 subquestion: |
-  % if tool_ID in ["custody_complaint", "custody_answer"]:
-  This includes **all** child support, parenting time, or custody cases, as well as any other family division cases. Add every case, including dismissed, ongoing, or stayed (paused) cases, and cases that have ended with an order.
-
-  % endif
-  ${ collapse_template(family_division_info) }
-  
   So far, you have listed&colon;
 
   ${prior_family_cases.table}
+
+  ${ collapse_template(family_division_info) }
 fields:
   - label: |
       % if tool_ID == "JOD_only":
@@ -6707,6 +6706,18 @@ fields:
       % endif
     field: prior_family_cases.there_is_another
     datatype: yesnoradio
+  - note: |
+      NOTE: Answer **Yes** if there are any more:
+
+      % if controlling_custody_case == "yes_multiple":
+      * **existing or dismissed** child support, parenting time, or custody cases; or
+      % else:
+      * **dismissed** child support, parenting time, or custody cases; or
+      % endif
+      * **other family division cases,** including dismissed, ongoing, or stayed (paused) cases, and cases that have ended with an order.
+    show if:
+      code: |
+        tool_ID in ["custody_complaint", "custody_answer"]
 validation code: |
   if tool_ID == "custody_complaint":
     if controlling_custody_case in ["yes_one", "yes_multiple"] and prior_family_cases.number_gathered() == 0:
