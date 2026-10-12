@@ -6494,6 +6494,9 @@ validation code: |
     prior_family_cases.reset_gathered(only_if_empty=True)
   else:
     prior_family_cases.minimum_number=None
+    for item in list(prior_family_cases.elements):
+      if not defined(item.attr_name('complete')):
+        prior_family_cases.remove(item)
     undefine("prior_family_cases.there_are_any")
 ---
 if: controlling_custody_case == "yes_one" and controlling_case_location == "Michigan"
