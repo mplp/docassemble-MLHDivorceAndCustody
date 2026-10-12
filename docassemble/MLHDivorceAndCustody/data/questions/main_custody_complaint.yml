@@ -115,7 +115,7 @@ code: |
     other_parties[0].mailing_address.address
   
   nav.set_section("signpost_prior_cases")
-  prior_family_cases ## calling now so that validation code on controlling_custody_case works
+  controlling_custody_cases ## calling now so that validation code on controlling_custody_case works
   if controlling_custody_case in ["yes_one", "yes_multiple"]:
     if controlling_case_location == "foreign":
       controlling_custody_case_exit
@@ -129,7 +129,8 @@ code: |
         if (users[0].lives_in_Michigan and controlling_custody_case_county == users[0].address.county) or (other_parties[0].lives_in_Michigan and controlling_custody_case_county == other_parties[0].address.county):
           controlling_custody_case_exit
       # here have a transition screen before we start gathering cases in earnest.
-  
+
+  controlling_custody_cases.gather()
   prior_family_cases.gather()
   has_prior_civil_cases
 
