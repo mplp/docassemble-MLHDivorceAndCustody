@@ -505,7 +505,7 @@ review:
   - Edit:
       - other_parties[0].gender
     button: |
-      ### Spouse's gender
+      ### ${capitalize(OP_label)}'s gender
         - ${other_parties[0].gender.capitalize()}
   - Edit:
       - other_parties[0].marriage_number
@@ -515,7 +515,7 @@ review:
   - Edit:
       - other_parties[0].birthdate
     button: |
-      ### Spouse's birthdate
+      ### ${capitalize(OP_label)}'s birthdate
         - ${other_parties[0].birthdate}
   - Edit:
       - other_parties[0].birthplace
@@ -706,8 +706,11 @@ review:
 
 # ---------- OP occupation, income, insurance ----------
   - raw html: |
+      ${ next_accordion("""<h2>The Defendant's Income, Job, Insurance, etc.</h2>""") }
+    show if: tool_ID in ["custody_complaint", "custody_anwer"] and defined('other_parties[0].has_job')
+  - raw html: |
       ${ next_accordion("""<h2>Spouse's Income, Job, Insurance, etc.</h2>""") }
-    show if: defined('other_parties[0].has_job')
+    show if: tool_ID in ["divorce_complaint", "divorce_anwer", "JOD_only"] and defined('other_parties[0].has_job')
     # if it's a simple case with very little of this info collected, the public assistance question should just go under the accordion above
   - Edit:
       - other_parties[0].has_job
@@ -716,7 +719,7 @@ review:
       - invalidate:
         - interview_order_other_party_income
     button: |
-      ### Spouse currently employed?
+      ### Is ${other_parties[0]} currently employed?
         - ${ word("not answered") if other_parties[0].has_job == None else word(yesno(other_parties[0].has_job)) }
       % if other_parties[0].has_job:
         - Employer: ${ other_parties[0].job.employer.name.first if other_parties[0].job.employer.name.first != "" else word("not answered")}
@@ -728,13 +731,13 @@ review:
   - Edit:
       - other_parties[0].occupation
     button: |
-      ### Spouse's occupation
+      ### ${other_parties[0]}'s occupation
         - ${ other_parties[0].occupation if other_parties[0].occupation != "" else word("not answered")}
     show if: tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children"))
   - Edit:
       - other_parties[0].has_professional_license
     button: |
-      ### Spouse has professional license?
+      ### Does ${other_parties[0]} have a professional license?
         - ${ word("not answered") if other_parties[0].has_professional_license == None else word(yesno(other_parties[0].has_professional_license)) }
       % if other_parties[0].has_professional_license:
         - License number: ${ other_parties[0].professional_license_number if other_parties[0].professional_license_number != "" else word("not answered")}
