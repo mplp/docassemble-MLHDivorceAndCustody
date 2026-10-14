@@ -1323,6 +1323,7 @@ review:
         - all_kids_spend_time_with_other_parent
         - child_address_not_confidential_warning
         - interview_order_custody_where_kids_live
+        - calculate_custody_venue_options
       - recompute:
         - interview_order_children
       # Note validation logic on children_live_with_parent
