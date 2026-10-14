@@ -505,7 +505,7 @@ review:
   - Edit:
       - other_parties[0].gender
     button: |
-      ### Spouse's gender
+      ### ${capitalize(OP_label)}'s gender
         - ${other_parties[0].gender.capitalize()}
   - Edit:
       - other_parties[0].marriage_number
@@ -515,7 +515,7 @@ review:
   - Edit:
       - other_parties[0].birthdate
     button: |
-      ### Spouse's birthdate
+      ### ${capitalize(OP_label)}'s birthdate
         - ${other_parties[0].birthdate}
   - Edit:
       - other_parties[0].birthplace
@@ -577,7 +577,7 @@ review:
       % endif
         - ${word(yesno(other_parties[0].mailing_address.yesno))}
       % if other_parties[0].mailing_address.yesno:
-      ### Spouse's mailing address
+      ### ${capitalize(OP_label)}'s mailing address
         - ${other_parties[0].mailing_address.on_one_line()}
       % endif
   - Edit:
@@ -706,8 +706,11 @@ review:
 
 # ---------- OP occupation, income, insurance ----------
   - raw html: |
+      ${ next_accordion("""<h2>The Defendant's Income, Job, Insurance, etc.</h2>""") }
+    show if: tool_ID in ["custody_complaint", "custody_anwer"] and defined('other_parties[0].has_job')
+  - raw html: |
       ${ next_accordion("""<h2>Spouse's Income, Job, Insurance, etc.</h2>""") }
-    show if: defined('other_parties[0].has_job')
+    show if: tool_ID in ["divorce_complaint", "divorce_anwer", "JOD_only"] and defined('other_parties[0].has_job')
     # if it's a simple case with very little of this info collected, the public assistance question should just go under the accordion above
   - Edit:
       - other_parties[0].has_job
@@ -716,7 +719,7 @@ review:
       - invalidate:
         - interview_order_other_party_income
     button: |
-      ### Spouse currently employed?
+      ### Is ${other_parties[0]} currently employed?
         - ${ word("not answered") if other_parties[0].has_job == None else word(yesno(other_parties[0].has_job)) }
       % if other_parties[0].has_job:
         - Employer: ${ other_parties[0].job.employer.name.first if other_parties[0].job.employer.name.first != "" else word("not answered")}
@@ -728,13 +731,13 @@ review:
   - Edit:
       - other_parties[0].occupation
     button: |
-      ### Spouse's occupation
+      ### ${other_parties[0]}'s occupation
         - ${ other_parties[0].occupation if other_parties[0].occupation != "" else word("not answered")}
     show if: tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children"))
   - Edit:
       - other_parties[0].has_professional_license
     button: |
-      ### Spouse has professional license?
+      ### Does ${other_parties[0]} have a professional license?
         - ${ word("not answered") if other_parties[0].has_professional_license == None else word(yesno(other_parties[0].has_professional_license)) }
       % if other_parties[0].has_professional_license:
         - License number: ${ other_parties[0].professional_license_number if other_parties[0].professional_license_number != "" else word("not answered")}
@@ -1302,7 +1305,11 @@ review:
       - recompute: 
         - interview_order_home_state
     button: |-
+      % if tool_ID in ["custody_complaint", "custody_answer"]:
+      ### Legal "home state" of children who are the subject of the case
+      % else:
       ### Marital children's legal "home state"
+      % endif
       % for child in children.filter(legal_parent="both"):
         - ${ child.familiar() } currently lives in ${ child.currently_resides_in_locality_display_name }. This is ${ "" if child.current_residence_is_home_state else word("**not**") } their legal "home state". 
         % if not (child.currently_resides_in_type == "Michigan" and child.current_residence_is_home_state) and (child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.currently_resides_in_locality != "MI" and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months"):
@@ -1316,6 +1323,7 @@ review:
         - all_kids_spend_time_with_other_parent
         - child_address_not_confidential_warning
         - interview_order_custody_where_kids_live
+        - calculate_custody_venue_options
       - recompute:
         - interview_order_children
       # Note validation logic on children_live_with_parent
@@ -1359,14 +1367,18 @@ review:
       - follow up:
         - children_previous_address.revisit
     button: |
+      % if tool_ID in ["custody_complaint", "custody_answer"]:
+      ### Past homes of children who are the subject of the case
+      % else:
       ### Past homes of marital children
+      % endif
         - Over the last 5 years, ${ comma_and_list(children.filter(legal_parent='both').familiar()) } lived with 
         % if children_lived_with_which_parent_past == "users[0]":
         you.
         % elif children_lived_with_which_parent_past == "other_parties[0]":
-        your spouse.
+        ${OP_label}.
         % elif children_lived_with_which_parent_past == "both":
-        you and your spouse.
+        you and ${OP_label}.
         % endif
         - In the last five years, ${ word("one or more children moved") if children_previous_address.there_are_any else word("they did not move") } to a new address.
         % if children_previous_address.there_are_any:
@@ -1392,21 +1404,21 @@ review:
         % if legal_custody_who == "user":
         - **You**
         % elif legal_custody_who == "other_party":
-        - **Your spouse**
+        - **${capitalize(OP_label)}**
         % elif legal_custody_who == "both":
-        - **Both you and your spouse**
+        - **Both you and ${OP_label}**
         % endif
         should have legal custody.
         % if physical_custody_who == "user":
         - **You**
         % elif physical_custody_who == "other_party":
-        - **Your spouse**
+        - **${capitalize(OP_label)}**
         % elif physical_custody_who == "both":
-        - **Both you and your spouse**
+        - **Both you and ${OP_label}**
         % endif
         should have physical custody.
         % if physical_custody_who != "both":
-        - ${ word("Your spouse") if physical_custody_who == "user" else word("You") } **${ word("should") if PT_who == "both" else word("should not") }** have parenting time.
+        - ${ capitalize(word(OP_label)) if physical_custody_who == "user" else word("You") } **${ word("should") if PT_who == "both" else word("should not") }** have parenting time.
         % endif
         % if physical_custody_who == "both" or PT_who == "both":
         - Type of parenting time: **${ PT_type }**
@@ -1434,9 +1446,9 @@ review:
       - hundred_mile_rule
     button: |
       ### 100-mile rule
-      - You and your spouse currently live ${ word("more than 100 miles away from each other.") if already_over_100_miles else word("within 100 miles of each other.") }
+      - You and ${OP_label} currently live ${ word("more than 100 miles away from each other.") if already_over_100_miles else word("within 100 miles of each other.") }
       % if not already_over_100_miles:
-      - You and your spouse **${ word("agree") if allow_over_100_miles else word("don't agree") }** either of you may move more than 100 miles from where you currently live, as long as you stay in Michigan.
+      - You and ${OP_label} **${ word("agree") if allow_over_100_miles else word("don't agree") }** either of you may move more than 100 miles from where you currently live, as long as you stay in Michigan.
       % endif
     show if: there_are_marital_children and legal_custody_who == "both"
   - Edit:
@@ -1495,7 +1507,11 @@ review:
   - Edit:
       - stepchild_address_review_screen
     button: |-
+      % if tool_ID in ["custody_complaint", "custody_answer"]:
+      ### Addresses of other children (not the subject of the case)
+      % else:
       ### Stepchildren's addresses
+      % endif
       % for child in children:
       % if child.legal_parent != "both":
       % if child.stepchild_lives_with == "user":
@@ -1514,7 +1530,7 @@ review:
       % endif    
       % endif
       % endfor
-    show if: children.there_are_any and len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0
+    show if: children.there_are_any and len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party') + children.filter(legal_parent='custody_other')) > 0
   - Edit:
       - users[0].pregnant
       - recompute: 

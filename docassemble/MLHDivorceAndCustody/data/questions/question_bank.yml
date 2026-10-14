@@ -449,6 +449,9 @@ fields:
       variable: married_other_parent_past
       is: True
   - note: ${collapse_template(divorce_final_meaning)}
+    show if: 
+      variable: married_other_parent_past
+      is: True
 ---
 template: divorce_final_meaning
 subject: When is a divorce final? 
@@ -840,7 +843,7 @@ id: advance_warnings
 continue button field: advance_warnings
 question: Requirements for a Michigan custody case
 subquestion: |
-  To use our forms to start a Michigan custody case for a child:
+  To use our forms to start a Michigan custody case:
   
   * the child must have lived for 6 months (or since birth) in Michigan, 
   * there must be a signed Affidvait of Parentage for that child,
@@ -1558,7 +1561,7 @@ question: |
 subquestion: |
   ${collapse_template(other_parties[0].gender_explanation_template)}
 fields:
-  - label: Gender
+  - label: ${other_parties[0]}'s gender
     field: other_parties[0].gender
     input type: radio
     choices:
@@ -1577,9 +1580,9 @@ fields:
 ---
 id: other_parties[0].birthdate
 question: |
-  When was your spouse born?
+  When was ${OP_label} born?
 fields:
-  - label: Birthdate
+  - label: ${other_parties[0]}'s Birthdate
     field: other_parties[0].birthdate
     datatype: BirthDate
 ---
@@ -1798,7 +1801,7 @@ fields:
 ---
 id: other_parties[0].email
 question: |
-  ${OP_label}'s email address
+  ${capitalize(OP_label)}'s email address
 fields:
   - label: What is ${other_parties[0]}'s email address?
     field: other_parties[0].email
@@ -6494,6 +6497,10 @@ validation code: |
     prior_family_cases.reset_gathered(only_if_empty=True)
   else:
     prior_family_cases.minimum_number=None
+    for item in list(prior_family_cases.elements):
+      if not defined(item.attr_name('complete')):
+        prior_family_cases.remove(item)
+    undefine("prior_family_cases.there_are_any")
 ---
 if: controlling_custody_case == "yes_one" and controlling_case_location == "Michigan"
 id: custody complaint Michigan custody case followup single
@@ -6679,15 +6686,11 @@ question: |
   Any more **family division** court cases or orders?
   % endif
 subquestion: |
-  % if tool_ID in ["custody_complaint", "custody_answer"]:
-  This includes **all** child support, parenting time, or custody cases, as well as any other family division cases. Add every case, including dismissed, ongoing, or stayed (paused) cases, and cases that have ended with an order.
-
-  % endif
-  ${ collapse_template(family_division_info) }
-  
   So far, you have listed&colon;
 
   ${prior_family_cases.table}
+
+  ${ collapse_template(family_division_info) }
 fields:
   - label: |
       % if tool_ID == "JOD_only":
@@ -6703,6 +6706,18 @@ fields:
       % endif
     field: prior_family_cases.there_is_another
     datatype: yesnoradio
+  - note: |
+      NOTE: Answer **Yes** if there are any more:
+
+      % if controlling_custody_case == "yes_multiple":
+      * **existing or dismissed** child support, parenting time, or custody cases; or
+      % else:
+      * **dismissed** child support, parenting time, or custody cases; or
+      % endif
+      * **other family division cases,** including dismissed, ongoing, or stayed (paused) cases, and cases that have ended with an order.
+    show if:
+      code: |
+        tool_ID in ["custody_complaint", "custody_answer"]
 validation code: |
   if tool_ID == "custody_complaint":
     if controlling_custody_case in ["yes_one", "yes_multiple"] and prior_family_cases.number_gathered() == 0:
@@ -7564,7 +7579,7 @@ subquestion: |
   This question is about medical, dental, vision, or other health care coverage.
 fields:
   - label: |
-      Does ${ OP_label } hold their own health care coverage, either through an employer, Medicaid or Medicare, or privately?
+      Does ${ other_parties[0] } hold their own health care coverage, either through an employer, Medicaid or Medicare, or privately?
     field: other_parties[0].insurance.there_are_any
     datatype: yesnoradio
 validation code: |
@@ -8362,28 +8377,24 @@ fields:
 ---
 id: other party SSN and DL
 question: |
-  % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
-  Your spouse's identity documents
-  % else:
-  ${ other_parties[0] }'s identity documents
-  % endif
+  ${ capitalize(OP_label) }'s identity documents
 subquestion: |
   ${ collapse_template(why_need_SSN)}
 fields:
-  - Please enter ${ OP_label }'s social security number: other_parties[0].ssn
+  - Please enter ${ other_parties[0] }'s social security number: other_parties[0].ssn
     required: False
     datatype: ssn
-  - Please enter ${ OP_label }'s driver's license number: other_parties[0].license_number
+  - Please enter ${ other_parties[0] }'s driver's license number: other_parties[0].license_number
     required: False
-  - What state issued ${ OP_label }'s driver's license?: other_parties[0].license_state
+  - What state issued ${ other_parties[0] }'s driver's license?: other_parties[0].license_state
     required: False
     # probably we should just make a consistent dropdown with states plus DC, PR, Guam, Virgin Islands (what about northern mariana islands (citizens) and american samoa (not citizens)?)
-  - Is ${ OP_label } a citizen of any country other than the US?: other_parties[0].has_foreign_citizenship
+  - Is ${ other_parties[0] } a citizen of any country other than the US?: other_parties[0].has_foreign_citizenship
     required: False
     datatype: yesnoradio
     show if: 
       code: tool_ID != "JOD_only"
-  - List all other countries that ${ OP_label } is a citizen of: other_parties[0].countries_of_citizenship
+  - List all other countries that ${ other_parties[0] } is a citizen of: other_parties[0].countries_of_citizenship
     required: False
     js show if: |
       ${ json.dumps(tool_ID) } !== "JOD_only" && val("other_parties[0].has_foreign_citizenship") === true
@@ -8399,13 +8410,9 @@ validation code: |
 ---
 id: other party eye color, hair color, weight
 question: |
-  % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
-  Your spouse's physical description
-  % else:
-  ${ other_parties[0] }'s physical description
-  % endif
+  ${capitalize(OP_label)}'s physical description
 fields:
-  - What color eyes does ${ OP_label } have?: other_parties[0].eye_color
+  - What color eyes does ${ other_parties[0] } have?: other_parties[0].eye_color
     required: False
     choices:
       - Black: Black
@@ -8415,7 +8422,7 @@ fields:
       - Green: Green
       - Hazel: Hazel
       - Unknown: Unknown
-  - What color hair does ${ OP_label } have?: other_parties[0].hair_color
+  - What color hair does ${ other_parties[0] } have?: other_parties[0].hair_color
     required: False
     choices:
       - Bald: Bald
@@ -8427,12 +8434,12 @@ fields:
       - Sandy: Sandy
       - White: White
       - Other: other
-  - "How much does ${ OP_label } weigh, in pounds?": other_parties[0].weight
+  - "How much does ${ other_parties[0] } weigh, in pounds?": other_parties[0].weight
     datatype: integer
     required: False
     min: 0
     max: 2000
-  - "Briefly list any identifying scars, tattoos, or other identifying marks that ${ OP_label } has. *Please limit your answer to 220 characters or less.*": other_parties[0].other_identifying_info
+  - "Briefly list any identifying scars, tattoos, or other identifying marks that ${ other_parties[0] } has. *Please limit your answer to 220 characters or less.*": other_parties[0].other_identifying_info
     required: False
     maxlength: 220
 ---
@@ -8455,13 +8462,9 @@ fields:
 ---
 id: other party race
 question: |
-  % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
-  Your spouse's race
-  % else:
-  ${ other_parties[0] }'s race
-  % endif
+  ${capitalize(OP_label)}'s race
 fields:
-  - What is ${ OP_label }'s race?: other_parties[0].race
+  - What is ${ other_parties[0] }'s race?: other_parties[0].race
     required: False
     choices:
       - White, not Hispanic or Latino: White

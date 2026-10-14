@@ -253,7 +253,11 @@ attachment:
           ${ other_parties[0].address.county + " County, Michigan" if other_parties[0].lives_in_Michigan else "State of " + other_parties[0].address.state if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
       - or_may_be_found: |
           % if MI_home_state_all_kids == False or (children_now_live_with_which_parent == "other_parties[0]" and not other_parties[0].lives_in_Michigan and all_kids_spend_time_with_other_parent) or (children_now_live_with_which_parent == "users[0]" and not users[0].lives_in_Michigan and all_kids_spend_time_with_other_parent):
-          ^ or may be found with
+          or may be found with
+          % endif
+      - or_may_be_found_caret: |
+          % if MI_home_state_all_kids == False or (children_now_live_with_which_parent == "other_parties[0]" and not other_parties[0].lives_in_Michigan and all_kids_spend_time_with_other_parent) or (children_now_live_with_which_parent == "users[0]" and not users[0].lives_in_Michigan and all_kids_spend_time_with_other_parent):
+          ^
           % endif
       - children_live_with_plaintiff: |
           ${children_now_live_with_which_parent in ["users[0]", "both", "depends_on_child"] or (children_now_live_with_which_parent == "other_parties[0]" and not other_parties[0].lives_in_Michigan and all_kids_spend_time_with_other_parent)}
