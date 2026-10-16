@@ -164,6 +164,7 @@ review:
       - invalidate:
         - interview_order_children # for Muskegon PT logic and custody venue stuff
         - calculate_custody_venue_options
+        - venue_conflict_continue
         - interview_order_custody_where_kids_live
         - all_kids_spend_time_with_other_parent
         - children_live_with_parent
@@ -206,6 +207,7 @@ review:
       - invalidate:
         - interview_order_children # because of Muskegon PT logic and custody venue stuff
         - calculate_custody_venue_options
+        - venue_conflict_continue
         - interview_order_custody_where_kids_live
         - all_kids_spend_time_with_other_parent
         - children_live_with_parent
@@ -532,6 +534,7 @@ review:
       - invalidate:
         - interview_order_children # because of Muskegon PT logic and custody venue stuff
         - calculate_custody_venue_options
+        - venue_conflict_continue
         - interview_order_custody_where_kids_live
         - all_kids_spend_time_with_other_parent
         - children_live_with_parent
@@ -1178,6 +1181,7 @@ review:
         - interview_order_stepchild_address
         - interview_order_children
         - calculate_custody_venue_options
+        - venue_conflict_continue
         - check_for_required_venue
         - venue
         - court_index
@@ -1272,6 +1276,7 @@ review:
         - interview_order_stepchild_address
         - interview_order_children
         - calculate_custody_venue_options
+        - venue_conflict_continue
         - check_for_required_venue
         - venue
         - court_index
@@ -1324,6 +1329,7 @@ review:
         - child_address_not_confidential_warning
         - interview_order_custody_where_kids_live
         - calculate_custody_venue_options
+        - venue_conflict_continue
       - recompute:
         - interview_order_children
       # Note validation logic on children_live_with_parent
