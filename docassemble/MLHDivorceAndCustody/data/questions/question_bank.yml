@@ -6571,16 +6571,16 @@ subquestion: |
 fields:
   - label: |
       % if tool_ID == "JOD_only":
-      Are there any prior custody or support orders in Michigan or any other state regarding ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') }?
+      Are there any prior custody or support orders in Michigan or anywhere else regarding ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') }?
       % elif tool_ID in ["custody_complaint", "custody_answer"]:
       Are there any other pending or resolved **family division** court cases or orders involving you and ${ OP_label }? 
       % elif tool_ID in ["divorce_complaint", "divorce_answer"]:
       % if there_are_marital_children and len(children.filter(legal_parent='both')) > 1:
-      Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') }, or you and your spouse?
+      Are there any pending or resolved **family division** court cases or orders in Michigan or anywhere else involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') }, or you and your spouse?
       % elif there_are_marital_children:
-      Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } or you and your spouse?
+      Are there any pending or resolved **family division** court cases or orders in Michigan or anywhere else involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } or you and your spouse?
       % else:
-      Are there any pending or resolved **family division** court cases or orders in Michigan or any other state involving you and your spouse?
+      Are there any pending or resolved **family division** court cases or orders in Michigan or anywhere else involving you and your spouse?
       % endif
       % endif
     field: prior_family_cases.there_are_any
@@ -6694,14 +6694,14 @@ subquestion: |
 fields:
   - label: |
       % if tool_ID == "JOD_only":
-      Are there any more prior custody or support orders in Michigan or any other state regarding ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') }?
+      Are there any more prior custody or support orders in Michigan or anywhere else regarding ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') }?
       % elif tool_ID in ["custody_complaint", "custody_answer"]:
       Are there any more pending or resolved **family division** court cases or orders involving you and ${ OP_label }? 
       % elif tool_ID in ["divorce_complaint", "divorce_answer"]:
       % if there_are_marital_children:
-      Are there any more pending or resolved **family division** court cases or orders in Michigan or any other state involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } or you and your spouse?
+      Are there any more pending or resolved **family division** court cases or orders in Michigan or anywhere else involving ${ comma_and_list(children.filter(legal_parent='both'), and_string='or') } or you and your spouse?
       % else:
-      Are there any more pending or resolved **family division** court cases or orders in Michigan or any other state involving you and your spouse?
+      Are there any more pending or resolved **family division** court cases or orders in Michigan anywhere else involving you and your spouse?
       % endif
       % endif
     field: prior_family_cases.there_is_another
