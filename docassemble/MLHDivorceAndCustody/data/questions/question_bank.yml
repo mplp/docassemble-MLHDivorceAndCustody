@@ -6822,6 +6822,7 @@ code: |
 variable name: prior_family_case_types
 data: !!omap
   - adoption: 'Adoption'
+  - child_support: 'Child Support'
   - custody: 'Custody'
   - divorce: 'Divorce'
   - emancipation: 'Emancipation'
