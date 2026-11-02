@@ -1324,7 +1324,7 @@ fields:
   - What county do you live in?: users[0].address.county
     code: court_list._load_courts()["address_county"].unique()
     show if: users[0].lives_in_Michigan
-  - Is it safe to list the state or country where you actually live on your custody forms?: safe_to_disclose_state
+  - Is it safe to list the state or country where you actually live on your custody forms?: users[0].safe_to_disclose_state
     datatype: yesnoradio
     js show if: |
       ${ "true" if tool_ID == "custody_complaint" else "false" } && val("users[0].lives_in_Michigan") === false
@@ -1333,18 +1333,18 @@ fields:
     required: False
     datatype: yesno
     js show if: |
-      ${ "true" if tool_ID == "custody_complaint" else "false" } && val("users[0].lives_in_Michigan") === false && val("safe_to_disclose_state") === true 
+      ${ "true" if tool_ID == "custody_complaint" else "false" } && val("users[0].lives_in_Michigan") === false && val("users[0].safe_to_disclose_state") === true 
   - US state or territory where you live:: users[0].state_of_residence_to_disclose
     code: |
       states_list()
     js show if: |
-      ${ "true" if tool_ID == "custody_complaint" else "false" } && val("users[0].lives_in_Michigan") === false && val("safe_to_disclose_state") === true && val("users[0].foreign_residence") === false
+      ${ "true" if tool_ID == "custody_complaint" else "false" } && val("users[0].lives_in_Michigan") === false && val("users[0].safe_to_disclose_state") === true && val("users[0].foreign_residence") === false
   - Country where you live:: users[0].country_of_residence_to_disclose
     default: US
     code: |
       countries_list()
     js show if: |
-      ${ "true" if tool_ID == "custody_complaint" else "false" } && val("users[0].lives_in_Michigan") === false && val("safe_to_disclose_state") === true && val("users[0].foreign_residence") === true
+      ${ "true" if tool_ID == "custody_complaint" else "false" } && val("users[0].lives_in_Michigan") === false && val("users[0].safe_to_disclose_state") === true && val("users[0].foreign_residence") === true
 ---
 if: tool_ID == "divorce_complaint" and users[0].lives_in_Michigan
 id: 10-day test user
