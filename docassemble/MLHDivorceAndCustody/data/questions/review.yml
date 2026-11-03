@@ -2250,8 +2250,9 @@ review:
       ${ end_accordion() }
     show if: marriage.attribute_defined("have_experienced_domestic_violence")
 validation code: |
-  # update cached documents in case edits are made after docs generated
-  undefine('al_user_bundle._downloadable_files', 'al_user_bundle.generate_downloads_task')
+  # regenerate downloads
+  # note: once we decide on new review screen button placement, we can maybe trigger this from the specific review screen button on the download screen instead of doing this. See. Quinten's documentation in https://github.com/SuffolkLITLab/docassemble-AssemblyLine/pull/1113
+  undefine('al_user_bundle.generate_downloads_task', 'al_user_bundle.downloads_ready')
 ---
 #
 ### -------- Tables and Review Screens -------------------
