@@ -1892,8 +1892,8 @@ review:
       ${ end_accordion() }
     show if: marriage.attribute_defined("have_experienced_domestic_violence")
 validation code: |
-  # update cached documents in case edits are made after docs generated
-  undefine('al_user_bundle._downloadable_files', 'al_user_bundle.generate_downloads_task')
+  # regenerate downloads
+  undefine('al_user_bundle.generate_downloads_with_docx_task')
 ---
 #
 ### -------- Tables and Review Screens -------------------
