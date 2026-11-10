@@ -226,8 +226,6 @@ objects:
 code: |
   custody_complaint_cc_429_full.enabled = tool_ID in ["custody_complaint"]
   custody_complaint_cc_429.enabled = tool_ID in ["custody_complaint"]
-  # running this so it's available in the document
-  custody_plaintiff_complaint_residence()
   if custody_complaint_cc_429.enabled:
     complaint_answer_attachment.enabled = ((physical_custody_who == "both" or PT_who == "both") and PT_type in ["specific", "supervised"] and specific_PT_how == "custom")
 ---
@@ -248,7 +246,7 @@ attachment:
       - plaintiff: ${ plaintiffs[0].name_full() }
       - defendant: ${ defendants[0].name_full() }
       - plaintiff_residency: | 
-          ${custody_plaintiff_complaint_residence()}
+          ${custody_plaintiff_complaint_residence(users[0], confidential_contact_info_yn)}
       - defendant_residency: | 
           ${ other_parties[0].address.county + " County, Michigan" if other_parties[0].lives_in_Michigan else "State of " + other_parties[0].address.state if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
       - or_may_be_found: |
@@ -268,19 +266,19 @@ attachment:
           % if users[0].lives_in_Michigan and other_parties[0].lives_in_Michigan:
           ${users[0].address.county} County and ${other_parties[0].address.county}
           % else:
-          ${custody_plaintiff_complaint_residence()} and ${ other_parties[0].address.county + " County, Michigan" if other_parties[0].lives_in_Michigan else "State of " + state_name(other_parties[0].address.state) if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
+          ${custody_plaintiff_complaint_residence(users[0], confidential_contact_info_yn)} and ${ other_parties[0].address.county + " County, Michigan" if other_parties[0].lives_in_Michigan else "State of " + state_name(other_parties[0].address.state) if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
           % endif
           % elif children_now_live_with_which_parent == "users[0]":
           % if users[0].lives_in_Michigan:
           ${users[0].address.county}
           % else:
-          ${custody_plaintiff_complaint_residence()} and ${ other_parties[0].address.county + " County, Michigan" if other_parties[0].lives_in_Michigan else "State of " + state_name(other_parties[0].address.state) if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
+          ${custody_plaintiff_complaint_residence(users[0], confidential_contact_info_yn)} and ${ other_parties[0].address.county + " County, Michigan" if other_parties[0].lives_in_Michigan else "State of " + state_name(other_parties[0].address.state) if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
           % endif
           % elif children_now_live_with_which_parent == "other_parties[0]":
           % if other_parties[0].lives_in_Michigan:
           ${ other_parties[0].address.county }
           % else:
-          ${custody_plaintiff_complaint_residence()} and ${ other_parties[0].address.county + " County, Michigan" if other_parties[0].lives_in_Michigan else "State of " + state_name(other_parties[0].address.state) if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
+          ${custody_plaintiff_complaint_residence(users[0], confidential_contact_info_yn)} and ${ other_parties[0].address.county + " County, Michigan" if other_parties[0].lives_in_Michigan else "State of " + state_name(other_parties[0].address.state) if other_parties[0].address.country == "US" else country_name(other_parties[0].address.country) }
           % endif
           % endif
       - marital_children_names_ages: |
@@ -6072,27 +6070,6 @@ code: |
                   return joined[:max_len].rstrip(), joined[max_len:].lstrip(", ").lstrip()
           return joined[:split_at].rstrip(","), joined[split_at+1:].lstrip()
   children_line_1, children_line_2 = format_children_names(children)
----
-code: |
-  def custody_plaintiff_complaint_residence():
-      if confidential_contact_info_yn:
-          if users[0].lives_in_Michigan:
-              return users[0].address.county + " County, Michigan"
-          elif safe_to_disclose_state:
-              if users[0].foreign_residence:
-                  return country_name(users[0].country_of_residence_to_disclose)
-              else:
-                  return "State of " + state_name(users[0].state_of_residence_to_disclose)
-          else:
-              return "Confidential"
-      else:
-          if users[0].address.country == "US":
-              if users[0].address.state == "MI":
-                  return users[0].address.county + " County, Michigan"
-              else:
-                  return "State of " + state_name(users[0].address.state)
-          else:
-              return country_name(users[0].address.country)
 ---
 ### income tax addendum code ###
 # add commas and the word "and" plus split specific plaintiff/defendant tax children names to two lines when over character count
