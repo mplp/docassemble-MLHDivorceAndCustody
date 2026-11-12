@@ -1318,7 +1318,7 @@ review:
       % for child in children.filter(legal_parent="both"):
         - ${ child.familiar() } currently lives in ${ child.currently_resides_in_locality_display_name }. This is ${ "" if child.current_residence_is_home_state else word("**not**") } their legal "home state". 
         % if not (child.currently_resides_in_type == "Michigan" and child.current_residence_is_home_state) and (child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.currently_resides_in_locality != "MI" and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months"):
-        Michigan has jurisdiction becaues they recently lived in Michigan for 6 months.
+        Michigan has jurisdiction because they recently lived in Michigan for 6 months.
         % endif
       % endfor
     show if: there_are_marital_children
@@ -1645,7 +1645,7 @@ review:
         % if case.in_tribal_court:
         - This case is in a tribal court.
         % endif
-        - Case status: ${case.status}
+        - Case status: ${word("ended with final order") if case.status == "ended_with_order" else word("ongoing") if case.status == "pending" else case.status }
         - Custody or parenting time order in effect? **${word(yesno(case.has_current_custody_PT_order))}**
         - Child support order in effect? **${word(yesno(case.has_child_support_order))}**
 

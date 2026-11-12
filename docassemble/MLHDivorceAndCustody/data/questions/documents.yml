@@ -40,18 +40,23 @@ code: |
 # Future note: for divorce_answer and custody_answer, only enabled if filing counterclaim
 code: |
   if tool_ID == "divorce_complaint":
+    UCCJEA_affidavit_mc416_full.enabled = there_are_marital_children
+  elif tool_ID == "custody_complaint":
+    UCCJEA_affidavit_mc416_full.enabled = True
+  elif tool_ID == "divorce_answer":
+    UCCJEA_affidavit_mc416_full.enabled = (create_counterclaim and counterclaim_type == "with_children")
+  else:
+    UCCJEA_affidavit_mc416_full.enabled = False
+---
+code: |
+  if tool_ID == "divorce_complaint":
     UCCJEA_affidavit_mc416.enabled = there_are_marital_children
   elif tool_ID == "custody_complaint":
     UCCJEA_affidavit_mc416.enabled = True
   elif tool_ID == "divorce_answer":
-    UCCJEA_affidavit_mc416.enabled = create_counterclaim and counterclaim_type == "with_children"
+    UCCJEA_affidavit_mc416.enabled = (create_counterclaim and counterclaim_type == "with_children")
   else:
     UCCJEA_affidavit_mc416.enabled = False
-
-  if UCCJEA_affidavit_mc416.enabled:
-    UCCJEA_affidavit_mc416_full.enabled = True
-  else:
-    UCCJEA_affidavit_mc416_full.enabled = False
 ---
 code: |
   UCCJEA_affidavit_mc416_addendum.enabled = False
@@ -4120,6 +4125,7 @@ attachment:
           % else:
           False
           % endif
+      # if child support can't be ordered in (a), leave child support options blank for judge:
       - no_child_support_ordered:
       - previous_child_support_ordered_no_jurisdiction:
       - previous_child_support_ordered_docket_number:
