@@ -4125,6 +4125,7 @@ attachment:
           % else:
           False
           % endif
+      # if child support can't be ordered in (a), leave child support options blank for judge:
       - no_child_support_ordered:
       - previous_child_support_ordered_no_jurisdiction:
       - previous_child_support_ordered_docket_number:
