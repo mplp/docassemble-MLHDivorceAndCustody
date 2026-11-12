@@ -1645,7 +1645,7 @@ review:
         % if case.in_tribal_court:
         - This case is in a tribal court.
         % endif
-        - Case status: ${case.status}
+        - Case status: ${word("ended with final order") if case.status == "ended_with_order" else word("ongoing") if case.status == "pending" else case.status }
         - Custody or parenting time order in effect? **${word(yesno(case.has_current_custody_PT_order))}**
         - Child support order in effect? **${word(yesno(case.has_child_support_order))}**
 
