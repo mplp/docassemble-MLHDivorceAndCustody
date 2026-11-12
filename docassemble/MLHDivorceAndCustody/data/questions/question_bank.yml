@@ -169,11 +169,11 @@ event: exit_no_pending_divorce
 question: |
   Sorry, this tool cannot help you.
 subquestion: |
-  You must have a pending Michigan divorce case to use this tool. This tool is only for completing your Judgment of Divorce and related papers in an existing divorce case. If you need to file a Michigan Divorce case, return to the Michigan Legal Help website to either the [Filing for Divorce with Children](https://michiganlegalhelp.org/resources/family/filing-divorce-children) Resource page or the [Filing for Divorce without Children](https://michiganlegalhelp.org/resources/family/filing-divorce-without-children) Resource page.
+  You must have a pending Michigan divorce case to use this tool. This tool is only for completing your *Judgment of Divorce* and related papers in an existing divorce case. If you need to file a Michigan divorce case, return to the Michigan Legal Help website to either the [Filing for Divorce with Children](https://michiganlegalhelp.org/resources/family/filing-divorce-children) Resource page or the [Filing for Divorce without Children](https://michiganlegalhelp.org/resources/family/filing-divorce-without-children) Resource page.
 
   You may want to contact a lawyer for help. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) on Michigan Legal Help to find a lawyer or a legal services office near you.
 
-  If you think you made a mistake, tap **Undo** and change the answer to this question.
+  If you think you made a mistake, tap **Undo** and change your answer.
 action buttons:
   - label: Exit
     action: https://michiganlegalhelp.org/resources/family
