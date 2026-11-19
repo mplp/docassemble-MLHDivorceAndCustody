@@ -2235,6 +2235,11 @@ fields:
   - label: On or about what date did you and your spouse stop living together?
     field: marriage.living_together_stopped_date
     datatype: ThreePartsDate
+    js show if: |
+      val("marriage.living_together_yn") === false && val("marriage.never_lived_together") === false
+  - label: Check here if you **never** lived with your spouse.
+    field: marriage.never_lived_together
+    datatype: yesno
     show if:
       variable: marriage.living_together_yn
       is: False
