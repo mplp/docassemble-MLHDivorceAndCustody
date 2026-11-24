@@ -7621,7 +7621,7 @@ fields:
   - What is the address of the provider?: users[0].insurance[i].company_address
     required: False
   - What coverage does the policy provide?: users[0].insurance[i].coverage_type
-    required: False
+    minlength: 1
     datatype: checkboxes
     choices:
       - medical
@@ -7658,8 +7658,8 @@ fields:
   - What is the address of the provider?: other_parties[0].insurance[i].company_address
     required: False
   - What coverage does the policy provide?: other_parties[0].insurance[i].coverage_type
-    required: False
     datatype: checkboxes
+    minlength: 1
     choices:
       - medical
       - dental
