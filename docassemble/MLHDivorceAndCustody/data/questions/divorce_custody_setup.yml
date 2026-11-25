@@ -13,6 +13,7 @@ modules:
   - .jod_functions
 ---
 features:
+  javascript: survey_monkey_script.js
   labels above fields: True
   css: mlh-divorce-and-custody.css
   # note css line copied from Jack's main judgment yml-- Ask Jack -- maybe just a placeholder?
@@ -52,19 +53,13 @@ code: |
     elif tool_ID == "JOD_only":
       filing_name = "Judgment of Divorce"
   elif tool_ID == "custody_complaint":
-    filing_name = "Custody Complaint"
     user_ask_role = "plaintiff"
     OP_label = "the Defendant"
     case_label = "custody"
-    user_party_label = "the Plaintiff"
-    OP_party_label = "the Defendant"
   elif tool_ID == "custody_answer":
-    filing_name = "Custody Answer"
     user_ask_role = "defendant"
     OP_label = "the Plaintiff"
     case_label = "custody"
-    user_party_label = "the Defendant"
-    OP_party_label = "the Plaintiff"
 
   set_prior_family_case_types
   
@@ -161,8 +156,6 @@ terms:
       - creditors
     definition: |
       A person, business, or entity that you owe money to.
-  - Defendant: |
-      The other parent of your children involved in a custody case. The Defendant in a custody case is the parent who did **not** file to start the case. 
   - phrases:
       - factor
       - factors
@@ -180,14 +173,6 @@ terms:
 
       You also got marital property if you or your spouse had separate property, and one of you actively worked during the marriage to **increase its value.**
   - phrases:
-      - legal description
-    definition: |
-      A paragraph of text in the deed that describes exactly where the property is located and where the boundaries are. It uses precise measurements instead of just the street address.
-  - phrases:
-      - legal residence with each parent
-    definition: |
-      Michigan law says that a child whose parental custody is governed by court order has a legal residence with each parent. This is true when parents share joint legal or physical custody.
-  - phrases:
       - marital children
     definition: |
       Children who have both you and your spouse as their legal parents.
@@ -199,9 +184,6 @@ terms:
       - minor
     definition: |
       A child is a minor if they are 17 years old or younger.
-  - Part of custody case: |
-      * "Yes" means your answers showed the child **can** be included in the custody case and you **want** a custody order for them. 
-      * "No" means either they do not qualify to be part of the custody case or you said you don't want them in the case. 
   - investments: |
       Stocks, bonds, Certificates of Deposit (CDs), mutual funds, Money Market Accounts, or other investments, not including pensions or retirement accounts.
   - phrases:
@@ -272,10 +254,12 @@ terms:
       * You accepted the papers and signed an acknowledgment of service for them; or
       * Someone handed the papers to you directly, whether you signed for them or not; or
       * The papers were sent to you by registered or certified mail, and you signed a return receipt acknowledging delivery of the papers.
-  - tribal court: | # currently unused, moved to "help" text
-      A tribal court is a court run by a Native American or First Nations government. In the United States, many Native American tribal governments have their own court systems. This type of court may have different names in different places.
+  - phrases:
+      - legal description
+    definition: |
+      A paragraph of text in the deed that describes exactly where the property is located and where the boundaries are. It uses precise measurements instead of just the street address.
 ---
-# override standard AL version language (originally for infinite spinner, now to emphasize the wait)
+# override standard AL version to add message about infinite spinner
 id: waiting screen
 question: |
   Please wait while we make your forms
@@ -285,26 +269,25 @@ subquestion: |
   <div class="spinner-border text-primary d-flex justify-content-center" role="status">
       <span class="sr-only visually-hidden">Making documents...</span>
   </div><br>
+  
+  ## Have you been waiting more than 5 minutes?
 
-# Below was added because of infinite spinner error. Could re-add if we learn people still get stuck in this stage.
-#  ## Have you been waiting more than 5 minutes?
-#
-#  If you've been waiting on this screen for **more than five minutes** you can [tap here to restart the form-building process](${ url_action('restart_document_generation')}). You won't lose any of your answers.
+  If you've been waiting on this screen for **more than five minutes** you can [tap here to restart the form-building process](${ url_action('restart_document_generation')}). You won't lose any of your answers.
 event: al_download_waiting_screen
 reload: True
-# Bring back the below if we re-add the option to restart generation from waiting screen
-#---
-#id: restart generation process
-#continue button field: restart_document_generation
-#question: Restart the form-building process
-#subquestion: |
-#  Tap the **${MLH_continue_button_label}** button to try building your forms again. 
-#  
-#  **It may take several minutes** for your forms to be ready after you tap **${MLH_continue_button_label}**.
-#validation code: |
-#  undefine('al_user_bundle._downloadable_files', 'al_user_bundle.generate_downloads_task')
+---
+id: restart generation process
+continue button field: restart_document_generation
+question: Restart the form-building process
+subquestion: |
+  Tap the **${MLH_continue_button_label}** button to try building your forms again. 
+  
+  **It may take several minutes** for your forms to be ready after you tap **${MLH_continue_button_label}**.
+validation code: |
+  undefine('al_user_bundle._downloadable_files', 'al_user_bundle.generate_downloads_task')
 ---
 # Directly copied from framework, but adding code for previously cached files for background assembly.
+# Also has customization for the JS survey because of multiple interviews in the same repo.
 id: DownloadScreen
 event: MLH_download
 question: |
@@ -324,9 +307,15 @@ subquestion: |
 
   ${ sign_in_message }
 under: |
-  <h2 id="survey-title">Take our quick survey!</h2>
+  ## Take our quick survey!
   Answer below or [open the survey in a new tab](${ survey_link_url_only }).
 
-  <iframe class="surveyiframe" src="${survey_link_url_only}" aria-labelledby="survey-title"></iframe>
+  % if tool_ID == "divorce_complaint":
+  <div id="survey_monkey1" data-smid="tRaiETqnLgj758hTBazgd3klEhgaKMHlXfvlsGbv5FZAlDWvFjduioTLlUVSyjRs"></div>
+  % elif tool_ID == "JOD_only":
+  <div id="survey_monkey1" data-smid="tRaiETqnLgj758hTBazgd3klEhgaKMHlXfvlsGbv5FaYfLmgWJ2K2UosZbMxcMcu"></div>
+  % elif tool_ID == "divorce_answer":
+  <div id="survey_monkey1" data-smid="tRaiETqnLgj758hTBazgd1caHSCpdmdgZgGo5Fq6bqp0y91DaTmREHdBKAkwXGAT"></div>
+  % endif
 progress: 100
 ---

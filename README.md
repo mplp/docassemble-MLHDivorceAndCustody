@@ -7,7 +7,6 @@ Michigan Legal Help
 Lemma Legal
 
 ## Changelog:
-* 11/25/26 2.1.0 update divorce instructions; fix issue of getting stuck on download screen; revamp past case collection to allow foreign and tribal cases; update survey method; various changes related to custody complaint tool work
 * 8/19/26  2.0.9 allow changing answer on whether there's real property during gathering process
 * 8/17/26  2.0.8 fix bug introduced by 2.0.7 with real property flow
 * 8/14/26  2.0.7 minor updates to Divorce Answer property guidance, interview language and order, and instruction language; changes to Important Reminders; add more parentage revocation guidance

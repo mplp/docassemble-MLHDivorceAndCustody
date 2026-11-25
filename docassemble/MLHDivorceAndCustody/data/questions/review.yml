@@ -10,7 +10,6 @@ review:
       % else:
       ${ review_empty_explainer }
       % endif
-      
   - Edit:
       - returning_to_finalize
       - invalidate:
@@ -36,10 +35,7 @@ review:
 #
   - raw html: |
       ${ start_accordion("""<h2>Marriage Information</h2>""") }
-    show if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"] and marriage.attribute_defined("have_experienced_domestic_violence")
-  - raw html: |
-      ${ start_accordion("""<h2>History with the Defendant</h2>""") }
-    show if: tool_ID in ["custody_complaint", "custody_answer"] and marriage.attribute_defined("have_experienced_domestic_violence")
+    show if: marriage.attribute_defined("have_experienced_domestic_violence")
   - Edit:
       - marriage.date
     button: |
@@ -79,7 +75,7 @@ review:
       - follow up:
         - marriage.have_experienced_domestic_violence_continue
     button: |
-      ### Has there been domestic violence or threats by ${OP_label}?
+      ### Has there been domestic violence or threats by your spouse?
         - ${word(yesno(marriage.have_experienced_domestic_violence))}
 #
 #
@@ -162,12 +158,7 @@ review:
       - recompute: 
         - interview_order_user_contact_info
       - invalidate:
-        - interview_order_children # for Muskegon PT logic and custody venue stuff
-        - calculate_custody_venue_options
-        - venue_conflict_continue
-        - interview_order_custody_where_kids_live
-        - all_kids_spend_time_with_other_parent
-        - children_live_with_parent
+        - interview_order_children # for Muskegon PT logic
         - venue
         - current_venue_options
         - all_potential_venue_options
@@ -178,39 +169,25 @@ review:
         - the_foc
       # Note validation logic on users[0].address.address question
     button: |
-      % if tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID in ["divorce_complaint", "custody_complaint"] and confidential_contact_info_yn):
+      % if tool_ID in ["JOD_only", "divorce_answer"] or (tool_ID == "divorce_complaint" and confidential_contact_info_yn):
       ### Your ${"safe mailing address" if confidential_contact_info_yn else "address"}
         - ${users[0].address.on_one_line()}
       % elif not confidential_contact_info_yn:
       ### Your address:
         - ${users[0].address.on_one_line()}
-      % if tool_ID in ["custody_complaint", "custody_answer"]:
-      ### Do you live in Michigan?
-        - ${word(yesno(users[0].lives_in_Michigan))}
-      % if users[0].lives_in_Michigan:
-      ### Your County:
-        - ${users[0].address.county}
-      % endif
-      % else:
       % if users[0].lives_in_Michigan:
       ### Have you lived in Michigan for 180+ days?
         - ${word(yesno(users[0].has_lived_6_months_MI))}
       ### Have you lived in ${users[0].address.county} County for the last 10 days?
         - ${word(yesno(users[0].ten_days_in_county))}
       % endif
-      % endif      
       % endif
   - Edit:
       - users[0].lives_in_Michigan 
       - follow up:
         - users[0].ten_days_in_county
       - invalidate:
-        - interview_order_children # because of Muskegon PT logic and custody venue stuff
-        - calculate_custody_venue_options
-        - venue_conflict_continue
-        - interview_order_custody_where_kids_live
-        - all_kids_spend_time_with_other_parent
-        - children_live_with_parent
+        - interview_order_children # because of Muskegon PT logic
         - venue
         - current_venue_options
         - all_potential_venue_options
@@ -223,27 +200,10 @@ review:
       ### Do you live in Michigan?
         - ${word(yesno(users[0].lives_in_Michigan))}   
       % if users[0].lives_in_Michigan:
-      % if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]:
       ### Have you lived in Michigan for 180+ days?
         - ${word(yesno(users[0].has_lived_6_months_MI))}
       ### Have you lived in ${users[0].address.county} County for the last 10 days?
         - ${word(yesno(users[0].ten_days_in_county))}
-      % elif tool_ID in ["custody_complaint", "custody_answer"]:
-      ### Your County:
-        - ${users[0].address.county}
-      % endif
-      % else:
-      ### Is it safe to list your state or country on your complaint?
-        - ${word(yesno(safe_to_disclose_state))}
-      % if safe_to_disclose_state:
-      % if users[0].foreign_residence:
-      ### Country where you live: 
-        - ${country_name(users[0].country_of_residence_to_disclose)}
-      % else:
-      ### State where you live: 
-        - ${state_name(users[0].state_of_residence_to_disclose)}
-      % endif
-      % endif
       % endif
     show if: confidential_contact_info_yn
   - Edit:
@@ -251,7 +211,7 @@ review:
     button: |
       ### Your County
         - ${users[0].address.county}
-    show if: (tool_ID in ["divorce_complaint", "custody_complaint"] and not users[0].lives_in_Michigan) or tool_ID == "JOD_only"
+    show if: (tool_ID == "divorce_complaint" and not users[0].lives_in_Michigan) or tool_ID == "JOD_only"
   - Edit:
       - users[0].village_or_township_yn
     button: |
@@ -464,19 +424,12 @@ review:
 # ---------- other_parties[0] ----------
 #
   - raw html: |
-      ${ next_accordion("""<h2>The Defendant's Basic Information</h2>""") }
-    show if: tool_ID in ["custody_complaint", "custody_anwer"] and other_parties[0].name.attribute_defined("first")
-  - raw html: |
       ${ next_accordion("""<h2>Spouse's Basic Information</h2>""") }
-    show if: tool_ID in ["divorce_complaint", "divorce_anwer", "JOD_only"] and other_parties[0].name.attribute_defined("first")
+    show if: other_parties[0].name.attribute_defined("first")
   - Edit:
       - other_parties[0].name.first
     button: |
-      % if tool_ID in ["custody_complaint", "custody_anwer"]:
-      ### The Defendant's name
-      % else:
       ### Spouse's name
-      % endif
         - ${other_parties[0]}
   - Edit:
       - other_parties[0].has_maiden_name
@@ -507,7 +460,7 @@ review:
   - Edit:
       - other_parties[0].gender
     button: |
-      ### ${capitalize(OP_label)}'s gender
+      ### Spouse's gender
         - ${other_parties[0].gender.capitalize()}
   - Edit:
       - other_parties[0].marriage_number
@@ -517,7 +470,7 @@ review:
   - Edit:
       - other_parties[0].birthdate
     button: |
-      ### ${capitalize(OP_label)}'s birthdate
+      ### Spouse's birthdate
         - ${other_parties[0].birthdate}
   - Edit:
       - other_parties[0].birthplace
@@ -532,12 +485,7 @@ review:
         - other_parties[0].village_or_township_yn
         - just_check_op_county
       - invalidate:
-        - interview_order_children # because of Muskegon PT logic and custody venue stuff
-        - calculate_custody_venue_options
-        - venue_conflict_continue
-        - interview_order_custody_where_kids_live
-        - all_kids_spend_time_with_other_parent
-        - children_live_with_parent
+        - interview_order_children # because of Muskegon PT logic
         - venue
         - current_venue_options
         - all_potential_venue_options
@@ -560,39 +508,22 @@ review:
       ### Has your spouse lived in ${other_parties[0].address.county} County for the last 10 days?
         - ${word(yesno(other_parties[0].ten_days_in_county))}
       % endif
-      % elif tool_ID == "custody_complaint":
-      ### Defendant's address
-        - ${other_parties[0].address.on_one_line()}
-      ### Does Defendant live in Michigan?
-        - ${word(yesno(other_parties[0].lives_in_Michigan))}
-      % if other_parties[0].lives_in_Michigan:
-      ### Defendant's County
-        - ${other_parties[0].address.county}
-      % endif
       % endif
   - Edit:
       - other_parties[0].mailing_address.yesno
     button: |
-      % if tool_ID in ["custody_complaint", "custody_anwer"]:
-      ### Defendant has a different mailing address
-      % else:
       ### Your spouse has a different mailing address
-      % endif
         - ${word(yesno(other_parties[0].mailing_address.yesno))}
       % if other_parties[0].mailing_address.yesno:
-      ### ${capitalize(OP_label)}'s mailing address
+      ### Spouse's mailing address
         - ${other_parties[0].mailing_address.on_one_line()}
       % endif
   - Edit:
       - other_parties[0].address.county
     button: |
-      % if tool_ID in ["custody_complaint", "custody_anwer"]:
-      ### Defendant's County
-      % else:
       ### Spouse's County
-      % endif
         - ${other_parties[0].address.county}
-    show if: (tool_ID in ["divorce_complaint", "custody_complaint"] and not other_parties[0].lives_in_Michigan) or tool_ID == "JOD_only"
+    show if: (tool_ID == "divorce_complaint" and not other_parties[0].lives_in_Michigan) or tool_ID == "JOD_only"
   - Edit:
       - other_parties[0].village_or_township_yn
     button: |
@@ -602,11 +533,7 @@ review:
   - Edit:
       - other_parties[0].no_phone_number
     button: |
-      % if tool_ID in ["custody_complaint", "custody_anwer"]:
-      ### Defendant's phone number
-      % else:
       ### Spouse's phone number
-      % endif
         - ${word("Unknown") if other_parties[0].no_phone_number else phone_number_formatted(other_parties[0].phone_number)}
         % if tool_ID != "JOD_only" and not other_parties[0].no_phone_number:
         - Type: ${ other_parties[0].phone_type }
@@ -614,11 +541,7 @@ review:
   - Edit:
       - other_parties[0].email
     button: |
-      % if tool_ID in ["custody_complaint", "custody_anwer"]:
-      ### Defendant's email address
-      % else:
       ### Spouse's email address
-      % endif
       % if other_parties[0].email == "":
         - None
       % else:
@@ -627,7 +550,7 @@ review:
   - Edit:
       - spouse_is_in_military
     button: |
-      ### Is ${capitalize(OP_label)} on active US military duty?
+      ### ${capitalize(OP_label)} on active US military duty?
         - ${word(yesno(spouse_is_in_military))}
   - Edit:
       - other_parties[0].has_attorney
@@ -709,11 +632,8 @@ review:
 
 # ---------- OP occupation, income, insurance ----------
   - raw html: |
-      ${ next_accordion("""<h2>The Defendant's Income, Job, Insurance, etc.</h2>""") }
-    show if: tool_ID in ["custody_complaint", "custody_anwer"] and defined('other_parties[0].has_job')
-  - raw html: |
       ${ next_accordion("""<h2>Spouse's Income, Job, Insurance, etc.</h2>""") }
-    show if: tool_ID in ["divorce_complaint", "divorce_anwer", "JOD_only"] and defined('other_parties[0].has_job')
+    show if: defined('other_parties[0].has_job')
     # if it's a simple case with very little of this info collected, the public assistance question should just go under the accordion above
   - Edit:
       - other_parties[0].has_job
@@ -722,7 +642,7 @@ review:
       - invalidate:
         - interview_order_other_party_income
     button: |
-      ### Is ${other_parties[0]} currently employed?
+      ### Spouse currently employed?
         - ${ word("not answered") if other_parties[0].has_job == None else word(yesno(other_parties[0].has_job)) }
       % if other_parties[0].has_job:
         - Employer: ${ other_parties[0].job.employer.name.first if other_parties[0].job.employer.name.first != "" else word("not answered")}
@@ -734,13 +654,13 @@ review:
   - Edit:
       - other_parties[0].occupation
     button: |
-      ### ${other_parties[0]}'s occupation
+      ### Spouse's occupation
         - ${ other_parties[0].occupation if other_parties[0].occupation != "" else word("not answered")}
     show if: tool_ID != "JOD_only" and (there_are_marital_children or user_wants_post_divorce_support or (tool_ID == "divorce_answer" and counterclaim_type == "with_children"))
   - Edit:
       - other_parties[0].has_professional_license
     button: |
-      ### Does ${other_parties[0]} have a professional license?
+      ### Spouse has professional license?
         - ${ word("not answered") if other_parties[0].has_professional_license == None else word(yesno(other_parties[0].has_professional_license)) }
       % if other_parties[0].has_professional_license:
         - License number: ${ other_parties[0].professional_license_number if other_parties[0].professional_license_number != "" else word("not answered")}
@@ -1027,10 +947,7 @@ review:
 #
   - raw html: |
       ${ next_accordion("""<h2>Children and Pregnancy</h2>""") }
-    show if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"] and defined('children.there_are_any')
-  - raw html: |
-      ${ next_accordion("""<h2>Children</h2>""") }
-    show if: tool_ID in ["custody_complaint", "custody_answer"] and defined('children.there_are_any') and defined('custody_child_explanation')
+    show if: defined('children.there_are_any')
   - note: |
       ### Children
       % for child in children.filter(legal_parent="both"):
@@ -1043,13 +960,13 @@ review:
       % endfor
       % for child in children:
       % if child.legal_parent != "both":
-      #### **${ child }** ${ word("") if not defined("child.birthdate") else "(DOB: " + format_date(child.birthdate, format='M/d/yyyy') + ")" if child.birthdate != None else "(DOB: not provided)" }
+      **${ child }** ${ word("") if not defined("child.birthdate") else "(DOB: " + format_date(child.birthdate, format='M/d/yyyy') + ")" if child.birthdate != None else "(DOB: not provided)" }
       
       % if defined("child.gender"):
       % if child.gender != "":
         - Gender: ${ child.gender }
       % else:
-        - Gender: not provided
+        - Gender: not provided"
       % endif
       % endif
       % if child.legal_parent == "user":
@@ -1061,49 +978,7 @@ review:
       % endif
       % endfor     
     show if: children.there_are_any and child_legal_parent_review_screen
-    # using child_legal_parent_review_screen as a proxy for having finished child gathering once in divorce interviews
-  - note: |
-      ### Children
-      % for child in children.filter(legal_parent="both"):
-      #### **${ child }** (DOB: ${format_date(child.birthdate, format='M/d/yyyy')})
-
-        - Gender: ${ child.gender }
-        - SSN: ${ child.ssn_last_four }
-        - You and ${ other_parties[0] } are **both legal parents.**
-        - You **want a custody order** for this child.
-      
-      % endfor
-      % for child in children:
-      % if child.legal_parent != "both":
-      #### **${ child }** ${ word("") if not defined("child.birthdate") else "(DOB: " + format_date(child.birthdate, format='M/d/yyyy') + ")" if child.birthdate != None else "(DOB: not provided)" }
-
-      % if defined("child.gender"):
-      % if child.gender != "":
-        - Gender: ${ child.gender }
-      % else:
-        - Gender: not provided
-      % endif
-      % endif
-      % if not child.is_shared_child:
-        - **Not included** in custody case. *Reason:* they are **not** a shared child with ${ other_parties[0] }.
-      % elif not child.want_in_custody_case:
-        - **Not included** in custody case. *Reason:* you said you **don't want** them in the case.
-      % elif not child.affidavit_of_parentage:
-        - **Not included** in custody case. *Reason:* you and ${ other_parties[0] } did **not** sign an affidavit of parentage.
-      % elif child.affidavit_revoked:
-        - **Not included** in custody case. *Reason:* affidavit of parentage was revoked. 
-      % elif child.marital_birth and not child.spouse_excluded_order:
-      % if child.bio_parent == "user":
-        - **Not included** in custody case. *Reason:* You were married when ${child.familiar()} was conceived or born, and your spouse's parentage wasn't revoked.
-      % else:
-        - **Not included** in custody case. *Reason:* ${ other_parties[0] } was married when ${child.familiar()} was conceived or born, and their spouse's parentage wasn't revoked. 
-      % endif 
-      % endif
-      
-      % endif
-      % endfor     
-    show if: children.there_are_any and child_custody_case_status_review_screen
-    # using child_legal_parent_review_screen as a proxy for having finished child gathering once in custody interviews
+    # using child_legal_parent_review_screen as a proxy for having finished child gathering once
   - Edit:
       - children.there_are_any
       - follow up:
@@ -1160,47 +1035,6 @@ review:
       ### Any minor children?
         - ${word(yesno(children.there_are_any))}
       % endif
-    show if: tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]
-  - Edit:
-      - invalidate:
-        - children_line_1
-        - children_line_2
-        - set_child_home_choices
-        - guidepost_subject_children
-        - kids_had_other_custodian
-        - third_party_custody_claim
-        - need_temporary_order_kids
-        - temporary_order_kids_exit
-        - interview_order_home_state
-        - set_children_home_state_info
-        - interview_order_custody_where_kids_live
-        - all_kids_spend_time_with_other_parent
-        - children_live_with_parent
-        - children_now_live_with_which_parent
-        - children_lived_with_which_parent_past
-        - interview_order_stepchild_address
-        - interview_order_children
-        - calculate_custody_venue_options
-        - venue_conflict_continue
-        - check_for_required_venue
-        - venue
-        - court_index
-        - the_court
-        - the_foc
-        - stepchildren_for_addendum
-      - children.revisit
-      - recompute:
-        - children_previous_address.gathered_reset
-        - interview_order_children
-      # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
-    button: |
-      % if children.there_are_any:
-      ### **Add or remove** a child
-      % else:
-      ### Any minor children?
-        - ${word(yesno(children.there_are_any))}
-      % endif
-    show if: tool_ID in ["custody_complaint", "custody_answer"] and custody_child_explanation
   - Edit:
       - child_demographics_review_screen
     button: |
@@ -1255,45 +1089,10 @@ review:
       # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
     button: |
       ### Edit a child's **legal parent** info
-    show if: children.there_are_any and tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"]
-  - Edit:
-      - invalidate:
-        - children_line_1
-        - children_line_2
-        - set_child_home_choices
-        - guidepost_subject_children
-        - kids_had_other_custodian
-        - third_party_custody_claim
-        - need_temporary_order_kids
-        - temporary_order_kids_exit
-        - interview_order_home_state
-        - set_children_home_state_info
-        - interview_order_custody_where_kids_live
-        - all_kids_spend_time_with_other_parent
-        - children_live_with_parent
-        - children_now_live_with_which_parent
-        - children_lived_with_which_parent_past
-        - interview_order_stepchild_address
-        - interview_order_children
-        - calculate_custody_venue_options
-        - venue_conflict_continue
-        - check_for_required_venue
-        - venue
-        - court_index
-        - the_court
-        - the_foc
-        - stepchildren_for_addendum
-      - child_custody_case_status_review_screen
-      - recompute:
-        - children_previous_address.gathered_reset
-        - interview_order_children
-      # EKM note: currently leaving some all-children questions out of the invalidate list because I'm OK with just asking them once and not re-asking unless user specifically wants to edit them.
-    button: |
-      ### Edit a child's **parentage or custody case status**
-    show if: children.there_are_any and tool_ID in ["custody_complaint", "custody_answer"]
+    show if: children.there_are_any
   - note: |
       <hr>
-    show if: children.there_are_any and child_legal_parent_review_screen or child_custody_case_status_review_screen
+    show if: children.there_are_any and child_legal_parent_review_screen
   - Edit:
       - need_temporary_order_kids
       - invalidate:
@@ -1310,60 +1109,34 @@ review:
       - recompute: 
         - interview_order_home_state
     button: |-
-      % if tool_ID in ["custody_complaint", "custody_answer"]:
-      ### Legal "home state" of children who are the subject of the case
-      % else:
       ### Marital children's legal "home state"
-      % endif
       % for child in children.filter(legal_parent="both"):
         - ${ child.familiar() } currently lives in ${ child.currently_resides_in_locality_display_name }. This is ${ "" if child.current_residence_is_home_state else word("**not**") } their legal "home state". 
         % if not (child.currently_resides_in_type == "Michigan" and child.current_residence_is_home_state) and (child.age_in_months() >= 6 and not child.current_residence_is_home_state and child.currently_resides_in_locality != "MI" and child.spent_six_months_in_michigan and child.MI_stay_ended_when == "within_six_months"):
-        Michigan has jurisdiction because they recently lived in Michigan for 6 months.
+        Michigan has jurisdiction becaues they recently lived in Michigan for 6 months.
         % endif
       % endfor
     show if: there_are_marital_children
   - Edit:
       - children_live_with_parent
       - invalidate:
-        - all_kids_spend_time_with_other_parent
         - child_address_not_confidential_warning
-        - interview_order_custody_where_kids_live
-        - calculate_custody_venue_options
-        - venue_conflict_continue
       - recompute:
         - interview_order_children
       # Note validation logic on children_live_with_parent
     button: |
-      ### Home of ${word("marital") if tool_ID in ["divorce_complaint", "divorce_answer", "JOD_only"] else "" } children ${word("who are the subject of the case") if tool_ID in ["custody_complaint", "custody_answer"] else ""}
-        ${ comma_and_list(children.filter(legal_parent='both').familiar()) } ${ children.filter(legal_parent="both").does_verb('live') } with: 
+      ### Home of marital children
+      ${ comma_and_list(children.filter(legal_parent='both').familiar()) } ${ children.filter(legal_parent="both").does_verb('live') } with: 
         % if children_now_live_with_which_parent == "users[0]":
         you.
-      
-        % if tool_ID in ["custody_complaint", "custody_answer"] and other_parties[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
-        They **${word("do") if all_kids_spend_time_with_other_parent else word("don't")}** spend time in ${other_parties[0].address.county} County with ${other_parties[0]}.
-        % endif
         % elif children_now_live_with_which_parent == "other_parties[0]":
-        ${other_parties[0]}.
-              
-        % if tool_ID in ["custody_complaint", "custody_answer"] and users[0].lives_in_Michigan and not (other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
-        They **${word("do") if all_kids_spend_time_with_other_parent else word("don't")}** spend time in ${users[0].address.county} County with you.
-        % endif
+        your spouse.
         % elif children_now_live_with_which_parent == "both":
-        you and ${other_parties[0]}.
+        you and your spouse.
         % elif children_now_live_with_which_parent == "depends_on_child": 
       
         % for child in children.filter(legal_parent='both'):  
-        % if child.lives_with == "users[0]":
-        - ${ child.familiar() } lives with ${ word("you")}. 
-        % if tool_ID in ["custody_complaint", "custody_answer"] and other_parties[0].lives_in_Michigan and not (users[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
-        They **${word("do") if child.spends_time_with_other_parent else word("don't")}** spend time in ${other_parties[0].address.county} County with ${other_parties[0]}.
-        % endif
-        % elif child.lives_with == "other_parties[0]":
-        - ${ child.familiar() } lives with ${ word(other_parties[0]) }. 
-        % if tool_ID in ["custody_complaint", "custody_answer"] and users[0].lives_in_Michigan and not (other_parties[0].lives_in_Michigan and users[0].address.county == other_parties[0].address.county):
-        They **${word("do") if child.spends_time_with_other_parent else word("don't")}** spend time in ${users[0].address.county} County with you.
-        % endif
-        % endif
+        - ${ child.familiar() } lives with ${ word("you") if child.lives_with == "users[0]" else word("your spouse") }.
         % endfor
         % endif
     show if: there_are_marital_children
@@ -1373,18 +1146,14 @@ review:
       - follow up:
         - children_previous_address.revisit
     button: |
-      % if tool_ID in ["custody_complaint", "custody_answer"]:
-      ### Past homes of children who are the subject of the case
-      % else:
       ### Past homes of marital children
-      % endif
         - Over the last 5 years, ${ comma_and_list(children.filter(legal_parent='both').familiar()) } lived with 
         % if children_lived_with_which_parent_past == "users[0]":
         you.
         % elif children_lived_with_which_parent_past == "other_parties[0]":
-        ${OP_label}.
+        your spouse.
         % elif children_lived_with_which_parent_past == "both":
-        you and ${OP_label}.
+        you and your spouse.
         % endif
         - In the last five years, ${ word("one or more children moved") if children_previous_address.there_are_any else word("they did not move") } to a new address.
         % if children_previous_address.there_are_any:
@@ -1410,21 +1179,21 @@ review:
         % if legal_custody_who == "user":
         - **You**
         % elif legal_custody_who == "other_party":
-        - **${capitalize(OP_label)}**
+        - **Your spouse**
         % elif legal_custody_who == "both":
-        - **Both you and ${OP_label}**
+        - **Both you and your spouse**
         % endif
         should have legal custody.
         % if physical_custody_who == "user":
         - **You**
         % elif physical_custody_who == "other_party":
-        - **${capitalize(OP_label)}**
+        - **Your spouse**
         % elif physical_custody_who == "both":
-        - **Both you and ${OP_label}**
+        - **Both you and your spouse**
         % endif
         should have physical custody.
         % if physical_custody_who != "both":
-        - ${ capitalize(word(OP_label)) if physical_custody_who == "user" else word("You") } **${ word("should") if PT_who == "both" else word("should not") }** have parenting time.
+        - ${ word("Your spouse") if physical_custody_who == "user" else word("You") } **${ word("should") if PT_who == "both" else word("should not") }** have parenting time.
         % endif
         % if physical_custody_who == "both" or PT_who == "both":
         - Type of parenting time: **${ PT_type }**
@@ -1452,9 +1221,9 @@ review:
       - hundred_mile_rule
     button: |
       ### 100-mile rule
-      - You and ${OP_label} currently live ${ word("more than 100 miles away from each other.") if already_over_100_miles else word("within 100 miles of each other.") }
+      - You and your spouse currently live ${ word("more than 100 miles away from each other.") if already_over_100_miles else word("within 100 miles of each other.") }
       % if not already_over_100_miles:
-      - You and ${OP_label} **${ word("agree") if allow_over_100_miles else word("don't agree") }** either of you may move more than 100 miles from where you currently live, as long as you stay in Michigan.
+      - You and your spouse **${ word("agree") if allow_over_100_miles else word("don't agree") }** either of you may move more than 100 miles from where you currently live, as long as you stay in Michigan.
       % endif
     show if: there_are_marital_children and legal_custody_who == "both"
   - Edit:
@@ -1497,27 +1266,10 @@ review:
         % endfor
         % endif     
     show if: there_are_marital_children
-  - Edit: 
-      - judge_ruled_jurisdiction_over_kids
-    button: |
-      ### Has the MI divorce judge decided if they have jurisdiction to make custody and parenting time determinations?
-      % if judge_ruled_jurisdiction_over_kids == "yes":
-      - Yes, the judge decided they **do have jurisdiction** to make custody and parenting time determinations.
-      % elif judge_ruled_jurisdiction_over_kids == "no":
-      - No, the judge decided they **do not have jurisdiction** to make custody and parenting time determinations.
-      % else:
-      - The judge has not made a decision on jurisdiction yet.
-      % endif
-    show if: |
-      tool_ID == "JOD_only" and there_are_marital_children and prior_family_cases.there_are_any and len(prior_family_cases.filter(potential_jurisdiction_problem=True)) > 0
   - Edit:
       - stepchild_address_review_screen
     button: |-
-      % if tool_ID in ["custody_complaint", "custody_answer"]:
-      ### Addresses of other children (not the subject of the case)
-      % else:
       ### Stepchildren's addresses
-      % endif
       % for child in children:
       % if child.legal_parent != "both":
       % if child.stepchild_lives_with == "user":
@@ -1536,7 +1288,7 @@ review:
       % endif    
       % endif
       % endfor
-    show if: children.there_are_any and len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party') + children.filter(legal_parent='custody_other')) > 0
+    show if: children.there_are_any and len(children.filter(legal_parent='user') + children.filter(legal_parent='other_party')) > 0
   - Edit:
       - users[0].pregnant
       - recompute: 
@@ -1596,7 +1348,7 @@ review:
 # ---------- prior cases ----------
   - raw html: |
       ${ next_accordion("""<h2>Other Court Cases</h2>""") }
-    show if: defined('prior_family_cases.there_are_any') or (tool_ID in ["custody_complaint", "custody_answer"] and defined("controlling_custody_case"))
+    show if: defined('prior_family_cases.there_are_any')
   - Edit:
       - prior_family_cases.there_are_any
       - invalidate:
@@ -1614,7 +1366,7 @@ review:
       ### Any prior family division cases?
       % endif
         - ${word(yesno(prior_family_cases.there_are_any))}
-    show if: len(prior_family_cases.complete_elements()) < 1 and (tool_ID in ["divorce_complaint", "divorce_answer"] or (tool_ID == "JOD_only" and there_are_marital_children))
+    show if: len(prior_family_cases.complete_elements()) < 1 and (tool_ID != "JOD_only" or (tool_ID == "JOD_only" and there_are_marital_children))
   - Edit:
       - prior_family_cases.revisit
       - invalidate:
@@ -1625,7 +1377,7 @@ review:
         - court_index
         - the_court
         - the_foc
-    show if: (tool_ID in ["divorce_complaint", "divorce_answer"] and prior_family_cases.there_are_any) or (tool_ID == "JOD_only" and there_are_marital_children and prior_family_cases.there_are_any)
+    show if: (tool_ID != "JOD_only" and prior_family_cases.there_are_any) or (tool_ID == "JOD_only" and there_are_marital_children and prior_family_cases.there_are_any)
     button: |
       % if tool_ID == "JOD_only":
       ### Custody or support cases
@@ -1636,16 +1388,9 @@ review:
       % if tool_ID == "JOD_only":
       % for case in prior_family_cases:
       **Case ${case.docket_number}**
-
-        % if case.country != "US":
-        - ${ country_name(case.country) }
-        % else:
+      
         - State or territory: ${case.state}
-        % endif
-        % if case.in_tribal_court:
-        - This case is in a tribal court.
-        % endif
-        - Case status: ${word("ended with final order") if case.status == "ended_with_order" else word("ongoing") if case.status == "pending" else case.status }
+        - Case status: ${case.status}
         - Custody or parenting time order in effect? **${word(yesno(case.has_current_custody_PT_order))}**
         - Child support order in effect? **${word(yesno(case.has_child_support_order))}**
 
@@ -1655,24 +1400,18 @@ review:
       **Case ${case.docket_number}** (${prior_family_case_types_ordered[case.type]})
 
         - ${case.title}
-        % if case.country != "US" or case.state != "MI" or case.in_tribal_court:
-        - ${case.court} ${word("(tribal court)") if case.in_tribal_court else ""}
-        % endif
-        % if case.country == "US":
-        % if not case.in_tribal_court:
         - ${case.county} County, ${case.state}
+        % if defined("case.court"):
+        - ${case.court}
+        % if defined("case.address"):
+        ${"-- " + case.address}
         % endif
-        % if (case.in_tribal_court or case.state != "MI") and defined("case.address"):
-        - ${ case.address }
         % endif
-        % elif case.country != "US" and defined("case.address"):
-        - ${ case.address }, ${ case.foreign_admin_unit }, ${ country_name(case.country) }
-        % endif   
         % if tool_ID in ["divorce_complaint", "custody_complaint"]:
         - Judge ${case.judge}
         % endif
         % if case.type == "other":
-        - ${case.type_description}
+        case.type_description
         % endif
         - Case status: ${word("ended with final order") if case.status == "ended_with_order" else word("ongoing") if case.status == "pending" else case.status }
         % if there_are_marital_children:
@@ -1717,103 +1456,6 @@ review:
       
       % endfor
       % endif
-  - Edit: 
-      - controlling_custody_case
-      - follow up:
-        - all_children_in_prior_case
-      - invalidate:
-        - venue
-        - check_for_required_venue
-        - court_index
-        - the_court
-        - the_foc
-      # note validation logic on id: custody complaint controlling custody case screener
-    button: |
-      ### Existing child support, parenting time, or custody case
-      
-        % if controlling_custody_case == "yes_one":
-        - There **is** an existing child support, parenting time, or custody case between you and ${other_parties[0]}.
-        % elif controlling_custody_case == "yes_multiple":
-        - There **are** multiple existing child support, parenting time, or custody cases between you and ${other_parties[0]}.   
-        % else:
-        - There is **no** existing child support, parenting time, or custody cases between you and ${other_parties[0]}.  
-        % endif
-        % if controlling_custody_case == "yes_one" and controlling_case_location == "Michigan":
-        - The case is located in Michigan state court in ${controlling_custody_case_county} County.
-        % elif controlling_custody_case == "yes_multiple" and controlling_case_location == "Michigan" and MI_cases_in_same_court:
-        - The cases are all located in the same Michigan state court in ${controlling_custody_case_county} County.
-        % endif
-    show if: tool_ID in ["custody_complaint", "custody_answer"]
-  - Edit:
-      - prior_family_cases.there_are_any
-      - invalidate:
-        - venue
-        - check_for_required_venue
-        - court_index
-        - the_court
-        - the_foc
-    button: |
-      ### Any prior family division cases?
-        - ${word(yesno(prior_family_cases.there_are_any))}
-    show if: tool_ID in ["custody_complaint", "custody_answer"] and controlling_custody_case == "no" and len(prior_family_cases.complete_elements()) < 1
-  - Edit:
-      - prior_family_cases.revisit
-      - invalidate:
-        - venue
-        - check_for_required_venue
-        - court_index
-        - the_court
-        - the_foc
-    show if: tool_ID in ["custody_complaint", "custody_answer"] and prior_family_cases.there_are_any
-    button: |
-      ### Family division cases?
-      
-      % for case in prior_family_cases:
-      **Case ${case.docket_number}** (${prior_family_case_types_ordered[case.type]})
-
-        - ${case.title}
-        % if case.country != "US" or case.state != "MI" or case.in_tribal_court:
-        - ${case.court} ${word("(tribal court)") if case.in_tribal_court else ""}
-        % endif
-        % if case.country == "US": 
-        % if not case.in_tribal_court:
-        - ${case.county} County, ${case.state}
-        % endif
-        % if case.in_tribal_court or case.state != "MI":
-        - ${ case.address }
-        % endif
-        % elif case.country != "US":
-        - ${ case.address }, ${ case.foreign_admin_unit }, ${ country_name(case.country) }
-        % endif
-        % if tool_ID in ["custody_complaint"]:
-        - Judge ${case.judge}
-        % endif
-        % if case.type == "other":
-        - ${case.type_description}
-        % endif
-        - Case status: ${word("ended with final order") if case.status == "ended_with_order" else word("ongoing") if case.status == "pending" else case.status }
-        % if case.status == "ended_with_order":
-        - Date of final judgment or order: ${case.final_order_date}
-        % endif
-        % if case.status in ["ended_with_order", "stayed", "pending"]:
-        - Included custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
-        % if case.included_custody_PT_order:
-        % if tool_ID != "custody_answer":
-        - Custody/parenting time order currently in effect? **${word(yesno(case.has_current_custody_PT_order))}**
-        % endif
-        % if case.status in ["stayed", "pending"]:
-        - Date of custody/PT order: ${case.custody_PT_order_date}
-        % endif
-        % endif
-        % if tool_ID != "custody_answer":
-        - Child support order currently in effect? **${word(yesno(case.has_child_support_order))}**
-        % endif
-        % elif case.status == "dismissed":
-        - Custody or parenting time order? **${word(yesno(case.included_custody_PT_order))}**
-        - Date of custody/PT order: ${case.custody_PT_order_date}
-        % endif
-      
-      % endfor     
   - Edit:
       - child_support_pending_elsewhere
       - invalidate:
@@ -1868,7 +1510,7 @@ review:
         - ${word(yesno(marriage.pension_retirement_accounts_keep_own))}
       % endif
       % if tool_ID in ["divorce_complaint", "JOD_only"] and marriage.have_pension_retirement and not marriage.pension_contributions_made:
-      ### Do you plan to ask for part of your spouse's separate pension or retirement account?
+      <h3 class="h5"> Do you plan to ask for part of your spouse's separate pension or retirement account?</h3>
         - ${word(yesno(marriage.divide_separate_pension))}
       % endif
   - Edit:
@@ -2250,9 +1892,8 @@ review:
       ${ end_accordion() }
     show if: marriage.attribute_defined("have_experienced_domestic_violence")
 validation code: |
-  # regenerate downloads
-  # note: once we decide on new review screen button placement, we can maybe trigger this from the specific review screen button on the download screen instead of doing this. See. Quinten's documentation in https://github.com/SuffolkLITLab/docassemble-AssemblyLine/pull/1113
-  undefine('al_user_bundle.generate_downloads_task', 'al_user_bundle.downloads_ready')
+  # update cached documents in case edits are made after docs generated
+  undefine('al_user_bundle._downloadable_files', 'al_user_bundle.generate_downloads_task')
 ---
 #
 ### -------- Tables and Review Screens -------------------
@@ -2376,26 +2017,6 @@ subquestion: |
   ${ children.edit_legal_parents }
 continue button field: child_legal_parent_review_screen
 ---
-table: children.edit_custody_parentage
-rows: children
-columns:
-  - Child: |
-      f"{row_item.name} ({format_date(row_item.birthdate, format='M/d/yyyy')})" if defined("row_item.birthdate") and row_item.birthdate != None else row_item.name
-  - "{Part of custody case}": |
-      "Yes" if row_item.legal_parent == "both" else "No"
-edit:
-  - rerun_custody_logic
-delete buttons: False
----
-id: review children custody case status
-question: |
-  Edit children's parentage or status in this custody case
-subquestion: |
-  Use the table below to edit information about each child's parentage and role in your custody case.
-
-  ${ children.edit_custody_parentage }
-continue button field: child_custody_case_status_review_screen
----
 only sets: enable_home_state_review_screen
 code: |
   home_state_review_screen = True
@@ -2419,12 +2040,6 @@ code: |
   child_legal_parent_review_screen = True
 
   enable_child_legal_parent_review_screen = True
----
-only sets: enable_child_custody_case_status_review_screen
-code: |
-  child_custody_case_status_review_screen = True
-
-  enable_child_custody_case_status_review_screen = True
 ---
 template: debt_review_template
 content: |
