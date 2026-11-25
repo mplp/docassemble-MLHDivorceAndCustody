@@ -31,12 +31,6 @@ sections:
 code: |
   survey_link_url_only = "https://www.surveymonkey.com/r/VDGS78M"
 ---
-template: survey_embed_script
-content: |
-  <script>
-  (function(t,e,s,n){var o,a,c;t.SMCX=t.SMCX||[],e.getElementById(n)||(o=e.getElementsByTagName(s),a=o[o.length-1],c=e.createElement(s),c.type="text/javascript",c.async=!0,c.id=n,c.src="https://widget.surveymonkey.com/collect/website/js/tRaiETqnLgj758hTBazgd1caHSCpdmdgZgGo5Fq6bqp0y91DaTmREHdBKAkwXGAT.js",a.parentNode.insertBefore(c,a))})(window,document,"script","smcx-sdk");
-  </script>
----
 code: |
   tool_ID = "divorce_answer"
 ---
@@ -210,6 +204,7 @@ code: |
       if there_are_marital_children:
         nav.set_section("signpost_prior_cases")
         prior_family_cases.gather()
+        court_info_revamp_compatibility
         nav.set_section("signpost_income_etc")
         users[0].insurance.gather()
         other_parties[0].insurance.gather()
@@ -242,9 +237,7 @@ code: |
     stepchildren_for_addendum
   set_dynamic_instructions_variables
 
-  al_user_bundle.generate_downloads_task
+  al_user_bundle.downloads_ready
   nav.set_section("signpost_done")
   snapshot_download
-  if not al_user_bundle.generate_downloads_task.ready():
-    al_download_waiting_screen
   MLH_download
